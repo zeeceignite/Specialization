@@ -23,13 +23,13 @@ public class RecipeManager {
 
     public void reloadPlayerRecipes(Player player) {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
+        lockAllRecipes(player.getUniqueId());
         for (Skill skill : customPlayer.getSkills()) {
-            switch (skill.getSkillLevel()) {
-                case EXPERT:
-                    lockAllRecipes(player.getUniqueId());
-                    for ()
-
-            }
+//            Config.getUnlockedRecipesConfig().getString(skill.getSkillType() + )
+//            switch (skill.getSkillLevel()) {
+//                case EXPERT:
+//
+//            }
         }
     }
 

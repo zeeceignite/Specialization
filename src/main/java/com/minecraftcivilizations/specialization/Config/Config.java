@@ -54,7 +54,7 @@ public class Config {
                             strings.add(material.name());
                         }
                     }
-                    fields.add(new Field<>(skillType.name() + "_" + skillLevel.name(), String.class, new Gson().toJson(strings, String[].class)));
+                    fields.add(new Field<>(skillType.name() + "_" + skillLevel.name(), String.class, new Gson().toJson(strings)));
                 }
             }
         });
@@ -66,7 +66,7 @@ public class Config {
                     strings.add(material.name());
                 }
             }
-            fields.add(new Field<>("DEFAULT_UNLOCKED_RECIPES", String.class, new Gson().toJson(strings, String[].class)));
+            fields.add(new Field<>("DEFAULT_UNLOCKED_RECIPES", String.class, new Gson().toJson(strings)));
         });
 
         blockHardnessConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "blockHardnessConfig", fields -> {

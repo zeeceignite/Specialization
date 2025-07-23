@@ -20,6 +20,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
 import java.util.Random;
+import java.util.Set;
 
 public class BlockDamage {
     private static ProtocolManager manager = ProtocolLibrary.getProtocolManager();
@@ -44,7 +45,10 @@ public class BlockDamage {
             @Override
             public void run() {
                 // stops breaking if player isn't actively breaking the block
-                if (!(PlayerMineListener.armSwinging.containsKey(player.getName()))) {
+                Block currentBlock = player.getTargetBlockExact(5);
+
+
+                if (!PlayerMineListener.armSwinging.containsKey(player.getName()) || currentBlock == null || !currentBlock.equals(originalBlock)) {
                     this.cancel();
                     // returns the breaking animation back to none
                     breakingAnimation.getIntegers().write(1, -1);
@@ -52,19 +56,7 @@ public class BlockDamage {
                     return;
                 }
 
-                Block currentTarget = player.getTargetBlockExact(5);
-
-                // removes any progress if mining from block onto air and cancels this task
-                if (currentTarget == null) {
-                    this.cancel();
-
-                    // returns the breaking animation back to none
-                    breakingAnimation.getIntegers().write(1, -1);
-                    manager.sendServerPacket(player, breakingAnimation);
-                    return;
-                }
-
-                // breaks the block if it has been mined for a succificnet amount of time
+                // breaks the block if it has been mined for a sufficient amount of time
                 if(currentTicks >= breakingTimeTicks) {
                     // sets the final breaking animation
                     breakingAnimation.getIntegers().write(1, 9);

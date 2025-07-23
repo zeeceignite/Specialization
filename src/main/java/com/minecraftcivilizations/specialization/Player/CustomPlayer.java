@@ -34,7 +34,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     public CustomPlayer(UUID uuid) {
         super(uuid);
         for (SkillType skill : SkillType.values()) {
-            Skill skill1 = new Skill(skill, SkillLevel.NOVICE, 1, System.currentTimeMillis());
+            Skill skill1 = new Skill(skill, SkillLevel.NOVICE, 0, System.currentTimeMillis());
             skill1.setSkillType(skill);
             this.skills.add(skill1);
         }

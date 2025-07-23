@@ -20,7 +20,7 @@ public class Skill {
 
 
     public static double getXPNeededForLevel(int level) {
-        return (50 * Math.pow(level, 2) + (5 * level) + (100*Math.pow(2, level)));
+        return (25 * Math.pow(level, 2) + (5 * level) + (200*Math.pow(2.2, level)));
     }
 
     public static double mapValue(double x, double in_min, double in_max, double out_min, double out_max) {
@@ -28,13 +28,16 @@ public class Skill {
     }
 
     public SkillLevel getSkillLevel() {
-        skillLevel = SkillLevel.values()[getLevelFromXP(this.xp)];
+        skillLevel = SkillLevel.getSkillLevelFromInt(getLevelFromXP(this.xp));
         return skillLevel;
     }
 
     public static int getLevelFromXP(double xp) {
         int level = 0;
-        while (getXPNeededForLevel(level) < xp) {
+        while (xp > getXPNeededForLevel(level)) {
+            if (xp < getXPNeededForLevel(level+1)) {
+                return level;
+            }
             level++;
         }
         return level;
@@ -46,11 +49,11 @@ public class Skill {
     }
 
     public static String getDisplayName(SkillLevel skillLevel) {
-        return skillLevel.name().toLowerCase().replace(skillLevel.name().substring(0, 1).toLowerCase(), skillLevel.name().substring(0, 1).toUpperCase());
+        return skillLevel.name().substring(0, 1).toUpperCase() + skillLevel.name().toLowerCase().substring(1, skillLevel.name().length());
     }
 
     public static String getDisplayName(SkillType skillType) {
-        return skillType.name().toLowerCase().replace(skillType.name().substring(0, 1).toLowerCase(), skillType.name().substring(0, 1).toUpperCase());
+        return skillType.name().substring(0, 1).toUpperCase() + skillType.name().toLowerCase().substring(1, skillType.name().length());
     }
 
 }

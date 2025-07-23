@@ -16,4 +16,13 @@ public enum SkillLevel {
 
     @Getter
     private final int level;
+
+    public static SkillLevel getSkillLevelFromInt(int skillLevel) {
+        for (SkillLevel level : SkillLevel.values()) {
+            if (level.level == skillLevel) {
+                return level;
+            }
+        }
+        return SkillLevel.NOVICE;
+    }
 }
