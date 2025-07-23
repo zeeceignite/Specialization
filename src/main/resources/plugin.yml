@@ -1,0 +1,13 @@
+name: Specialization
+version: '0.0.0.1'
+main: com.minecraftcivilizations.specialization.Specialization
+api-version: '1.21'
+depend:
+  - MinecraftCivilizationsCore
+authors: [ DNFneca ]
+description: Lyphea
+commands:
+  class:
+  setxp:
+  reloadconfigs:
+
