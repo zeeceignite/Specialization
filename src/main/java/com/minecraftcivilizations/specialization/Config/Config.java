@@ -1,15 +1,18 @@
 package com.minecraftcivilizations.specialization.Config;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.minecraftcivilizations.specialization.Recipe.Pair;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
-import minecraftcivilizations.com.minecraftCivilizationsCore.API.Field;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Field;
+import org.bukkit.Bukkit;
+import org.bukkit.Keyed;
 import org.bukkit.Material;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 
 public class Config {
     @Getter
@@ -48,25 +51,26 @@ public class Config {
         unlockedRecipesConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "unlockedRecipesConfig", "The array of unlocked recipes, they don't need to repeat between levels, the ones for novice are unlocked for the next ones", fields -> {
             for (SkillType skillType : SkillType.values()) {
                 for (SkillLevel skillLevel : SkillLevel.values()) {
-                    ArrayList<String> strings = new ArrayList<>();
-                    for (Material material : Material.values()) {
-                        if (material.isBlock() && !material.isAir()) {
-                            strings.add(material.name());
+                    Set<Pair> strings = new HashSet<>();
+                    Bukkit.recipeIterator().forEachRemaining((recipe) -> {
+                        if (recipe instanceof Keyed keyed) {
+                            strings.add(new Pair(keyed.getKey().getNamespace(), keyed.getKey().getKey()));
                         }
-                    }
-                    fields.add(new Field<>(skillType.name() + "_" + skillLevel.name(), String.class, new Gson().toJson(strings)));
+                    });
+                    fields.add(new Field<>(skillType.name() + "_" + skillLevel.name(), String.class, new Gson().toJson(strings, new TypeToken<Set<Pair>>() {}.getType())));
                 }
             }
         });
 
         defaultUnlockedRecipesConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "defaultUnlockedRecipesConfig", fields -> {
-            ArrayList<String> strings = new ArrayList<>();
-            for (Material material : Material.values()) {
-                if (material.isBlock() && !material.isAir()) {
-                    strings.add(material.name());
+            Set<Pair> strings = new HashSet<>();
+            Bukkit.recipeIterator().forEachRemaining((recipe) -> {
+                if (recipe instanceof Keyed keyed) {
+                    strings.add(new Pair(keyed.getKey().getNamespace(), keyed.getKey().getKey()));
                 }
-            }
-            fields.add(new Field<>("DEFAULT_UNLOCKED_RECIPES", String.class, new Gson().toJson(strings)));
+            });
+            fields.add(new Field<>("DEFAULT_UNLOCKED_RECIPES", String.class, new Gson().toJson(strings, new TypeToken<Set<Pair>>() {
+            }.getType())));
         });
 
         blockHardnessConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "blockHardnessConfig", fields -> {

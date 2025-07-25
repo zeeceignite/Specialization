@@ -41,6 +41,6 @@ public class DataManager {
         LocalDateTime nextTime = now.withMinute(0).withSecond(0).withNano(0).plusMinutes(nextInterval);
 
         Duration duration = Duration.between(now, nextTime);
-        return duration.getSeconds();
+        return duration.getSeconds() + 1;
     }
 }
