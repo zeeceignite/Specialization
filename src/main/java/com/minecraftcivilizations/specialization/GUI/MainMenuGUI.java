@@ -70,7 +70,7 @@ public class MainMenuGUI extends GUI {
 
                 }
 
-                int currentSkillLevel = Skill.getLevelFromXP(skill.getXp());
+                int currentSkillLevel =  Skill.getLevelFromXP(skill.getXp());
 
                 if (currentSkillLevel < SkillLevel.values().length) {
 
@@ -108,7 +108,7 @@ public class MainMenuGUI extends GUI {
                                 add(Component.text(Math.round((percentOfNextLevel - customPlayer.getPercentOfTotal(skill.getSkillType())) * 100) / 100.0 + "% more to level up")
                                         .color(NamedTextColor.WHITE)
                                         .decoration(TextDecoration.ITALIC, false)
-                                        .append(Component.text(" (" + (int) Math.floor((customPlayer.getTotalXp() * percentOfNextLevel) - currentXp) + "xp)"))
+                                        .append(Component.text(" (" + (int) ((percentOfNextLevel/100 * (customPlayer.getTotalXp() == 0 ? 1 : customPlayer.getTotalXp())) / (1.0 - percentOfNextLevel/100) - currentXp) + "xp)"))
                                         .color(NamedTextColor.GRAY)
                                         .decoration(TextDecoration.ITALIC, false));
                             }

@@ -7,7 +7,9 @@ import com.minecraftcivilizations.specialization.Command.SetXpCommandExecutor;
 import com.minecraftcivilizations.specialization.Config.Config;
 import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Listener.BreakBlockListener;
+import com.minecraftcivilizations.specialization.Listener.FurnaceListener;
 import com.minecraftcivilizations.specialization.Listener.PlayerMineListener;
+import com.minecraftcivilizations.specialization.Listener.StonecutterListener;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import lombok.Getter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
@@ -38,6 +40,9 @@ public final class Specialization extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new PlayerMineListener(), this);
         getServer().getPluginManager().registerEvents(new BreakBlockListener(), this);
+
+        getServer().getPluginManager().registerEvents(new StonecutterListener(), this);
+        getServer().getPluginManager().registerEvents(new FurnaceListener(), this);
 
 
         ItemStack result = new ItemStack(Material.DIAMOND_SWORD);

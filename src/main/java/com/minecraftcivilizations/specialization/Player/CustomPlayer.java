@@ -11,6 +11,7 @@ import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
 import lombok.Setter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
@@ -24,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static com.minecraftcivilizations.specialization.Skill.Skill.getXPNeededForLevel;
 import static com.minecraftcivilizations.specialization.Skill.Skill.mapValue;
 
 public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizationsCore.Player.CustomPlayer {
@@ -34,7 +36,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     List<Skill> skills = new ArrayList<>(0);
     @Getter
     @Setter
-    private String inGameName = "Finger";
+    private String inGameName = "Ginger";
     @Setter
     @Getter
     private double height = 0;
@@ -89,10 +91,11 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
     public void addSkillXp(SkillType skillType, double xp) {
         if (skillType == null) return;
-        double previousXp = xp;
+        Bukkit.getPlayer(getUuid()).sendMessage(Component.text("You gained xp in: " + skillType.name()));
+        int previousLevel = this.getSkillLevel(skillType);
         getSkill(skillType).addXp(xp);
-        int currentLevel = Skill.getLevelFromXP(getSkill(skillType).getXp());
-        if (Skill.getLevelFromXP(previousXp) != currentLevel) {
+        int currentLevel = this.getSkillLevel(skillType);
+        if (previousLevel != currentLevel) {
             while (currentLevel > 0) {
                 Set<Pair> recipes = new Gson().fromJson(
                         Config.getUnlockedRecipesConfig().getString(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(currentLevel)),
@@ -105,6 +108,22 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
                 currentLevel--;
             }
         }
+    }
+
+    public int getSkillLevel(SkillType skillType) {
+
+        int level = 0;
+        Specialization.logger.info(String.valueOf(this.getPercentOfTotal(skillType)));
+        Specialization.logger.info(String.valueOf(Config.getSkillRequirementsConfig().getDouble(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(1) + "_REQUIREMENT")));
+        Specialization.logger.info(String.valueOf(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(1) + "_REQUIREMENT"));
+        Specialization.logger.info(String.valueOf(((double) this.getPercentOfTotal(skillType)) < (double) Config.getSkillRequirementsConfig().getDouble(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(level) + "_REQUIREMENT")));
+        while (getSkill(skillType).getXp() > getXPNeededForLevel(level) && this.getPercentOfTotal(skillType) >= Config.getSkillRequirementsConfig().getDouble(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(level) + "_REQUIREMENT")) {
+            if (getSkill(skillType).getXp() < getXPNeededForLevel(level+1)) {
+                return level;
+            }
+            level++;
+        }
+        return level;
     }
 
     public double getTotalXp() {
