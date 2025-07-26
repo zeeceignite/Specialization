@@ -94,35 +94,17 @@ public class BlockDamage {
         ItemStack item = player.getEquipment().getItemInMainHand();
 
         if (block.isPreferredTool(player.getEquipment().getItemInMainHand())) {
-            if (item.getType().equals(Material.WOODEN_PICKAXE) ||
-                    item.getType().equals(Material.WOODEN_SHOVEL) ||
-                    item.getType().equals(Material.WOODEN_AXE) ||
-                    item.getType().equals(Material.WOODEN_HOE)) speedMultiplier = 2d;
+            if (item.getType().name().matches("WOODEN_(PICKAXE|SHOVEL|AXE|HOE)")) speedMultiplier = 2d;
 
-            else if (item.getType().equals(Material.STONE_PICKAXE) ||
-                    item.getType().equals(Material.STONE_SHOVEL) ||
-                    item.getType().equals(Material.STONE_AXE) ||
-                    item.getType().equals(Material.STONE_HOE)) speedMultiplier = 4d;
+            else if (item.getType().name().matches("STONE_(PICKAXE|SHOVEL|AXE|HOE)")) speedMultiplier = 4d;
 
-            else if (item.getType().equals(Material.IRON_PICKAXE) ||
-                    item.getType().equals(Material.IRON_SHOVEL) ||
-                    item.getType().equals(Material.IRON_AXE) ||
-                    item.getType().equals(Material.IRON_HOE)) speedMultiplier = 6d;
+            else if (item.getType().name().matches("IRON_(PICKAXE|SHOVEL|AXE|HOE)")) speedMultiplier = 6d;
 
-            else if (item.getType().equals(Material.DIAMOND_PICKAXE) ||
-                    item.getType().equals(Material.DIAMOND_SHOVEL) ||
-                    item.getType().equals(Material.DIAMOND_AXE) ||
-                    item.getType().equals(Material.DIAMOND_HOE)) speedMultiplier = 8d;
+            else if (item.getType().name().matches("DIAMOND_(PICKAXE|SHOVEL|AXE|HOE)")) speedMultiplier = 8d;
 
-            else if (item.getType().equals(Material.NETHERITE_PICKAXE) ||
-                    item.getType().equals(Material.NETHERITE_SHOVEL) ||
-                    item.getType().equals(Material.NETHERITE_AXE) ||
-                    item.getType().equals(Material.NETHERITE_HOE)) speedMultiplier = 9d;
+            else if (item.getType().name().matches("NETHERITE_(PICKAXE|SHOVEL|AXE|HOE)")) speedMultiplier = 9d;
 
-            else if (item.getType().equals(Material.GOLDEN_PICKAXE) ||
-                    item.getType().equals(Material.GOLDEN_SHOVEL) ||
-                    item.getType().equals(Material.GOLDEN_AXE) ||
-                    item.getType().equals(Material.GOLDEN_HOE)) speedMultiplier = 12d;
+            else if (item.getType().name().matches("GOLDEN_(PICKAXE|SHOVEL|AXE|HOE)")) speedMultiplier = 12d;
 
             if (item.hasItemMeta()) {
                 if (item.getItemMeta().hasEnchant(Enchantment.EFFICIENCY)) {
