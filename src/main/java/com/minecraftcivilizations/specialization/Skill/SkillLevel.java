@@ -25,4 +25,12 @@ public enum SkillLevel {
         }
         return SkillLevel.NOVICE;
     }
+
+    public static String getDisplayName(SkillLevel skillLevel) {
+        return skillLevel.name().substring(0, 1).toUpperCase() + skillLevel.name().toLowerCase().substring(1, skillLevel.name().length());
+    }
+
+    public static String getDisplayName(int skillLevel) {
+        return getDisplayName(getSkillLevelFromInt(skillLevel));
+    }
 }

@@ -20,11 +20,6 @@ public class DataManager {
         scheduler.scheduleAtFixedRate(saveDataTask(), initialDelay, period, TimeUnit.SECONDS);
     }
 
-
-
-
-
-
     private static Runnable saveDataTask() {
         return () -> {
             Specialization.logger.info("Running task at " + LocalDateTime.now());

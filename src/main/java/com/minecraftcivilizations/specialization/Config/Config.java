@@ -144,6 +144,22 @@ public class Config {
             }
         });
 
+        xpGainFromBreakingConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "xpGainFromBreaking", fields -> {
+            for (Material inputMaterial : Material.values()) {
+                if (inputMaterial.isBlock()) {
+                    fields.add(new Field<>(inputMaterial.name(), String.class, new Gson().toJson(new Pair(SkillType.FARMER.name(), "1"))));
+                }
+            }
+        });
+
+        xpGainFromPlacingConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "xpGainFromPlacing", fields -> {
+            for (Material inputMaterial : Material.values()) {
+                if (inputMaterial.isBlock()) {
+                    fields.add(new Field<>(inputMaterial.name(), String.class, new Gson().toJson(new Pair(SkillType.FARMER.name(), "1"))));
+                }
+            }
+        });
+
         defaultUnlockedRecipesConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "defaultUnlockedRecipesConfig", fields -> {
             Set<Pair> strings = new HashSet<>();
             Bukkit.recipeIterator().forEachRemaining((recipe) -> {

@@ -41,8 +41,5 @@ public class StonecutterListener implements Listener {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
         Pair pair = new Gson().fromJson(Config.getXpGainFromStonecuttingConfig().getString(result.getType().name()), Pair.class);
         customPlayer.addSkillXp(SkillType.valueOf(pair.key()), Double.parseDouble(pair.value()) * amount);
-
-        // At this point, the player is taking a crafted stonecutter item
-        player.sendMessage("You crafted: " + result.getType() + ", and gained " + Double.parseDouble(pair.value()) * amount + " xp in " + SkillType.valueOf(pair.key()));
     }
 }

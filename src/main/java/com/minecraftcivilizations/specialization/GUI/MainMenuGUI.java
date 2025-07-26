@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.minecraftcivilizations.specialization.Skill.SkillType.getDisplayName;
+
 public class MainMenuGUI extends GUI {
 
     public MainMenuGUI(String title) {
@@ -47,7 +49,7 @@ public class MainMenuGUI extends GUI {
     public void open(Player player) {
         if (MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId()) != null) {
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-            this.getItems().put(4, ItemUtils.makeGUIItemOfType(Material.EMERALD, customPlayer.getInGameName()));
+//            this.getItems().put(4, ItemUtils.makeGUIItemOfType(ItemStack.of(Material.EMERALD), customPlayer.getName()));
             int i = 37;
             for (Skill skill : customPlayer.getSkills()) {
                 int temp = i;
@@ -57,38 +59,36 @@ public class MainMenuGUI extends GUI {
 
 
                     if (diff >= 1) {
-                        this.getItems().put(temp-=9, makeGlassDistributionPane(Skill.getDisplayName(skill.getSkillType()), Material.GREEN_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
+                        this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), Material.GREEN_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                     } else if (diff >= 0.75) {
-                        this.getItems().put(temp-=9, makeGlassDistributionPane(Skill.getDisplayName(skill.getSkillType()), Material.LIME_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
+                        this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), Material.LIME_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                     } else if (diff >= 0.5) {
-                        this.getItems().put(temp-=9, makeGlassDistributionPane(Skill.getDisplayName(skill.getSkillType()), Material.YELLOW_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
+                        this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), Material.YELLOW_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                     } else if (diff >= 0.25) {
-                        this.getItems().put(temp-=9, makeGlassDistributionPane(Skill.getDisplayName(skill.getSkillType()), Material.ORANGE_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
+                        this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), Material.ORANGE_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                     } else {
-                        this.getItems().put(temp-=9, makeGlassDistributionPane(Skill.getDisplayName(skill.getSkillType()), Material.RED_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
+                        this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), Material.RED_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                     }
 
                 }
 
-                int currentSkillLevel =  Skill.getLevelFromXP(skill.getXp());
+                int currentSkillLevel = customPlayer.getSkillLevel(skill.getSkillType());
 
                 if (currentSkillLevel < SkillLevel.values().length) {
 
                     double currentXp = Math.round(skill.getXp() * 100) / 100D;
                     double xpToNextLevel = Math.round((Skill.getXPNeededForLevel(currentSkillLevel + 1) - skill.getXp()) * 100) / 100D ;
-                    double percentOfNextLevel = Math.round(Config.getSkillRequirementsConfig().getDouble(skill.getSkillType().name() + "_" + SkillLevel.getSkillLevelFromInt(currentSkillLevel + 1).name() + "_REQUIREMENT") * 100) / 100D;
-
-                    Specialization.logger.info(String.valueOf(customPlayer.getPercentOfTotal(skill.getSkillType())));
+                    double percentOfTotalForNextLevel = Math.round(Config.getSkillRequirementsConfig().getDouble(skill.getSkillType().name() + "_" + SkillLevel.getSkillLevelFromInt(currentSkillLevel + 1).name() + "_REQUIREMENT") * 100) / 100D;
 
                     ItemStack itemStack = ItemStack.of(skill.getSkillType().getSkillWorkstation());
                     ItemMeta itemMeta = itemStack.getItemMeta();
                     itemMeta.addItemFlags(ItemFlag.values());
-                    itemMeta.displayName(Component.text(Skill.getDisplayName(skill.getSkillType()))
+                    itemMeta.displayName(Component.text(getDisplayName(skill.getSkillType()))
                             .decoration(TextDecoration.ITALIC, false)
                             .color(NamedTextColor.WHITE));
                     itemMeta.lore(new ArrayList<>() {
                         {
-                            add(Component.text(Skill.getDisplayName(skill.getSkillLevel()))
+                            add(Component.text(SkillLevel.getDisplayName(currentSkillLevel))
                                     .decoration(TextDecoration.ITALIC, false)
                                     .color(NamedTextColor.WHITE)
                                     .append(Component.text("(lvl " + currentSkillLevel + ")"))
@@ -98,17 +98,17 @@ public class MainMenuGUI extends GUI {
                             add(Component.empty());
                             add(Component.text("Requirements for level " + (currentSkillLevel + 1) + ":").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
                             add(Component.text((int) Math.round(Skill.getXPNeededForLevel(currentSkillLevel + 1)) + "xp").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
-                            add(Component.text(percentOfNextLevel + "% of your total xp to level up").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+                            add(Component.text(percentOfTotalForNextLevel + "% of your total xp to level up").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
                             add(Component.empty());
                             add(Component.text("You are missing: ").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
                             if (xpToNextLevel > 0) {
                                 add(Component.text(xpToNextLevel + "xp to have enough xp").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
                             }
-                            if (percentOfNextLevel > customPlayer.getPercentOfTotal(skill.getSkillType())) {
-                                add(Component.text(Math.round((percentOfNextLevel - customPlayer.getPercentOfTotal(skill.getSkillType())) * 100) / 100.0 + "% more to level up")
+                            if (percentOfTotalForNextLevel > customPlayer.getPercentOfTotal(skill.getSkillType())) {
+                                add(Component.text(Math.round((percentOfTotalForNextLevel - customPlayer.getPercentOfTotal(skill.getSkillType())) * 100) / 100.0 + "% more to level up")
                                         .color(NamedTextColor.WHITE)
                                         .decoration(TextDecoration.ITALIC, false)
-                                        .append(Component.text(" (" + (int) ((percentOfNextLevel/100 * (customPlayer.getTotalXp() == 0 ? 1 : customPlayer.getTotalXp())) / (1.0 - percentOfNextLevel/100) - currentXp) + "xp)"))
+                                        .append(Component.text(" (" + (int) ((percentOfTotalForNextLevel / 100 * customPlayer.getTotalXp() - currentXp) / (1.0 - percentOfTotalForNextLevel / 100)) + "xp)"))
                                         .color(NamedTextColor.GRAY)
                                         .decoration(TextDecoration.ITALIC, false));
                             }

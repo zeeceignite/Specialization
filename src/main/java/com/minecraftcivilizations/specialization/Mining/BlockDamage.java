@@ -5,9 +5,14 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
+import com.google.gson.Gson;
 import com.minecraftcivilizations.specialization.Config.Config;
 import com.minecraftcivilizations.specialization.Listener.PlayerMineListener;
+import com.minecraftcivilizations.specialization.Player.CustomPlayer;
+import com.minecraftcivilizations.specialization.Recipe.Pair;
+import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
+import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -72,8 +77,6 @@ public class BlockDamage {
                         if (currentTicks <= (breakingTimeTicks * multiplier)) {
                             breakingAnimation.getIntegers().write(1,  x-1);
                             manager.sendServerPacket(player, breakingAnimation);
-                            Specialization.logger.info("Current Ticks: " + currentTicks);
-                            Specialization.logger.info("Progress: " + (x-1));
                             break;
                         }
                         multiplier += 0.1;
@@ -91,7 +94,6 @@ public class BlockDamage {
         ItemStack item = player.getEquipment().getItemInMainHand();
 
         if (block.isPreferredTool(player.getEquipment().getItemInMainHand())) {
-
             if (item.getType().equals(Material.WOODEN_PICKAXE) ||
                     item.getType().equals(Material.WOODEN_SHOVEL) ||
                     item.getType().equals(Material.WOODEN_AXE) ||
@@ -142,7 +144,6 @@ public class BlockDamage {
         if (!player.isOnGround()) {
             speedMultiplier /= 5;
         }
-
         double damage;
 
         damage = speedMultiplier / Config.getBlockHardnessConfig().getDouble(block.getType().name());;
@@ -158,27 +159,11 @@ public class BlockDamage {
     }
 
     public void playerBreakBlock(Player player, Block block) {
-
+        CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
+        Pair pair = new Gson().fromJson(Config.getXpGainFromBreakingConfig().getString(block.getType().name()), Pair.class);
+        Specialization.logger.info(block.getType().name() + " ");
+        customPlayer.addSkillXp(SkillType.valueOf(pair.key()), Double.parseDouble(pair.value()));
 
         block.breakNaturally(player.getEquipment().getItemInMainHand(), true, true);
-        block.getWorld().playSound(block.getLocation(), block.getBlockData().getSoundGroup().getBreakSound(), 1.0f, 1.0f);
-
-        ItemStack item = player.getEquipment().getItemInMainHand();
-        ItemMeta meta = item.getItemMeta();
-
-        if (meta == null) {
-            return;
-        }
-        if (meta.isUnbreakable()) {
-            return;
-        }
-
-        if (meta.hasEnchant(Enchantment.UNBREAKING)) {
-            Random random = new Random();
-
-            if (random.nextInt(Math.round(100 / (meta.getEnchantLevel(Enchantment.UNBREAKING) + 1))) == 0) {
-                return;
-            }
-        }
     }
 }
