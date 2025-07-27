@@ -57,7 +57,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     }
 
     private void loadPlayer() {
-        CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().load(this.getUuid(), CustomPlayer.class);
+        CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().load(this.getUuid());
 
         if (customPlayer != null) {
             return;
@@ -102,7 +102,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         if (skillType == null) return;
         int previousLevel = this.getSkillLevel(skillType);
         getSkill(skillType).addXp(xp);
-        Bukkit.getPlayer(getUuid()).sendActionBar(Component.text("+" + xp).color(NamedTextColor.WHITE).append(Component.text("(" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));
+        Bukkit.getPlayer(getUuid()).sendActionBar(Component.text("+" + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));
         int currentLevel = this.getSkillLevel(skillType);
 
         if (previousLevel != currentLevel) {

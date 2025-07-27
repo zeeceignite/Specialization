@@ -14,14 +14,13 @@ import com.minecraftcivilizations.specialization.Command.SetXpCommandExecutor;
 import com.minecraftcivilizations.specialization.Config.Config;
 import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
-import com.minecraftcivilizations.specialization.Listener.BreakBlockListener;
-import com.minecraftcivilizations.specialization.Listener.FurnaceListener;
-import com.minecraftcivilizations.specialization.Listener.PlayerMineListener;
-import com.minecraftcivilizations.specialization.Listener.StonecutterListener;
+import com.minecraftcivilizations.specialization.Listener.*;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Player.PreJoinEventListener;
+import com.minecraftcivilizations.specialization.Recipe.Recipes;
 import com.mojang.authlib.GameProfile;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Component.ComponentUtils;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItem;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -35,6 +34,7 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -64,6 +64,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new FurnaceListener(), this);
         getServer().getPluginManager().registerEvents(new PreJoinEventListener(), this);
         getServer().getPluginManager().registerEvents(new TownManager(), this);
+        getServer().getPluginManager().registerEvents(new MoveListener(), this);
 
         new BukkitRunnable() {
             @Override
@@ -73,34 +74,27 @@ public final class Specialization extends JavaPlugin {
         }.runTaskAsynchronously(this);
 
 
-        ItemStack result = new ItemStack(Material.DIAMOND_SWORD);
+        Recipes.init();
 
-        // Unique recipe key for registry
-        NamespacedKey key = new NamespacedKey(this, "diamond_sword_plus");
+        Bukkit.updateRecipes();
 
-        ShapedRecipe recipe = new ShapedRecipe(key, result);
-
-        // Recipe shape
-        recipe.shape(" D ", " D ", " S ");
-
-        // Ingredients
-        recipe.setIngredient('D', Material.DIAMOND_BLOCK);
-        recipe.setIngredient('S', Material.STICK);
-
-        // Register the recipe
-        Bukkit.addRecipe(recipe);
-
+        MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setCustomPlayerClass(CustomPlayer.class);
 
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerJoin(playerJoinEvent -> {
+            minecraftcivilizations.com.minecraftCivilizationsCore.Player.CustomPlayer load = MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().load(playerJoinEvent.getUniqueId());
+
+            if (load != null) {
+                Specialization.logger.info("Custom player joined!");
+                return;
+            }
+
+            
             MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().addCustomPlayer(new CustomPlayer(playerJoinEvent.getUniqueId()));
-
-            Specialization.logger.info("Custom player joined!");
-
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(playerJoinEvent.getUniqueId());
 
-            Specialization.logger.info("Custom player joined!");
+            Specialization.logger.info("Custom player joined!!");
 
-            applyCustomName(playerJoinEvent.getPlayer(), Component.text("DUMBASS").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+//            applyCustomName(playerJoinEvent.getPlayer(), Component.text("DUMBASS").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
 
 
         });

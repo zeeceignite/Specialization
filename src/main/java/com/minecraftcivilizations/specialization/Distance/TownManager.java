@@ -19,11 +19,15 @@ public class TownManager implements Listener {
     public static TownManager instance;
     private static final List<Town> towns = Collections.synchronizedList(new ArrayList<>());
     private static final Map<UUID, Location> playerSpawnLocations = new ConcurrentHashMap<>();
-    private static final int TOWN_RADIUS = 150;
-    private static final int MIN_BEDS = 5;
+    private static int TOWN_RADIUS = 150;
+    private static int MIN_BEDS = 5;
 
     public TownManager() {
         instance = this;
+    }
+
+    public static void reloadConfig() {
+
     }
 
     @EventHandler
@@ -189,24 +193,22 @@ public class TownManager implements Listener {
 
     private static void updateTownsList() {
         // Remove duplicate towns that might be too close to each other
-        synchronized (towns) {
-            for (int i = 0; i < towns.size(); i++) {
-                for (int j = i + 1; j < towns.size(); j++) {
-                    Town town1 = towns.get(i);
-                    Town town2 = towns.get(j);
+        for (int i = 0; i < towns.size(); i++) {
+            for (int j = i + 1; j < towns.size(); j++) {
+                Town town1 = towns.get(i);
+                Town town2 = towns.get(j);
 
-                    if (town1.getCenterLocation().getWorld().equals(town2.getCenterLocation().getWorld()) &&
-                            town1.getCenterLocation().distance(town2.getCenterLocation()) <= TOWN_RADIUS) {
+                if (town1.getCenterLocation().getWorld().equals(town2.getCenterLocation().getWorld()) &&
+                        town1.getCenterLocation().distance(town2.getCenterLocation()) <= TOWN_RADIUS) {
 
-                        // Merge towns - keep the one with more beds
-                        if (town1.getBedCount() >= town2.getBedCount()) {
-                            towns.remove(j);
-                        } else {
-                            towns.remove(i);
-                            i--; // Adjust index after removal
-                        }
-                        break;
+                    // Merge towns - keep the one with more beds
+                    if (town1.getBedCount() >= town2.getBedCount()) {
+                        towns.remove(j);
+                    } else {
+                        towns.remove(i);
+                        i--; // Adjust index after removal
                     }
+                    break;
                 }
             }
         }

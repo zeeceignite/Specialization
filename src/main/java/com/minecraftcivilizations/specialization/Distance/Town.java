@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.Distance;
 
+import lombok.Getter;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -11,6 +12,7 @@ import java.util.Set;
 public class Town {
     private Location centerLocation;
     private List<Location> bedLocations;
+    @Getter
     private final long discoveredTime;
 
     public Town(Location center, List<Location> beds) {
@@ -29,10 +31,6 @@ public class Town {
 
     public int getBedCount() {
         return bedLocations.size();
-    }
-
-    public long getDiscoveredTime() {
-        return discoveredTime;
     }
 
     public void updateBeds(List<Location> newBeds) {
