@@ -143,8 +143,6 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         double currentPercentage = getPercentOfTotal(skillType);
 
         double XPProgressAsPercentage;
-        player.sendMessage("xpmin:" + XPMin + " and max" + XPMax);
-        player.sendMessage("current percentage:" + currentPercentage + " min" + percentageNeededMin + " max" + percentageNeededMax);
         if(skill.getXp() <= XPMax) {
             XPProgressAsPercentage = mapValue(skill.getXp() - XPMin, 0, XPMax - XPMin, 0, 100);
         }else XPProgressAsPercentage = 100.0;
@@ -156,8 +154,6 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         }else if(getTotalXp() == 0){
             percentageProgressAsPercentage = 0;
         } else percentageProgressAsPercentage = 100.0;
-
-        player.sendMessage(skillType.toString() + "XP " + XPProgressAsPercentage + " percentage " + percentageProgressAsPercentage);
         return Math.round(XPProgressAsPercentage * percentageProgressAsPercentage * .01);
     }
 
