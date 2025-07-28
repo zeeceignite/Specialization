@@ -27,18 +27,15 @@ public class MainMenuGUI extends GUI {
 
     public MainMenuGUI(String title) {
         super(Component.text(title), 54);
-        this.getItems().put(0, new GUIItem(new ItemStack(Material.COMPASS), new Runnable() {
-            @Override
-            public void run() {
-                List<ItemStack> items = new ArrayList<>();
-                for (Material material : Material.values()) {
-                    if (material.isItem() && material != Material.AIR) {
-                        items.add(new ItemStack(material));
-                    }
+        this.getItems().put(0, new GUIItem(new ItemStack(Material.COMPASS), () -> {
+            List<ItemStack> items = new ArrayList<>();
+            for (Material material : Material.values()) {
+                if (material.isItem() && material != Material.AIR) {
+                    items.add(new ItemStack(material));
                 }
-
-                new ListGUI(Component.text("Classes"), new ArrayList<>(items)).setParentGUI(MainMenuGUI.this).open((Player) getInventory().getViewers().getFirst());
             }
+
+            new ListGUI(Component.text("Classes"), new ArrayList<>(items)).setParentGUI(MainMenuGUI.this).open((Player) getInventory().getViewers().getFirst());
         }));
     }
 
