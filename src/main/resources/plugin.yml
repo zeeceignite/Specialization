@@ -11,4 +11,5 @@ commands:
   setxp:
   reloadconfigs:
   setlore:
+  reloadtowns:
 
