@@ -41,13 +41,13 @@ public class MainMenuGUI extends GUI {
 
     private Material getPaneMaterial(int tier, int type){
         String color = switch (tier) {
-            case 0 -> "RED";
-            case 1 -> "ORANGE";
-            case 2 -> "YELLOW";
-            case 3 -> "LIME";
-            case 4 -> "GREEN";
+            case 0 -> "WHITE";
+            case 1 -> "RED";
+            case 2 -> "ORANGE";
+            case 3 -> "YELLOW";
+            case 4 -> "LIME";
             case 5 -> "PURPLE";
-            default -> "WHITE";
+            default -> "BLACK";
         };
         String materialType = switch (type){
             case 0 -> "CARPET";
@@ -67,7 +67,6 @@ public class MainMenuGUI extends GUI {
             for (Skill skill : customPlayer.getSkills()) {
                 int temp = i;
                 double distribution = customPlayer.getGUIDistributionOfTotalSkills(skill.getSkillType(), player);
-                player.sendMessage(distribution + " dist for skill " + skill.getSkillType());
                 int currentSkillLevel =  Math.min(customPlayer.getSkillLevel(skill.getSkillType()),SkillLevel.values().length-1);
                 for (int score = 0; score < 3; score++) {
                     if((distribution * .03 - score) < 0 ) break;
@@ -76,8 +75,11 @@ public class MainMenuGUI extends GUI {
                 }
 
                 double currentXp = Math.round(skill.getXp() * 100) / 100D;
-                double xpToNextLevel = Math.round((Skill.getXPNeededForLevel(currentSkillLevel + 1) - skill.getXp()) * 100) / 100D ;
                 double percentOfTotalForNextLevel = Math.round(Config.getSkillRequirementsConfig().getDouble(skill.getSkillType().name() + "_" + SkillLevel.getSkillLevelFromInt(currentSkillLevel + 1).name() + "_REQUIREMENT") * 100) / 100D;
+                double xpToNextLevel = Math.max(
+                        Math.round((Skill.getXPNeededForLevel(currentSkillLevel + 1) - skill.getXp()) * 100) / 100D,
+                        Math.round((percentOfTotalForNextLevel / 100 * customPlayer.getTotalXp() - currentXp) / (1.0 - percentOfTotalForNextLevel / 100))
+                );
 
                 ItemStack itemStack = ItemStack.of(skill.getSkillType().getSkillWorkstation());
                 ItemMeta itemMeta = itemStack.getItemMeta();
@@ -95,24 +97,10 @@ public class MainMenuGUI extends GUI {
                                 .decoration(TextDecoration.ITALIC, false));
                         add(Component.text("Current xp: " + (int) Math.round(skill.getXp())).decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
                         add(Component.empty());
-                        add(Component.text("Requirements for level " + (currentSkillLevel + 1) + ":").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
-                        add(Component.text((int) Math.round(Skill.getXPNeededForLevel(currentSkillLevel + 1)) + "xp").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
-                        add(Component.text(percentOfTotalForNextLevel + "% of your total xp to level up").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
-                        add(Component.empty());
                         add(Component.text("You are missing: ").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
                         if (xpToNextLevel > 0) {
-                            add(Component.text(xpToNextLevel + "xp to have enough xp").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
+                                add(Component.text(xpToNextLevel + "xp to level up").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
                         }
-                        if (percentOfTotalForNextLevel > customPlayer.getPercentOfTotal(skill.getSkillType())) {
-                            add(Component.text(Math.round((percentOfTotalForNextLevel - customPlayer.getPercentOfTotal(skill.getSkillType())) * 100) / 100.0 + "% more to level up")
-                                    .color(NamedTextColor.WHITE)
-                                    .decoration(TextDecoration.ITALIC, false)
-                                    .append(Component.text(" (" + (int) ((percentOfTotalForNextLevel / 100 * customPlayer.getTotalXp() - currentXp) / (1.0 - percentOfTotalForNextLevel / 100)) + "xp)"))
-                                    .color(NamedTextColor.GRAY)
-                                    .decoration(TextDecoration.ITALIC, false));
-                        }
-                        add(Component.empty());
-                        add(Component.text("Pretty awesome if you ask me!").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
                     }
                 });
                 itemStack.setItemMeta(itemMeta);
