@@ -4,11 +4,9 @@ import com.minecraftcivilizations.specialization.Config.Config;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
-import com.minecraftcivilizations.specialization.Specialization;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUI;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.ListGUI;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Item.ItemUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -20,9 +18,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 
 import static com.minecraftcivilizations.specialization.Skill.SkillType.getDisplayName;
 
@@ -45,6 +42,25 @@ public class MainMenuGUI extends GUI {
         }));
     }
 
+    private Material getPaneMaterial(int tier, int type){
+        String color = switch (tier) {
+            case 0 -> "RED";
+            case 1 -> "ORANGE";
+            case 2 -> "YELLOW";
+            case 3 -> "LIME";
+            case 4 -> "GREEN";
+            case 5 -> "PURPLE";
+            default -> "WHITE";
+        };
+        String materialType = switch (type){
+            case 0 -> "CARPET";
+            case 1 -> "DYE";
+            case 2 -> "STAINED_GLASS_PANE";
+            default-> "BANNER";
+        };
+        return Objects.requireNonNull(Material.getMaterial(color + "_" + materialType));
+    }
+
     @Override
     public void open(Player player) {
         if (MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId()) != null) {
@@ -53,72 +69,57 @@ public class MainMenuGUI extends GUI {
             int i = 37;
             for (Skill skill : customPlayer.getSkills()) {
                 int temp = i;
+                double distribution = customPlayer.getGUIDistributionOfTotalSkills(skill.getSkillType(), player);
+                player.sendMessage(distribution + " dist for skill " + skill.getSkillType());
+                int currentSkillLevel =  Math.min(customPlayer.getSkillLevel(skill.getSkillType()),SkillLevel.values().length-1);
                 for (int score = 0; score < 3; score++) {
-                    double diff = customPlayer.getGUIDistributionOfTotalSkills(skill.getSkillType()) - score;
-
-
-
-                    if (diff >= 1) {
-                        this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), Material.GREEN_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
-                    } else if (diff >= 0.75) {
-                        this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), Material.LIME_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
-                    } else if (diff >= 0.5) {
-                        this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), Material.YELLOW_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
-                    } else if (diff >= 0.25) {
-                        this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), Material.ORANGE_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
-                    } else {
-                        this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), Material.RED_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
-                    }
-
+                    if((distribution * .03 - score) < 0 ) break;
+                    int type = Math.min((int) (distribution * .09 - score * 3), 2);
+                    this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), getPaneMaterial(currentSkillLevel, type), distribution));
                 }
 
-                int currentSkillLevel = customPlayer.getSkillLevel(skill.getSkillType());
+                double currentXp = Math.round(skill.getXp() * 100) / 100D;
+                double xpToNextLevel = Math.round((Skill.getXPNeededForLevel(currentSkillLevel + 1) - skill.getXp()) * 100) / 100D ;
+                double percentOfTotalForNextLevel = Math.round(Config.getSkillRequirementsConfig().getDouble(skill.getSkillType().name() + "_" + SkillLevel.getSkillLevelFromInt(currentSkillLevel + 1).name() + "_REQUIREMENT") * 100) / 100D;
 
-                if (currentSkillLevel < SkillLevel.values().length) {
-
-                    double currentXp = Math.round(skill.getXp() * 100) / 100D;
-                    double xpToNextLevel = Math.round((Skill.getXPNeededForLevel(currentSkillLevel + 1) - skill.getXp()) * 100) / 100D ;
-                    double percentOfTotalForNextLevel = Math.round(Config.getSkillRequirementsConfig().getDouble(skill.getSkillType().name() + "_" + SkillLevel.getSkillLevelFromInt(currentSkillLevel + 1).name() + "_REQUIREMENT") * 100) / 100D;
-
-                    ItemStack itemStack = ItemStack.of(skill.getSkillType().getSkillWorkstation());
-                    ItemMeta itemMeta = itemStack.getItemMeta();
-                    itemMeta.addItemFlags(ItemFlag.values());
-                    itemMeta.displayName(Component.text(getDisplayName(skill.getSkillType()))
-                            .decoration(TextDecoration.ITALIC, false)
-                            .color(NamedTextColor.WHITE));
-                    itemMeta.lore(new ArrayList<>() {
-                        {
-                            add(Component.text(SkillLevel.getDisplayName(currentSkillLevel))
-                                    .decoration(TextDecoration.ITALIC, false)
+                ItemStack itemStack = ItemStack.of(skill.getSkillType().getSkillWorkstation());
+                ItemMeta itemMeta = itemStack.getItemMeta();
+                itemMeta.addItemFlags(ItemFlag.values());
+                itemMeta.displayName(Component.text(getDisplayName(skill.getSkillType()))
+                        .decoration(TextDecoration.ITALIC, false)
+                        .color(NamedTextColor.WHITE));
+                itemMeta.lore(new ArrayList<>() {
+                    {
+                        add(Component.text(SkillLevel.getDisplayName(currentSkillLevel))
+                                .decoration(TextDecoration.ITALIC, false)
+                                .color(NamedTextColor.WHITE)
+                                .append(Component.text("(lvl " + currentSkillLevel + ")"))
+                                .color(NamedTextColor.GRAY)
+                                .decoration(TextDecoration.ITALIC, false));
+                        add(Component.text("Current xp: " + (int) Math.round(skill.getXp())).decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+                        add(Component.empty());
+                        add(Component.text("Requirements for level " + (currentSkillLevel + 1) + ":").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+                        add(Component.text((int) Math.round(Skill.getXPNeededForLevel(currentSkillLevel + 1)) + "xp").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+                        add(Component.text(percentOfTotalForNextLevel + "% of your total xp to level up").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+                        add(Component.empty());
+                        add(Component.text("You are missing: ").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
+                        if (xpToNextLevel > 0) {
+                            add(Component.text(xpToNextLevel + "xp to have enough xp").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
+                        }
+                        if (percentOfTotalForNextLevel > customPlayer.getPercentOfTotal(skill.getSkillType())) {
+                            add(Component.text(Math.round((percentOfTotalForNextLevel - customPlayer.getPercentOfTotal(skill.getSkillType())) * 100) / 100.0 + "% more to level up")
                                     .color(NamedTextColor.WHITE)
-                                    .append(Component.text("(lvl " + currentSkillLevel + ")"))
+                                    .decoration(TextDecoration.ITALIC, false)
+                                    .append(Component.text(" (" + (int) ((percentOfTotalForNextLevel / 100 * customPlayer.getTotalXp() - currentXp) / (1.0 - percentOfTotalForNextLevel / 100)) + "xp)"))
                                     .color(NamedTextColor.GRAY)
                                     .decoration(TextDecoration.ITALIC, false));
-                            add(Component.text("Current xp: " + (int) Math.round(skill.getXp())).decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
-                            add(Component.empty());
-                            add(Component.text("Requirements for level " + (currentSkillLevel + 1) + ":").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
-                            add(Component.text((int) Math.round(Skill.getXPNeededForLevel(currentSkillLevel + 1)) + "xp").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
-                            add(Component.text(percentOfTotalForNextLevel + "% of your total xp to level up").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
-                            add(Component.empty());
-                            add(Component.text("You are missing: ").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
-                            if (xpToNextLevel > 0) {
-                                add(Component.text(xpToNextLevel + "xp to have enough xp").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
-                            }
-                            if (percentOfTotalForNextLevel > customPlayer.getPercentOfTotal(skill.getSkillType())) {
-                                add(Component.text(Math.round((percentOfTotalForNextLevel - customPlayer.getPercentOfTotal(skill.getSkillType())) * 100) / 100.0 + "% more to level up")
-                                        .color(NamedTextColor.WHITE)
-                                        .decoration(TextDecoration.ITALIC, false)
-                                        .append(Component.text(" (" + (int) ((percentOfTotalForNextLevel / 100 * customPlayer.getTotalXp() - currentXp) / (1.0 - percentOfTotalForNextLevel / 100)) + "xp)"))
-                                        .color(NamedTextColor.GRAY)
-                                        .decoration(TextDecoration.ITALIC, false));
-                            }
-                            add(Component.empty());
-                            add(Component.text("Pretty awesome if you ask me!").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
                         }
-                    });
-                    itemStack.setItemMeta(itemMeta);
-                    this.getItems().put(i++, new GUIItem(itemStack, null));
-                }
+                        add(Component.empty());
+                        add(Component.text("Pretty awesome if you ask me!").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
+                    }
+                });
+                itemStack.setItemMeta(itemMeta);
+                this.getItems().put(i++, new GUIItem(itemStack, null));
 
             }
 
@@ -134,7 +135,7 @@ public class MainMenuGUI extends GUI {
         itemMeta.displayName(Component.text(name).decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
         itemMeta.lore(new ArrayList<>() {
             {
-                add(Component.text("Holds " + Math.round(percent * 100) / 100 + "% of your total xp").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+                add(Component.text("You have " + percent + "% progress to the next tier in this skill.").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
                 add(Component.empty());
                 add(Component.text("Awesome!").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
             }
