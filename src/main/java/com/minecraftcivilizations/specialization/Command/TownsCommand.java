@@ -7,7 +7,6 @@ import co.aikar.commands.annotation.Default;
 import com.minecraftcivilizations.specialization.Distance.Town;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
 import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
 @CommandAlias("towns")
@@ -15,7 +14,7 @@ public class TownsCommand extends BaseCommand {
 
     @Default
     @CommandPermission("towndetector.list")
-    public void onTowns(CommandSender sender, Command command, String label, String[] args) {
+    public void onTowns(CommandSender sender) {
         sender.sendMessage(ChatColor.GREEN + "=== Detected Towns ===");
         if (TownManager.getTowns().isEmpty()) {
             sender.sendMessage(ChatColor.YELLOW + "No towns detected yet.");
