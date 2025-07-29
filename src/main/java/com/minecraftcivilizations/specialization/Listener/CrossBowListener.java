@@ -34,11 +34,11 @@ public class CrossBowListener implements Listener {
         if (arrow.isShotFromCrossbow()) {
             arrow.setVelocity(arrow.getVelocity().multiply(1.6));
             if (bowEvent.getBow().containsEnchantment(Enchantment.MULTISHOT)) {
-                arrow.setVelocity(arrow.getVelocity().multiply(0.6));
+                arrow.setVelocity(arrow.getVelocity().multiply(1.3));
             } else if (bowEvent.getBow().containsEnchantment(Enchantment.PIERCING)) {
                 arrow.setVelocity(arrow.getVelocity().multiply(2.5));
             } else if (bowEvent.getBow().containsEnchantment(Enchantment.QUICK_CHARGE)) {
-                arrow.setVelocity(arrow.getVelocity().multiply(0.6));
+                arrow.setVelocity(arrow.getVelocity().multiply(1.3));
             }
         }
     }
