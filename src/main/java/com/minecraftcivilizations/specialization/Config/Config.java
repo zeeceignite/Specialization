@@ -97,10 +97,10 @@ public class Config {
         });
 
         combatConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "playerConfig", fields -> {
-            fields.add(new Field<>("CROSSBOW_VELOCITY", Double.class, 2.0));
-            fields.add(new Field<>("CROSSBOW_BASE_PIERCING_VELOCITY", Double.class, 2.0));
-            fields.add(new Field<>("CROSSBOW_BASE_MULTISHOT_VELOCITY", Double.class, 1.75));
-            fields.add(new Field<>("CROSSBOW_QUICKCHARGE_VELOCITY", Double.class, 1.75));
+            fields.add(new Field<>("CROSSBOW_BASE_VELOCITY", Double.class, 1.6));
+            fields.add(new Field<>("CROSSBOW_BASE_PIERCING_VELOCITY", Double.class, 1.3));
+            fields.add(new Field<>("CROSSBOW_BASE_MULTISHOT_VELOCITY", Double.class, 2.5));
+            fields.add(new Field<>("CROSSBOW_BASE_QUICKCHARGE_VELOCITY", Double.class, 1.3));
         });
 
         xpGainFromRepairingConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "xpGainFromRepairing", fields -> {
