@@ -51,6 +51,8 @@ public class SpecializationConfig {
     @Getter
     private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config combatConfig;
     @Getter
+    private static Config chatConfig;
+    @Getter
     private static final Set<Recipe> recipeSet = new HashSet<>();
 
 
@@ -202,6 +204,13 @@ public class SpecializationConfig {
                     fields.add(new Field<>(skillType.name() + "_" + skillLevel.name() + "_REQUIREMENT", Double.class, 0D));
                 }
             }
+        });
+
+        chatConfig = new Config(Specialization.getInstance(), "chatConfig", fields -> {
+            fields.add(new Field<>("CHAT_RADIUS", Double.class, 32.0));
+            fields.add(new Field<>("DEFAULT_FORMAT", String.class, "%s > %s"));
+            fields.add(new Field<>("ANNOUNCEMENT_FORMAT", String.class, "<aqua>[Announcement]<gray> %s"));
+            fields.add(new Field<>("ANNOUNCEMENT_PREFIX", String.class, "#"));
         });
     }
 
