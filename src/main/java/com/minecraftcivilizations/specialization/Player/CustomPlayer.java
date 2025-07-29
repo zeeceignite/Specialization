@@ -3,7 +3,6 @@ package com.minecraftcivilizations.specialization.Player;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
-import com.minecraftcivilizations.specialization.Recipe.Pair;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -11,6 +10,7 @@ import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
 import lombok.Setter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -71,13 +71,11 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         new BukkitRunnable() {
             @Override
             public void run() {
-                Set<Pair> recipes = new Gson().fromJson(
-                        SpecializationConfig.getDefaultUnlockedRecipesConfig().getString("DEFAULT_UNLOCKED_RECIPES"),
-                        new TypeToken<Set<Pair>>() {
-                        }.getType());
-                for (Pair entry : recipes) {
-                    NamespacedKey key = new NamespacedKey(entry.key(), entry.value());
-                    player.discoverRecipe(key);
+                Set<NamespacedKey> recipes =
+                        SpecializationConfig.getDefaultUnlockedRecipesConfig().get("DEFAULT_UNLOCKED_RECIPES",
+                        new TypeToken<Set<NamespacedKey>>() {}.getType());
+                for (NamespacedKey entry : recipes) {
+                    player.discoverRecipe(entry);
                 }
             }
         }.runTaskLater(Specialization.getInstance(), 1);
@@ -95,12 +93,11 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
         if (previousLevel != currentLevel) {
             while (currentLevel > 0) {
-                Set<Pair> recipes = new Gson().fromJson(
-                        SpecializationConfig.getUnlockedRecipesConfig().getString(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(currentLevel)),
-                        new TypeToken<Set<Pair>>() {}.getType());
-                for (Pair entry : recipes) {
-                    NamespacedKey key = new NamespacedKey(entry.key(), entry.value());
-                    Specialization.logger.info(String.valueOf(Bukkit.getPlayer(this.getUuid()).discoverRecipe(key)));
+                Set<NamespacedKey> recipes =
+                        SpecializationConfig.getUnlockedRecipesConfig().get(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(currentLevel),
+                        new TypeToken<Set<NamespacedKey>>() {}.getType());
+                for (NamespacedKey entry : recipes) {
+                    Specialization.logger.info(String.valueOf(Bukkit.getPlayer(this.getUuid()).discoverRecipe(entry)));
                 }
 
                 currentLevel--;
@@ -128,7 +125,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     }
 
     private boolean isMissingPercentForLevel(SkillType skillType, int level) {
-        return getPercentOfTotal(skillType) < SpecializationConfig.getSkillRequirementsConfig().getDouble(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(level) + "_REQUIREMENT");
+        return getPercentOfTotal(skillType) < (Double) SpecializationConfig.getSkillRequirementsConfig().get(skillType + "_" + SkillLevel.getSkillLevelFromInt(level) + "_REQUIREMENT", Double.class);
     }
 
     public double getGUIDistributionOfTotalSkills(SkillType skillType) {
