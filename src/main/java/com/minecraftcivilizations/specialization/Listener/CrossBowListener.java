@@ -30,25 +30,17 @@ public class CrossBowListener implements Listener {
         assert bowEvent.getBow() != null;
         Arrow arrow = (Arrow) bowEvent.getProjectile();
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (arrow.isDead() || arrow.isOnGround() || arrow.isInBlock() || !arrow.isValid()) {
-                    this.cancel();
-                }
 
-                if (arrow.isShotFromCrossbow()) {
-                    arrow.setVelocity(arrow.getVelocity().multiply(1.25));
-                    if (bowEvent.getBow().containsEnchantment(Enchantment.MULTISHOT)) {
-                        arrow.setVelocity(arrow.getVelocity().multiply(0.9));
-                    } else if (bowEvent.getBow().containsEnchantment(Enchantment.PIERCING)) {
-                        arrow.setVelocity(arrow.getVelocity().multiply(1.5));
-                    } else if (bowEvent.getBow().containsEnchantment(Enchantment.QUICK_CHARGE)) {
-                        arrow.setVelocity(arrow.getVelocity().multiply(0.95));
-                    }
-                }
+        if (arrow.isShotFromCrossbow()) {
+            arrow.setVelocity(arrow.getVelocity().multiply(1.6));
+            if (bowEvent.getBow().containsEnchantment(Enchantment.MULTISHOT)) {
+                arrow.setVelocity(arrow.getVelocity().multiply(0.6));
+            } else if (bowEvent.getBow().containsEnchantment(Enchantment.PIERCING)) {
+                arrow.setVelocity(arrow.getVelocity().multiply(2.5));
+            } else if (bowEvent.getBow().containsEnchantment(Enchantment.QUICK_CHARGE)) {
+                arrow.setVelocity(arrow.getVelocity().multiply(0.6));
             }
-
-        }.runTaskTimer(plugin, 0, 5);
+        }
     }
+
 }
