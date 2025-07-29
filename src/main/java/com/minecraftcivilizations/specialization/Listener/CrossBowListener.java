@@ -1,28 +1,13 @@
 package com.minecraftcivilizations.specialization.Listener;
 
-import com.minecraftcivilizations.specialization.Config.Config;
-import com.minecraftcivilizations.specialization.Specialization;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Arrow;
-import org.bukkit.entity.Entity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityShootBowEvent;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 public class CrossBowListener implements Listener {
-
-    Plugin plugin = Specialization.getInstance();
-    Map<Arrow, Location> arrowLocations = new HashMap<>();
 
 
     @EventHandler
@@ -32,13 +17,13 @@ public class CrossBowListener implements Listener {
 
 
         if (arrow.isShotFromCrossbow()) {
-            arrow.setVelocity(arrow.getVelocity().multiply(Config.getCombatConfig().getDouble("CROSSBOW_BASE_VELOCITY")));
+            arrow.setVelocity(arrow.getVelocity().multiply(SpecializationConfig.getCombatConfig().getDouble("CROSSBOW_BASE_VELOCITY")));
             if (bowEvent.getBow().containsEnchantment(Enchantment.MULTISHOT)) {
-                arrow.setVelocity(arrow.getVelocity().multiply(Config.getCombatConfig().getDouble("CROSSBOW_BASE_MULTISHOT_VELOCITY")));
+                arrow.setVelocity(arrow.getVelocity().multiply(SpecializationConfig.getCombatConfig().getDouble("CROSSBOW_BASE_MULTISHOT_VELOCITY")));
             } else if (bowEvent.getBow().containsEnchantment(Enchantment.PIERCING)) {
-                arrow.setVelocity(arrow.getVelocity().multiply(Config.getCombatConfig().getDouble("CROSSBOW_BASE_PIERCING_VELOCITY")));
+                arrow.setVelocity(arrow.getVelocity().multiply(SpecializationConfig.getCombatConfig().getDouble("CROSSBOW_BASE_PIERCING_VELOCITY")));
             } else if (bowEvent.getBow().containsEnchantment(Enchantment.QUICK_CHARGE)) {
-                arrow.setVelocity(arrow.getVelocity().multiply(Config.getCombatConfig().getDouble("CROSSBOW_BASE_QUICKCHARGE_VELOCITY")));
+                arrow.setVelocity(arrow.getVelocity().multiply(SpecializationConfig.getCombatConfig().getDouble("CROSSBOW_BASE_QUICKCHARGE_VELOCITY")));
             }
         }
     }

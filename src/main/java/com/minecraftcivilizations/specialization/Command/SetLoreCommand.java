@@ -4,8 +4,6 @@ import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
 import com.minecraftcivilizations.specialization.Specialization;
-import io.papermc.paper.datacomponent.DataComponentTypes;
-import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItem;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
@@ -28,7 +26,6 @@ public class SetLoreCommand extends BaseCommand {
                     },
                     Specialization.getInstance()
             );
-            player.getInventory().getItemInMainHand().setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().hideTooltip(true));
         }
     }
 
