@@ -37,6 +37,9 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     @Setter
     @Getter
     private double height = 0;
+    @Getter
+    @Setter
+    private boolean isAdvancedClassesGUIEnabled = false;
 
     public CustomPlayer(UUID uuid) {
         super(uuid);
