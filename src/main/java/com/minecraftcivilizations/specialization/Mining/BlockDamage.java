@@ -6,29 +6,24 @@ import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.google.gson.Gson;
-import com.minecraftcivilizations.specialization.Config.Config;
+import com.google.gson.reflect.TypeToken;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Listener.PlayerMineListener;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
-import com.minecraftcivilizations.specialization.Recipe.Pair;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
-import org.bukkit.Bukkit;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.HashMap;
-import java.util.Random;
-import java.util.Set;
-
 public class BlockDamage {
-    private static ProtocolManager manager = ProtocolLibrary.getProtocolManager();
+    private static final ProtocolManager manager = ProtocolLibrary.getProtocolManager();
 
     public PacketContainer configureBreakingPacket(Player player, Block block) {
         PacketContainer breakingAnimation = manager.createPacket(PacketType.Play.Server.BLOCK_BREAK_ANIMATION);
@@ -94,35 +89,17 @@ public class BlockDamage {
         ItemStack item = player.getEquipment().getItemInMainHand();
 
         if (block.isPreferredTool(player.getEquipment().getItemInMainHand())) {
-            if (item.getType().equals(Material.WOODEN_PICKAXE) ||
-                    item.getType().equals(Material.WOODEN_SHOVEL) ||
-                    item.getType().equals(Material.WOODEN_AXE) ||
-                    item.getType().equals(Material.WOODEN_HOE)) speedMultiplier = 2d;
+            if (item.getType().name().matches("WOODEN_(PICKAXE|SHOVEL|AXE|HOE)")) speedMultiplier = 2d;
 
-            else if (item.getType().equals(Material.STONE_PICKAXE) ||
-                    item.getType().equals(Material.STONE_SHOVEL) ||
-                    item.getType().equals(Material.STONE_AXE) ||
-                    item.getType().equals(Material.STONE_HOE)) speedMultiplier = 4d;
+            else if (item.getType().name().matches("STONE_(PICKAXE|SHOVEL|AXE|HOE)")) speedMultiplier = 4d;
 
-            else if (item.getType().equals(Material.IRON_PICKAXE) ||
-                    item.getType().equals(Material.IRON_SHOVEL) ||
-                    item.getType().equals(Material.IRON_AXE) ||
-                    item.getType().equals(Material.IRON_HOE)) speedMultiplier = 6d;
+            else if (item.getType().name().matches("IRON_(PICKAXE|SHOVEL|AXE|HOE)")) speedMultiplier = 6d;
 
-            else if (item.getType().equals(Material.DIAMOND_PICKAXE) ||
-                    item.getType().equals(Material.DIAMOND_SHOVEL) ||
-                    item.getType().equals(Material.DIAMOND_AXE) ||
-                    item.getType().equals(Material.DIAMOND_HOE)) speedMultiplier = 8d;
+            else if (item.getType().name().matches("DIAMOND_(PICKAXE|SHOVEL|AXE|HOE)")) speedMultiplier = 8d;
 
-            else if (item.getType().equals(Material.NETHERITE_PICKAXE) ||
-                    item.getType().equals(Material.NETHERITE_SHOVEL) ||
-                    item.getType().equals(Material.NETHERITE_AXE) ||
-                    item.getType().equals(Material.NETHERITE_HOE)) speedMultiplier = 9d;
+            else if (item.getType().name().matches("NETHERITE_(PICKAXE|SHOVEL|AXE|HOE)")) speedMultiplier = 9d;
 
-            else if (item.getType().equals(Material.GOLDEN_PICKAXE) ||
-                    item.getType().equals(Material.GOLDEN_SHOVEL) ||
-                    item.getType().equals(Material.GOLDEN_AXE) ||
-                    item.getType().equals(Material.GOLDEN_HOE)) speedMultiplier = 12d;
+            else if (item.getType().name().matches("GOLDEN_(PICKAXE|SHOVEL|AXE|HOE)")) speedMultiplier = 12d;
 
             if (item.hasItemMeta()) {
                 if (item.getItemMeta().hasEnchant(Enchantment.EFFICIENCY)) {
@@ -146,7 +123,7 @@ public class BlockDamage {
         }
         double damage;
 
-        damage = speedMultiplier / Config.getBlockHardnessConfig().getDouble(block.getType().name());;
+        damage = speedMultiplier / (Double) SpecializationConfig.getBlockHardnessConfig().get(block.getType(), new TypeToken<Double>() {}.getType());
 
         damage /= 30;
 
@@ -160,9 +137,9 @@ public class BlockDamage {
 
     public void playerBreakBlock(Player player, Block block) {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-        Pair pair = new Gson().fromJson(Config.getXpGainFromBreakingConfig().getString(block.getType().name()), Pair.class);
+        Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromBreakingConfig().get(block.getType(), new TypeToken<Pair<SkillType, Double>>() {}.getType());
         Specialization.logger.info(block.getType().name() + " ");
-        customPlayer.addSkillXp(SkillType.valueOf(pair.key()), Double.parseDouble(pair.value()));
+        customPlayer.addSkillXp(pair.firstValue(), pair.secondValue());
 
         block.breakNaturally(player.getEquipment().getItemInMainHand(), true, true);
     }

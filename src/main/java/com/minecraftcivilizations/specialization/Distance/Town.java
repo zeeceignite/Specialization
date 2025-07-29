@@ -2,14 +2,12 @@ package com.minecraftcivilizations.specialization.Distance;
 
 import lombok.Getter;
 import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.block.Block;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class Town {
+
     private Location centerLocation;
     private List<Location> bedLocations;
     @Getter
@@ -37,19 +35,9 @@ public class Town {
         this.bedLocations = new ArrayList<>(newBeds);
         // Recalculate center
         if (!newBeds.isEmpty()) {
-            double totalX = 0, totalY = 0, totalZ = 0;
-            World world = newBeds.get(0).getWorld();
 
-            for (Location bed : newBeds) {
-                totalX += bed.getX();
-                totalY += bed.getY();
-                totalZ += bed.getZ();
-            }
 
-            this.centerLocation = new Location(world,
-                    totalX / newBeds.size(),
-                    totalY / newBeds.size(),
-                    totalZ / newBeds.size());
+            this.centerLocation = TownManager.calculateTownCenter(newBeds);
         }
     }
 
@@ -58,4 +46,5 @@ public class Town {
         return String.format("Town{center=%s, beds=%d, discovered=%d}",
                 centerLocation, bedLocations.size(), discoveredTime);
     }
+
 }

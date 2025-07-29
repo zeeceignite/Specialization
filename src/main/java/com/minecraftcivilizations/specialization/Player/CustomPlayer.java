@@ -2,8 +2,7 @@ package com.minecraftcivilizations.specialization.Player;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.minecraftcivilizations.specialization.Config.Config;
-import com.minecraftcivilizations.specialization.Recipe.Pair;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -11,6 +10,7 @@ import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
 import lombok.Setter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -20,7 +20,6 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -72,19 +71,17 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         new BukkitRunnable() {
             @Override
             public void run() {
-                Set<Pair> recipes = new Gson().fromJson(
-                        Config.getDefaultUnlockedRecipesConfig().getString("DEFAULT_UNLOCKED_RECIPES"),
-                        new TypeToken<Set<Pair>>() {
-                        }.getType());
-                for (Pair entry : recipes) {
-                    NamespacedKey key = new NamespacedKey(entry.key(), entry.value());
-                    player.discoverRecipe(key);
+                Set<NamespacedKey> recipes =
+                        SpecializationConfig.getDefaultUnlockedRecipesConfig().get("DEFAULT_UNLOCKED_RECIPES",
+                        new TypeToken<Set<NamespacedKey>>() {}.getType());
+                for (NamespacedKey entry : recipes) {
+                    player.discoverRecipe(entry);
                 }
             }
         }.runTaskLater(Specialization.getInstance(), 1);
 
-        Objects.requireNonNull(player.getAttribute(Attribute.MINING_EFFICIENCY)).setBaseValue(0);
-        Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_BREAK_SPEED)).setBaseValue(0);
+        player.getAttribute(Attribute.MINING_EFFICIENCY).setBaseValue(0);
+        player.getAttribute(Attribute.BLOCK_BREAK_SPEED).setBaseValue(0);
     }
 
     public void addSkillXp(SkillType skillType, double xp) {
@@ -96,12 +93,11 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
         if (previousLevel != currentLevel) {
             while (currentLevel > 0) {
-                Set<Pair> recipes = new Gson().fromJson(
-                        Config.getUnlockedRecipesConfig().getString(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(currentLevel)),
-                        new TypeToken<Set<Pair>>() {}.getType());
-                for (Pair entry : recipes) {
-                    NamespacedKey key = new NamespacedKey(entry.key(), entry.value());
-                    Bukkit.getPlayer(this.getUuid()).discoverRecipe(key);
+                Set<NamespacedKey> recipes =
+                        SpecializationConfig.getUnlockedRecipesConfig().get(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(currentLevel),
+                        new TypeToken<Set<NamespacedKey>>() {}.getType());
+                for (NamespacedKey entry : recipes) {
+                    Specialization.logger.info(String.valueOf(Bukkit.getPlayer(this.getUuid()).discoverRecipe(entry)));
                 }
 
                 currentLevel--;
@@ -112,7 +108,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     public int getSkillLevel(SkillType skillType) {
         int level;
         // So, so sorry if you have to read this, it was fixed about 10 times and I forgot to call it, so now it looks like this :sad:
-        for(level = 0; level < SkillLevel.values().length && !isMissingXpForLevel(skillType, level+1) && !isMissingPercentForLevel(skillType, level+1); level++);
+        for (level = 0; level < SkillLevel.values().length && !isMissingXpForLevel(skillType, level+1) && !isMissingPercentForLevel(skillType, level+1); level++);
         return level;
     }
 
@@ -129,44 +125,23 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     }
 
     private boolean isMissingPercentForLevel(SkillType skillType, int level) {
-        return getPercentOfTotal(skillType) < Config.getSkillRequirementsConfig().getDouble(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(level) + "_REQUIREMENT");
+        return getPercentOfTotal(skillType) < (Double) SpecializationConfig.getSkillRequirementsConfig().get(skillType + "_" + SkillLevel.getSkillLevelFromInt(level) + "_REQUIREMENT", Double.class);
     }
 
-    public double getGUIDistributionOfTotalSkills(SkillType skillType, Player player) {
-        int level = getSkillLevel(skillType);
-        double XPMin = level == 0 ? 0 : getXPNeededForLevel(level);
-        double XPMax = getXPNeededForLevel(level + 1);
-
-        Skill skill = getSkill(skillType);
-        double percentageNeededMin = Config.getSkillRequirementsConfig().getDouble(skill.getSkillType().name() + "_" + SkillLevel.getSkillLevelFromInt(level).name() + "_REQUIREMENT");
-        double percentageNeededMax = Config.getSkillRequirementsConfig().getDouble(skill.getSkillType().name() + "_" + SkillLevel.getSkillLevelFromInt(level + 1).name() + "_REQUIREMENT");
-        double currentPercentage = getPercentOfTotal(skillType);
-
-        double XPProgressAsPercentage;
-        if(skill.getXp() <= XPMax) {
-            XPProgressAsPercentage = mapValue(skill.getXp() - XPMin, 0, XPMax - XPMin, 0, 100);
-        }else XPProgressAsPercentage = 100.0;
-
-        double percentageProgressAsPercentage;
-
-        if(currentPercentage <= percentageNeededMax) {
-            percentageProgressAsPercentage = mapValue(currentPercentage - percentageNeededMin, 0, percentageNeededMax - percentageNeededMin,0,100);
-        }else if(getTotalXp() == 0){
-            percentageProgressAsPercentage = 0;
-        } else percentageProgressAsPercentage = 100.0;
-        return Math.round(XPProgressAsPercentage * percentageProgressAsPercentage * .01);
+    public double getGUIDistributionOfTotalSkills(SkillType skillType) {
+        return mapValue(getSkill(skillType).getXp(), 0, getTotalXp(), 0, 3);
     }
 
     public double getPercentOfTotal(SkillType skillType) {
         return mapValue(getSkill(skillType).getXp(), 0, getTotalXp(), 0, 100);
     }
 
-    private @NotNull Skill getSkill(SkillType skillType) {
+    private Skill getSkill(SkillType skillType) {
         for (Skill skill : this.skills) {
             if (skill.getSkillType() == skillType) {
                 return skill;
             }
         }
-        throw new IllegalStateException("Can't get skill " + skillType);
+        throw new IllegalStateException("Couldn't get skill " + skillType.toString());
     }
 }

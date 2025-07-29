@@ -3,8 +3,6 @@ package com.minecraftcivilizations.specialization.Listener;
 import com.minecraftcivilizations.specialization.Distance.Town;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
 import com.minecraftcivilizations.specialization.Specialization;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Item.ItemUtils;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -16,30 +14,32 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
 
+import java.util.List;
+
 import static com.minecraftcivilizations.specialization.Skill.Skill.mapValue;
 
 public class MoveListener implements Listener {
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         Location from = event.getFrom();
-        Location to = event.getTo();
-        if (from.getBlockX() == to.getBlockX()
-                && from.getBlockY() == to.getBlockY()
-                && from.getBlockZ() == to.getBlockZ()) {
-            return; // No block movement, skip
-        }
 
-        Double minDistanceSq = null;
-        double minDistance = 0;
+        if (!event.hasChangedBlock()) return;
+
+        List<Town> towns = TownManager.getTowns();
+
+        if(towns.isEmpty()) return;
+
+        double minDistanceSq = Double.MAX_VALUE;
         for (Town town : TownManager.getTowns()) {
-            if (minDistanceSq == null || town.getCenterLocation().distanceSquared(from) < minDistanceSq) {
-                minDistance = town.getCenterLocation().distance(from);
+            if (town.getCenterLocation().distanceSquared(from) < minDistanceSq) {
                 minDistanceSq = town.getCenterLocation().distanceSquared(from);
             }
         }
 
+        double minDistance = Math.sqrt(minDistanceSq);
+
         BossBar bar = Bukkit.getBossBar(new NamespacedKey(Specialization.getInstance(), "distanceBar"));
-        if (minDistanceSq != null && minDistance > 100) {
+        if (minDistance > 100) {
             if (bar == null) {
                 bar = Bukkit.createBossBar(new NamespacedKey(Specialization.getInstance(), "distanceBar"), "Distance from Town: " + minDistance + " blocks", BarColor.RED, BarStyle.SEGMENTED_10);
             }
