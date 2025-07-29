@@ -10,20 +10,17 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapelessRecipe;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class Recipes {
+
     public static void init() {
         ItemStack itemStack = CustomItem.newCustomItem(Material.PAPER,
-
-                Component.text("Bandage"),
-                new ArrayList<>() {
-                    {
-                        add(Component.empty());
-                        add(Component.text("If used by a healer able to heal players"));
-                    }
-                },
-                Specialization.getInstance());
+            Component.text("Bandage"),
+            List.of(Component.empty(),
+                    Component.text("If used by a healer able to heal players")
+            ),
+            Specialization.getInstance());
 
         ShapelessRecipe shapelessRecipe = new ShapelessRecipe(new NamespacedKey(Specialization.getInstance(), "bandage"), itemStack);
         shapelessRecipe.addIngredient(new ItemStack(Material.PAPER, 8));
@@ -32,18 +29,15 @@ public class Recipes {
         Bukkit.addRecipe(shapelessRecipe, true);
 
         itemStack = CustomItem.newCustomItem(Material.PAPER,
-
                 Component.text("Iron Chestplate Blueprint").color(NamedTextColor.WHITE),
-                new ArrayList<>() {
-                    {
-                        add(Component.empty());
-                        add(Component.text("Used for crafting of").color(NamedTextColor.WHITE));
-                        add(Component.text("the Iron Chestplate").color(NamedTextColor.WHITE));
-                        add(Component.empty());
-                        add(Component.text("Crafted by the most").color(NamedTextColor.GRAY));
-                        add(Component.text("esteemed of librarians").color(NamedTextColor.GRAY));
-                    }
-                },
+                List.of(
+                        Component.empty(),
+                        Component.text("Used for crafting of").color(NamedTextColor.WHITE),
+                        Component.text("the Iron Chestplate").color(NamedTextColor.WHITE),
+                        Component.empty(),
+                        Component.text("Crafted by the most").color(NamedTextColor.GRAY),
+                        Component.text("esteemed of librarians").color(NamedTextColor.GRAY)
+                ),
                 Specialization.getInstance());
 
         shapelessRecipe = new ShapelessRecipe(new NamespacedKey(Specialization.getInstance(), "iron_chestplate_blueprint"), itemStack);

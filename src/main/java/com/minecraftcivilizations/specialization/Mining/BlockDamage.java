@@ -6,26 +6,20 @@ import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.google.gson.Gson;
-import com.minecraftcivilizations.specialization.Config.Config;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Listener.PlayerMineListener;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Recipe.Pair;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
-
-import java.util.HashMap;
-import java.util.Random;
-import java.util.Set;
 
 public class BlockDamage {
     private static ProtocolManager manager = ProtocolLibrary.getProtocolManager();
@@ -128,7 +122,7 @@ public class BlockDamage {
         }
         double damage;
 
-        damage = speedMultiplier / Config.getBlockHardnessConfig().getDouble(block.getType().name());;
+        damage = speedMultiplier / SpecializationConfig.getBlockHardnessConfig().getDouble(block.getType().name());;
 
         damage /= 30;
 
@@ -142,7 +136,7 @@ public class BlockDamage {
 
     public void playerBreakBlock(Player player, Block block) {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-        Pair pair = new Gson().fromJson(Config.getXpGainFromBreakingConfig().getString(block.getType().name()), Pair.class);
+        Pair pair = new Gson().fromJson(SpecializationConfig.getXpGainFromBreakingConfig().getString(block.getType().name()), Pair.class);
         Specialization.logger.info(block.getType().name() + " ");
         customPlayer.addSkillXp(SkillType.valueOf(pair.key()), Double.parseDouble(pair.value()));
 

@@ -1,38 +1,26 @@
 package com.minecraftcivilizations.specialization.Player;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.PlayerInfoData;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.minecraftcivilizations.specialization.Config.Config;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Recipe.Pair;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
-import com.mojang.authlib.GameProfile;
 import lombok.Getter;
 import lombok.Setter;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Component.ComponentUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -84,7 +72,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
             @Override
             public void run() {
                 Set<Pair> recipes = new Gson().fromJson(
-                        Config.getDefaultUnlockedRecipesConfig().getString("DEFAULT_UNLOCKED_RECIPES"),
+                        SpecializationConfig.getDefaultUnlockedRecipesConfig().getString("DEFAULT_UNLOCKED_RECIPES"),
                         new TypeToken<Set<Pair>>() {
                         }.getType());
                 for (Pair entry : recipes) {
@@ -108,7 +96,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         if (previousLevel != currentLevel) {
             while (currentLevel > 0) {
                 Set<Pair> recipes = new Gson().fromJson(
-                        Config.getUnlockedRecipesConfig().getString(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(currentLevel)),
+                        SpecializationConfig.getUnlockedRecipesConfig().getString(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(currentLevel)),
                         new TypeToken<Set<Pair>>() {}.getType());
                 for (Pair entry : recipes) {
                     NamespacedKey key = new NamespacedKey(entry.key(), entry.value());
@@ -140,7 +128,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     }
 
     private boolean isMissingPercentForLevel(SkillType skillType, int level) {
-        return getPercentOfTotal(skillType) < Config.getSkillRequirementsConfig().getDouble(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(level) + "_REQUIREMENT");
+        return getPercentOfTotal(skillType) < SpecializationConfig.getSkillRequirementsConfig().getDouble(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(level) + "_REQUIREMENT");
     }
 
     public double getGUIDistributionOfTotalSkills(SkillType skillType) {
@@ -157,6 +145,6 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
                 return skill;
             }
         }
-        return null;
+        throw new IllegalStateException("Couldn't get skill " + skillType.toString());
     }
 }

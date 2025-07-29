@@ -1,31 +1,35 @@
 package com.minecraftcivilizations.specialization.Command;
 
+import co.aikar.commands.BaseCommand;
+import co.aikar.commands.annotation.CommandAlias;
+import co.aikar.commands.annotation.Default;
 import com.minecraftcivilizations.specialization.Specialization;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItem;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Item.ItemUtils;
 import net.kyori.adventure.text.Component;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 
-public class SetLoreCommandExecutor implements CommandExecutor {
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
+@CommandAlias("setlore")
+public class SetLoreCommand extends BaseCommand {
+
+    @Default
+    public void onSetLore(@NotNull CommandSender sender, String lore) {
         if (sender instanceof Player player) {
             CustomItem.addLore(
                     player.getInventory().getItemInMainHand(), new ArrayList<>() {
                         {
-                            add(Component.text(args[0]));
+                            add(Component.text(lore));
                         }
                     },
                     Specialization.getInstance()
             );
-            return true;
+            player.getInventory().getItemInMainHand().setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().hideTooltip(true));
         }
-        return false;
     }
+
 }

@@ -7,46 +7,47 @@ import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Field;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.inventory.*;
-import org.bukkit.inventory.meta.Damageable;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
-public class Config {
+public class SpecializationConfig {
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config playerConfig;
+    private static Config playerConfig;
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config skillsConfig;
+    private static Config skillsConfig;
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config blockHardnessConfig;
+    private static Config blockHardnessConfig;
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config skillRequirementsConfig;
+    private static Config skillRequirementsConfig;
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config unlockedRecipesConfig;
+    private static Config unlockedRecipesConfig;
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config defaultUnlockedRecipesConfig;
+    private static Config defaultUnlockedRecipesConfig;
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config xpGainFromStonecuttingConfig;
+    private static Config xpGainFromStonecuttingConfig;
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config xpGainFromSmeltingConfig;
+    private static Config xpGainFromSmeltingConfig;
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config xpGainFromBlastingConfig;
+    private static Config xpGainFromBlastingConfig;
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config xpGainFromSmokingConfig;
+    private static Config xpGainFromSmokingConfig;
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config xpGainFromBreakingConfig;
+    private static Config xpGainFromBreakingConfig;
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config xpGainFromPlacingConfig;
+    private static Config xpGainFromPlacingConfig;
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config xpGainFromEnchantingConfig;
+    private static Config xpGainFromEnchantingConfig;
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config xpGainFromCartographyConfig;
+    private static Config xpGainFromCartographyConfig;
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config xpGainFromRepairingConfig;
+    private static Config xpGainFromRepairingConfig;
     @Getter
     private static final Set<Recipe> recipeSet = new HashSet<>();
 
@@ -59,14 +60,14 @@ public class Config {
         });
 
 
-        playerConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "playerConfig", fields -> {
+        playerConfig = new Config(Specialization.getInstance(), "playerConfig", fields -> {
             fields.add(new Field<>("SPECIALIZATION_BONUS", Double.class, 0.3));
             fields.add(new Field<>("MULTI_CLASS_PENALTY", Double.class, 0.15));
             fields.add(new Field<>("LINEAR_DECAY_RATE", Double.class, 0.02));
             fields.add(new Field<>("CROSS_SKILL_PENALTY", Double.class, 0.25));
         });
 
-        unlockedRecipesConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "unlockedRecipesConfig", "The array of unlocked recipes, they don't need to repeat between levels, the ones for novice are unlocked for the next ones", fields -> {
+        unlockedRecipesConfig = new Config(Specialization.getInstance(), "unlockedRecipesConfig", "The array of unlocked recipes, they don't need to repeat between levels, the ones for novice are unlocked for the next ones", fields -> {
             for (SkillType skillType : SkillType.values()) {
                 for (SkillLevel skillLevel : SkillLevel.values()) {
                     Set<Pair> strings = new HashSet<>();
@@ -80,7 +81,7 @@ public class Config {
             }
         });
 
-        xpGainFromStonecuttingConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "xpGainFromStonecutting", fields -> {
+        xpGainFromStonecuttingConfig = new Config(Specialization.getInstance(), "xpGainFromStonecutting", fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isItem() && inputMaterial != Material.AIR) {
                     Bukkit.recipeIterator().forEachRemaining((recipe) -> {
@@ -94,7 +95,7 @@ public class Config {
             }
         });
 
-        xpGainFromRepairingConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "xpGainFromRepairing", fields -> {
+        xpGainFromRepairingConfig = new Config(Specialization.getInstance(), "xpGainFromRepairing", fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isItem() && inputMaterial != Material.AIR && inputMaterial.getMaxDurability() > 0) {
                     fields.add(new Field<>(inputMaterial.name(), String.class, new Gson().toJson(new Pair(SkillType.LIBRARIAN.name(), "1"))));
@@ -102,7 +103,7 @@ public class Config {
             }
         });
 
-        xpGainFromBlastingConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "xpGainFromBlasting", fields -> {
+        xpGainFromBlastingConfig = new Config(Specialization.getInstance(), "xpGainFromBlasting", fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isItem() && inputMaterial != Material.AIR) {
                     Bukkit.recipeIterator().forEachRemaining((recipe) -> {
@@ -116,7 +117,7 @@ public class Config {
             }
         });
 
-        xpGainFromSmeltingConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "xpGainFromSmelting", fields -> {
+        xpGainFromSmeltingConfig = new Config(Specialization.getInstance(), "xpGainFromSmelting", fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isItem() && inputMaterial != Material.AIR) {
                     Bukkit.recipeIterator().forEachRemaining((recipe) -> {
@@ -130,7 +131,7 @@ public class Config {
             }
         });
 
-        xpGainFromSmokingConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "xpGainFromSmoking", fields -> {
+        xpGainFromSmokingConfig = new Config(Specialization.getInstance(), "xpGainFromSmoking", fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isItem() && inputMaterial != Material.AIR) {
                     Bukkit.recipeIterator().forEachRemaining((recipe) -> {
@@ -144,7 +145,7 @@ public class Config {
             }
         });
 
-        xpGainFromBreakingConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "xpGainFromBreaking", fields -> {
+        xpGainFromBreakingConfig = new Config(Specialization.getInstance(), "xpGainFromBreaking", fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isBlock()) {
                     fields.add(new Field<>(inputMaterial.name(), String.class, new Gson().toJson(new Pair(SkillType.FARMER.name(), "1"))));
@@ -152,7 +153,7 @@ public class Config {
             }
         });
 
-        xpGainFromPlacingConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "xpGainFromPlacing", fields -> {
+        xpGainFromPlacingConfig = new Config(Specialization.getInstance(), "xpGainFromPlacing", fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isBlock()) {
                     fields.add(new Field<>(inputMaterial.name(), String.class, new Gson().toJson(new Pair(SkillType.FARMER.name(), "1"))));
@@ -160,7 +161,7 @@ public class Config {
             }
         });
 
-        defaultUnlockedRecipesConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "defaultUnlockedRecipesConfig", fields -> {
+        defaultUnlockedRecipesConfig = new Config(Specialization.getInstance(), "defaultUnlockedRecipesConfig", fields -> {
             Set<Pair> strings = new HashSet<>();
             Bukkit.recipeIterator().forEachRemaining((recipe) -> {
                 if (recipe instanceof Keyed keyed) {
@@ -171,7 +172,7 @@ public class Config {
             }.getType())));
         });
 
-        blockHardnessConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "blockHardnessConfig", fields -> {
+        blockHardnessConfig = new Config(Specialization.getInstance(), "blockHardnessConfig", fields -> {
             for (Material material : Material.values()) {
                 if (material.isBlock() && !material.isAir()) {
                     fields.add(new Field<>(material.name(), Double.class, 1D));
@@ -179,14 +180,14 @@ public class Config {
             }
         });
 
-        skillsConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "skillsConfig", fields -> {
+        skillsConfig = new Config(Specialization.getInstance(), "skillsConfig", fields -> {
             for (SkillType skillType : SkillType.values()) {
                 fields.add(new Field<>(skillType.name() + "_WORKSTATION", String.class, Material.COMPOSTER.name()));
                 fields.add(new Field<>(skillType.name() + "_DESCRIPTION", String.class, "Description"));
             }
         });
 
-        skillRequirementsConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "skillRequirementsConfig", "the number represents the percentage of total xp in this skill needed to level it up each level", fields -> {
+        skillRequirementsConfig = new Config(Specialization.getInstance(), "skillRequirementsConfig", "the number represents the percentage of total xp in this skill needed to level it up each level", fields -> {
             for (SkillType skillType : SkillType.values()) {
                 for (SkillLevel skillLevel : SkillLevel.values()) {
                     fields.add(new Field<>(skillType.name() + "_" + skillLevel.name() + "_REQUIREMENT", Double.class, 0D));

@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization;
 
+import co.aikar.commands.PaperCommandManager;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
@@ -7,11 +8,8 @@ import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
-import com.minecraftcivilizations.specialization.Command.ClassCommandExecutor;
-import com.minecraftcivilizations.specialization.Command.ReloadPluginCommandExecutor;
-import com.minecraftcivilizations.specialization.Command.SetLoreCommandExecutor;
-import com.minecraftcivilizations.specialization.Command.SetXpCommandExecutor;
-import com.minecraftcivilizations.specialization.Config.Config;
+import com.minecraftcivilizations.specialization.Command.*;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
 import com.minecraftcivilizations.specialization.Listener.*;
@@ -20,42 +18,31 @@ import com.minecraftcivilizations.specialization.Player.PreJoinEventListener;
 import com.minecraftcivilizations.specialization.Recipe.Recipes;
 import com.mojang.authlib.GameProfile;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Component.ComponentUtils;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItem;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.ShapedRecipe;
-import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
 public final class Specialization extends JavaPlugin {
+
     public static Logger logger;
+
     @Override
     public void onEnable() {
         logger = getLogger();
 
-        getServer().getPluginCommand("class").setExecutor(new ClassCommandExecutor());
-        getServer().getPluginCommand("setxp").setExecutor(new SetXpCommandExecutor());
-        getServer().getPluginCommand("reloadconfigs").setExecutor(new ReloadPluginCommandExecutor());
-        getServer().getPluginCommand("setlore").setExecutor(new SetLoreCommandExecutor());
-        getServer().getPluginCommand("reloadtowns").setExecutor(new SetLoreCommandExecutor());
+        setupCommands();
 
         getServer().getPluginManager().registerEvents(new PlayerMineListener(), this);
         getServer().getPluginManager().registerEvents(new BreakBlockListener(), this);
@@ -69,7 +56,7 @@ public final class Specialization extends JavaPlugin {
         new BukkitRunnable() {
             @Override
             public void run() {
-                TownManager.getInstance().scanAllPlayersForTowns();
+                TownManager.scanAllPlayersForTowns();
             }
         }.runTaskAsynchronously(this);
 
@@ -99,16 +86,14 @@ public final class Specialization extends JavaPlugin {
 
         });
 
-        MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerQuit(playerQuitEvent -> {
-            MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().removeCustomPlayer(playerQuitEvent.getPlayer().getUniqueId());
-        });
+        MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerQuit(playerQuitEvent -> MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().removeCustomPlayer(playerQuitEvent.getPlayer().getUniqueId()));
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().addCustomPlayer(new CustomPlayer(player.getUniqueId()));
         }
 
         DataManager.startSaver();
-        Config.initialize();
+        SpecializationConfig.initialize();
     }
 
     @Override
@@ -116,14 +101,18 @@ public final class Specialization extends JavaPlugin {
         // Plugin shutdown logic
     }
 
-
     public static Specialization getInstance() {
         return getPlugin(Specialization.class);
     }
 
-
-
-
+    private void setupCommands(){
+        PaperCommandManager commandManager = new PaperCommandManager(this);
+        commandManager.registerCommand(new ClassCommand());
+        commandManager.registerCommand(new SetXpCommand());
+        commandManager.registerCommand(new ReloadConfigCommand());
+        commandManager.registerCommand(new SetLoreCommand());
+        commandManager.registerCommand(new TownsCommand());
+    }
 
     public void applyCustomName(Player player, Component name){
         PacketContainer packet = createChangeNamePacket(player.getUniqueId(), name);
@@ -151,12 +140,14 @@ public final class Specialization extends JavaPlugin {
 
     private PacketContainer createChangeNamePacket(UUID uuid, Component name) {
         PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.PLAYER_INFO);
+
         packet.getPlayerInfoActions().write(0, Collections.singleton(EnumWrappers.PlayerInfoAction.UPDATE_DISPLAY_NAME));
-        List<PlayerInfoData> pd = new ArrayList<>();
+
         WrappedGameProfile profile = new WrappedGameProfile(uuid, ComponentUtils.serializeComponentAsString(name));
         WrappedChatComponent nameComponent = WrappedChatComponent.fromJson(JSONComponentSerializer.json().serialize(Component.text("DUMBASS")));
-        pd.add(new PlayerInfoData(profile, 0, EnumWrappers.NativeGameMode.SURVIVAL, nameComponent));
-        packet.getPlayerInfoDataLists().write(1, pd);
+        List<PlayerInfoData> playerInfoData = List.of(new PlayerInfoData(profile, 0, EnumWrappers.NativeGameMode.SURVIVAL, nameComponent));
+        packet.getPlayerInfoDataLists().write(1, playerInfoData);
+
         return packet;
     }
 }
