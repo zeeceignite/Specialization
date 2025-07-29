@@ -49,6 +49,8 @@ public class SpecializationConfig {
     @Getter
     private static Config xpGainFromRepairingConfig;
     @Getter
+    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config combatConfig;
+    @Getter
     private static final Set<Recipe> recipeSet = new HashSet<>();
 
 
@@ -93,6 +95,13 @@ public class SpecializationConfig {
                     });
                 }
             }
+        });
+
+        combatConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "playerConfig", fields -> {
+            fields.add(new Field<>("CROSSBOW_BASE_VELOCITY", Double.class, 1.6));
+            fields.add(new Field<>("CROSSBOW_BASE_PIERCING_VELOCITY", Double.class, 1.3));
+            fields.add(new Field<>("CROSSBOW_BASE_MULTISHOT_VELOCITY", Double.class, 2.5));
+            fields.add(new Field<>("CROSSBOW_BASE_QUICKCHARGE_VELOCITY", Double.class, 1.3));
         });
 
         xpGainFromRepairingConfig = new Config(Specialization.getInstance(), "xpGainFromRepairing", fields -> {
@@ -204,6 +213,7 @@ public class SpecializationConfig {
         blockHardnessConfig.reload();
         skillsConfig.reload();
         skillRequirementsConfig.reload();
+        combatConfig.reload();
     }
 
 

@@ -52,6 +52,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PreJoinEventListener(), this);
         getServer().getPluginManager().registerEvents(new TownManager(), this);
         getServer().getPluginManager().registerEvents(new MoveListener(), this);
+        getServer().getPluginManager().registerEvents(new CrossBowListener(), this);
 
         new BukkitRunnable() {
             @Override
