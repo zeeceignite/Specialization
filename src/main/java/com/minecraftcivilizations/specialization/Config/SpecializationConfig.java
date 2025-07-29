@@ -2,16 +2,16 @@ package com.minecraftcivilizations.specialization.Config;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.minecraftcivilizations.specialization.Recipe.Pair;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Field;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Config.ConfigFile;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.*;
 
 import java.util.HashSet;
@@ -19,79 +19,70 @@ import java.util.Set;
 
 public class SpecializationConfig {
     @Getter
-    private static Config playerConfig;
+    private static ConfigFile playerConfig;
     @Getter
-    private static Config skillsConfig;
+    private static ConfigFile skillsConfig;
     @Getter
-    private static Config blockHardnessConfig;
+    private static ConfigFile blockHardnessConfig;
     @Getter
-    private static Config skillRequirementsConfig;
+    private static ConfigFile skillRequirementsConfig;
     @Getter
-    private static Config unlockedRecipesConfig;
+    private static ConfigFile unlockedRecipesConfig;
     @Getter
-    private static Config defaultUnlockedRecipesConfig;
+    private static ConfigFile defaultUnlockedRecipesConfig;
     @Getter
-    private static Config xpGainFromStonecuttingConfig;
+    private static ConfigFile xpGainFromStonecuttingConfig;
     @Getter
-    private static Config xpGainFromSmeltingConfig;
+    private static ConfigFile xpGainFromSmeltingConfig;
     @Getter
-    private static Config xpGainFromBlastingConfig;
+    private static ConfigFile xpGainFromBlastingConfig;
     @Getter
-    private static Config xpGainFromSmokingConfig;
+    private static ConfigFile xpGainFromSmokingConfig;
     @Getter
-    private static Config xpGainFromBreakingConfig;
+    private static ConfigFile xpGainFromBreakingConfig;
     @Getter
-    private static Config xpGainFromPlacingConfig;
+    private static ConfigFile xpGainFromPlacingConfig;
     @Getter
-    private static Config xpGainFromEnchantingConfig;
+    private static ConfigFile xpGainFromEnchantingConfig;
     @Getter
-    private static Config xpGainFromCartographyConfig;
+    private static ConfigFile xpGainFromCartographyConfig;
     @Getter
-    private static Config xpGainFromRepairingConfig;
+    private static ConfigFile xpGainFromRepairingConfig;
     @Getter
-    private static minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config combatConfig;
+    private static ConfigFile combatConfig;
     @Getter
-    private static Config chatConfig;
-    @Getter
-    private static final Set<Recipe> recipeSet = new HashSet<>();
+    private static ConfigFile chatConfig;
 
 
     public static void initialize() {
-        Bukkit.recipeIterator().forEachRemaining((recipe) -> {
-            if (recipe instanceof Keyed keyed) {
-                recipeSet.add(recipe);
-            }
+        playerConfig = new ConfigFile(Specialization.getInstance(), "playerConfig", null, fields -> {
+            fields.add(new Pair<>("SPECIALIZATION_BONUS", 0.3));
+            fields.add(new Pair<>("MULTI_CLASS_PENALTY", 0.15));
+            fields.add(new Pair<>("LINEAR_DECAY_RATE", 0.02));
+            fields.add(new Pair<>("CROSS_SKILL_PENALTY", 0.25));
         });
 
-
-        playerConfig = new Config(Specialization.getInstance(), "playerConfig", fields -> {
-            fields.add(new Field<>("SPECIALIZATION_BONUS", Double.class, 0.3));
-            fields.add(new Field<>("MULTI_CLASS_PENALTY", Double.class, 0.15));
-            fields.add(new Field<>("LINEAR_DECAY_RATE", Double.class, 0.02));
-            fields.add(new Field<>("CROSS_SKILL_PENALTY", Double.class, 0.25));
-        });
-
-        unlockedRecipesConfig = new Config(Specialization.getInstance(), "unlockedRecipesConfig", "The array of unlocked recipes, they don't need to repeat between levels, the ones for novice are unlocked for the next ones", fields -> {
+        unlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "unlockedRecipesConfig", "The array of unlocked recipes, they don't need to repeat between levels, the ones for novice are unlocked for the next ones", fields -> {
             for (SkillType skillType : SkillType.values()) {
                 for (SkillLevel skillLevel : SkillLevel.values()) {
-                    Set<Pair> strings = new HashSet<>();
+                    Set<NamespacedKey> namespacedKeys = new HashSet<>();
                     Bukkit.recipeIterator().forEachRemaining((recipe) -> {
                         if (recipe instanceof Keyed keyed) {
-                            strings.add(new Pair(keyed.getKey().getNamespace(), keyed.getKey().getKey()));
+                            namespacedKeys.add(keyed.getKey());
                         }
                     });
-                    fields.add(new Field<>(skillType.name() + "_" + skillLevel.name(), String.class, new Gson().toJson(strings, new TypeToken<Set<Pair>>() {}.getType())));
+                    fields.add(new Pair<>(skillType + "_" + skillLevel, namespacedKeys));
                 }
             }
         });
 
-        xpGainFromStonecuttingConfig = new Config(Specialization.getInstance(), "xpGainFromStonecutting", fields -> {
+        xpGainFromStonecuttingConfig = new ConfigFile(Specialization.getInstance(), "xpGainFromStonecutting", null, fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isItem() && inputMaterial != Material.AIR) {
                     Bukkit.recipeIterator().forEachRemaining((recipe) -> {
                         if (recipe instanceof StonecuttingRecipe stonecuttingRecipe) {
                             if (stonecuttingRecipe.getResult().equals(ItemStack.of(inputMaterial))) {
-                                fields.add(new Field<>(inputMaterial.name(), String.class, new Gson().toJson(new Pair(SkillType.FARMER.name(), "1"))));
+                                fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.FARMER, "1")));
                             }
                         }
                     });
@@ -99,28 +90,28 @@ public class SpecializationConfig {
             }
         });
 
-        combatConfig = new minecraftcivilizations.com.minecraftCivilizationsCore.Config.Config(Specialization.getInstance(), "playerConfig", fields -> {
-            fields.add(new Field<>("CROSSBOW_BASE_VELOCITY", Double.class, 1.6));
-            fields.add(new Field<>("CROSSBOW_BASE_PIERCING_VELOCITY", Double.class, 1.3));
-            fields.add(new Field<>("CROSSBOW_BASE_MULTISHOT_VELOCITY", Double.class, 2.5));
-            fields.add(new Field<>("CROSSBOW_BASE_QUICKCHARGE_VELOCITY", Double.class, 1.3));
+        combatConfig = new ConfigFile(Specialization.getInstance(), "playerConfig", null, fields -> {
+            fields.add(new Pair<>("CROSSBOW_BASE_VELOCITY", 1.6));
+            fields.add(new Pair<>("CROSSBOW_BASE_PIERCING_VELOCITY", 1.3));
+            fields.add(new Pair<>("CROSSBOW_BASE_MULTISHOT_VELOCITY", 2.5));
+            fields.add(new Pair<>("CROSSBOW_BASE_QUICKCHARGE_VELOCITY", 1.3));
         });
 
-        xpGainFromRepairingConfig = new Config(Specialization.getInstance(), "xpGainFromRepairing", fields -> {
+        xpGainFromRepairingConfig = new ConfigFile(Specialization.getInstance(), "xpGainFromRepairing", null, fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isItem() && inputMaterial != Material.AIR && inputMaterial.getMaxDurability() > 0) {
-                    fields.add(new Field<>(inputMaterial.name(), String.class, new Gson().toJson(new Pair(SkillType.LIBRARIAN.name(), "1"))));
+                    fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.LIBRARIAN, "1")));
                 }
             }
         });
 
-        xpGainFromBlastingConfig = new Config(Specialization.getInstance(), "xpGainFromBlasting", fields -> {
+        xpGainFromBlastingConfig = new ConfigFile(Specialization.getInstance(), "xpGainFromBlasting", null, fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isItem() && inputMaterial != Material.AIR) {
                     Bukkit.recipeIterator().forEachRemaining((recipe) -> {
                         if (recipe instanceof BlastingRecipe blastingRecipe) {
                             if (blastingRecipe.getResult().equals(ItemStack.of(inputMaterial))) {
-                                fields.add(new Field<>(inputMaterial.name(), String.class, new Gson().toJson(new Pair(SkillType.FARMER.name(), "1"))));
+                                fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.FARMER, "1")));
                             }
                         }
                     });
@@ -128,13 +119,13 @@ public class SpecializationConfig {
             }
         });
 
-        xpGainFromSmeltingConfig = new Config(Specialization.getInstance(), "xpGainFromSmelting", fields -> {
+        xpGainFromSmeltingConfig = new ConfigFile(Specialization.getInstance(), "xpGainFromSmelting", null, fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isItem() && inputMaterial != Material.AIR) {
                     Bukkit.recipeIterator().forEachRemaining((recipe) -> {
                         if (recipe instanceof FurnaceRecipe furnaceRecipe) {
                             if (furnaceRecipe.getResult().equals(ItemStack.of(inputMaterial))) {
-                                fields.add(new Field<>(inputMaterial.name(), String.class, new Gson().toJson(new Pair(SkillType.FARMER.name(), "1"))));
+                                fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.FARMER, "1")));
                             }
                         }
                     });
@@ -142,13 +133,13 @@ public class SpecializationConfig {
             }
         });
 
-        xpGainFromSmokingConfig = new Config(Specialization.getInstance(), "xpGainFromSmoking", fields -> {
+        xpGainFromSmokingConfig = new ConfigFile(Specialization.getInstance(), "xpGainFromSmoking", null, fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isItem() && inputMaterial != Material.AIR) {
                     Bukkit.recipeIterator().forEachRemaining((recipe) -> {
                         if (recipe instanceof SmokingRecipe smokingRecipe) {
                             if (smokingRecipe.getResult().equals(ItemStack.of(inputMaterial))) {
-                                fields.add(new Field<>(inputMaterial.name(), String.class, new Gson().toJson(new Pair(SkillType.FARMER.name(), "1"))));
+                                fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.FARMER, "1")));
                             }
                         }
                     });
@@ -156,74 +147,58 @@ public class SpecializationConfig {
             }
         });
 
-        xpGainFromBreakingConfig = new Config(Specialization.getInstance(), "xpGainFromBreaking", fields -> {
+        xpGainFromBreakingConfig = new ConfigFile(Specialization.getInstance(), "xpGainFromBreaking", null, fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isBlock()) {
-                    fields.add(new Field<>(inputMaterial.name(), String.class, new Gson().toJson(new Pair(SkillType.FARMER.name(), "1"))));
+                    fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.FARMER, "1")));
                 }
             }
         });
 
-        xpGainFromPlacingConfig = new Config(Specialization.getInstance(), "xpGainFromPlacing", fields -> {
+        xpGainFromPlacingConfig = new ConfigFile(Specialization.getInstance(), "xpGainFromPlacing", null, fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isBlock()) {
-                    fields.add(new Field<>(inputMaterial.name(), String.class, new Gson().toJson(new Pair(SkillType.FARMER.name(), "1"))));
+                    fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.FARMER, "1")));
                 }
             }
         });
 
-        defaultUnlockedRecipesConfig = new Config(Specialization.getInstance(), "defaultUnlockedRecipesConfig", fields -> {
-            Set<Pair> strings = new HashSet<>();
+        defaultUnlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "defaultUnlockedRecipesConfig", null, fields -> {
             Bukkit.recipeIterator().forEachRemaining((recipe) -> {
                 if (recipe instanceof Keyed keyed) {
-                    strings.add(new Pair(keyed.getKey().getNamespace(), keyed.getKey().getKey()));
+                    fields.add(new Pair<>("DEFAULT_UNLOCKED_RECIPES", keyed.getKey()));
                 }
             });
-            fields.add(new Field<>("DEFAULT_UNLOCKED_RECIPES", String.class, new Gson().toJson(strings, new TypeToken<Set<Pair>>() {
-            }.getType())));
         });
 
-        blockHardnessConfig = new Config(Specialization.getInstance(), "blockHardnessConfig", fields -> {
+        blockHardnessConfig = new ConfigFile(Specialization.getInstance(), "blockHardnessConfig", null, fields -> {
             for (Material material : Material.values()) {
                 if (material.isBlock() && !material.isAir()) {
-                    fields.add(new Field<>(material.name(), Double.class, 1D));
+                    fields.add(new Pair<>(material, 1D));
                 }
             }
         });
 
-        skillsConfig = new Config(Specialization.getInstance(), "skillsConfig", fields -> {
+        skillsConfig = new ConfigFile(Specialization.getInstance(), "skillsConfig", null, fields -> {
             for (SkillType skillType : SkillType.values()) {
-                fields.add(new Field<>(skillType.name() + "_WORKSTATION", String.class, Material.COMPOSTER.name()));
-                fields.add(new Field<>(skillType.name() + "_DESCRIPTION", String.class, "Description"));
+                fields.add(new Pair<>(skillType + "_WORKSTATION", Material.COMPOSTER));
+                fields.add(new Pair<>(skillType + "_DESCRIPTION", "Description"));
             }
         });
 
-        skillRequirementsConfig = new Config(Specialization.getInstance(), "skillRequirementsConfig", "the number represents the percentage of total xp in this skill needed to level it up each level", fields -> {
+        skillRequirementsConfig = new ConfigFile(Specialization.getInstance(), "skillRequirementsConfig", "the number represents the percentage of total xp in this skill needed to level it up each level", fields -> {
             for (SkillType skillType : SkillType.values()) {
                 for (SkillLevel skillLevel : SkillLevel.values()) {
-                    fields.add(new Field<>(skillType.name() + "_" + skillLevel.name() + "_REQUIREMENT", Double.class, 0D));
+                    fields.add(new Pair<>(skillType + "_" + skillLevel + "_REQUIREMENT", 0D));
                 }
             }
         });
 
-        chatConfig = new Config(Specialization.getInstance(), "chatConfig", fields -> {
-            fields.add(new Field<>("CHAT_RADIUS", Double.class, 32.0));
-            fields.add(new Field<>("DEFAULT_FORMAT", String.class, "%s > %s"));
-            fields.add(new Field<>("ANNOUNCEMENT_FORMAT", String.class, "<aqua>[Announcement]<gray> %s"));
-            fields.add(new Field<>("ANNOUNCEMENT_PREFIX", String.class, "#"));
+        chatConfig = new ConfigFile(Specialization.getInstance(), "chatConfig", null, fields -> {
+            fields.add(new Pair<>("CHAT_RADIUS", 32.0));
+            fields.add(new Pair<>("DEFAULT_FORMAT", "%s > %s"));
+            fields.add(new Pair<>("ANNOUNCEMENT_FORMAT", "<aqua>[Announcement]<gray> %s"));
+            fields.add(new Pair<>("ANNOUNCEMENT_PREFIX", "#"));
         });
     }
-
-    public static void reload() {
-        playerConfig.reload();
-        unlockedRecipesConfig.reload();
-        xpGainFromStonecuttingConfig.reload();
-        defaultUnlockedRecipesConfig.reload();
-        blockHardnessConfig.reload();
-        skillsConfig.reload();
-        skillRequirementsConfig.reload();
-        combatConfig.reload();
-    }
-
-
 }

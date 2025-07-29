@@ -6,13 +6,14 @@ import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Listener.PlayerMineListener;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
-import com.minecraftcivilizations.specialization.Recipe.Pair;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
@@ -22,7 +23,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class BlockDamage {
-    private static ProtocolManager manager = ProtocolLibrary.getProtocolManager();
+    private static final ProtocolManager manager = ProtocolLibrary.getProtocolManager();
 
     public PacketContainer configureBreakingPacket(Player player, Block block) {
         PacketContainer breakingAnimation = manager.createPacket(PacketType.Play.Server.BLOCK_BREAK_ANIMATION);
@@ -122,7 +123,7 @@ public class BlockDamage {
         }
         double damage;
 
-        damage = speedMultiplier / SpecializationConfig.getBlockHardnessConfig().getDouble(block.getType().name());;
+        damage = speedMultiplier / (Double) SpecializationConfig.getBlockHardnessConfig().get(block.getType(), new TypeToken<Double>() {}.getType());
 
         damage /= 30;
 
@@ -136,9 +137,9 @@ public class BlockDamage {
 
     public void playerBreakBlock(Player player, Block block) {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-        Pair pair = new Gson().fromJson(SpecializationConfig.getXpGainFromBreakingConfig().getString(block.getType().name()), Pair.class);
+        Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromBreakingConfig().get(block.getType(), new TypeToken<Pair<SkillType, Double>>() {}.getType());
         Specialization.logger.info(block.getType().name() + " ");
-        customPlayer.addSkillXp(SkillType.valueOf(pair.key()), Double.parseDouble(pair.value()));
+        customPlayer.addSkillXp(pair.firstValue(), pair.secondValue());
 
         block.breakNaturally(player.getEquipment().getItemInMainHand(), true, true);
     }

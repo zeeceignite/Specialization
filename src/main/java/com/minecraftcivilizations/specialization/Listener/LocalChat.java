@@ -22,7 +22,7 @@ public class LocalChat implements Listener {
         String originalMessage = MiniMessage.miniMessage().stripTags(event.getMessage().trim());
         if(tryHandleGlobalChat(sender, originalMessage)) return;
 
-        String defaultFormat = SpecializationConfig.getChatConfig().getString("DEFAULT_FORMAT");
+        String defaultFormat = SpecializationConfig.getChatConfig().get("DEFAULT_FORMAT", String.class);
         Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> {
             getNearbyPlayers(sender).forEach(player -> {
                 player.sendRichMessage(defaultFormat.formatted(sender.getName(), originalMessage)); //TODO: replace with anon name
@@ -33,16 +33,16 @@ public class LocalChat implements Listener {
     }
 
     private boolean tryHandleGlobalChat(Player player, String message) {
-        String prefix = SpecializationConfig.getChatConfig().getString("ANNOUNCEMENT_PREFIX");
+        String prefix = SpecializationConfig.getChatConfig().get("ANNOUNCEMENT_PREFIX", String.class);
         if(!message.startsWith(prefix) || !player.isOp()) return false;
         String actualMessage = message.substring(prefix.length());
-        String announcementFormat = SpecializationConfig.getChatConfig().getString("ANNOUNCEMENT_FORMAT");
+        String announcementFormat = SpecializationConfig.getChatConfig().get("ANNOUNCEMENT_FORMAT", String.class);
         Bukkit.getOnlinePlayers().forEach(other -> other.sendRichMessage(announcementFormat.formatted(actualMessage)));
         return true;
     }
 
     private List<Player> getNearbyPlayers(Player player) {
-        double radius = SpecializationConfig.getChatConfig().getDouble("CHAT_RADIUS");
+        double radius = SpecializationConfig.getChatConfig().get("CHAT_RADIUS", Double.class);
         return player.getNearbyEntities(radius,radius,radius).stream().filter(entity -> entity instanceof Player)
                 .map(entity -> (Player) entity).toList();
     }
