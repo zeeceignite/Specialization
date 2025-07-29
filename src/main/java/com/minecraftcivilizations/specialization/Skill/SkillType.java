@@ -16,11 +16,11 @@ public enum SkillType {
     BLACKSMITH;
 
     public String getSkillDescription() {
-        return SpecializationConfig.getSkillsConfig().getString(this.name() + "_DESCRIPTION");
+        return SpecializationConfig.getSkillsConfig().get(this + "_DESCRIPTION", String.class);
     }
 
     public Material getSkillWorkstation() {
-        return Material.valueOf(SpecializationConfig.getSkillsConfig().getString(this.name() + "_WORKSTATION"));
+        return SpecializationConfig.getSkillsConfig().get(this + "_WORKSTATION", Material.class);
     }
 
     public static int getLevelFromXP(double xp) {

@@ -8,6 +8,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.minecraftcivilizations.specialization.Command.*;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Data.DataManager;
@@ -46,6 +47,7 @@ public final class Specialization extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new PlayerMineListener(), this);
         getServer().getPluginManager().registerEvents(new BreakBlockListener(), this);
+        getServer().getPluginManager().registerEvents(new PlaceBlockListener(), this);
 
         getServer().getPluginManager().registerEvents(new StonecutterListener(), this);
         getServer().getPluginManager().registerEvents(new FurnaceListener(), this);
@@ -68,6 +70,18 @@ public final class Specialization extends JavaPlugin {
         Bukkit.updateRecipes();
 
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setCustomPlayerClass(CustomPlayer.class);
+
+        MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPrePlayerJoin(playerJoinEvent -> {
+//            try {
+//                CraftPlayerProfile profile = (CraftPlayerProfile) playerJoinEvent.getPlayerProfile();
+//                GameProfile gameProfile = profile.getGameProfile();
+//                Field ff = gameProfile.getClass().getDeclaredField("name");
+//                ff.setAccessible(true);
+//                ff.set(gameProfile, "DUMBASS");
+//            } catch (NoSuchFieldException | IllegalAccessException e) {
+//                e.printStackTrace();
+//            }
+        });
 
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerJoin(playerJoinEvent -> {
             minecraftcivilizations.com.minecraftCivilizationsCore.Player.CustomPlayer load = MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().load(playerJoinEvent.getUniqueId());
@@ -111,7 +125,6 @@ public final class Specialization extends JavaPlugin {
         PaperCommandManager commandManager = new PaperCommandManager(this);
         commandManager.registerCommand(new ClassCommand());
         commandManager.registerCommand(new SetXpCommand());
-        commandManager.registerCommand(new ReloadConfigCommand());
         commandManager.registerCommand(new SetLoreCommand());
         commandManager.registerCommand(new TownsCommand());
     }
