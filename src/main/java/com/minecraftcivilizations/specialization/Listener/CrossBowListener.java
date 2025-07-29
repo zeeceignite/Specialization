@@ -38,7 +38,7 @@ public class CrossBowListener implements Listener {
                 }
 
                 if (arrow.isShotFromCrossbow()) {
-                    arrow.setVelocity(arrow.getVelocity().multiply(0.99));
+                    arrow.setVelocity(arrow.getVelocity().multiply(1.25));
                     if (bowEvent.getBow().containsEnchantment(Enchantment.MULTISHOT)) {
                         arrow.setVelocity(arrow.getVelocity().multiply(0.9));
                     } else if (bowEvent.getBow().containsEnchantment(Enchantment.PIERCING)) {
