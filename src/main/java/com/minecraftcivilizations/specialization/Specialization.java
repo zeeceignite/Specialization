@@ -9,7 +9,7 @@ import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.minecraftcivilizations.specialization.Command.*;
-import com.minecraftcivilizations.specialization.Config.Config;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
 import com.minecraftcivilizations.specialization.Listener.*;
@@ -29,7 +29,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -94,7 +93,7 @@ public final class Specialization extends JavaPlugin {
         }
 
         DataManager.startSaver();
-        Config.initialize();
+        SpecializationConfig.initialize();
     }
 
     @Override
@@ -141,12 +140,14 @@ public final class Specialization extends JavaPlugin {
 
     private PacketContainer createChangeNamePacket(UUID uuid, Component name) {
         PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.PLAYER_INFO);
+
         packet.getPlayerInfoActions().write(0, Collections.singleton(EnumWrappers.PlayerInfoAction.UPDATE_DISPLAY_NAME));
-        List<PlayerInfoData> pd = new ArrayList<>();
+
         WrappedGameProfile profile = new WrappedGameProfile(uuid, ComponentUtils.serializeComponentAsString(name));
         WrappedChatComponent nameComponent = WrappedChatComponent.fromJson(JSONComponentSerializer.json().serialize(Component.text("DUMBASS")));
-        pd.add(new PlayerInfoData(profile, 0, EnumWrappers.NativeGameMode.SURVIVAL, nameComponent));
-        packet.getPlayerInfoDataLists().write(1, pd);
+        List<PlayerInfoData> playerInfoData = List.of(new PlayerInfoData(profile, 0, EnumWrappers.NativeGameMode.SURVIVAL, nameComponent));
+        packet.getPlayerInfoDataLists().write(1, playerInfoData);
+
         return packet;
     }
 }

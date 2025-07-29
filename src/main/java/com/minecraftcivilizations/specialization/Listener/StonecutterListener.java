@@ -1,7 +1,7 @@
 package com.minecraftcivilizations.specialization.Listener;
 
 import com.google.gson.Gson;
-import com.minecraftcivilizations.specialization.Config.Config;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Recipe.Pair;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -39,7 +39,7 @@ public class StonecutterListener implements Listener {
         Specialization.logger.info(String.valueOf(event.getView().getItem(event.getSlot()).getAmount()));
 
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-        Pair pair = new Gson().fromJson(Config.getXpGainFromStonecuttingConfig().getString(result.getType().name()), Pair.class);
+        Pair pair = new Gson().fromJson(SpecializationConfig.getXpGainFromStonecuttingConfig().getString(result.getType().name()), Pair.class);
         customPlayer.addSkillXp(SkillType.valueOf(pair.key()), Double.parseDouble(pair.value()) * amount);
     }
 }

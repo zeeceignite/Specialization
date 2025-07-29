@@ -1,7 +1,5 @@
 package com.minecraftcivilizations.specialization.Data;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.minecraftcivilizations.specialization.Specialization;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 
@@ -12,6 +10,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class DataManager {
+
     private static final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     public static void startSaver() {
@@ -25,9 +24,9 @@ public class DataManager {
             Specialization.logger.info("Running task at " + LocalDateTime.now());
             MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().saveAll();
         };
-
     }
 
+    // this is done so analytics are exactly every 10 min, so its clean
     private static long getInitialDelayUntilNext10Min() {
         LocalDateTime now = LocalDateTime.now();
         int minute = now.getMinute();

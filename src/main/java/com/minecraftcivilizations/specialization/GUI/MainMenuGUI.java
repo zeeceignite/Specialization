@@ -1,14 +1,12 @@
 package com.minecraftcivilizations.specialization.GUI;
 
-import com.minecraftcivilizations.specialization.Config.Config;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
-import com.minecraftcivilizations.specialization.Specialization;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUI;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.ListGUI;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Item.ItemUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -20,9 +18,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.minecraftcivilizations.specialization.Skill.SkillType.getDisplayName;
 
@@ -78,7 +74,7 @@ public class MainMenuGUI extends GUI {
 
                     double currentXp = Math.round(skill.getXp() * 100) / 100D;
                     double xpToNextLevel = Math.round((Skill.getXPNeededForLevel(currentSkillLevel + 1) - skill.getXp()) * 100) / 100D ;
-                    double percentOfTotalForNextLevel = Math.round(Config.getSkillRequirementsConfig().getDouble(skill.getSkillType().name() + "_" + SkillLevel.getSkillLevelFromInt(currentSkillLevel + 1).name() + "_REQUIREMENT") * 100) / 100D;
+                    double percentOfTotalForNextLevel = Math.round(SpecializationConfig.getSkillRequirementsConfig().getDouble(skill.getSkillType().name() + "_" + SkillLevel.getSkillLevelFromInt(currentSkillLevel + 1).name() + "_REQUIREMENT") * 100) / 100D;
 
                     ItemStack itemStack = ItemStack.of(skill.getSkillType().getSkillWorkstation());
                     ItemMeta itemMeta = itemStack.getItemMeta();
