@@ -1,7 +1,7 @@
 package com.minecraftcivilizations.specialization.Config;
 
-import com.minecraftCivilizationsCore.Config.ConfigFile;
-import com.minecraftCivilizationsCore.Options.Pair;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Config.ConfigFile;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
