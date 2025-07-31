@@ -50,6 +50,8 @@ public class SpecializationConfig {
     private static ConfigFile combatConfig;
     @Getter
     private static ConfigFile chatConfig;
+    @Getter
+    private static ConfigFile mobConfig;
 
 
     public static void initialize() {
@@ -88,11 +90,19 @@ public class SpecializationConfig {
             }
         });
 
-        combatConfig = new ConfigFile(Specialization.getInstance(), "playerConfig", null, fields -> {
+        combatConfig = new ConfigFile(Specialization.getInstance(), "combatConfig", null, fields -> {
             fields.add(new Pair<>("CROSSBOW_BASE_VELOCITY", 1.6));
             fields.add(new Pair<>("CROSSBOW_BASE_PIERCING_VELOCITY", 1.3));
             fields.add(new Pair<>("CROSSBOW_BASE_MULTISHOT_VELOCITY", 2.5));
             fields.add(new Pair<>("CROSSBOW_BASE_QUICKCHARGE_VELOCITY", 1.3));
+        });
+
+        mobConfig = new ConfigFile(Specialization.getInstance(), "mobConfig", null, fields -> {
+            fields.add(new Pair<>("DAYTIME_MOB_DAMAGE_MULTIPLIER", 4.0));
+            fields.add(new Pair<>("NIGHTTIME_MOB_DAMAGE_MULTIPLIER", 10.0));
+            fields.add(new Pair<>("NIGHT_GUARDSMAN_MOB_DAMAGE_PERCENT_REDUCTION", 30));
+            fields.add(new Pair<>("DAYTIME_SPEED_BUFF", .25));
+            fields.add(new Pair<>("NIGHTTIME_SPEED_BUFF", .35));
         });
 
         xpGainFromRepairingConfig = new ConfigFile(Specialization.getInstance(), "xpGainFromRepairing", null, fields -> {
@@ -161,13 +171,12 @@ public class SpecializationConfig {
             }
         });
 
-        defaultUnlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "defaultUnlockedRecipesConfig", null, fields -> {
+        defaultUnlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "defaultUnlockedRecipesConfig", null, fields ->
             Bukkit.recipeIterator().forEachRemaining((recipe) -> {
                 if (recipe instanceof Keyed keyed) {
                     fields.add(new Pair<>("DEFAULT_UNLOCKED_RECIPES", keyed.getKey()));
                 }
-            });
-        });
+        }));
 
         blockHardnessConfig = new ConfigFile(Specialization.getInstance(), "blockHardnessConfig", null, fields -> {
             for (Material material : Material.values()) {
