@@ -1,11 +1,11 @@
 package com.minecraftcivilizations.specialization.Config;
 
-import minecraftcivilizations.com.minecraftCivilizationsCore.Config.ConfigFile;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Config.ConfigFile;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
@@ -103,6 +103,9 @@ public class SpecializationConfig {
             fields.add(new Pair<>("NIGHT_GUARDSMAN_MOB_DAMAGE_PERCENT_REDUCTION", 30));
             fields.add(new Pair<>("DAYTIME_SPEED_BUFF", .25));
             fields.add(new Pair<>("NIGHTTIME_SPEED_BUFF", .35));
+
+            fields.add(new Pair<>("BLOCK_BREAK_CHANCE_PERCENTAGE", 30));
+            fields.add(new Pair<>("VISUAL_BREAKING_INCREASE_PER_TICK_PERCENTAGE", 5f));
         });
 
         xpGainFromRepairingConfig = new ConfigFile(Specialization.getInstance(), "xpGainFromRepairing", null, fields -> {

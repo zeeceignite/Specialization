@@ -1,12 +1,15 @@
 package com.minecraftcivilizations.specialization.Listener;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Mobs.BreakBlockMobGoal;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Enemy;
+import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -17,7 +20,7 @@ public class MobListeners implements Listener {
 
     @EventHandler
     public void onMobSpawn(EntitySpawnEvent event) {
-        if(!(event.getEntity() instanceof Enemy monster)) return;
+        if(!(event.getEntity() instanceof Monster monster)) return;
         double speedAddition;
 
         if(monster.getWorld().isDayTime()) speedAddition = SpecializationConfig.getMobConfig().get("DAYTIME_SPEED_BUFF", Double.class);
@@ -28,8 +31,10 @@ public class MobListeners implements Listener {
             Specialization.logger.warning("Mob spawned and didn't have movement speed:" + monster.getType());
             return;
         }
-
         attribute.setBaseValue(attribute.getDefaultValue() + speedAddition);
+
+        Bukkit.getMobGoals().addGoal(monster,1, new BreakBlockMobGoal(monster));
+
     }
 
     @EventHandler
