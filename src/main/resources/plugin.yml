@@ -4,6 +4,7 @@ main: com.minecraftcivilizations.specialization.Specialization
 api-version: '1.21'
 depend:
   - MinecraftCivilizationsCore
+  - Weight
 authors: [ DNFneca ]
 description: Lyphea
 
