@@ -137,8 +137,9 @@ public class BlockDamage {
 
     public void playerBreakBlock(Player player, Block block) {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-        Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromBreakingConfig().get(block.getType(), new TypeToken<>() {});
         Specialization.logger.info(block.getType().name() + " ");
+        Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromBreakingConfig().get(block.getType(), new TypeToken<>() {
+        });
         customPlayer.addSkillXp(pair.firstValue(), pair.secondValue());
 
         block.breakNaturally(player.getEquipment().getItemInMainHand(), true, true);
