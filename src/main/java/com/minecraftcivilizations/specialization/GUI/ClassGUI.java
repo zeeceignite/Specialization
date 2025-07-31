@@ -28,19 +28,6 @@ public class ClassGUI extends GUI {
 
     public ClassGUI(String title) {
         super(Component.text(title), 54);
-        this.getItems().put(0, new GUIItem(new ItemStack(Material.COMPASS), new Runnable() {
-            @Override
-            public void run() {
-                List<ItemStack> items = new ArrayList<>();
-                for (Material material : Material.values()) {
-                    if (material.isItem() && material != Material.AIR) {
-                        items.add(new ItemStack(material));
-                    }
-                }
-
-                new ListGUI(Component.text("Classes"), new ArrayList<>(items)).setParentGUI(ClassGUI.this).open((Player) getInventory().getViewers().getFirst());
-            }
-        }));
     }
 
     @Override
@@ -62,6 +49,7 @@ public class ClassGUI extends GUI {
                 @Override
                 public void run() {
                     customPlayer.setAdvancedClassesGUIEnabled(!customPlayer.isAdvancedClassesGUIEnabled());
+                    getItems().clear();
                     ClassGUI.this.open(player);
                 }
             }));

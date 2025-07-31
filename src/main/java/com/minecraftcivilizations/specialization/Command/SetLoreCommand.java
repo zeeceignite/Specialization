@@ -8,11 +8,13 @@ import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItem;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @CommandAlias("setlore")
 public class SetLoreCommand extends BaseCommand {
@@ -20,15 +22,9 @@ public class SetLoreCommand extends BaseCommand {
     @Default
     public void onSetLore(@NotNull CommandSender sender, String lore) {
         if (sender instanceof Player player) {
-            CustomItem.addLore(
-                    player.getInventory().getItemInMainHand(), new ArrayList<>() {
-                        {
-                            add(Component.text(lore));
-                        }
-                    },
-                    Specialization.getInstance()
-            );
-            player.getInventory().getItemInMainHand().setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().hideTooltip(true));
+            CustomItem from = CustomItem.from(player.getInventory().getItemInMainHand());
+            from.addLore(List.of(Component.text(lore).color(NamedTextColor.WHITE)));
+
         }
     }
 

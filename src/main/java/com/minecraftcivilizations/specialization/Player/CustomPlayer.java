@@ -76,7 +76,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
             public void run() {
                 Set<NamespacedKey> recipes =
                         SpecializationConfig.getDefaultUnlockedRecipesConfig().get("DEFAULT_UNLOCKED_RECIPES",
-                        new TypeToken<Set<NamespacedKey>>() {}.getType());
+                                new TypeToken<>() {});
                 for (NamespacedKey entry : recipes) {
                     player.discoverRecipe(entry);
                 }
@@ -98,7 +98,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
             while (currentLevel > 0) {
                 Set<NamespacedKey> recipes =
                         SpecializationConfig.getUnlockedRecipesConfig().get(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(currentLevel),
-                        new TypeToken<Set<NamespacedKey>>() {}.getType());
+                        new TypeToken<>() {});
                 for (NamespacedKey entry : recipes) {
                     Specialization.logger.info(String.valueOf(Bukkit.getPlayer(this.getUuid()).discoverRecipe(entry)));
                 }
