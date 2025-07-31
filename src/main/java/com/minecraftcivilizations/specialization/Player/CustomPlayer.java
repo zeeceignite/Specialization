@@ -135,7 +135,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         return mapValue(getSkill(skillType).getXp(), 0, getTotalXp(), 0, 3);
     }
 
-    public double getGUIDistributionOfTotalSkills(SkillType skillType, Player player) {
+    public double getGUIDistributionOfTotalLevels(SkillType skillType) {
         int level = getSkillLevel(skillType);
         double XPMin = level == 0 ? 0 : getXPNeededForLevel(level);
         double XPMax = getXPNeededForLevel(level + 1);
