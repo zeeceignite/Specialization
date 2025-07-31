@@ -135,6 +135,31 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         return mapValue(getSkill(skillType).getXp(), 0, getTotalXp(), 0, 3);
     }
 
+    public double getGUIDistributionOfTotalSkills(SkillType skillType, Player player) {
+        int level = getSkillLevel(skillType);
+        double XPMin = level == 0 ? 0 : getXPNeededForLevel(level);
+        double XPMax = getXPNeededForLevel(level + 1);
+
+        Skill skill = getSkill(skillType);
+        double percentageNeededMin = SpecializationConfig.getSkillRequirementsConfig().get(skill.getSkillType() + "_" + SkillLevel.getSkillLevelFromInt(level) + "_REQUIREMENT", Double.class);
+        double percentageNeededMax = SpecializationConfig.getSkillRequirementsConfig().get(skill.getSkillType() + "_" + SkillLevel.getSkillLevelFromInt(level + 1) + "_REQUIREMENT", Double.class);
+        double currentPercentage = getPercentOfTotal(skillType);
+
+        double XPProgressAsPercentage;
+        if(skill.getXp() <= XPMax) {
+            XPProgressAsPercentage = mapValue(skill.getXp() - XPMin, 0, XPMax - XPMin, 0, 100);
+        }else XPProgressAsPercentage = 100.0;
+
+        double percentageProgressAsPercentage;
+
+        if(currentPercentage <= percentageNeededMax) {
+            percentageProgressAsPercentage = mapValue(currentPercentage - percentageNeededMin, 0, percentageNeededMax - percentageNeededMin,0,100);
+        }else if(getTotalXp() == 0){
+            percentageProgressAsPercentage = 0;
+        } else percentageProgressAsPercentage = 100.0;
+        return Math.round(XPProgressAsPercentage * percentageProgressAsPercentage * .01);
+    }
+
     public double getPercentOfTotal(SkillType skillType) {
         return mapValue(getSkill(skillType).getXp(), 0, getTotalXp(), 0, 100);
     }

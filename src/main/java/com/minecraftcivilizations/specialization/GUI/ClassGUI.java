@@ -11,6 +11,7 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizati
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
@@ -186,7 +187,7 @@ public class ClassGUI extends GUI {
         int i = 37;
         for (Skill skill : customPlayer.getSkills()) {
             int temp = i;
-            double distribution = customPlayer.getGUIDistributionOfTotalSkills(skill.getSkillType());
+            double distribution = customPlayer.getGUIDistributionOfTotalSkills(skill.getSkillType(), Bukkit.getPlayer(customPlayer.getUuid()));
             int currentSkillLevel =  Math.min(customPlayer.getSkillLevel(skill.getSkillType()), SkillLevel.values().length-1);
             for (int score = 0; score < 3; score++) {
                 if((distribution * .03 - score) < 0 ) break;
