@@ -57,7 +57,7 @@ public class Recipes {
         shapelessRecipe.addIngredient(8, Material.PAPER);
         shapelessRecipe.addIngredient(Material.SUGAR_CANE);
         Bukkit.addRecipe(shapelessRecipe, true);
-
+      
         ShapedRecipe shapedRecipe = new ShapedRecipe(NamespacedKey.minecraft("rail"), new ItemStack(Material.RAIL).add(64));
         shapedRecipe.shape(
                 "I I",
