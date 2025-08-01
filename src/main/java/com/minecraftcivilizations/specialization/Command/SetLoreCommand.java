@@ -7,6 +7,7 @@ import com.minecraftcivilizations.specialization.Specialization;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItem;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItemRegistry;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -21,7 +22,7 @@ public class SetLoreCommand extends BaseCommand {
     public void onSetLore(@NotNull CommandSender sender, String lore) {
         if (sender instanceof Player player) {
             CustomItem from = CustomItem.from(player.getInventory().getItemInMainHand());
-            from.addLore(List.of(Component.text(lore)));
+            from.addLore(Specialization.getInstance(), List.of(Component.text(lore).color(NamedTextColor.WHITE)));
         }
     }
 

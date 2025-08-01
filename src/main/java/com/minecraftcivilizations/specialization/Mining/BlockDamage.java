@@ -122,9 +122,9 @@ public class BlockDamage {
             speedMultiplier /= 5;
         }
         double damage;
-
+      
         damage = speedMultiplier / SpecializationConfig.getBlockHardnessConfig().get(block.getType(), Double.class);
-
+      
         damage /= 30;
 
         // Instant breaking
