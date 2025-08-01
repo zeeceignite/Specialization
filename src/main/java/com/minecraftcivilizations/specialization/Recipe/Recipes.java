@@ -16,6 +16,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -24,10 +25,10 @@ import java.util.List;
 public class Recipes {
 
     public static void init() {
-        ItemStack itemStack = ItemStack.of(Material.PAPER);
-        ItemMeta itemMeta = itemStack.getItemMeta();
-        itemMeta.displayName(Component.text("Bandage").color(NamedTextColor.WHITE));
-        itemStack.setItemMeta(itemMeta);
+        CustomItem customItem = new CustomItem(Material.PAPER, Component.text("Bandage").color(NamedTextColor.WHITE),
+                Component.empty(),
+                Component.text("Can be used to heal yourself or others.").color(NamedTextColor.WHITE)
+        );
 
         CustomAbility customAbility = new CustomAbility();
         customAbility.setAbilityFunction(customAbilityFunction -> {
@@ -42,18 +43,25 @@ public class Recipes {
 
         CustomItemAbilityRegistry.register(new NamespacedKey(Specialization.getInstance(), "bandage"), customAbility);
 
-        CustomItem newCustomItem = new CustomItem();
-        newCustomItem.setItem(itemStack);
-        newCustomItem.addLore(List.of(Component.empty(),
-                Component.text("Can be used to heal yourself or others.").color(NamedTextColor.WHITE)));
-        newCustomItem.addAbility(new NamespacedKey(Specialization.getInstance(), "bandage"));
+        customItem.addAbility(new NamespacedKey(Specialization.getInstance(), "bandage"));
 
-        CustomItemRegistry.register(new NamespacedKey(Specialization.getInstance(), "bandage"), newCustomItem);
+        CustomItemRegistry.register(new NamespacedKey(Specialization.getInstance(), "bandage"), customItem);
 
 
-        ShapelessRecipe shapelessRecipe = new ShapelessRecipe(new NamespacedKey(Specialization.getInstance(), "bandage"), itemStack);
+        ShapelessRecipe shapelessRecipe = new ShapelessRecipe(new NamespacedKey(Specialization.getInstance(), "bandage"), customItem.getItem());
         shapelessRecipe.addIngredient(new ItemStack(Material.PAPER, 8));
         shapelessRecipe.addIngredient(new ItemStack(Material.SUGAR_CANE));
         Bukkit.addRecipe(shapelessRecipe, true);
+
+        ShapedRecipe shapedRecipe = new ShapedRecipe(NamespacedKey.minecraft("rail"), new ItemStack(Material.RAIL).add(23));
+        shapedRecipe.shape(
+                "I I",
+                "ISI",
+                "I I"
+        );
+        shapedRecipe.setIngredient('I', Material.IRON_INGOT);
+        shapedRecipe.setIngredient('S', Material.STICK);
+        Bukkit.removeRecipe(NamespacedKey.minecraft("rail"));
+        Bukkit.addRecipe(shapedRecipe);
     }
 }
