@@ -13,6 +13,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.*;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class SpecializationConfig {
@@ -101,11 +102,12 @@ public class SpecializationConfig {
             fields.add(new Pair<>("DAYTIME_MOB_DAMAGE_MULTIPLIER", 4.0));
             fields.add(new Pair<>("NIGHTTIME_MOB_DAMAGE_MULTIPLIER", 10.0));
             fields.add(new Pair<>("NIGHT_GUARDSMAN_MOB_DAMAGE_PERCENT_REDUCTION", 30));
-            fields.add(new Pair<>("DAYTIME_SPEED_BUFF", .25));
-            fields.add(new Pair<>("NIGHTTIME_SPEED_BUFF", .35));
+            fields.add(new Pair<>("DAYTIME_SPEED_BUFF", .00));
+            fields.add(new Pair<>("NIGHTTIME_SPEED_BUFF", .00));
 
             fields.add(new Pair<>("BLOCK_BREAK_CHANCE_PERCENTAGE", 30));
-            fields.add(new Pair<>("VISUAL_BREAKING_INCREASE_PER_TICK_PERCENTAGE", 5f));
+            fields.add(new Pair<>("BLOCK_BREAK_IGNORE_LIST_REGEX", List.of(".*BRICK.*", "OBSIDIAN")));
+            fields.add(new Pair<>("VISUAL_BREAKING_INCREASE_PER_TICK_PERCENTAGE", 1f));
         });
 
         xpGainFromRepairingConfig = new ConfigFile(Specialization.getInstance(), "xpGainFromRepairing", null, fields -> {

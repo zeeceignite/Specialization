@@ -34,7 +34,6 @@ public class MobListeners implements Listener {
         attribute.setBaseValue(attribute.getDefaultValue() + speedAddition);
 
         Bukkit.getMobGoals().addGoal(monster,1, new BreakBlockMobGoal(monster));
-
     }
 
     @EventHandler

@@ -3,9 +3,12 @@ package com.minecraftcivilizations.specialization.Mobs;
 import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.destroystokyo.paper.entity.ai.GoalType;
+import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
+import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Monster;
@@ -16,7 +19,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
 
@@ -38,24 +43,28 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
     @Override
     public boolean shouldActivate() {
         if(monster.getTarget() == null) return false;
+        if(monster.getWorld().isDayTime()) return false;
+
         double percentage = SpecializationConfig.getMobConfig().get("BLOCK_BREAK_CHANCE_PERCENTAGE", Double.class);
         if(random.nextDouble() > percentage / 100d) return false;
+
         Vector directionToPlayer = monster.getTarget().getLocation().subtract(monster.getLocation()).toVector().normalize();
         RayTraceResult result = monster.getWorld().rayTraceBlocks(monster.getLocation(), directionToPlayer, 5);
         if(result == null || result.getHitBlock() == null) return false;
-        block = result.getHitBlock();
 
-        return true;
+        block = result.getHitBlock();
+        List<String> deniedBlocks = SpecializationConfig.getMobConfig().get("BLOCK_BREAK_IGNORE_LIST_REGEX", new TypeToken<>(){});
+        return block.getType() != Material.AIR && deniedBlocks.stream().noneMatch(it -> it.matches(block.getType().name()));
     }
 
     @Override
     public boolean shouldStayActive() {
-        return breakAmount < 1.0;
+        return breakAmount < 1.0 && !monster.getWorld().isDayTime();
     }
 
     @Override
     public void start() {
-        nearbyPlayers = block.getLocation().getNearbyPlayers(16);
+        nearbyPlayers = block.getLocation().getNearbyPlayers(16).stream().filter(player -> player.getGameMode().equals(GameMode.SURVIVAL)).collect(Collectors.toSet());
     }
 
     @Override

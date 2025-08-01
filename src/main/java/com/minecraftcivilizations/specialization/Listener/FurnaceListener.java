@@ -1,6 +1,5 @@
 package com.minecraftcivilizations.specialization.Listener;
 
-import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
@@ -11,7 +10,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.*;
+import org.bukkit.event.inventory.FurnaceExtractEvent;
 import org.bukkit.inventory.ItemStack;
 
 public class FurnaceListener implements Listener {
@@ -35,8 +34,7 @@ public class FurnaceListener implements Listener {
 
     private void furnaceSmelt(Player player, ItemStack item, int amount) {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-        Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromSmeltingConfig().get(item.getType(), new TypeToken<>() {
-        });
+        Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromSmeltingConfig().get(item.getType(), new TypeToken<>() {});
         customPlayer.addSkillXp(pair.firstValue(), pair.secondValue() * amount);
     }
 
