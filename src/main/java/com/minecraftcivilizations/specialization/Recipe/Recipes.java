@@ -25,10 +25,11 @@ import java.util.List;
 public class Recipes {
 
     public static void init() {
-        CustomItem customItem = new CustomItem(Material.PAPER, Component.text("Bandage").color(NamedTextColor.WHITE),
+        CustomItem customItem = new CustomItem(Material.PAPER, Component.text("Bandage").color(NamedTextColor.WHITE));
+        customItem.addLore(Specialization.getInstance(), List.of(
                 Component.empty(),
                 Component.text("Can be used to heal yourself or others.").color(NamedTextColor.WHITE)
-        );
+        ));
 
         CustomAbility customAbility = new CustomAbility();
         customAbility.setAbilityFunction(customAbilityFunction -> {
@@ -49,8 +50,8 @@ public class Recipes {
 
 
         ShapelessRecipe shapelessRecipe = new ShapelessRecipe(new NamespacedKey(Specialization.getInstance(), "bandage"), customItem.getItem());
-        shapelessRecipe.addIngredient(new ItemStack(Material.PAPER, 8));
-        shapelessRecipe.addIngredient(new ItemStack(Material.SUGAR_CANE));
+        shapelessRecipe.addIngredient(8, Material.PAPER);
+        shapelessRecipe.addIngredient(Material.SUGAR_CANE);
         Bukkit.addRecipe(shapelessRecipe, true);
 
         ShapedRecipe shapedRecipe = new ShapedRecipe(NamespacedKey.minecraft("rail"), new ItemStack(Material.RAIL).add(23));

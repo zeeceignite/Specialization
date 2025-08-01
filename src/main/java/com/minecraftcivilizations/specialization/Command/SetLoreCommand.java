@@ -22,7 +22,7 @@ public class SetLoreCommand extends BaseCommand {
     public void onSetLore(@NotNull CommandSender sender, String lore) {
         if (sender instanceof Player player) {
             CustomItem from = CustomItem.from(player.getInventory().getItemInMainHand());
-            from.addLore(List.of(Component.text(lore).color(NamedTextColor.WHITE)));
+            from.addLore(Specialization.getInstance(), List.of(Component.text(lore).color(NamedTextColor.WHITE)));
         }
     }
 
