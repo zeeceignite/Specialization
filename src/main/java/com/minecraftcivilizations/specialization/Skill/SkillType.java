@@ -1,11 +1,12 @@
 package com.minecraftcivilizations.specialization.Skill;
 
-import com.minecraftcivilizations.specialization.Config.Config;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import org.bukkit.Material;
 
 import static com.minecraftcivilizations.specialization.Skill.Skill.getXPNeededForLevel;
 
 public enum SkillType {
+
     FARMER,
     BUILDER,
     MINER,
@@ -14,14 +15,12 @@ public enum SkillType {
     GUARDSMAN,
     BLACKSMITH;
 
-
-
     public String getSkillDescription() {
-        return Config.getSkillsConfig().getString(this.name() + "_DESCRIPTION");
+        return SpecializationConfig.getSkillsConfig().get(this + "_DESCRIPTION", String.class);
     }
 
     public Material getSkillWorkstation() {
-        return Material.valueOf(Config.getSkillsConfig().getString(this.name() + "_WORKSTATION"));
+        return SpecializationConfig.getSkillsConfig().get(this + "_WORKSTATION", Material.class);
     }
 
     public static int getLevelFromXP(double xp) {

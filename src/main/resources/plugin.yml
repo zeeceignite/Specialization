@@ -6,10 +6,4 @@ depend:
   - MinecraftCivilizationsCore
 authors: [ DNFneca ]
 description: Lyphea
-commands:
-  class:
-  setxp:
-  reloadconfigs:
-  setlore:
-  reloadtowns:
 

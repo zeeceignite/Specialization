@@ -1,12 +1,8 @@
 package com.minecraftcivilizations.specialization.Skill;
 
-import com.minecraftcivilizations.specialization.Config.Config;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.Material;
-
-import static com.minecraftcivilizations.specialization.Skill.SkillType.getLevelFromXP;
 
 @AllArgsConstructor
 public class Skill {

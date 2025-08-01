@@ -3,7 +3,6 @@ package com.minecraftcivilizations.specialization.Distance;
 import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
 import org.bukkit.*;
-import org.bukkit.block.Bed;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,8 +18,8 @@ public class TownManager implements Listener {
     public static TownManager instance;
     private static final List<Town> towns = Collections.synchronizedList(new ArrayList<>());
     private static final Map<UUID, Location> playerSpawnLocations = new ConcurrentHashMap<>();
-    private static int TOWN_RADIUS = 150;
-    private static int MIN_BEDS = 5;
+    private static final int TOWN_RADIUS = 150;
+    private static final int MIN_BEDS = 5;
 
     public TownManager() {
         instance = this;
@@ -173,11 +172,11 @@ public class TownManager implements Listener {
         return false;
     }
 
-    private static Location calculateTownCenter(List<Location> beds) {
+    static Location calculateTownCenter(List<Location> beds) {
         if (beds.isEmpty()) return null;
 
         double totalX = 0, totalY = 0, totalZ = 0;
-        World world = beds.get(0).getWorld();
+        World world = beds.getFirst().getWorld();
 
         for (Location bed : beds) {
             totalX += bed.getX();

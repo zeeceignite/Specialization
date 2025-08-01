@@ -1,12 +1,13 @@
 package com.minecraftcivilizations.specialization.Listener;
 
 import com.google.gson.Gson;
-import com.minecraftcivilizations.specialization.Config.Config;
+import com.google.gson.reflect.TypeToken;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
-import com.minecraftcivilizations.specialization.Recipe.Pair;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -39,7 +40,8 @@ public class StonecutterListener implements Listener {
         Specialization.logger.info(String.valueOf(event.getView().getItem(event.getSlot()).getAmount()));
 
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-        Pair pair = new Gson().fromJson(Config.getXpGainFromStonecuttingConfig().getString(result.getType().name()), Pair.class);
-        customPlayer.addSkillXp(SkillType.valueOf(pair.key()), Double.parseDouble(pair.value()) * amount);
+        Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromStonecuttingConfig().get(result.getType(), new TypeToken<>() {
+        });
+        customPlayer.addSkillXp(pair.firstValue(), pair.secondValue() * amount);
     }
 }
