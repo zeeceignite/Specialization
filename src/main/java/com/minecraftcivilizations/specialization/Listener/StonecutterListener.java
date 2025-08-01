@@ -40,8 +40,7 @@ public class StonecutterListener implements Listener {
         Specialization.logger.info(String.valueOf(event.getView().getItem(event.getSlot()).getAmount()));
 
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-        Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromStonecuttingConfig().get(result.getType(), new TypeToken<>() {
-        });
+        Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromStonecuttingConfig().get(result.getType(), new TypeToken<>(){});
         customPlayer.addSkillXp(pair.firstValue(), pair.secondValue() * amount);
     }
 }

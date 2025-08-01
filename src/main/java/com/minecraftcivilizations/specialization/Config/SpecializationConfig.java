@@ -1,13 +1,11 @@
 package com.minecraftcivilizations.specialization.Config;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Config.ConfigFile;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Config.ConfigFile;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
