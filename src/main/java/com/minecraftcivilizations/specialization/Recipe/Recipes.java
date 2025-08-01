@@ -15,6 +15,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
@@ -34,8 +36,10 @@ public class Recipes {
         CustomAbility customAbility = new CustomAbility();
         customAbility.setAbilityFunction(customAbilityFunction -> {
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(customAbilityFunction.getUniqueId());
-            customPlayer.addSkillXp(SkillType.HEALER, 100);
-            Specialization.logger.info("TESTING");
+            if (customAbilityFunction.getTargetEntity(4) instanceof Player player && player.getHealth() < player.getAttribute(Attribute.MAX_HEALTH).getValue()) {
+                player.heal(.5);
+                customPlayer.addSkillXp(SkillType.HEALER, 100);
+            }
         });
         customAbility.setCooldown(10);
         customAbility.setCastEvent(AbilityCastEvent.RIGHT_CLICK);
@@ -53,8 +57,8 @@ public class Recipes {
         shapelessRecipe.addIngredient(8, Material.PAPER);
         shapelessRecipe.addIngredient(Material.SUGAR_CANE);
         Bukkit.addRecipe(shapelessRecipe, true);
-
-        ShapedRecipe shapedRecipe = new ShapedRecipe(NamespacedKey.minecraft("rail"), new ItemStack(Material.RAIL).add(23));
+      
+        ShapedRecipe shapedRecipe = new ShapedRecipe(NamespacedKey.minecraft("rail"), new ItemStack(Material.RAIL).add(64));
         shapedRecipe.shape(
                 "I I",
                 "ISI",

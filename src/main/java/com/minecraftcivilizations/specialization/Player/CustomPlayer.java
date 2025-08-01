@@ -126,7 +126,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     }
 
     private boolean isMissingPercentForLevel(SkillType skillType, int level) {
-        return getPercentOfTotal(skillType) < (Double) SpecializationConfig.getSkillRequirementsConfig().get(skillType + "_" + SkillLevel.getSkillLevelFromInt(level) + "_REQUIREMENT", Double.class);
+        return getPercentOfTotal(skillType) < SpecializationConfig.getSkillRequirementsConfig().get(skillType + "_" + SkillLevel.getSkillLevelFromInt(level) + "_REQUIREMENT", Double.class);
     }
 
     public double getGUIDistributionOfTotalSkills(SkillType skillType) {
