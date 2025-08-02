@@ -15,12 +15,16 @@ import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
 import com.minecraftcivilizations.specialization.Listener.*;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
+import com.minecraftcivilizations.specialization.Player.LocalNameGenerator;
 import com.minecraftcivilizations.specialization.Player.PreJoinEventListener;
 import com.minecraftcivilizations.specialization.Recipe.Recipes;
+import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.mojang.authlib.GameProfile;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Component.ComponentUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
@@ -29,6 +33,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
@@ -38,9 +43,13 @@ import java.util.logging.Logger;
 public final class Specialization extends JavaPlugin {
 
     public static Logger logger;
+    private static LocalNameGenerator localNameGenerator;
 
     @Override
     public void onEnable() {
+        saveResource("first_names.txt", false);
+        saveResource("last_names.txt", false);
+
         logger = getLogger();
 
         setupCommands();
@@ -70,37 +79,46 @@ public final class Specialization extends JavaPlugin {
 
         Bukkit.updateRecipes();
 
+        try {
+            localNameGenerator = new LocalNameGenerator();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setCustomPlayerClass(CustomPlayer.class);
 
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPrePlayerJoin(playerJoinEvent -> {
-//            try {
-//                CraftPlayerProfile profile = (CraftPlayerProfile) playerJoinEvent.getPlayerProfile();
-//                GameProfile gameProfile = profile.getGameProfile();
-//                Field ff = gameProfile.getClass().getDeclaredField("name");
-//                ff.setAccessible(true);
-//                ff.set(gameProfile, "DUMBASS");
-//            } catch (NoSuchFieldException | IllegalAccessException e) {
-//                e.printStackTrace();
-//            }
+            try {
+                CustomPlayer load = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().load(playerJoinEvent.getUniqueId());
+                Component localName;
+                if (load != null) {
+                    Specialization.logger.info("Already joined before!");
+                    localName = load.getName();
+                } else {
+                    Specialization.logger.info("Custom player not found!");
+                    MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().addCustomPlayer(new CustomPlayer(playerJoinEvent.getUniqueId()));
+                    CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(playerJoinEvent.getUniqueId());
+                    customPlayer.setName(Component.text(localNameGenerator.nextName()).color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false));
+                    double height = Skill.mapValue(Math.random(), 0.0, 1.0, .85, 1.0);
+                    customPlayer.setHeight(height);
+                    localName = customPlayer.getName();
+                }
+
+
+                CraftPlayerProfile profile = (CraftPlayerProfile) playerJoinEvent.getPlayerProfile();
+                GameProfile gameProfile = profile.getGameProfile();
+                Field ff = gameProfile.getClass().getDeclaredField("name");
+                ff.setAccessible(true);
+                ff.set(gameProfile, ComponentUtils.serializeComponentAsString(localName));
+
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
         });
 
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerJoin(playerJoinEvent -> {
-            minecraftcivilizations.com.minecraftCivilizationsCore.Player.CustomPlayer load = MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().load(playerJoinEvent.getUniqueId());
-
-            if (load != null) {
-                Specialization.logger.info("Custom player joined!");
-                return;
-            }
-
-            
-            MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().addCustomPlayer(new CustomPlayer(playerJoinEvent.getUniqueId()));
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(playerJoinEvent.getUniqueId());
-
-            Specialization.logger.info("Custom player joined!!");
-
-//            applyCustomName(playerJoinEvent.getPlayer(), Component.text("DUMBASS").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
-
-
+            applyCustomName(playerJoinEvent.getPlayer(), customPlayer.getName());
         });
 
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerQuit(playerQuitEvent -> MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().removeCustomPlayer(playerQuitEvent.getPlayer().getUniqueId()));
@@ -116,6 +134,8 @@ public final class Specialization extends JavaPlugin {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+        DataManager.getScheduler().shutdown();
+
     }
 
     public static Specialization getInstance() {
@@ -135,14 +155,14 @@ public final class Specialization extends JavaPlugin {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
         for (Player p : Bukkit.getServer().getOnlinePlayers()) {
             ProtocolLibrary.getProtocolManager().sendServerPacket(p, packet); // show everyone your name
-            ProtocolLibrary.getProtocolManager().sendServerPacket(player, createChangeNamePacket(p.getUniqueId(), Component.text("DUMBASS"))); // everyone tells you their name
+            ProtocolLibrary.getProtocolManager().sendServerPacket(player, createChangeNamePacket(p.getUniqueId(), customPlayer.getName())); // everyone tells you their name
         }
         try {
             ServerPlayer profile = ((CraftPlayer) player).getHandle();
             GameProfile gameProfile = profile.getGameProfile();
             Field ff = gameProfile.getClass().getDeclaredField("name");
             ff.setAccessible(true);
-            ff.set(gameProfile, "DUMBASS");
+            ff.set(gameProfile, ComponentUtils.serializeComponentAsString(customPlayer.getName()));
         } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
         }

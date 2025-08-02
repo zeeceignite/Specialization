@@ -7,6 +7,7 @@ import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUI;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.ListGUI;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Item.ItemUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -39,19 +40,24 @@ public class ClassGUI extends GUI {
             } else {
                 defaultClassGUI(customPlayer);
             }
-//            this.getItems().put(4, ItemUtils.makeGUIItemOfType(ItemStack.of(Material.EMERALD), customPlayer.getName()));
-            ItemStack itemStack = ItemStack.of(Material.BOOK);
-            ItemMeta itemMeta = itemStack.getItemMeta();
-            itemMeta.addItemFlags(ItemFlag.values());
-            itemMeta.displayName(Component.text("Enable/Disable Advanced Class GUI").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
-            itemStack.setItemMeta(itemMeta);
-            this.getItems().put(53, new GUIItem(itemStack, new Runnable() {
-                @Override
-                public void run() {
-                    customPlayer.setAdvancedClassesGUIEnabled(!customPlayer.isAdvancedClassesGUIEnabled());
-                    getItems().clear();
-                    ClassGUI.this.open(player);
-                }
+            ItemStack user = ItemStack.of(Material.EMERALD);
+            ItemMeta userItemMeta = user.getItemMeta();
+            userItemMeta.addItemFlags(ItemFlag.values());
+            userItemMeta.displayName(customPlayer.getName().decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+            user.setItemMeta(userItemMeta);
+            this.getItems().put(4, new GUIItem(user, () -> {}));
+
+
+
+            ItemStack settings = ItemStack.of(Material.BOOK);
+            ItemMeta settingsItemMeta = settings.getItemMeta();
+            settingsItemMeta.addItemFlags(ItemFlag.values());
+            settingsItemMeta.displayName(Component.text("Enable/Disable Advanced Class GUI").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+            settings.setItemMeta(settingsItemMeta);
+            this.getItems().put(53, new GUIItem(settings, () -> {
+                customPlayer.setAdvancedClassesGUIEnabled(!customPlayer.isAdvancedClassesGUIEnabled());
+                getItems().clear();
+                ClassGUI.this.open(player);
             }));
         }
         super.open(player);
