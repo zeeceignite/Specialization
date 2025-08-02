@@ -35,6 +35,7 @@ public class ClassGUI extends GUI {
     public void open(Player player) {
         if (MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId()) != null) {
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
+            this.getItems().clear();
             if (customPlayer.isAdvancedClassesGUIEnabled()) {
                 advancedClassGUI(customPlayer);
             } else {
@@ -45,20 +46,16 @@ public class ClassGUI extends GUI {
             userItemMeta.addItemFlags(ItemFlag.values());
             userItemMeta.displayName(customPlayer.getName().decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
             user.setItemMeta(userItemMeta);
-            this.getItems().put(4, new GUIItem(user, () -> {}));
+            this.getItems().put(4, new GUIItem(user, null));
 
 
 
             ItemStack settings = ItemStack.of(Material.BOOK);
             ItemMeta settingsItemMeta = settings.getItemMeta();
             settingsItemMeta.addItemFlags(ItemFlag.values());
-            settingsItemMeta.displayName(Component.text("Enable/Disable Advanced Class GUI").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+            settingsItemMeta.displayName(Component.text("Settings").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
             settings.setItemMeta(settingsItemMeta);
-            this.getItems().put(53, new GUIItem(settings, () -> {
-                customPlayer.setAdvancedClassesGUIEnabled(!customPlayer.isAdvancedClassesGUIEnabled());
-                getItems().clear();
-                ClassGUI.this.open(player);
-            }));
+            this.getItems().put(53, new GUIItem(settings, () -> new SettingsGUI().setParentGUI(this).open(player)));
         }
         super.open(player);
     }
