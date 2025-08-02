@@ -41,14 +41,13 @@ public class FurnaceListener implements Listener {
 
     private void smokerSmelt(Player player, ItemStack item, int amount) {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-        Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromSmokingConfig().get(item.getType(), new TypeToken<>() {
-        });
+        Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromSmokingConfig().get(item.getType(), new TypeToken<>() {});
         customPlayer.addSkillXp(pair.firstValue(), pair.secondValue() * amount);
     }
 
     private void blastSmelt(Player player, ItemStack item, int amount) {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-        Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromBlastingConfig().get(item.getType().name(), new TypeToken<>() {
+        Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromBlastingConfig().get(item.getType().name(), new TypeToken<>() {});
         customPlayer.addSkillXp(pair.firstValue(), pair.secondValue() * amount);
     }
 }

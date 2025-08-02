@@ -28,6 +28,8 @@ public class StonecutterListener implements Listener {
 
         int amount = 1;
 
+
+
         if (!event.getAction().toString().startsWith("PICKUP")) {
             if (event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
                 amount = event.getCurrentItem().getAmount() * event.getView().getItem(0).getAmount() == 0 ? 1 : event.getCurrentItem().getAmount() * event.getView().getItem(0).getAmount();
