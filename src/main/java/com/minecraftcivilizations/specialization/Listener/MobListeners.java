@@ -31,9 +31,9 @@ public class MobListeners implements Listener {
             Specialization.logger.warning("Mob spawned and didn't have movement speed:" + monster.getType());
             return;
         }
-        attribute.setBaseValue(attribute.getDefaultValue() + speedAddition);
+        attribute.setBaseValue(attribute.getValue() + speedAddition);
 
-        Bukkit.getMobGoals().addGoal(monster,1, new BreakBlockMobGoal(monster));
+        Bukkit.getMobGoals().addGoal(monster,2, new BreakBlockMobGoal(monster));
     }
 
     @EventHandler
