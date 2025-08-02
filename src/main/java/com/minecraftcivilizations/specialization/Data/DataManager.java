@@ -1,6 +1,7 @@
 package com.minecraftcivilizations.specialization.Data;
 
 import com.minecraftcivilizations.specialization.Specialization;
+import lombok.Getter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 
 import java.time.Duration;
@@ -11,20 +12,19 @@ import java.util.concurrent.TimeUnit;
 
 public class DataManager {
 
+    @Getter
     private static final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     public static void startSaver() {
         long initialDelay = getInitialDelayUntilNext10Min();
         long period = 10 * 60; // seconds
-        scheduler.scheduleAtFixedRate(saveDataTask(), initialDelay, period, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.SECONDS);
     }
 
-    private static Runnable saveDataTask() {
-        return () -> {
-            Specialization.logger.info("Running task at " + LocalDateTime.now());
-            MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().saveAll();
-        };
-    }
+    private static Runnable runnable = () -> {
+        Specialization.logger.info("Running task at " + LocalDateTime.now());
+        MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().saveAll();
+    };
 
     // this is done so analytics are exactly every 10 min, so its clean
     private static long getInitialDelayUntilNext10Min() {
