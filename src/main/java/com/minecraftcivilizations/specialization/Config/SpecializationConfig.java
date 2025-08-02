@@ -33,6 +33,8 @@ public class SpecializationConfig {
     @Getter
     private static ConfigFile xpGainFromSmeltingConfig;
     @Getter
+    private static ConfigFile xpGainFromCraftingConfig;
+    @Getter
     private static ConfigFile xpGainFromBlastingConfig;
     @Getter
     private static ConfigFile xpGainFromSmokingConfig;
@@ -70,6 +72,14 @@ public class SpecializationConfig {
                         }
                     });
                     fields.add(new Pair<>(skillType + "_" + skillLevel, namespacedKeys));
+                }
+            }
+        });
+
+        xpGainFromCraftingConfig = new ConfigFile(Specialization.getInstance(), "xpGainFromCrafting", null, fields -> {
+            for (Material inputMaterial : Material.values()) {
+                if (inputMaterial.isItem() && inputMaterial != Material.AIR) {
+                    fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.FARMER, 1D)));
                 }
             }
         });

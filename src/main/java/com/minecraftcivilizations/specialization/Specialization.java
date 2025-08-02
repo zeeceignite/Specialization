@@ -50,6 +50,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlaceBlockListener(), this);
 
         getServer().getPluginManager().registerEvents(new StonecutterListener(), this);
+        getServer().getPluginManager().registerEvents(new CraftingListener(), this);
         getServer().getPluginManager().registerEvents(new FurnaceListener(), this);
         getServer().getPluginManager().registerEvents(new PreJoinEventListener(), this);
         getServer().getPluginManager().registerEvents(new TownManager(), this);
