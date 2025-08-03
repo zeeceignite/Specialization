@@ -41,6 +41,19 @@ public class ReinforcementManager {
         }
     }
 
+    public static boolean isReinforced(Block block) {
+        Chunk chunk = block.getChunk();
+        Set<Vector> reinforcedBlocks = getReinforcedBlocks(chunk);
+        if (reinforcedBlocks != null) {
+            for (Vector vector : reinforcedBlocks) {
+                if (vector.getX() == block.getX() && vector.getY() == block.getY() && vector.getZ() == block.getZ()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private static Set<Vector> getReinforcedBlocks(Chunk chunk) {
         if (chunk.getPersistentDataContainer().has(namespacedKey)) {
             String s = chunk.getPersistentDataContainer().get(namespacedKey, PersistentDataType.STRING);
