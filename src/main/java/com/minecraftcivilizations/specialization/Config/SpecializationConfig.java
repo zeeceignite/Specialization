@@ -10,6 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.*;
 
 import java.util.HashSet;
@@ -48,6 +49,8 @@ public class SpecializationConfig {
     private static ConfigFile xpGainFromEnchantingConfig;
     @Getter
     private static ConfigFile xpGainFromCartographyConfig;
+    @Getter
+    private static ConfigFile librarianConfig;
     @Getter
     private static ConfigFile canUseBlockConfig;
     @Getter
@@ -184,6 +187,7 @@ public class SpecializationConfig {
             }
         });
 
+
         defaultUnlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "defaultUnlockedRecipesConfig", null, fields -> {
             Bukkit.recipeIterator().forEachRemaining((recipe) -> {
                 if (recipe instanceof Keyed keyed) {
@@ -213,6 +217,14 @@ public class SpecializationConfig {
                     fields.add(new Pair<>(skillType + "_" + skillLevel + "_REQUIREMENT", 0D));
                 }
             }
+        });
+
+        librarianConfig = new ConfigFile(Specialization.getInstance(), "librarianConfig", null, fields -> {
+            fields.add(new Pair<>("ENCHANTABLE_TOOL_REGEX", "^(?i)(?:(wooden|stone|iron|diamond|golden|netherite)_(?:(pickaxe|axe|shovel|sword|hoe))|(leather|chainmail|iron|diamond|golden|netherite)_(?:(helmet|chestplate|leggings|boots))|fishing_rod|shears|flint_and_steel|bow|crossbow|trident|mace|elytra|book|shield)"));
+            fields.add(new Pair<>("BANNED_BLESS_ENCHANTS", List.of(Enchantment.MENDING)));
+            fields.add(new Pair<>("BLESS_ITEM_LIBRARIAN_LEVEL", 2));
+            fields.add(new Pair<>("BLESS_ITEM_XP_LEVEL_REQUIREMENT", 3));
+
         });
 
         chatConfig = new ConfigFile(Specialization.getInstance(), "chatConfig", null, fields -> {
