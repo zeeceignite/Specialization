@@ -11,6 +11,7 @@ import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.*;
 
 import java.util.HashSet;
@@ -178,8 +179,8 @@ public class SpecializationConfig {
             }
         });
 
-        canUseBlockConfig = new ConfigFile(Specialization.getInstance(), "canUseBlock", null, fields -> {
-            fields.add(new Pair<>("default", List.of(Material.CRAFTING_TABLE, Material.FURNACE)));
+        canUseBlockConfig = new ConfigFile(Specialization.getInstance(), "canUseBlock", "use InventoryType's not blocks, full list here: https://jd.papermc.io/paper/1.21.8/org/bukkit/event/inventory/InventoryType.html", fields -> {
+            fields.add(new Pair<>("default", List.of(InventoryType.CRAFTING, InventoryType.FURNACE)));
             for (SkillType skillType : SkillType.values()) {
                 for (SkillLevel skillLevel : SkillLevel.values()) {
                     fields.add(new Pair<>(skillType + "_" + skillLevel, List.of()));

@@ -10,10 +10,12 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Material;
+import org.bukkit.Bukkit;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -23,16 +25,15 @@ import java.util.*;
 public class PlayerInteractListener implements Listener {
 
     @EventHandler
-    public void onRightClickBlock(PlayerInteractEvent e) {
-        if(e.getAction().isLeftClick() || e.getClickedBlock() == null) return;
-        List<Material> defaultAllow = SpecializationConfig.getCanUseBlockConfig().get("default", new TypeToken<>(){});
-        Material clickedType = e.getClickedBlock().getType();
-        if(defaultAllow.contains(clickedType)) return;
+    public void onRightClickBlock(InventoryOpenEvent e) {
+        InventoryType type = e.getInventory().getType();
+        List<InventoryType> defaultAllow = SpecializationConfig.getCanUseBlockConfig().get("default", new TypeToken<>(){});
+        if(defaultAllow.contains(type)) return;
 
         CustomPlayer player = CoreUtil.getPlayer(e.getPlayer());
         for (Skill skill : player.getSkills()) {
-            List<Material> blocks = SpecializationConfig.getCanUseBlockConfig().get(skill.getSkillType()+"_"+player.getSkillLevelEnum(skill.getSkillType()), new TypeToken<>(){});
-            if(blocks.contains(clickedType)) return;
+            List<InventoryType> types = SpecializationConfig.getCanUseBlockConfig().get(skill.getSkillType()+"_"+player.getSkillLevelEnum(skill.getSkillType()), new TypeToken<>(){});
+            if(types.contains(type)) return;
         }
         e.setCancelled(true);
     }
@@ -42,16 +43,17 @@ public class PlayerInteractListener implements Listener {
         if(!e.getAction().isRightClick() || !e.getPlayer().isSneaking() || e.getItem() == null) return;
         CustomPlayer player = CoreUtil.getPlayer(e.getPlayer());
 
+        Bukkit.getLogger().info("1");
 
         int xpBase = SpecializationConfig.getLibrarianConfig().get("BLESS_ITEM_XP_LEVEL_REQUIREMENT", Integer.class);
         int skillMin = SpecializationConfig.getLibrarianConfig().get("BLESS_ITEM_LIBRARIAN_LEVEL", Integer.class);
         int xpLevelAmount = xpBase * (player.getSkillLevel(SkillType.LIBRARIAN) - skillMin + 1);
         if(xpLevelAmount > e.getPlayer().getExpToLevel()) return;
-
+        Bukkit.getLogger().info("2");
 
         String regex = SpecializationConfig.getLibrarianConfig().get("ENCHANTABLE_TOOL_REGEX", String.class);
         if(regex.matches(e.getItem().getType().name()) && player.getSkillLevel(SkillType.LIBRARIAN) >= skillMin) {
-
+            Bukkit.getLogger().info("3");
             List<Enchantment> bannedBlessEnchants = SpecializationConfig.getLibrarianConfig().get("BANNED_BLESS_ENCHANTS", new TypeToken<>(){});
 
             ArrayList<Enchantment> validEnchants = new ArrayList<>(RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT)
@@ -61,6 +63,7 @@ public class PlayerInteractListener implements Listener {
                     }).toList());
 
             if(validEnchants.isEmpty()) return;
+            Bukkit.getLogger().info("4");
             Collections.shuffle(validEnchants);
             ItemMeta meta = e.getItem().getItemMeta();
             Enchantment enchant = validEnchants.getFirst();
