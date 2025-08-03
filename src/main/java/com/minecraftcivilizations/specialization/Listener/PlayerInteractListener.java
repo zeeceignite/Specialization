@@ -19,14 +19,19 @@ public class PlayerInteractListener implements Listener {
         if(e.getAction().isLeftClick() || e.getClickedBlock() == null) return;
         List<Material> defaultAllow = SpecializationConfig.getCanUseBlockConfig().get("default", new TypeToken<>(){});
         Material clickedType = e.getClickedBlock().getType();
-        if(defaultAllow.contains(clickedType)) return;
+        if(defaultAllow.contains(clickedType)) {
+            e.setCancelled(true);
+            return;
+        }
 
         CustomPlayer player = CoreUtil.getPlayer(e.getPlayer());
         for (Skill skill : player.getSkills()) {
             List<Material> blocks = SpecializationConfig.getCanUseBlockConfig().get(skill.getSkillType()+"_"+player.getSkillLevelEnum(skill.getSkillType()), new TypeToken<>(){});
-            if(blocks.contains(clickedType)) return;
+            if(blocks.contains(clickedType)) {
+                e.setCancelled(true);
+                return;
+            }
         }
-        e.setCancelled(true);
     }
 
 }

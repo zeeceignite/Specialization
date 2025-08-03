@@ -134,7 +134,7 @@ public final class Specialization extends JavaPlugin {
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             Specialization.logger.info("Loaded player: " + player.getName());
-            MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().addCustomPlayer(new CustomPlayer(player.getUniqueId()));
+            MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().load(player.getUniqueId());
         }
 
         DataManager.startSaver();
