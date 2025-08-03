@@ -56,6 +56,8 @@ public class SpecializationConfig {
     private static ConfigFile combatConfig;
     @Getter
     private static ConfigFile chatConfig;
+    @Getter
+    private static ConfigFile mobConfig;
 
 
     public static void initialize() {
@@ -102,11 +104,23 @@ public class SpecializationConfig {
             }
         });
 
-        combatConfig = new ConfigFile(Specialization.getInstance(), "playerConfig", null, fields -> {
+        combatConfig = new ConfigFile(Specialization.getInstance(), "combatConfig", null, fields -> {
             fields.add(new Pair<>("CROSSBOW_BASE_VELOCITY", 1.6));
             fields.add(new Pair<>("CROSSBOW_BASE_PIERCING_VELOCITY", 1.3));
             fields.add(new Pair<>("CROSSBOW_BASE_MULTISHOT_VELOCITY", 2.5));
             fields.add(new Pair<>("CROSSBOW_BASE_QUICKCHARGE_VELOCITY", 1.3));
+        });
+
+        mobConfig = new ConfigFile(Specialization.getInstance(), "mobConfig", null, fields -> {
+            fields.add(new Pair<>("DAYTIME_MOB_DAMAGE_MULTIPLIER", 4.0));
+            fields.add(new Pair<>("NIGHTTIME_MOB_DAMAGE_MULTIPLIER", 10.0));
+            fields.add(new Pair<>("NIGHT_GUARDSMAN_MOB_DAMAGE_PERCENT_REDUCTION", 30));
+            fields.add(new Pair<>("DAYTIME_SPEED_BUFF", .03));
+            fields.add(new Pair<>("NIGHTTIME_SPEED_BUFF", .2));
+
+            fields.add(new Pair<>("BLOCK_BREAK_CHANCE_PERCENTAGE", 30));
+            fields.add(new Pair<>("BLOCK_BREAK_IGNORE_LIST_REGEX", List.of(".*BRICK.*", "OBSIDIAN")));
+            fields.add(new Pair<>("VISUAL_BREAKING_INCREASE_PER_TICK_PERCENTAGE", 1f));
         });
 
         xpGainFromRepairingConfig = new ConfigFile(Specialization.getInstance(), "xpGainFromRepairing", null, fields -> {
@@ -174,7 +188,6 @@ public class SpecializationConfig {
                 }
             }
         });
-
         canUseBlockConfig = new ConfigFile(Specialization.getInstance(), "canUseBlock", null, fields -> {
             fields.add(new Pair<>("default", List.of(Material.CRAFTING_TABLE, Material.FURNACE)));
             for (SkillType skillType : SkillType.values()) {
@@ -184,13 +197,12 @@ public class SpecializationConfig {
             }
         });
 
-        defaultUnlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "defaultUnlockedRecipesConfig", null, fields -> {
+        defaultUnlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "defaultUnlockedRecipesConfig", null, fields ->
             Bukkit.recipeIterator().forEachRemaining((recipe) -> {
                 if (recipe instanceof Keyed keyed) {
                     fields.add(new Pair<>("DEFAULT_UNLOCKED_RECIPES", keyed.getKey()));
                 }
-            });
-        });
+        }));
 
         blockHardnessConfig = new ConfigFile(Specialization.getInstance(), "blockHardnessConfig", null, fields -> {
             for (Material material : Material.values()) {
@@ -198,6 +210,8 @@ public class SpecializationConfig {
                     fields.add(new Pair<>(material, 1D));
                 }
             }
+            fields.add(new Pair<>("LIGHT_REINFORCEMENT_MULTIPLIER", 3D));
+            fields.add(new Pair<>("HEAVY_REINFORCEMENT_MULTIPLIER", 8D));
         });
 
         skillsConfig = new ConfigFile(Specialization.getInstance(), "skillsConfig", null, fields -> {

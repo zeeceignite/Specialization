@@ -9,7 +9,10 @@ import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
-import com.minecraftcivilizations.specialization.Command.*;
+import com.minecraftcivilizations.specialization.Command.ClassCommand;
+import com.minecraftcivilizations.specialization.Command.SetLoreCommand;
+import com.minecraftcivilizations.specialization.Command.SetXpCommand;
+import com.minecraftcivilizations.specialization.Command.TownsCommand;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
@@ -18,6 +21,7 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Player.LocalNameGenerator;
 import com.minecraftcivilizations.specialization.Player.PreJoinEventListener;
 import com.minecraftcivilizations.specialization.Recipe.Recipes;
+import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.mojang.authlib.GameProfile;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Component.ComponentUtils;
@@ -57,9 +61,10 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerMineListener(), this);
         getServer().getPluginManager().registerEvents(new BreakBlockListener(), this);
         getServer().getPluginManager().registerEvents(new PlaceBlockListener(), this);
+        getServer().getPluginManager().registerEvents(new RightClickListener(), this);
+        getServer().getPluginManager().registerEvents(new BurnListener(), this);
+        getServer().getPluginManager().registerEvents(new ExplodeListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
-
-
 
         getServer().getPluginManager().registerEvents(new StonecutterListener(), this);
         getServer().getPluginManager().registerEvents(new CraftingListener(), this);
@@ -69,6 +74,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new MoveListener(), this);
         getServer().getPluginManager().registerEvents(new CrossBowListener(), this);
         getServer().getPluginManager().registerEvents(new LocalChat(), this);
+        getServer().getPluginManager().registerEvents(new MobListeners(), this);
 
         new BukkitRunnable() {
             @Override
@@ -127,18 +133,20 @@ public final class Specialization extends JavaPlugin {
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerQuit(playerQuitEvent -> MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().removeCustomPlayer(playerQuitEvent.getPlayer().getUniqueId()));
 
         for (Player player : Bukkit.getOnlinePlayers()) {
+            Specialization.logger.info("Loaded player: " + player.getName());
             MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().addCustomPlayer(new CustomPlayer(player.getUniqueId()));
         }
 
         DataManager.startSaver();
         SpecializationConfig.initialize();
+        ReinforcementManager.startReinforcement();
     }
 
     @Override
     public void onDisable() {
         // Plugin shutdown logic
         DataManager.getScheduler().shutdown();
-
+        MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().saveAll();
     }
 
     public static Specialization getInstance() {

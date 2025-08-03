@@ -164,7 +164,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         return mapValue(getSkill(skillType).getXp(), 0, getTotalXp(), 0, 100);
     }
 
-    private Skill getSkill(SkillType skillType) {
+    public Skill getSkill(SkillType skillType) {
         for (Skill skill : this.skills) {
             if (skill.getSkillType() == skillType) {
                 return skill;
