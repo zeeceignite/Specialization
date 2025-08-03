@@ -199,6 +199,8 @@ public class SpecializationConfig {
                     fields.add(new Pair<>(material, 1D));
                 }
             }
+            fields.add(new Pair<>("LIGHT_REINFORCEMENT_MULTIPLIER", 3D));
+            fields.add(new Pair<>("HEAVY_REINFORCEMENT_MULTIPLIER", 8D));
         });
 
         skillsConfig = new ConfigFile(Specialization.getInstance(), "skillsConfig", null, fields -> {
