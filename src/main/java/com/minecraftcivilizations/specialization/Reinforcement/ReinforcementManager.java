@@ -3,12 +3,14 @@ package com.minecraftcivilizations.specialization.Reinforcement;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Specialization;
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import java.util.HashSet;
@@ -28,10 +30,9 @@ public class ReinforcementManager {
             Set<Vector> reinforcedBlocks = getReinforcedBlocks(chunk);
             if (reinforcedBlocks != null) {
                 for (Vector vector : reinforcedBlocks) {
-                    Specialization.logger.info("Vector " + vector.getX() + " " + vector.getY() + " " + vector.getZ());
                     if (lastTimeSpawnedParticle.containsKey(vector) && System.currentTimeMillis() - lastTimeSpawnedParticle.get(vector) > cooldown) {
                         Block blockAt = player.getWorld().getBlockAt(vector.getBlockX(), vector.getBlockY(), vector.getBlockZ());
-                        player.getWorld().spawnParticle(Particle.CRIT, blockAt.getLocation().toBlockLocation(), 200, .5, .5, .5);
+                        player.spawnParticle(Particle.CRIT, blockAt.getLocation().toBlockLocation(), 200, .5, .5, .5);
                         lastTimeSpawnedParticle.put(vector, System.currentTimeMillis());
                     } else if (!lastTimeSpawnedParticle.containsKey(vector)) {
                         lastTimeSpawnedParticle.put(vector, System.currentTimeMillis());
@@ -78,6 +79,20 @@ public class ReinforcementManager {
         }
 
         return nearbyChunks;
+    }
+
+
+    public static void startReinforcement() {
+        new BukkitRunnable() {
+
+            @Override
+            public void run() {
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    ReinforcementManager.checkForReinforcements(player);
+                }
+            }
+        }.runTaskTimerAsynchronously(Specialization.getInstance(), 0, 20);
+
     }
 
 }

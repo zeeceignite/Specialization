@@ -23,8 +23,6 @@ public class MoveListener implements Listener {
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
 
-        ReinforcementManager.checkForReinforcements(event.getPlayer());
-
         Location from = event.getFrom();
 
         if (!event.hasChangedBlock()) return;

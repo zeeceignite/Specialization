@@ -5,12 +5,18 @@ import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.destroystokyo.paper.entity.ai.GoalType;
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.pathfinder.Path;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftMob;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.util.RayTraceResult;
@@ -24,8 +30,6 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
-
-    @Getter
     public static final GoalKey<@NotNull Monster> KEY = GoalKey.of(Monster.class, new NamespacedKey(Specialization.getInstance(),"monster_break_block"));
 
     private final Monster monster;
@@ -48,11 +52,18 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
         double percentage = SpecializationConfig.getMobConfig().get("BLOCK_BREAK_CHANCE_PERCENTAGE", Double.class);
         if(random.nextDouble() > percentage / 100d) return false;
 
+        Path path = ((CraftMob) monster).getHandle().getNavigation().getPath();
+        if(path == null) return false;
+        if(path.canReach()) return false;
+
+        double addToY = ((CraftMob) monster).getEyeLocation().add(0, monster.getHeight() / 2, 0).subtract(monster.getLocation()).getY();
+
         Vector directionToPlayer = monster.getTarget().getLocation().subtract(monster.getLocation()).toVector().normalize();
-        RayTraceResult result = monster.getWorld().rayTraceBlocks(monster.getLocation(), directionToPlayer, 5);
+        RayTraceResult result = monster.getWorld().rayTrace(monster.getLocation().add(0, -addToY, 0), directionToPlayer, 5, FluidCollisionMode.NEVER, true, .25, null);
         if(result == null || result.getHitBlock() == null) return false;
 
         block = result.getHitBlock();
+        if (ReinforcementManager.isReinforced(block)) return false;
         List<String> deniedBlocks = SpecializationConfig.getMobConfig().get("BLOCK_BREAK_IGNORE_LIST_REGEX", new TypeToken<>(){});
         return block.getType() != Material.AIR && deniedBlocks.stream().noneMatch(it -> it.matches(block.getType().name()));
     }

@@ -8,6 +8,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.minecraftcivilizations.specialization.Command.ClassCommand;
 import com.minecraftcivilizations.specialization.Command.SetLoreCommand;
 import com.minecraftcivilizations.specialization.Command.SetXpCommand;
@@ -20,6 +21,7 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Player.LocalNameGenerator;
 import com.minecraftcivilizations.specialization.Player.PreJoinEventListener;
 import com.minecraftcivilizations.specialization.Recipe.Recipes;
+import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.mojang.authlib.GameProfile;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Component.ComponentUtils;
@@ -132,6 +134,7 @@ public final class Specialization extends JavaPlugin {
 
         DataManager.startSaver();
         SpecializationConfig.initialize();
+        ReinforcementManager.startReinforcement();
     }
 
     @Override
