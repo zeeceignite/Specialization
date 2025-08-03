@@ -1,6 +1,5 @@
 package com.minecraftcivilizations.specialization.Player;
 
-import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Skill.Skill;
@@ -10,7 +9,6 @@ import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
 import lombok.Setter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -162,7 +160,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         return mapValue(getSkill(skillType).getXp(), 0, getTotalXp(), 0, 100);
     }
 
-    private Skill getSkill(SkillType skillType) {
+    public Skill getSkill(SkillType skillType) {
         for (Skill skill : this.skills) {
             if (skill.getSkillType() == skillType) {
                 return skill;

@@ -8,8 +8,10 @@ import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
-import com.destroystokyo.paper.profile.CraftPlayerProfile;
-import com.minecraftcivilizations.specialization.Command.*;
+import com.minecraftcivilizations.specialization.Command.ClassCommand;
+import com.minecraftcivilizations.specialization.Command.SetLoreCommand;
+import com.minecraftcivilizations.specialization.Command.SetXpCommand;
+import com.minecraftcivilizations.specialization.Command.TownsCommand;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
@@ -66,6 +68,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new MoveListener(), this);
         getServer().getPluginManager().registerEvents(new CrossBowListener(), this);
         getServer().getPluginManager().registerEvents(new LocalChat(), this);
+        getServer().getPluginManager().registerEvents(new MobListeners(), this);
 
         new BukkitRunnable() {
             @Override
