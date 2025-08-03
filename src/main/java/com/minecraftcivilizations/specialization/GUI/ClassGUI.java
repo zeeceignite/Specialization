@@ -6,13 +6,10 @@ import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUI;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem;
-import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.ListGUI;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Item.ItemUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
@@ -20,7 +17,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 import static com.minecraftcivilizations.specialization.Skill.SkillType.getDisplayName;
@@ -60,7 +56,7 @@ public class ClassGUI extends GUI {
         super.open(player);
     }
 
-    private GUIItem makeGlassDistributionPane(String name, Material material, double percent) {
+    private GUIItem makeGlassDistributionPaneAdvanced(String name, Material material, double percent) {
         ItemStack itemStack = ItemStack.of(material);
         ItemMeta itemMeta = itemStack.getItemMeta();
         itemMeta.addItemFlags(ItemFlag.values());
@@ -68,6 +64,22 @@ public class ClassGUI extends GUI {
         itemMeta.lore(new ArrayList<>() {
             {
                 add(Component.text("Holds " + Math.round(percent * 100) / 100 + "% of your total xp").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+                add(Component.empty());
+                add(Component.text("Awesome!").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
+            }
+        });
+        itemStack.setItemMeta(itemMeta);
+        return new GUIItem(itemStack, null);
+    }
+
+    private GUIItem makeGlassDistributionPaneSimple(String name, Material material, double percent) {
+        ItemStack itemStack = ItemStack.of(material);
+        ItemMeta itemMeta = itemStack.getItemMeta();
+        itemMeta.addItemFlags(ItemFlag.values());
+        itemMeta.displayName(Component.text(name).decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+        itemMeta.lore(new ArrayList<>() {
+            {
+                add(Component.text("You are " + Math.round(percent * 100) / 100 + "% progressed through this tier").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
                 add(Component.empty());
                 add(Component.text("Awesome!").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
             }
@@ -108,15 +120,15 @@ public class ClassGUI extends GUI {
 
 
                 if (diff >= 1) {
-                    this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), Material.GREEN_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
+                    this.getItems().put(temp-=9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.GREEN_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                 } else if (diff >= 0.75) {
-                    this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), Material.LIME_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
+                    this.getItems().put(temp-=9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.LIME_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                 } else if (diff >= 0.5) {
-                    this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), Material.YELLOW_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
+                    this.getItems().put(temp-=9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.YELLOW_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                 } else if (diff >= 0.25) {
-                    this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), Material.ORANGE_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
+                    this.getItems().put(temp-=9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.ORANGE_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                 } else {
-                    this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), Material.RED_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
+                    this.getItems().put(temp-=9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.RED_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                 }
 
             }
@@ -183,7 +195,7 @@ public class ClassGUI extends GUI {
             for (int score = 0; score < 3; score++) {
                 if((distribution * .03 - score) < 0 ) break;
                 int type = Math.min((int) (distribution * .09 - score * 3), 2);
-                this.getItems().put(temp-=9, makeGlassDistributionPane(getDisplayName(skill.getSkillType()), getPaneMaterial(currentSkillLevel, type), distribution));
+                this.getItems().put(temp-=9, makeGlassDistributionPaneSimple(getDisplayName(skill.getSkillType()), getPaneMaterial(currentSkillLevel, type), distribution));
             }
 
             double currentXp = Math.round(skill.getXp() * 100) / 100D;

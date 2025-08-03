@@ -111,6 +111,10 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         return level;
     }
 
+    public SkillLevel getSkillLevelEnum(SkillType skillType) {
+        return SkillLevel.getSkillLevelFromInt(getSkillLevel(skillType));
+    }
+
     public double getTotalXp() {
         double totalXp = 0;
         for (Skill skill : this.skills) {

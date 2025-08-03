@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@Getter
 public class SpecializationConfig {
     @Getter
     private static ConfigFile playerConfig;
@@ -47,6 +48,8 @@ public class SpecializationConfig {
     private static ConfigFile xpGainFromEnchantingConfig;
     @Getter
     private static ConfigFile xpGainFromCartographyConfig;
+    @Getter
+    private static ConfigFile canUseBlockConfig;
     @Getter
     private static ConfigFile xpGainFromRepairingConfig;
     @Getter
@@ -182,6 +185,14 @@ public class SpecializationConfig {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isBlock()) {
                     fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.FARMER, "1")));
+                }
+            }
+        });
+        canUseBlockConfig = new ConfigFile(Specialization.getInstance(), "canUseBlock", null, fields -> {
+            fields.add(new Pair<>("default", List.of(Material.CRAFTING_TABLE, Material.FURNACE)));
+            for (SkillType skillType : SkillType.values()) {
+                for (SkillLevel skillLevel : SkillLevel.values()) {
+                    fields.add(new Pair<>(skillType + "_" + skillLevel, List.of()));
                 }
             }
         });
