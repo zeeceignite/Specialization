@@ -1,6 +1,5 @@
 package com.minecraftcivilizations.specialization.Player;
 
-import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Skill.Skill;
@@ -10,7 +9,6 @@ import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
 import lombok.Setter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -111,6 +109,10 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         // So, so sorry if you have to read this, it was fixed about 10 times and I forgot to call it, so now it looks like this :sad:
         for (level = 0; level < SkillLevel.values().length && !isMissingXpForLevel(skillType, level+1) && !isMissingPercentForLevel(skillType, level+1); level++);
         return level;
+    }
+
+    public SkillLevel getSkillLevelEnum(SkillType skillType) {
+        return SkillLevel.getSkillLevelFromInt(getSkillLevel(skillType));
     }
 
     public double getTotalXp() {

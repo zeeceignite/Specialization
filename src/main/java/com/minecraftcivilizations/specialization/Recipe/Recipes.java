@@ -1,6 +1,5 @@
 package com.minecraftcivilizations.specialization.Recipe;
 
-import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
@@ -20,7 +19,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.List;
 

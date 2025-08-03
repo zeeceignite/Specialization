@@ -57,6 +57,9 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerMineListener(), this);
         getServer().getPluginManager().registerEvents(new BreakBlockListener(), this);
         getServer().getPluginManager().registerEvents(new PlaceBlockListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
+
+
 
         getServer().getPluginManager().registerEvents(new StonecutterListener(), this);
         getServer().getPluginManager().registerEvents(new CraftingListener(), this);
