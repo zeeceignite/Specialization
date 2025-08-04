@@ -82,6 +82,7 @@ public class PlayerInteractListener implements Listener {
         }
     }
 
+    @EventHandler
     public void onAnvilFinish(InventoryClickEvent e) {
         if(e.getView() instanceof AnvilView view){
             String renameText = view.getRenameText();
