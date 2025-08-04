@@ -7,6 +7,7 @@ import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.ItemLore;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
@@ -86,20 +87,27 @@ public class PlayerInteractListener implements Listener {
     public void onAnvilFinish(InventoryClickEvent e) {
         if(e.getView() instanceof AnvilView view){
             String renameText = view.getRenameText();
-            if(renameText != null && renameText.matches("^\\[lore [0-9]]")){
+            if(renameText != null && renameText.matches("^\\[lore [0-9]].*")){
                 CustomPlayer player = CoreUtil.getPlayer(e.getWhoClicked());
                 int level = SpecializationConfig.getLibrarianConfig().get("ITEM_LORE_LIBRARIAN_LEVEL", Integer.class);
                 if(player.getSkillLevel(SkillType.LIBRARIAN) < level) return;
 
-                int number = renameText.charAt(7);
+                int number = Integer.parseInt(String.valueOf(renameText.charAt(6)));
                 ItemStack result = view.getTopInventory().getResult();
-                result.unsetData(DataComponentTypes.CUSTOM_NAME);
-                List<Component> lines = result.getData(DataComponentTypes.LORE).lines();
-                if(lines.size() < number){
-                    for(int i=0; i<number-lines.size(); i++) lines.add(Component.empty());
+                if(result == null) return;
+                ItemStack oldItem = view.getTopInventory().getFirstItem();
+                if (oldItem.hasData(DataComponentTypes.CUSTOM_NAME))
+                    result.setData(DataComponentTypes.CUSTOM_NAME, view.getTopInventory().getFirstItem().getData(DataComponentTypes.CUSTOM_NAME));
+                else {
+                    result.unsetData(DataComponentTypes.CUSTOM_NAME);
                 }
-                lines.add(number + 1, Component.text(renameText.substring(8)));
+                ArrayList<Component> lines = new ArrayList<>(result.getData(DataComponentTypes.LORE).lines());
+                if(lines.size() < number) {
+                    for (int i = 0; i < number - lines.size() + 1; i++) lines.add(Component.empty());
+                }
+                lines.set(number - 1, Component.text(renameText.substring(8).trim()));
 
+                result.setData(DataComponentTypes.LORE, ItemLore.lore(lines));
             }
         }
     }
