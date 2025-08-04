@@ -46,7 +46,7 @@ public class PlayerInteractListener implements Listener {
         int xpBase = SpecializationConfig.getLibrarianConfig().get("BLESS_ITEM_XP_LEVEL_REQUIREMENT", Integer.class);
         int skillMin = SpecializationConfig.getLibrarianConfig().get("BLESS_ITEM_LIBRARIAN_LEVEL", Integer.class);
         int xpLevelAmount = xpBase * (player.getSkillLevel(SkillType.LIBRARIAN) - skillMin + 1);
-        if(xpLevelAmount > e.getPlayer().getExpToLevel()) return;
+        if(xpLevelAmount > e.getPlayer().getLevel()) return;
 
         String regex = SpecializationConfig.getLibrarianConfig().get("ENCHANTABLE_TOOL_REGEX", String.class);
         if(e.getItem().getType().name().matches(regex) && player.getSkillLevel(SkillType.LIBRARIAN) >= skillMin) {
