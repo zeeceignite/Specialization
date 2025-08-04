@@ -82,10 +82,14 @@ public class PlayerInteractListener implements Listener {
         }
     }
 
-    public void anvilRenameEvent(InventoryClickEvent e) {
+    public void onAnvilFinish(InventoryClickEvent e) {
         if(e.getView() instanceof AnvilView view){
             String renameText = view.getRenameText();
             if(renameText != null && renameText.matches("^\\[lore [0-9]]")){
+                CustomPlayer player = CoreUtil.getPlayer(e.getWhoClicked());
+                int level = SpecializationConfig.getLibrarianConfig().get("ITEM_LORE_LIBRARIAN_LEVEL", Integer.class);
+                if(player.getSkillLevel(SkillType.LIBRARIAN) < level) return;
+
                 int number = renameText.charAt(7);
                 ItemStack result = view.getTopInventory().getResult();
                 result.unsetData(DataComponentTypes.CUSTOM_NAME);
@@ -94,6 +98,7 @@ public class PlayerInteractListener implements Listener {
                     for(int i=0; i<number-lines.size(); i++) lines.add(Component.empty());
                 }
                 lines.add(number + 1, Component.text(renameText.substring(8)));
+
             }
         }
     }

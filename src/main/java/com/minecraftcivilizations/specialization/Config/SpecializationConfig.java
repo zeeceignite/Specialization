@@ -225,6 +225,7 @@ public class SpecializationConfig {
             fields.add(new Pair<>("BANNED_BLESS_ENCHANTS", List.of(Enchantment.MENDING)));
             fields.add(new Pair<>("BLESS_ITEM_LIBRARIAN_LEVEL", 2));
             fields.add(new Pair<>("BLESS_ITEM_XP_LEVEL_REQUIREMENT", 3));
+            fields.add(new Pair<>("ITEM_LORE_LIBRARIAN_LEVEL", 3));
 
         });
 
