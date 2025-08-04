@@ -221,10 +221,12 @@ public class ClassGUI extends GUI {
                             .decoration(TextDecoration.ITALIC, false));
                     add(Component.text("Current xp: " + (int) Math.round(skill.getXp())).decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
                     add(Component.empty());
-                    add(Component.text("You are missing: ").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
-                    if (xpToNextLevel > 0) {
-                        add(Component.text(xpToNextLevel + "xp to level up").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
-                    }
+                    if(currentSkillLevel < 5) {
+                        add(Component.text("You are missing: ").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
+                        if (xpToNextLevel > 0) {
+                            add(Component.text(xpToNextLevel + "xp to level up").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
+                        }
+                    }else add(Component.text("You are maximum level in this class."));
                 }
             });
             itemStack.setItemMeta(itemMeta);

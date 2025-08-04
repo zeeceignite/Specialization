@@ -6,6 +6,7 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
@@ -14,11 +15,13 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.view.AnvilView;
 
 import java.util.*;
 
@@ -26,6 +29,7 @@ public class PlayerInteractListener implements Listener {
 
     @EventHandler
     public void onRightClickBlock(InventoryOpenEvent e) {
+        if(e.getPlayer().isOp()) return;
         InventoryType type = e.getInventory().getType();
         List<InventoryType> defaultAllow = SpecializationConfig.getCanUseBlockConfig().get("default", new TypeToken<>(){});
         if(defaultAllow.contains(type)) return;
@@ -77,6 +81,19 @@ public class PlayerInteractListener implements Listener {
             items.get(index).setAmount(items.get(index).getAmount() - 1);
         }
     }
+
+    public void anvilRenameEvent(InventoryClickEvent e) {
+        if(e.getView() instanceof AnvilView view){
+            String renameText = view.getRenameText();
+            if(renameText != null && renameText.matches("^\\[lore [0-9]]")){
+                int number = renameText.charAt(7);
+                ItemStack result = view.getTopInventory().getResult();
+                result.unsetData(DataComponentTypes.CUSTOM_NAME);
+                result.getData(DataComponentTypes.LORE).lines().add(number + 1, Component.text(renameText.substring(8)));
+            }
+        }
+    }
+
 
 
 }
