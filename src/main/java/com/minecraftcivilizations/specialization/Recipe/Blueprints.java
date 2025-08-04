@@ -32,12 +32,12 @@ public class Blueprints {
             String blueprintName = PlainTextComponentSerializer.plainText().serialize(blueprintBase.displayName());
             NamespacedKey blueprintKey = new NamespacedKey(Specialization.getInstance(), blueprintName + " Blueprint");
 
-            CustomItemAbilityRegistry.register(blueprintKey, makeBlueprintAbility(blueprintName));
+            CustomItemAbilityRegistry.register(blueprintKey, makeBlueprintAbility(blueprintName, blueprintKey));
             customItem.addAbility(blueprintKey);
 
             CustomItemRegistry.register(blueprintKey, customItem);
 
-            Recipe recipe = makeBlueprintRecipe(blueprintBase.getType() ,customItem.getItem(), blueprintKey);
+            Recipe recipe = makeBlueprintRecipe(blueprintBase.getType(), customItem.getItem(), blueprintKey);
             Bukkit.addRecipe(recipe, true);
         }
     }
@@ -50,10 +50,11 @@ public class Blueprints {
         return shapelessRecipe;
     }
 
-    private static CustomAbility makeBlueprintAbility(String blueprintName){
+    private static CustomAbility makeBlueprintAbility(String blueprintName, NamespacedKey recipe){
         CustomAbility ability = new CustomAbility();
         ability.setAbilityFunction(player -> {
             player.getInventory().getItemInMainHand().setAmount(0);
+            player.discoverRecipe(recipe);
             player.sendRichMessage("<green>Unlocked " + blueprintName + "</green>");
         });
         ability.setCastEvent(AbilityCastEvent.RIGHT_CLICK);
