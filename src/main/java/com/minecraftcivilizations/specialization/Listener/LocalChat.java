@@ -35,7 +35,7 @@ public class LocalChat implements Listener {
     private boolean tryHandleGlobalChat(Player player, String message) {
         String prefix = SpecializationConfig.getChatConfig().get("ANNOUNCEMENT_PREFIX", String.class);
         if(!message.startsWith(prefix) || !player.isOp()) return false;
-        String actualMessage = message.substring(prefix.length());
+        String actualMessage = message.substring(prefix.length()).trim();
         String announcementFormat = SpecializationConfig.getChatConfig().get("ANNOUNCEMENT_FORMAT", String.class);
         Bukkit.getOnlinePlayers().forEach(other -> other.sendRichMessage(announcementFormat.formatted(actualMessage)));
         return true;
