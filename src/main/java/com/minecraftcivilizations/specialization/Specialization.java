@@ -75,6 +75,8 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CrossBowListener(), this);
         getServer().getPluginManager().registerEvents(new LocalChat(), this);
         getServer().getPluginManager().registerEvents(new MobListeners(), this);
+        getServer().getPluginManager().registerEvents(new MobKillListener(), this);
+        getServer().getPluginManager().registerEvents(new Berserk(), this);
 
         new BukkitRunnable() {
             @Override

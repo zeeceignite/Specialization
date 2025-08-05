@@ -6,13 +6,12 @@ import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Config.ConfigFile;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
-import org.bukkit.Bukkit;
-import org.bukkit.Keyed;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
+import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.EntityType;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.*;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.HashSet;
 import java.util.List;
@@ -62,6 +61,10 @@ public class SpecializationConfig {
     private static ConfigFile chatConfig;
     @Getter
     private static ConfigFile mobConfig;
+    @Getter
+    private static ConfigFile guardsmanConfig;
+    @Getter
+    private static ConfigFile berserkConfig;
 
 
     public static void initialize() {
@@ -132,6 +135,19 @@ public class SpecializationConfig {
                 if (inputMaterial.isItem() && inputMaterial != Material.AIR && inputMaterial.getMaxDurability() > 0) {
                     fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.LIBRARIAN, "1")));
                 }
+            }
+        });
+
+        guardsmanConfig = new ConfigFile(Specialization.getInstance(), "guardsmanConfig", null, fields -> {
+            for(EntityType entityType : EntityType.values()) {
+                fields.add(new Pair<>(entityType, 1D));
+            }
+        });
+
+
+        berserkConfig = new ConfigFile(Specialization.getInstance(), "berserkConfig", null, fields -> {
+            for(PotionEffectType potionEffectType : Registry.EFFECT) {
+                fields.add(new Pair<>(potionEffectType.getKey().getKey(), new Pair<>(1D, 0D)));
             }
         });
 
@@ -249,4 +265,6 @@ public class SpecializationConfig {
             fields.add(new Pair<>("ANNOUNCEMENT_PREFIX", "#"));
         });
     }
+
+
 }
