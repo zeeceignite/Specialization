@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.Config;
 
+import com.minecraftcivilizations.specialization.Listener.PotionData;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
@@ -11,8 +12,11 @@ import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.*;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.HashSet;
 import java.util.List;
@@ -62,6 +66,10 @@ public class SpecializationConfig {
     private static ConfigFile chatConfig;
     @Getter
     private static ConfigFile mobConfig;
+    @Getter
+    private static ConfigFile guardsmanConfig;
+    @Getter
+    private static ConfigFile berserkConfig;
 
 
     public static void initialize() {
@@ -132,6 +140,18 @@ public class SpecializationConfig {
                 if (inputMaterial.isItem() && inputMaterial != Material.AIR && inputMaterial.getMaxDurability() > 0) {
                     fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.LIBRARIAN, "1")));
                 }
+            }
+        });
+
+        guardsmanConfig = new ConfigFile(Specialization.getInstance(), "guardsmanConfig", null, fields -> {
+            for(EntityType entityType : EntityType.values()) {
+                fields.add(new Pair<>(entityType, 1D));
+            }
+        });
+
+        berserkConfig = new ConfigFile(Specialization.getInstance(), "berserkConfig", null, fields -> {
+            for(PotionEffectType potionEffectType : PotionEffectType.values()) {
+                fields.add(new Pair<>(potionEffectType, new PotionData(1, 0)));
             }
         });
 
@@ -249,4 +269,6 @@ public class SpecializationConfig {
             fields.add(new Pair<>("ANNOUNCEMENT_PREFIX", "#"));
         });
     }
+
+
 }
