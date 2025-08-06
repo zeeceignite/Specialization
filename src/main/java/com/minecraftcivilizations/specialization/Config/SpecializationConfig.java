@@ -86,13 +86,7 @@ public class SpecializationConfig {
         unlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "unlockedRecipesConfig", "The array of unlocked recipes, they don't need to repeat between levels, the ones for novice are unlocked for the next ones", fields -> {
             for (SkillType skillType : SkillType.values()) {
                 for (SkillLevel skillLevel : SkillLevel.values()) {
-                    Set<NamespacedKey> namespacedKeys = new HashSet<>();
-                    Bukkit.recipeIterator().forEachRemaining((recipe) -> {
-                        if (recipe instanceof Keyed keyed) {
-                            namespacedKeys.add(keyed.getKey());
-                        }
-                    });
-                    fields.add(new Pair<>(skillType + "_" + skillLevel, namespacedKeys));
+                    fields.add(new Pair<>(skillType + "_" + skillLevel, new HashSet<NamespacedKey>()));
                 }
             }
         });
@@ -226,12 +220,39 @@ public class SpecializationConfig {
         });
 
 
-        defaultUnlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "defaultUnlockedRecipesConfig", null, fields ->
+        defaultUnlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "defaultUnlockedRecipesConfig", "All recipes available by default. Recipes added to unlockedRecipesConfig will be automatically removed from here.", fields -> {
+            // Collect all recipes that are NOT in unlockedRecipesConfig
+            Set<NamespacedKey> allRecipes = new HashSet<>();
+            Set<NamespacedKey> unlockedRecipes = new HashSet<>();
+            
+            // Get all recipes
             Bukkit.recipeIterator().forEachRemaining((recipe) -> {
                 if (recipe instanceof Keyed keyed) {
-                    fields.add(new Pair<>("DEFAULT_UNLOCKED_RECIPES", keyed.getKey()));
+                    allRecipes.add(keyed.getKey());
                 }
-        }));
+            });
+            
+            // Get recipes that are already unlocked in skill configs
+            if (unlockedRecipesConfig != null) {
+                for (SkillType skillType : SkillType.values()) {
+                    for (SkillLevel skillLevel : SkillLevel.values()) {
+                        String key = skillType + "_" + skillLevel;
+                        Object value = unlockedRecipesConfig.get(key, Object.class);
+                        if (value instanceof Set<?> set) {
+                            for (Object item : set) {
+                                if (item instanceof NamespacedKey namespacedKey) {
+                                    unlockedRecipes.add(namespacedKey);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Add all recipes that aren't already unlocked
+            allRecipes.removeAll(unlockedRecipes);
+            fields.add(new Pair<>("DEFAULT_UNLOCKED_RECIPES", allRecipes));
+        });
 
         blockHardnessConfig = new ConfigFile(Specialization.getInstance(), "blockHardnessConfig", null, fields -> {
             for (Material material : Material.values()) {
