@@ -82,6 +82,7 @@ public class SpecializationConfig {
             fields.add(new Pair<>("HEAVY_REINFORCEMENT_MULTIPLIER", 0.1D));
         });
 
+
         unlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "unlockedRecipesConfig", "The array of unlocked recipes, they don't need to repeat between levels, the ones for novice are unlocked for the next ones", fields -> {
             for (SkillType skillType : SkillType.values()) {
                 for (SkillLevel skillLevel : SkillLevel.values()) {

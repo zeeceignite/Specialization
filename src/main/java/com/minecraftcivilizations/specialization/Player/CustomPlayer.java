@@ -38,6 +38,11 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     @Getter
     @Setter
     private boolean isAdvancedClassesGUIEnabled = false;
+    @Getter
+    private boolean isDowned = false;
+    @Getter
+    @Setter
+    private long lastDowned = System.currentTimeMillis();
 
     public CustomPlayer(UUID uuid) {
         super(uuid);
@@ -160,8 +165,38 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         return Math.round(XPProgressAsPercentage * percentageProgressAsPercentage * .01);
     }
 
+    public boolean isDownedTimeout() {
+        if (isDowned) {
+            return lastDowned + 80 <= System.currentTimeMillis();
+        }
+        return false;
+    }
+
     public double getPercentOfTotal(SkillType skillType) {
         return mapValue(getSkill(skillType).getXp(), 0, getTotalXp(), 0, 100);
+    }
+
+    public void setDowned(boolean downed) {
+        if (this.isDowned != downed) {
+            this.isDowned = downed;
+            if (!downed) return;
+            lastDowned = System.currentTimeMillis();
+            new BukkitRunnable() {
+                final double totalTime = 2400;
+                double currentTime = 0;
+                @Override
+                public void run() {
+                    if (!isDowned) {
+                        this.cancel();
+                        return;
+                    }
+                    if (currentTime >= totalTime && CustomPlayer.this.isDowned()) {
+                        Bukkit.getPlayer(CustomPlayer.this.getUuid()).setHealth(0);
+                    }
+                    currentTime ++;
+                }
+            }.runTaskTimer(MinecraftCivilizationsCore.getInstance(), 0, 1);
+        }
     }
 
     public Skill getSkill(SkillType skillType) {

@@ -3,6 +3,7 @@ package com.minecraftcivilizations.specialization.Recipe;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.util.CoreUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Ability.AbilityCastEvent;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Ability.CustomAbility;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Ability.CustomItemAbilityRegistry;
@@ -19,6 +20,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
 
@@ -35,12 +37,17 @@ public class Recipes {
         customAbility.setAbilityFunction(customAbilityFunction -> {
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(customAbilityFunction.getUniqueId());
             if (customAbilityFunction.getTargetEntity(4) instanceof Player player && player.getHealth() < player.getAttribute(Attribute.MAX_HEALTH).getValue()) {
-                player.heal(.5);
-                customPlayer.addSkillXp(SkillType.HEALER, 100);
+                player.heal(10);
+                customPlayer.addSkillXp(SkillType.HEALER, 15);
+                player.setFoodLevel(player.getLevel() - 10);
+                CustomPlayer healedPlayer = CoreUtil.getPlayer(player.getUniqueId());
+                healedPlayer.setDowned(false);
+                player.removePotionEffect(PotionEffectType.WITHER);
+                customItem.getItem().setAmount(customItem.getItem().getAmount() - 1);
             }
         });
-        customAbility.setCooldown(10);
-        customAbility.setCastEvent(AbilityCastEvent.RIGHT_CLICK);
+        customAbility.setCooldown(1);
+        customAbility.setCastEvent(AbilityCastEvent.SNEAK_RIGHT_CLICK);
         customAbility.setName("Bandage");
         customAbility.setDescription("Bandage");
 
@@ -55,7 +62,7 @@ public class Recipes {
         shapelessRecipe.addIngredient(8, Material.PAPER);
         shapelessRecipe.addIngredient(Material.SUGAR_CANE);
         Bukkit.addRecipe(shapelessRecipe, true);
-      
+
         ShapedRecipe shapedRecipe = new ShapedRecipe(NamespacedKey.minecraft("rail"), new ItemStack(Material.RAIL).add(64));
         shapedRecipe.shape(
                 "I I",

@@ -67,6 +67,12 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BurnListener(), this);
         getServer().getPluginManager().registerEvents(new ExplodeListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
+        getServer().getPluginManager().registerEvents(new EntityDamageListener(), this);
+        getServer().getPluginManager().registerEvents(new MobKillListener(), this);
+        getServer().getPluginManager().registerEvents(new FoodInteractionListener(), this);
+        getServer().getPluginManager().registerEvents(new HungerSystemListener(this), this);
 
         getServer().getPluginManager().registerEvents(new StonecutterListener(), this);
         getServer().getPluginManager().registerEvents(new CraftingListener(), this);
@@ -77,8 +83,8 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CrossBowListener(), this);
         getServer().getPluginManager().registerEvents(new LocalChat(), this);
         getServer().getPluginManager().registerEvents(new MobListeners(), this);
-        getServer().getPluginManager().registerEvents(new MobKillListener(), this);
         getServer().getPluginManager().registerEvents(new Berserk(), this);
+
 
         new BukkitRunnable() {
             @Override
