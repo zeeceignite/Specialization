@@ -65,6 +65,8 @@ public class SpecializationConfig {
     private static ConfigFile guardsmanConfig;
     @Getter
     private static ConfigFile berserkConfig;
+    @Getter
+    private static ConfigFile reinforcementConfig;
 
 
     public static void initialize() {
@@ -73,6 +75,11 @@ public class SpecializationConfig {
             fields.add(new Pair<>("MULTI_CLASS_PENALTY", 0.15));
             fields.add(new Pair<>("LINEAR_DECAY_RATE", 0.02));
             fields.add(new Pair<>("CROSS_SKILL_PENALTY", 0.25));
+        });
+
+        reinforcementConfig = new ConfigFile(Specialization.getInstance(), "reinforcementConfig", null, fields -> {
+            fields.add(new Pair<>("LIGHT_REINFORCEMENT_MULTIPLIER", 0.2D));
+            fields.add(new Pair<>("HEAVY_REINFORCEMENT_MULTIPLIER", 0.1D));
         });
 
         unlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "unlockedRecipesConfig", "The array of unlocked recipes, they don't need to repeat between levels, the ones for novice are unlocked for the next ones", fields -> {
@@ -231,9 +238,9 @@ public class SpecializationConfig {
                     fields.add(new Pair<>(material, 1D));
                 }
             }
-            fields.add(new Pair<>("LIGHT_REINFORCEMENT_MULTIPLIER", 3D));
-            fields.add(new Pair<>("HEAVY_REINFORCEMENT_MULTIPLIER", 8D));
         });
+
+
 
         skillsConfig = new ConfigFile(Specialization.getInstance(), "skillsConfig", null, fields -> {
             for (SkillType skillType : SkillType.values()) {
