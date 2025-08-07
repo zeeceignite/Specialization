@@ -24,6 +24,8 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
 
+import static com.minecraftcivilizations.specialization.Listener.PlayerDeathListener.removeDownedArmorStand;
+
 public class Recipes {
 
     public static void init() {
@@ -39,11 +41,9 @@ public class Recipes {
             if (customAbilityFunction.getTargetEntity(4) instanceof Player player && player.getHealth() < player.getAttribute(Attribute.MAX_HEALTH).getValue()) {
                 player.heal(10);
                 customPlayer.addSkillXp(SkillType.HEALER, 15);
-                player.setFoodLevel(player.getLevel() - 10);
                 CustomPlayer healedPlayer = CoreUtil.getPlayer(player.getUniqueId());
                 healedPlayer.setDowned(false);
-                player.removePotionEffect(PotionEffectType.WITHER);
-                customItem.getItem().setAmount(customItem.getItem().getAmount() - 1);
+                removeDownedArmorStand(player);
             }
         });
         customAbility.setCooldown(1);

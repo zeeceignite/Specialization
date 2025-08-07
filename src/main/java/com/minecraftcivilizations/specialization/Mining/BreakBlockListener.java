@@ -6,6 +6,7 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -78,5 +79,27 @@ public class BreakBlockListener implements Listener {
                 removeReinforcement(block);
             }
         });
+    }
+
+    @EventHandler
+    public void minerListener(BlockBreakEvent event) {
+        CustomPlayer player =  CoreUtil.getPlayer(event.getPlayer());
+        String materialName = event.getBlock().getType().name();
+        Integer skillRequired = SpecializationConfig.getCanMinerLvlBreakConfig().get(materialName, new TypeToken<>() {});
+        if (skillRequired != null && player.getSkillLevel(SkillType.MINER) < skillRequired) {
+            event.setDropItems(false);
+            event.getPlayer().sendMessage(Color.RED + "You are unable to mine this ore.");
+        }
+    }
+
+    @EventHandler
+    public void farmerListener(BlockBreakEvent event) {
+        CustomPlayer player =  CoreUtil.getPlayer(event.getPlayer());
+        String materialName = event.getBlock().getType().name();
+        Integer skillRequired = SpecializationConfig.getCanFarmerBreakConfig().get(materialName, new TypeToken<>() {});
+        if (skillRequired != null && player.getSkillLevel(SkillType.FARMER) < skillRequired) {
+            event.setDropItems(false);
+            event.getPlayer().sendMessage(Color.RED + "You are unable to farm this.");
+        }
     }
 }

@@ -182,7 +182,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
             if (!downed) return;
             lastDowned = System.currentTimeMillis();
             new BukkitRunnable() {
-                final double totalTime = 2400;
+                final double totalTime = SpecializationConfig.getDownedConfig().get("TIME_TO_DEATH_IN_TICKS", Double.class);
                 double currentTime = 0;
                 @Override
                 public void run() {

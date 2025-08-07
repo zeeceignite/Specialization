@@ -1,36 +1,45 @@
 package com.minecraftcivilizations.specialization.Listener;
 
+import com.comphenix.protocol.wrappers.Pair;
+import com.google.gson.reflect.TypeToken;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Registry;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDismountEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 public class PlayerDeathListener implements Listener {
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
-        CustomPlayer player = CoreUtil.getPlayer(event.getPlayer().getUniqueId());
-        if (player == null || (player.isDowned() && player.isDownedTimeout())) {
-            if (player != null) {
-                player.setDowned(false);
+        CustomPlayer customPlayer = CoreUtil.getPlayer(event.getPlayer().getUniqueId());
+        if (customPlayer == null || (customPlayer.isDowned() && customPlayer.isDownedTimeout())) {
+            if (customPlayer != null) {
+                customPlayer.setDowned(false);
                 removeDownedArmorStand(event.getPlayer());
             }
             return;
         }
 
-        player.setDowned(true);
+        customPlayer.setDowned(true);
         event.getPlayer().setHealth(10);
-        event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 2400, 0, true, false));
+
+        applyDownedEffects(event.getPlayer());
         event.setCancelled(true);
 
         Location playerLoc = event.getPlayer().getLocation();
-        Location armorStandLoc = playerLoc.clone().subtract(0, 2, 0);
+        Location armorStandLoc = playerLoc.clone().subtract(0, SpecializationConfig.getDownedConfig().get("OFFSET_TO_GROUND", Double.class), 0);
 
         ArmorStand armorStand = event.getPlayer().getWorld().spawn(armorStandLoc, ArmorStand.class);
         armorStand.setVisible(false);
@@ -50,6 +59,26 @@ public class PlayerDeathListener implements Listener {
             if (expectedName.equals(armorStand.getCustomName())) {
                 player.leaveVehicle();
                 armorStand.remove();
+            }
+        }
+    }
+
+    public void applyDownedEffects(Player player) {
+        for (PotionEffectType potionEffectType : Registry.EFFECT) {
+            try {
+                String effectKey = potionEffectType.getKey().getKey();
+                Pair<Double, Double> effectData = SpecializationConfig.getDownedConfig().get(effectKey, new TypeToken<Pair<Double, Double>>(){});
+
+                if (effectData != null && effectData.getFirst() != null && effectData.getSecond() != null) {
+                    int duration = effectData.getFirst().intValue();
+                    int amplifier = effectData.getSecond().intValue();
+
+                    if (duration > 0) {
+                        player.addPotionEffect(new PotionEffect(potionEffectType, duration, amplifier, false, false));
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to apply downed effect " + potionEffectType.getKey() + ": " + e.getMessage());
             }
         }
     }

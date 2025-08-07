@@ -67,6 +67,14 @@ public class SpecializationConfig {
     private static ConfigFile berserkConfig;
     @Getter
     private static ConfigFile reinforcementConfig;
+    @Getter
+    private static ConfigFile hungerConfig;
+    @Getter
+    private static ConfigFile downedConfig;
+    @Getter
+    private static ConfigFile canMinerLvlBreakConfig;
+    @Getter
+    private static ConfigFile canFarmerBreakConfig;
 
 
     public static void initialize() {
@@ -120,6 +128,16 @@ public class SpecializationConfig {
             fields.add(new Pair<>("CROSSBOW_BASE_QUICKCHARGE_VELOCITY", 1.3));
         });
 
+        hungerConfig = new ConfigFile(Specialization.getInstance(), "hungerConfig", null, fields -> {
+            fields.add(new Pair<>("SPRINTING_DRAIN", 2));
+            fields.add(new Pair<>("WALKING_DRAIN", 0.5));
+            fields.add(new Pair<>("CROUCHING_DRAIN", 0.2));
+            fields.add(new Pair<>("SWIMMING_DRAIN", 4));
+            fields.add(new Pair<>("IDLE_DRAIN", 0.1));
+            fields.add(new Pair<>("DRAIN_INTERVAL_IN_TICKS", 100L));
+            fields.add(new Pair<>("IDLE_CHECK_TIME_IN_TICKS", 100L));
+        });
+
         mobConfig = new ConfigFile(Specialization.getInstance(), "mobConfig", null, fields -> {
             fields.add(new Pair<>("DAYTIME_MOB_DAMAGE_MULTIPLIER", 4.0));
             fields.add(new Pair<>("NIGHTTIME_MOB_DAMAGE_MULTIPLIER", 10.0));
@@ -143,6 +161,28 @@ public class SpecializationConfig {
         guardsmanConfig = new ConfigFile(Specialization.getInstance(), "guardsmanConfig", null, fields -> {
             for(EntityType entityType : EntityType.values()) {
                 fields.add(new Pair<>(entityType, 1D));
+            }
+        });
+
+        downedConfig = new ConfigFile(Specialization.getInstance(), "downedConfig", null, fields -> {
+            for(PotionEffectType potionEffectType : Registry.EFFECT) {
+                fields.add(new Pair<>(potionEffectType.getKey().getKey(), new Pair<>(1D, 0D)));
+            }
+            fields.add(new Pair<>("TIME_TO_DEATH_IN_TICKS", 2400));
+            fields.add(new Pair<>("OFFSET_TO_GROUND", 1.9));
+        });
+
+        canFarmerBreakConfig = new ConfigFile(Specialization.getInstance(), "canFarmerBreakConfig", null, fields -> {
+            for (SkillLevel skillLevel : SkillLevel.values()) {
+                SkillType farmerSkill = SkillType.FARMER;
+                fields.add(new Pair<>(farmerSkill + "_" + skillLevel, new HashSet<NamespacedKey>()));
+            }
+        });
+
+        canMinerLvlBreakConfig = new ConfigFile(Specialization.getInstance(), "canMinerLvlBreakConfig", null, fields -> {
+            for (SkillLevel skillLevel : SkillLevel.values()) {
+                SkillType minerSkill = SkillType.MINER;
+                fields.add(new Pair<>(minerSkill + "_" + skillLevel, new HashSet<NamespacedKey>()));
             }
         });
 
@@ -220,37 +260,15 @@ public class SpecializationConfig {
         });
 
 
-        defaultUnlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "defaultUnlockedRecipesConfig", "All recipes available by default. Recipes added to unlockedRecipesConfig will be automatically removed from here.", fields -> {
-            // Collect all recipes that are NOT in unlockedRecipesConfig
+
+        defaultUnlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "defaultUnlockedRecipesConfig", null, fields -> {
             Set<NamespacedKey> allRecipes = new HashSet<>();
-            Set<NamespacedKey> unlockedRecipes = new HashSet<>();
-            
-            // Get all recipes
+
             Bukkit.recipeIterator().forEachRemaining((recipe) -> {
                 if (recipe instanceof Keyed keyed) {
                     allRecipes.add(keyed.getKey());
                 }
             });
-            
-            // Get recipes that are already unlocked in skill configs
-            if (unlockedRecipesConfig != null) {
-                for (SkillType skillType : SkillType.values()) {
-                    for (SkillLevel skillLevel : SkillLevel.values()) {
-                        String key = skillType + "_" + skillLevel;
-                        Object value = unlockedRecipesConfig.get(key, Object.class);
-                        if (value instanceof Set<?> set) {
-                            for (Object item : set) {
-                                if (item instanceof NamespacedKey namespacedKey) {
-                                    unlockedRecipes.add(namespacedKey);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // Add all recipes that aren't already unlocked
-            allRecipes.removeAll(unlockedRecipes);
             fields.add(new Pair<>("DEFAULT_UNLOCKED_RECIPES", allRecipes));
         });
 

@@ -55,6 +55,7 @@ public final class Specialization extends JavaPlugin {
     public void onEnable() {
         saveResource("first_names.txt", false);
         saveResource("last_names.txt", false);
+        SpecializationConfig.initialize();
 
         logger = getLogger();
 
@@ -148,7 +149,6 @@ public final class Specialization extends JavaPlugin {
         }
 
         DataManager.startSaver();
-        SpecializationConfig.initialize();
         ReinforcementManager.startReinforcement();
     }
 

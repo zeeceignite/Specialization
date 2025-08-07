@@ -18,7 +18,7 @@ public class MobKillListener implements Listener {
     public void GuardsmanKillListener(EntityDeathEvent e){
         Player player = e.getEntity().getKiller();
         assert player != null;
-        CustomPlayer killer = CoreUtil.getPlayer(player);
+        CustomPlayer killer = CoreUtil.getPlayer(e.getEntity().getKiller().getUniqueId());
 
         EntityType entity = e.getEntity().getType();
 

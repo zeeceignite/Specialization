@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.Listener;
 
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,15 +20,15 @@ public class HungerSystemListener implements Listener {
     private final Map<UUID, Long> lastMoveTime = new HashMap<>();
     private final Map<UUID, PlayerActivity> playerActivity = new HashMap<>();
 
-    // Hunger drain rates (higher = more hunger loss)
-    private static final double SPRINTING_DRAIN = 2;
-    private static final double WALKING_DRAIN = 0.5;
-    private static final double CRAWLING_DRAIN = 0.2;
-    private static final double IDLE_DRAIN = 0.1; // Very small drain when standing still
+    private static final double SPRINTING_DRAIN = SpecializationConfig.getHungerConfig().get("SPRINTING_DRAIN", Double.class);
+    private static final double WALKING_DRAIN = SpecializationConfig.getHungerConfig().get("WALKING_DRAIN", Double.class);
+    private static final double SWIMMING_DRAIN = SpecializationConfig.getHungerConfig().get("SWIMMING_DRAIN", Double.class);
+    private static final double CROUCHING_DRAIN = SpecializationConfig.getHungerConfig().get("CROUCHING_DRAIN", Double.class);
+    private static final double IDLE_DRAIN = SpecializationConfig.getHungerConfig().get("IDLE_DRAIN", Double.class);
 
-    // Time intervals (in ticks - 20 ticks = 1 second)
-    private static final long DRAIN_INTERVAL = 100; // Drain every 5 seconds
-    private static final long IDLE_CHECK_TIME = 100; // 5 seconds of no movement = idle
+
+    private static final long DRAIN_INTERVAL = SpecializationConfig.getHungerConfig().get("DRAIN_INTERVAL_IN_TICKS", Long.class);
+    private static final long IDLE_CHECK_TIME = SpecializationConfig.getHungerConfig().get("IDLE_CHECK_TIME_IN_TICKS", Long.class);
 
     public HungerSystemListener(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -37,7 +38,8 @@ public class HungerSystemListener implements Listener {
     private enum PlayerActivity {
         SPRINTING,
         WALKING,
-        CRAWLING,
+        CROUCHING,
+        SWIMMING,
         IDLE
     }
 
@@ -46,22 +48,25 @@ public class HungerSystemListener implements Listener {
         Player player = event.getPlayer();
         UUID playerId = player.getUniqueId();
 
-        // Check if player actually moved (not just looking around)
+
         if (event.getFrom().getBlockX() == event.getTo().getBlockX() &&
                 event.getFrom().getBlockY() == event.getTo().getBlockY() &&
                 event.getFrom().getBlockZ() == event.getTo().getBlockZ()) {
-            return; // Player didn't actually move, just looked around
+            return;
         }
 
         lastMoveTime.put(playerId, System.currentTimeMillis());
 
-        // Determine activity based on player state
+
         PlayerActivity activity;
         if (player.isSprinting()) {
             activity = PlayerActivity.SPRINTING;
         } else if (player.isSneaking()) {
-            activity = PlayerActivity.CRAWLING;
-        } else {
+            activity = PlayerActivity.CROUCHING;
+        } else if (player.isSwimming()) {
+            activity = PlayerActivity.SWIMMING;
+        }
+        else {
             activity = PlayerActivity.WALKING;
         }
 
@@ -92,14 +97,8 @@ public class HungerSystemListener implements Listener {
         UUID playerId = player.getUniqueId();
 
         if (event.isSneaking()) {
-            playerActivity.put(playerId, PlayerActivity.CRAWLING);
-        } else {
-            // If they stop sneaking, assume walking (will be updated by move event)
-            if (playerActivity.get(playerId) == PlayerActivity.CRAWLING) {
-                playerActivity.put(playerId, PlayerActivity.WALKING);
-            }
+            playerActivity.put(playerId, PlayerActivity.CROUCHING);
         }
-
         lastMoveTime.put(playerId, System.currentTimeMillis());
     }
 
@@ -135,7 +134,7 @@ public class HungerSystemListener implements Listener {
         double currentFoodLevel = player.getFoodLevel();
         double drainAmount = getDrainAmount(activity);
 
-        // Directly drain food level
+
         double newFoodLevel = Math.max(0, currentFoodLevel - drainAmount);
         player.setFoodLevel((int) newFoodLevel);
     }
@@ -146,30 +145,12 @@ public class HungerSystemListener implements Listener {
                 return SPRINTING_DRAIN;
             case WALKING:
                 return WALKING_DRAIN;
-            case CRAWLING:
-                return CRAWLING_DRAIN;
-            case IDLE:
-                return IDLE_DRAIN;
+            case CROUCHING:
+                return CROUCHING_DRAIN;
+            case SWIMMING:
+                return SWIMMING_DRAIN;
             default:
                 return IDLE_DRAIN;
         }
-    }
-
-    // Clean up data when player leaves
-    public void removePlayer(UUID playerId) {
-        lastMoveTime.remove(playerId);
-        playerActivity.remove(playerId);
-    }
-
-    // Getters for configuration/testing
-    public double getSprintingDrain() { return SPRINTING_DRAIN; }
-    public double getWalkingDrain() { return WALKING_DRAIN; }
-    public double getCrawlingDrain() { return CRAWLING_DRAIN; }
-    public double getIdleDrain() { return IDLE_DRAIN; }
-
-    // Method to update drain rates if needed (for config-based rates)
-    public void setDrainRates(double sprinting, double walking, double crawling, double idle) {
-        // You could implement dynamic rate changes here if needed
-        // For now, rates are constants but this method provides extensibility
     }
 }

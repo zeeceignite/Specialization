@@ -22,42 +22,47 @@ import org.bukkit.ChatColor;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.minecraftcivilizations.specialization.Listener.PlayerDeathListener.removeDownedArmorStand;
+
 public class FoodInteractionListener implements Listener {
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
-        if (item == null || !item.getType().isEdible() || !event.getAction().name().contains("RIGHT_CLICK")) return;
-        if (!player.isSneaking()) return;
         CustomPlayer customPlayer = CoreUtil.getPlayer(player.getUniqueId());
         if (customPlayer == null) return;
-        if (customPlayer.getSkillLevel(SkillType.HEALER) > SkillLevel.APPRENTICE.getLevel()) {
+        if (event.getAction().isRightClick()) {
+            assert item != null;
+            if (item.getType().isEdible() && player.isSneaking()) {
+                if (customPlayer.getSkillLevel(SkillType.HEALER) > SkillLevel.APPRENTICE.getLevel()) {
 
-            if (player.getFoodLevel() < 10) {
-                player.sendMessage(ChatColor.RED + "You need more hunger to bless food");
-                event.setCancelled(true);
-                return;
-            }
-            
-            int healerLevel = customPlayer.getSkillLevel(SkillType.HEALER);
-            if (item.getAmount() > 1) {
-                ItemStack singleItem = item.clone();
-                singleItem.setAmount(1);
-                blessFood(singleItem, healerLevel);
-                item.setAmount(item.getAmount() - 1);
-                if (player.getInventory().firstEmpty() != -1) {
-                    player.getInventory().addItem(singleItem);
-                } else {
-                    player.getWorld().dropItemNaturally(player.getLocation(), singleItem);
-                    player.sendMessage(ChatColor.YELLOW + "Your inventory is full! The blessed food was dropped.");
+                    if (player.getFoodLevel() < 10) {
+                        player.sendMessage(ChatColor.RED + "You need more hunger to bless food");
+                        event.setCancelled(true);
+                        return;
+                    }
+
+                    int healerLevel = customPlayer.getSkillLevel(SkillType.HEALER);
+                    if (item.getAmount() > 1) {
+                        ItemStack singleItem = item.clone();
+                        singleItem.setAmount(1);
+                        blessFood(singleItem, healerLevel);
+                        item.setAmount(item.getAmount() - 1);
+                        if (player.getInventory().firstEmpty() != -1) {
+                            player.getInventory().addItem(singleItem);
+                        } else {
+                            player.getWorld().dropItemNaturally(player.getLocation(), singleItem);
+                            player.sendMessage(ChatColor.YELLOW + "Your inventory is full! The blessed food was dropped.");
+                        }
+                        player.sendMessage(ChatColor.GOLD + "You have blessed one " + getItemName(singleItem));
+                    } else {
+                        blessFood(item, healerLevel);
+                        player.sendMessage(ChatColor.GOLD + "You have blessed this food");
+                    }
+                    event.setCancelled(true);
                 }
-                player.sendMessage(ChatColor.GOLD + "You have blessed one " + getItemName(singleItem));
-            } else {
-                blessFood(item, healerLevel);
-                player.sendMessage(ChatColor.GOLD + "You have blessed this food");
             }
-            event.setCancelled(true);
         }
     }
 
@@ -72,6 +77,7 @@ public class FoodInteractionListener implements Listener {
         }
         if (customPlayer != null && customPlayer.isDowned()) {
             customPlayer.setDowned(false);
+            removeDownedArmorStand(player);
             int healerLevel = getBlessedFoodLevel(item);
             applyBlessedFoodEffects(player, healerLevel);
             player.removePotionEffect(PotionEffectType.WITHER);
