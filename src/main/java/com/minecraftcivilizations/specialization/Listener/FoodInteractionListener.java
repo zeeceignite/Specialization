@@ -33,7 +33,7 @@ public class FoodInteractionListener implements Listener {
         CustomPlayer customPlayer = CoreUtil.getPlayer(player.getUniqueId());
         if (customPlayer == null) return;
         if (event.getAction().isRightClick()) {
-            assert item != null;
+            if (item == null) return;
             if (item.getType().isEdible() && player.isSneaking()) {
                 if (customPlayer.getSkillLevel(SkillType.HEALER) > SkillLevel.APPRENTICE.getLevel()) {
 
