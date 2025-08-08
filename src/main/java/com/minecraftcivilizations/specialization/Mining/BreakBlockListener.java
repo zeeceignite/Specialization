@@ -3,9 +3,11 @@ package com.minecraftcivilizations.specialization.Mining;
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
+import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -17,6 +19,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ItemType;
 
 import static com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager.*;
 
@@ -27,7 +30,7 @@ public class BreakBlockListener implements Listener {
         AttributeInstance breakSpeedAttr = event.getPlayer().getAttribute(Attribute.BLOCK_BREAK_SPEED);
         if (breakSpeedAttr != null) {
             breakSpeedAttr.setBaseValue(1.0);
-            Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromPlacingConfig().get(event.getBlock().getType(), new TypeToken<>() {});
+            Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromBreakingConfig().get(event.getBlock().getType(), new TypeToken<>() {});
             CustomPlayer player = CoreUtil.getPlayer(event.getPlayer());
 
             if(isReinforced(event.getBlock())) {
@@ -44,6 +47,18 @@ public class BreakBlockListener implements Listener {
                 removeReinforcement(event.getBlock());
             }
             player.addSkillXp(pair.firstValue(), pair.secondValue());
+        }
+        minerListener(event);
+    }
+
+    public void minerListener(BlockBreakEvent event) {
+        CustomPlayer player = CoreUtil.getPlayer(event.getPlayer());
+        Material materialName = event.getBlock().getType();
+        SkillLevel skillRequired = SpecializationConfig.getCanMinerLvlBreakConfig().get(materialName.toString(), new TypeToken<SkillLevel>() {});
+        if (skillRequired != null && player.getSkillLevel(SkillType.MINER) < skillRequired.getLevel()) {
+            event.setDropItems(false);
+            System.out.println("Hey this guy wasnt supposed to break this!");
+            event.getPlayer().sendMessage(org.bukkit.ChatColor.RED + "You are unable to mine this ore.");
         }
     }
 
@@ -82,24 +97,14 @@ public class BreakBlockListener implements Listener {
     }
 
     @EventHandler
-    public void minerListener(BlockBreakEvent event) {
-        CustomPlayer player =  CoreUtil.getPlayer(event.getPlayer());
-        String materialName = event.getBlock().getType().name();
-        Integer skillRequired = SpecializationConfig.getCanMinerLvlBreakConfig().get(materialName, new TypeToken<>() {});
-        if (skillRequired != null && player.getSkillLevel(SkillType.MINER) < skillRequired) {
-            event.setDropItems(false);
-            event.getPlayer().sendMessage(Color.RED + "You are unable to mine this ore.");
-        }
-    }
-
-    @EventHandler
     public void farmerListener(BlockBreakEvent event) {
-        CustomPlayer player =  CoreUtil.getPlayer(event.getPlayer());
-        String materialName = event.getBlock().getType().name();
-        Integer skillRequired = SpecializationConfig.getCanFarmerBreakConfig().get(materialName, new TypeToken<>() {});
-        if (skillRequired != null && player.getSkillLevel(SkillType.FARMER) < skillRequired) {
+        CustomPlayer player = CoreUtil.getPlayer(event.getPlayer());
+        Material materialName = event.getBlock().getType();
+        SkillLevel skillRequired = SpecializationConfig.getCanMinerLvlBreakConfig().get(materialName.toString(), new TypeToken<>() {});
+        if (skillRequired != null && player.getSkillLevel(SkillType.FARMER) < skillRequired.getLevel()) {
             event.setDropItems(false);
-            event.getPlayer().sendMessage(Color.RED + "You are unable to farm this.");
+            System.out.println("Hey this guy wasnt supposed to break this!");
+            event.getPlayer().sendMessage(org.bukkit.ChatColor.RED + "You are unable to farm this");
         }
     }
 }

@@ -135,44 +135,20 @@ public class ClassGUI extends GUI {
 
             int currentSkillLevel = customPlayer.getSkillLevel(skill.getSkillType());
 
-            // Always display the skill, but handle max level differently
-            double currentXp = Math.round(skill.getXp() * 100) / 100D;
-            
-            ItemStack itemStack = ItemStack.of(skill.getSkillType().getSkillWorkstation());
-            ItemMeta itemMeta = itemStack.getItemMeta();
-            itemMeta.addItemFlags(ItemFlag.values());
-            itemMeta.displayName(Component.text(getDisplayName(skill.getSkillType()))
-                    .decoration(TextDecoration.ITALIC, false)
-                    .color(NamedTextColor.WHITE));
-            
-            // Cap the skill level display at max level
-            int displayLevel = Math.min(currentSkillLevel, SkillLevel.values().length - 1);
-            
-            if (currentSkillLevel >= SkillLevel.values().length - 1) {
-                // Player is at max level (Grandmaster)
-                itemMeta.lore(new ArrayList<>() {
-                    {
-                        add(Component.text(SkillLevel.getDisplayName(displayLevel))
-                                .decoration(TextDecoration.ITALIC, false)
-                                .color(NamedTextColor.WHITE)
-                                .append(Component.text("(lvl " + displayLevel + ")"))
-                                .color(NamedTextColor.GRAY)
-                                .decoration(TextDecoration.ITALIC, false));
-                        add(Component.text("Current xp: " + (int) Math.round(skill.getXp())).decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
-                        add(Component.empty());
-                        add(Component.text("MAX LEVEL REACHED!").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GOLD));
-                        add(Component.text("You have mastered this skill!").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GOLD));
-                        add(Component.empty());
-                        add(Component.text("Pretty awesome if you ask me!").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
-                    }
-                });
-            } else {
-                // Player is not at max level, show progression info
+            if (currentSkillLevel < SkillLevel.values().length) {
+
+                double currentXp = Math.round(skill.getXp() * 100) / 100D;
                 double xpToNextLevel = Math.round((Skill.getXPNeededForLevel(currentSkillLevel + 1) - skill.getXp()) * 100) / 100D ;
                 double percentOfTotalForNextLevel = Math.round(
                         (Double) SpecializationConfig.getSkillRequirementsConfig().get(
                                 skill.getSkillType() + "_" + SkillLevel.getSkillLevelFromInt(currentSkillLevel + 1) + "_REQUIREMENT", Double.TYPE) * 100) / 100D;
 
+                ItemStack itemStack = ItemStack.of(skill.getSkillType().getSkillWorkstation());
+                ItemMeta itemMeta = itemStack.getItemMeta();
+                itemMeta.addItemFlags(ItemFlag.values());
+                itemMeta.displayName(Component.text(getDisplayName(skill.getSkillType()))
+                        .decoration(TextDecoration.ITALIC, false)
+                        .color(NamedTextColor.WHITE));
                 itemMeta.lore(new ArrayList<>() {
                     {
                         add(Component.text(SkillLevel.getDisplayName(currentSkillLevel))
@@ -203,9 +179,10 @@ public class ClassGUI extends GUI {
                         add(Component.text("Pretty awesome if you ask me!").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
                     }
                 });
+                itemStack.setItemMeta(itemMeta);
+                this.getItems().put(i++, new GUIItem(itemStack, null));
             }
-            itemStack.setItemMeta(itemMeta);
-            this.getItems().put(i++, new GUIItem(itemStack, null));
+
         }
     }
 

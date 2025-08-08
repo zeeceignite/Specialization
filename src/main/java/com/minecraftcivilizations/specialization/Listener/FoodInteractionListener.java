@@ -75,7 +75,7 @@ public class FoodInteractionListener implements Listener {
             int healerLevel = getBlessedFoodLevel(item);
             applyBlessedFoodEffects(player, healerLevel);
         }
-        if (customPlayer != null && customPlayer.isDowned()) {
+        if (customPlayer != null && customPlayer.isDowned() && isBlessedFood(item)) {
             customPlayer.setDowned(false);
             removeDownedArmorStand(player);
             int healerLevel = getBlessedFoodLevel(item);

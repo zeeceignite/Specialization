@@ -151,7 +151,7 @@ public class PlayerInteractEntityListener implements Listener {
                         return;
                     }
                 }
-                
+
                 String expectedName = "downed_" + player.getUniqueId();
                 for (ArmorStand armorStand : player.getWorld().getEntitiesByClass(ArmorStand.class)) {
                     if (expectedName.equals(armorStand.getCustomName()) &&

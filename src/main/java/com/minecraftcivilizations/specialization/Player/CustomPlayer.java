@@ -67,13 +67,6 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
         if (player == null) return;
 
-        for (Iterator<Recipe> it = Bukkit.recipeIterator(); it.hasNext(); ) {
-            Recipe recipe = it.next();
-            if (recipe instanceof Keyed keyed) {
-                player.undiscoverRecipe(keyed.getKey());
-            }
-        }
-
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -85,8 +78,8 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
             }
         }.runTaskLater(Specialization.getInstance(), 1);
 
-        player.getAttribute(Attribute.MINING_EFFICIENCY).setBaseValue(0);
-        player.getAttribute(Attribute.BLOCK_BREAK_SPEED).setBaseValue(0);
+        Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_BREAK_SPEED)).setBaseValue(0);
+        Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_BREAK_SPEED)).setBaseValue(0);
     }
 
     public void addSkillXp(SkillType skillType, double xp) {
