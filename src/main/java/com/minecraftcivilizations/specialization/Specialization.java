@@ -53,11 +53,12 @@ public final class Specialization extends JavaPlugin {
 
     @Override
     public void onEnable() {
+
+        logger = getLogger();
+
         saveResource("first_names.txt", false);
         saveResource("last_names.txt", false);
         SpecializationConfig.initialize();
-
-        logger = getLogger();
 
         setupCommands();
 
