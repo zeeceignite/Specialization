@@ -19,6 +19,7 @@ public class HungerSystemListener implements Listener {
     private final JavaPlugin plugin;
     private final Map<UUID, Long> lastMoveTime = new HashMap<>();
     private final Map<UUID, PlayerActivity> playerActivity = new HashMap<>();
+    private final Map<UUID, Double> playerHungerBuffer = new HashMap<>();
 
     private static final double SPRINTING_DRAIN = SpecializationConfig.getHungerConfig().get("SPRINTING_DRAIN", Double.class);
     private static final double WALKING_DRAIN = SpecializationConfig.getHungerConfig().get("WALKING_DRAIN", Double.class);
@@ -131,12 +132,28 @@ public class HungerSystemListener implements Listener {
     }
 
     private void drainHunger(Player player, PlayerActivity activity) {
+        UUID playerId = player.getUniqueId();
         double currentFoodLevel = player.getFoodLevel();
         double drainAmount = getDrainAmount(activity);
 
-
-        double newFoodLevel = Math.max(0, currentFoodLevel - drainAmount);
-        player.setFoodLevel((int) newFoodLevel);
+        // Get or initialize the player's hunger buffer
+        double hungerBuffer = playerHungerBuffer.getOrDefault(playerId, 0.0);
+        
+        // Add the drain amount to the buffer
+        hungerBuffer += drainAmount;
+        
+        // Check if we have accumulated enough to drain at least 1 hunger point
+        if (hungerBuffer >= 1.0) {
+            int hungerPointsToDrain = (int) hungerBuffer;
+            double newFoodLevel = Math.max(0, currentFoodLevel - hungerPointsToDrain);
+            player.setFoodLevel((int) newFoodLevel);
+            
+            // Subtract the drained amount from buffer, keeping the remainder
+            hungerBuffer -= hungerPointsToDrain;
+        }
+        
+        // Store the updated buffer
+        playerHungerBuffer.put(playerId, hungerBuffer);
     }
 
     private double getDrainAmount(PlayerActivity activity) {

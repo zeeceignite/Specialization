@@ -31,7 +31,7 @@ public class CraftingListener implements Listener {
 
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
         Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromCraftingConfig().get(crafted.getType(), new TypeToken<>() {});
-        customPlayer.addSkillXp(pair.firstValue(), pair.secondValue());
+        customPlayer.addSkillXp(pair.firstValue(), pair.secondValue() * event.getCurrentItem().getAmount());
     }
 
     @EventHandler(ignoreCancelled = true)
