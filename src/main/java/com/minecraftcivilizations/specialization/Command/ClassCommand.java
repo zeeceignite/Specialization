@@ -14,7 +14,6 @@ public class ClassCommand extends BaseCommand {
 
     @Default
     public void onClass(@NotNull Player player) {
-        player.sendMessage("goon0");
         new ClassGUI("Your Specialization Stats").open(player);
     }
 

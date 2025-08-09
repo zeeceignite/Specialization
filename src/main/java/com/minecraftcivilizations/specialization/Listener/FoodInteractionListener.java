@@ -8,18 +8,16 @@ import com.minecraftcivilizations.specialization.Specialization;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItem;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.ChatColor;
-import java.util.ArrayList;
+
 import java.util.List;
 
 import static com.minecraftcivilizations.specialization.Listener.PlayerDeathListener.removeDownedArmorStand;
