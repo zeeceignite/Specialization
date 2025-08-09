@@ -329,7 +329,7 @@ public class SpecializationConfig {
             fields.add(new Pair<>("BLESS_ITEM_LIBRARIAN_LEVEL", 2));
             fields.add(new Pair<>("BLESS_ITEM_XP_LEVEL_REQUIREMENT", 3));
             fields.add(new Pair<>("ITEM_LORE_LIBRARIAN_LEVEL", 3));
-            });
+        });
 
         blueprintConfig = new ConfigFile(Specialization.getInstance(), "librarianConfig", null, fields -> {
             fields.add(new Pair<>("BLUEPRINT_ITEM_RECIPES", "^(?i)(?:(wooden|stone|iron|diamond|golden|netherite)_(?:(pickaxe|axe|shovel|sword|hoe))|(leather|chainmail|iron|diamond|golden|netherite)_(?:(helmet|chestplate|leggings|boots))|fishing_rod|shears|flint_and_steel|bow|crossbow|trident|mace|elytra|book|shield)"));
