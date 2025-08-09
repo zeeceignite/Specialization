@@ -1,5 +1,7 @@
 package com.minecraftcivilizations.specialization.Distance;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import org.bukkit.Location;
 
@@ -11,9 +13,11 @@ public class Town {
     private Location centerLocation;
     private List<Location> bedLocations;
     @Getter
-    private final long discoveredTime;
+    private long discoveredTime;
 
-    public Town(Location center, List<Location> beds) {
+    @JsonCreator
+    public Town(@JsonProperty("centerLocation") Location center,
+                @JsonProperty("bedLocations") List<Location> beds) {
         this.centerLocation = center;
         this.bedLocations = new ArrayList<>(beds);
         this.discoveredTime = System.currentTimeMillis();

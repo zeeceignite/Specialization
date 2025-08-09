@@ -9,12 +9,14 @@ import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
+import com.minecraftcivilizations.specialization.Analytics.AnalyticsData;
 import com.minecraftcivilizations.specialization.Command.ClassCommand;
 import com.minecraftcivilizations.specialization.Command.SetLoreCommand;
 import com.minecraftcivilizations.specialization.Command.SetXpCommand;
 import com.minecraftcivilizations.specialization.Command.TownsCommand;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Data.DataManager;
+import com.minecraftcivilizations.specialization.Data.MongoConnection;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
 import com.minecraftcivilizations.specialization.Listener.*;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
@@ -56,11 +58,14 @@ public final class Specialization extends JavaPlugin {
 
         logger = getLogger();
 
+        MongoConnection.startDBConnection();
+
         setupCommands();
 
         getServer().getPluginManager().registerEvents(new PlayerMineListener(), this);
         getServer().getPluginManager().registerEvents(new BreakBlockListener(), this);
         getServer().getPluginManager().registerEvents(new PlaceBlockListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerDieListener(), this);
         getServer().getPluginManager().registerEvents(new RightClickListener(), this);
         getServer().getPluginManager().registerEvents(new BurnListener(), this);
         getServer().getPluginManager().registerEvents(new ExplodeListener(), this);
@@ -140,6 +145,8 @@ public final class Specialization extends JavaPlugin {
         DataManager.startSaver();
         SpecializationConfig.initialize();
         ReinforcementManager.startReinforcement();
+
+        AnalyticsData.autoPoll();
     }
 
     @Override

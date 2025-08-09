@@ -43,6 +43,7 @@ repositories {
         url = "https://repo.aikar.co/content/groups/aikar/"
         name = "aikar"
     }
+
 }
 
 configurations {
@@ -55,7 +56,9 @@ dependencies {
     implementation("com.minecraftcivilizations:weight:1.2.1")
     implementation "com.google.code.gson:gson:2.10.1"
     implementation "co.aikar:acf-paper:0.5.1-SNAPSHOT"
+    implementation "org.mongojack:mongojack:5.0.3"
     shadow "co.aikar:acf-paper:0.5.1-SNAPSHOT"
+    shadow "org.mongojack:mongojack:5.0.3"
 
     compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "5.3.0"
     compileOnly("org.projectlombok:lombok:1.18.38")

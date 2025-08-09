@@ -6,6 +6,7 @@ import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
@@ -26,6 +27,7 @@ import static com.minecraftcivilizations.specialization.Skill.Skill.getXPNeededF
 import static com.minecraftcivilizations.specialization.Skill.Skill.mapValue;
 import static com.minecraftcivilizations.specialization.Skill.SkillType.getDisplayName;
 
+@Getter
 public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizationsCore.Player.CustomPlayer {
     @Getter
     @Setter
@@ -38,6 +40,9 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     @Getter
     @Setter
     private boolean isAdvancedClassesGUIEnabled = false;
+    @Getter
+    @Setter
+    private AnalyticPlayerData analyticPlayerData = new AnalyticPlayerData();
 
     public CustomPlayer(UUID uuid) {
         super(uuid);
@@ -172,4 +177,10 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         }
         throw new IllegalStateException("Couldn't get skill " + skillType.toString());
     }
+
+    @Data
+    public static class AnalyticPlayerData {
+        int deaths;
+    }
+
 }
