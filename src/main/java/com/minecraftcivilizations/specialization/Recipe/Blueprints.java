@@ -1,0 +1,71 @@
+package com.minecraftcivilizations.specialization.Recipe;
+
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Specialization;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Ability.AbilityCastEvent;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Ability.CustomAbility;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Ability.CustomItemAbilityRegistry;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItem;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItemRegistry;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.inventory.*;
+
+import java.util.List;
+
+public class Blueprints {
+
+    public static void init(){
+        for(ItemStack blueprintBase : getBluePrintBaseItems()){
+            CustomItem customItem = new CustomItem(blueprintBase.getType(), blueprintBase.displayName().append(Component.text(" Blueprint")));
+            customItem.addLore(Specialization.getInstance(), List.of(
+                    Component.empty(),
+                    Component.text("Right click to learn this recipe!").color(NamedTextColor.WHITE)
+            ));
+
+            String blueprintName = PlainTextComponentSerializer.plainText().serialize(blueprintBase.displayName());
+            NamespacedKey blueprintKey = new NamespacedKey(Specialization.getInstance(), blueprintName + " Blueprint");
+
+            CustomItemAbilityRegistry.register(blueprintKey, makeBlueprintAbility(blueprintName, blueprintKey));
+            customItem.addAbility(blueprintKey);
+
+            CustomItemRegistry.register(blueprintKey, customItem);
+
+            Recipe recipe = makeBlueprintRecipe(blueprintBase.getType(), customItem.getItem(), blueprintKey);
+            Bukkit.addRecipe(recipe, true);
+        }
+    }
+
+    private static Recipe makeBlueprintRecipe(Material ingredient, ItemStack newItem, NamespacedKey key){
+        ShapelessRecipe shapelessRecipe = new ShapelessRecipe(key, newItem);
+        shapelessRecipe.addIngredient(Material.BLUE_DYE);
+        shapelessRecipe.addIngredient(3, Material.PAPER);
+        shapelessRecipe.addIngredient(new RecipeChoice.MaterialChoice(ingredient));
+        return shapelessRecipe;
+    }
+
+    private static CustomAbility makeBlueprintAbility(String blueprintName, NamespacedKey recipe){
+        CustomAbility ability = new CustomAbility();
+        ability.setAbilityFunction(player -> {
+            player.getInventory().getItemInMainHand().setAmount(0);
+            player.discoverRecipe(recipe);
+            player.sendRichMessage("<green>Unlocked " + blueprintName + "</green>");
+        });
+        ability.setCastEvent(AbilityCastEvent.RIGHT_CLICK);
+        ability.setName(blueprintName + " Blueprint");
+        ability.setDescription(blueprintName + " Blueprint");
+
+        return ability;
+    }
+
+    public static List<ItemStack> getBluePrintBaseItems(){
+        String regex = SpecializationConfig.getBlueprintConfig().get("BLUEPRINT_ITEM_RECIPES", String.class);
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.ITEM).stream().filter(item -> item.key().value().matches(regex)).map(ItemType::createItemStack).toList();
+    }
+}
