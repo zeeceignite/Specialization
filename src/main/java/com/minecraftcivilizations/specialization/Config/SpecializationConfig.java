@@ -274,27 +274,6 @@ public class SpecializationConfig {
                 }
             });
 
-            // Remove recipes that are already in unlockedRecipesConfig
-            Set<NamespacedKey> recipesToRemove = new HashSet<>();
-            for (SkillType skillType : SkillType.values()) {
-                for (SkillLevel skillLevel : SkillLevel.values()) {
-                    String configKey = skillType + "_" + skillLevel;
-                    try {
-                        @SuppressWarnings("unchecked")
-                        Set<NamespacedKey> skillRecipes = unlockedRecipesConfig.get(configKey, new com.google.gson.reflect.TypeToken<Set<NamespacedKey>>(){});
-                        if (skillRecipes != null) {
-                            recipesToRemove.addAll(skillRecipes);
-                        }
-                    } catch (Exception e) {
-                        // If there's an error reading the config, continue without removing recipes
-                        Specialization.logger.warning("Could not read recipes from " + configKey + ": " + e.getMessage());
-                    }
-                }
-            }
-
-            // Remove the recipes that are already in skill-specific configs
-            allRecipes.removeAll(recipesToRemove);
-
             fields.add(new Pair<>("DEFAULT_UNLOCKED_RECIPES", allRecipes));
         });
 
