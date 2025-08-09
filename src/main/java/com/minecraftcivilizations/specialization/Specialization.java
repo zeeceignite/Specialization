@@ -70,7 +70,6 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerMineListener(), this);
         getServer().getPluginManager().registerEvents(new BreakBlockListener(), this);
         getServer().getPluginManager().registerEvents(new PlaceBlockListener(), this);
-        getServer().getPluginManager().registerEvents(new PlayerDieListener(), this);
         getServer().getPluginManager().registerEvents(new RightClickListener(), this);
         getServer().getPluginManager().registerEvents(new BurnListener(), this);
         getServer().getPluginManager().registerEvents(new ExplodeListener(), this);

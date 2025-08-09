@@ -13,11 +13,9 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizati
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Recipe;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
@@ -110,7 +108,10 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     public int getSkillLevel(SkillType skillType) {
         int level;
         // So, so sorry if you have to read this, it was fixed about 10 times and I forgot to call it, so now it looks like this :sad:
-        for (level = 0; level < SkillLevel.values().length && !isMissingXpForLevel(skillType, level+1) && !isMissingPercentForLevel(skillType, level+1); level++);
+        level = 0;
+        while (level < SkillLevel.values().length && !isMissingXpForLevel(skillType, level+1) && !isMissingPercentForLevel(skillType, level+1)) {
+            level++;
+        }
         return level;
     }
 

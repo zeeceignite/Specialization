@@ -43,8 +43,8 @@ public record AnalyticsData(
     }
 
     private static AnalyticsData poll(){
-        List<CustomPlayer> allPlayers = Bukkit.getOnlinePlayers().stream().map(CoreUtil::getPlayer).toList();
-        List<CustomPlayer.AnalyticPlayerData> allData = allPlayers.stream().map(CustomPlayer::getAnalyticPlayerData).toList();
+        List<CustomPlayer> allPlayers = Bukkit.getOnlinePlayers().stream().map(CoreUtil::getPlayer).filter(Objects::nonNull) .toList();
+        List<CustomPlayer.AnalyticPlayerData> allData = allPlayers.stream().map(CustomPlayer::getAnalyticPlayerData).filter(Objects::nonNull).toList();
 
         Timestamp now = new Timestamp(System.currentTimeMillis());
         int onlinePlayers = Bukkit.getOnlinePlayers().size();

@@ -2,23 +2,23 @@ package com.minecraftcivilizations.specialization.Listener;
 
 import com.comphenix.protocol.wrappers.Pair;
 import com.google.gson.reflect.TypeToken;
+import com.minecraftcivilizations.specialization.Analytics.AnalyticsData;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDismountEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+
+import java.util.Set;
 
 public class PlayerDeathListener implements Listener {
     @EventHandler
@@ -28,7 +28,9 @@ public class PlayerDeathListener implements Listener {
             if (customPlayer != null) {
                 customPlayer.setDowned(false);
                 removeDownedArmorStand(event.getPlayer());
+                playerActuallyDied(event.getPlayer());
             }
+
             return;
         }
 
@@ -61,6 +63,27 @@ public class PlayerDeathListener implements Listener {
                 armorStand.remove();
             }
         }
+    }
+
+    public void playerActuallyDied(Player player){
+        CustomPlayer.AnalyticPlayerData data = CoreUtil.getPlayer(player).getAnalyticPlayerData();
+        data.setDeaths(data.getDeaths() + 1);
+        if(player.getLastDamageCause() == null) return;
+        EntityDamageEvent.DamageCause cause = player.getLastDamageCause().getCause();
+        AnalyticsData.deaths.putIfAbsent(cause, 0);
+        AnalyticsData.deaths.put(cause, AnalyticsData.deaths.get(cause) + 1);
+        CustomPlayer customplayer = CoreUtil.getPlayer(player);
+        customplayer.getSkills().forEach(skill -> {
+            customplayer.addSkillXp(skill.getSkillType(), -skill.getXp());
+        });
+
+        Set<NamespacedKey> defaultRecipes = SpecializationConfig.getDefaultUnlockedRecipesConfig().get("DEFAULT_UNLOCKED_RECIPES", new TypeToken<>(){});
+
+        player.getDiscoveredRecipes().forEach(recipe -> {
+            if(defaultRecipes.contains(recipe)) {
+                player.undiscoverRecipe(recipe);
+            }
+        });
     }
 
     public void applyDownedEffects(Player player) {
