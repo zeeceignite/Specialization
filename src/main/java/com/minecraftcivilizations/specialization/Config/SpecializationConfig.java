@@ -281,7 +281,7 @@ public class SpecializationConfig {
                     String configKey = skillType + "_" + skillLevel;
                     try {
                         @SuppressWarnings("unchecked")
-                        Set<NamespacedKey> skillRecipes = (Set<NamespacedKey>) unlockedRecipesConfig.get(configKey, new com.google.gson.reflect.TypeToken<Set<NamespacedKey>>(){});
+                        Set<NamespacedKey> skillRecipes = unlockedRecipesConfig.get(configKey, new com.google.gson.reflect.TypeToken<Set<NamespacedKey>>(){});
                         if (skillRecipes != null) {
                             recipesToRemove.addAll(skillRecipes);
                         }

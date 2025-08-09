@@ -24,6 +24,7 @@ import com.minecraftcivilizations.specialization.Mining.PlayerMineListener;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Player.LocalNameGenerator;
 import com.minecraftcivilizations.specialization.Player.PreJoinEventListener;
+import com.minecraftcivilizations.specialization.Recipe.Blueprints;
 import com.minecraftcivilizations.specialization.Recipe.Recipes;
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import com.minecraftcivilizations.specialization.Skill.Skill;
@@ -102,6 +103,7 @@ public final class Specialization extends JavaPlugin {
 
 
         Recipes.init();
+        Blueprints.init();
 
         Bukkit.updateRecipes();
 

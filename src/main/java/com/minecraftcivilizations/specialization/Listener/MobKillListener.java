@@ -16,13 +16,15 @@ public class MobKillListener implements Listener {
 
     @EventHandler
     public void GuardsmanKillListener(EntityDeathEvent e){
-        Player player = e.getEntity().getKiller();
-        assert player != null;
-        CustomPlayer killer = CoreUtil.getPlayer(e.getEntity().getKiller().getUniqueId());
+        if (e.getEntity().getKiller() != null) {
+            Player player = e.getEntity().getKiller();
+            assert player != null;
+            CustomPlayer killer = CoreUtil.getPlayer(e.getEntity().getKiller().getUniqueId());
 
-        EntityType entity = e.getEntity().getType();
+            EntityType entity = e.getEntity().getType();
 
-        Double xp = SpecializationConfig.getGuardsmanConfig().get(entity, Double.class);
-        killer.addSkillXp(SkillType.GUARDSMAN, xp);
+            Double xp = SpecializationConfig.getGuardsmanConfig().get(entity, Double.class);
+            killer.addSkillXp(SkillType.GUARDSMAN, xp);
+        }
     }
 }

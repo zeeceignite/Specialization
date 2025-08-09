@@ -1,7 +1,10 @@
 package com.minecraftcivilizations.specialization.Recipe;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Player.CustomPlayer;
+import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.util.CoreUtil;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Ability.AbilityCastEvent;
@@ -18,6 +21,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.*;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class Blueprints {
 
@@ -30,7 +34,7 @@ public class Blueprints {
             ));
 
             String blueprintName = PlainTextComponentSerializer.plainText().serialize(blueprintBase.displayName());
-            NamespacedKey blueprintKey = new NamespacedKey(Specialization.getInstance(), blueprintName + " Blueprint");
+            NamespacedKey blueprintKey = new NamespacedKey(Specialization.getInstance(), sanitizeNamespacedKey(blueprintName + "_blueprint"));
 
             CustomItemAbilityRegistry.register(blueprintKey, makeBlueprintAbility(blueprintName, blueprintKey));
             customItem.addAbility(blueprintKey);
@@ -53,6 +57,11 @@ public class Blueprints {
     private static CustomAbility makeBlueprintAbility(String blueprintName, NamespacedKey recipe){
         CustomAbility ability = new CustomAbility();
         ability.setAbilityFunction(player -> {
+            CustomPlayer customPlayer = CoreUtil.getPlayer(player.getUniqueId());
+            if (customPlayer.getSkillLevel(SkillType.BLACKSMITH) < 1) {
+                player.sendRichMessage("<red>You must be an apprentice blacksmith to use this blueprint!</red>");
+                return;
+            }
             player.getInventory().getItemInMainHand().setAmount(0);
             player.discoverRecipe(recipe);
             player.sendRichMessage("<green>Unlocked " + blueprintName + "</green>");
@@ -67,5 +76,12 @@ public class Blueprints {
     public static List<ItemStack> getBluePrintBaseItems(){
         String regex = SpecializationConfig.getBlueprintConfig().get("BLUEPRINT_ITEM_RECIPES", String.class);
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.ITEM).stream().filter(item -> item.key().value().matches(regex)).map(ItemType::createItemStack).toList();
+    }
+
+    private static String sanitizeNamespacedKey(String key) {
+        return key.toLowerCase()
+                  .replaceAll("[^a-z0-9_.-/]", "_")
+                  .replaceAll("_{2,}", "_")
+                  .replaceAll("^_+|_+$", "");
     }
 }

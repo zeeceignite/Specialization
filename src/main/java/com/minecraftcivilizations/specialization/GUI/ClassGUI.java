@@ -10,6 +10,8 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizati
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.minecraft.world.level.block.state.properties.ChestType;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
@@ -18,6 +20,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.UUID;
 
 import static com.minecraftcivilizations.specialization.Skill.SkillType.getDisplayName;
 
@@ -25,25 +28,31 @@ public class ClassGUI extends GUI {
 
     public ClassGUI(String title) {
         super(Component.text(title), 54);
+        System.out.println("goon8");
     }
 
     @Override
     public void open(Player player) {
+        player.sendMessage("goon1");
         if (MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId()) != null) {
+            player.sendMessage("goon2");
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
             this.getItems().clear();
+            player.sendMessage("goon4");
             if (customPlayer.isAdvancedClassesGUIEnabled()) {
                 advancedClassGUI(customPlayer);
             } else {
+                player.sendMessage("goon3");
                 defaultClassGUI(customPlayer);
             }
             ItemStack user = ItemStack.of(Material.EMERALD);
             ItemMeta userItemMeta = user.getItemMeta();
             userItemMeta.addItemFlags(ItemFlag.values());
+            userItemMeta.addItemFlags(ItemFlag.values());
             userItemMeta.displayName(customPlayer.getName().decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
             user.setItemMeta(userItemMeta);
             this.getItems().put(4, new GUIItem(user, null));
-
+            player.sendMessage("goon5");
 
 
             ItemStack settings = ItemStack.of(Material.BOOK);
@@ -53,8 +62,13 @@ public class ClassGUI extends GUI {
             settings.setItemMeta(settingsItemMeta);
             this.getItems().put(53, new GUIItem(settings, () -> new SettingsGUI().setParentGUI(this).open(player)));
         }
+        player.openInventory(Bukkit.createInventory(player, 54));
         super.open(player);
+        Bukkit.getPlayer(player.getUniqueId());
+        player.sendMessage("goon6");
     }
+
+
 
     private GUIItem makeGlassDistributionPaneAdvanced(String name, Material material, double percent) {
         ItemStack itemStack = ItemStack.of(material);

@@ -31,7 +31,7 @@ public class BreakBlockListener implements Listener {
         if (breakSpeedAttr != null) {
             breakSpeedAttr.setBaseValue(1.0);
             Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromBreakingConfig().get(event.getBlock().getType(), new TypeToken<>() {});
-            CustomPlayer player = CoreUtil.getPlayer(event.getPlayer());
+            CustomPlayer player = CoreUtil.getPlayer(event.getPlayer().getUniqueId());
 
             if(isReinforced(event.getBlock())) {
                 Location dropLocation = event.getBlock().getLocation().add(0.5, 0.5, 0.5);
