@@ -19,6 +19,8 @@ import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Data.MongoConnection;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
 import com.minecraftcivilizations.specialization.Listener.*;
+import com.minecraftcivilizations.specialization.Mining.BreakBlockListener;
+import com.minecraftcivilizations.specialization.Mining.PlayerMineListener;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Player.LocalNameGenerator;
 import com.minecraftcivilizations.specialization.Player.PreJoinEventListener;
@@ -53,10 +55,12 @@ public final class Specialization extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        saveResource("first_names.txt", false);
-        saveResource("last_names.txt", false);
 
         logger = getLogger();
+
+        saveResource("first_names.txt", false);
+        saveResource("last_names.txt", false);
+        SpecializationConfig.initialize();
 
         MongoConnection.startDBConnection();
 
@@ -70,6 +74,12 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BurnListener(), this);
         getServer().getPluginManager().registerEvents(new ExplodeListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
+        getServer().getPluginManager().registerEvents(new EntityDamageListener(), this);
+        getServer().getPluginManager().registerEvents(new MobKillListener(), this);
+        getServer().getPluginManager().registerEvents(new FoodInteractionListener(), this);
+        getServer().getPluginManager().registerEvents(new HungerSystemListener(this), this);
 
         getServer().getPluginManager().registerEvents(new StonecutterListener(), this);
         getServer().getPluginManager().registerEvents(new CraftingListener(), this);
@@ -80,6 +90,8 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CrossBowListener(), this);
         getServer().getPluginManager().registerEvents(new LocalChat(), this);
         getServer().getPluginManager().registerEvents(new MobListeners(), this);
+        getServer().getPluginManager().registerEvents(new Berserk(), this);
+
 
         new BukkitRunnable() {
             @Override
@@ -143,7 +155,6 @@ public final class Specialization extends JavaPlugin {
         }
 
         DataManager.startSaver();
-        SpecializationConfig.initialize();
         ReinforcementManager.startReinforcement();
 
         AnalyticsData.autoPoll();

@@ -6,13 +6,12 @@ import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Config.ConfigFile;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
-import org.bukkit.Bukkit;
-import org.bukkit.Keyed;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
+import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.EntityType;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.*;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.HashSet;
 import java.util.List;
@@ -64,6 +63,20 @@ public class SpecializationConfig {
     private static ConfigFile blueprintConfig;
     @Getter
     private static ConfigFile mobConfig;
+    @Getter
+    private static ConfigFile guardsmanConfig;
+    @Getter
+    private static ConfigFile berserkConfig;
+    @Getter
+    private static ConfigFile reinforcementConfig;
+    @Getter
+    private static ConfigFile hungerConfig;
+    @Getter
+    private static ConfigFile downedConfig;
+    @Getter
+    private static ConfigFile canMinerLvlBreakConfig;
+    @Getter
+    private static ConfigFile canFarmerBreakConfig;
 
 
     public static void initialize() {
@@ -74,16 +87,16 @@ public class SpecializationConfig {
             fields.add(new Pair<>("CROSS_SKILL_PENALTY", 0.25));
         });
 
+        reinforcementConfig = new ConfigFile(Specialization.getInstance(), "reinforcementConfig", null, fields -> {
+            fields.add(new Pair<>("LIGHT_REINFORCEMENT_MULTIPLIER", 0.2D));
+            fields.add(new Pair<>("HEAVY_REINFORCEMENT_MULTIPLIER", 0.1D));
+        });
+
+
         unlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "unlockedRecipesConfig", "The array of unlocked recipes, they don't need to repeat between levels, the ones for novice are unlocked for the next ones", fields -> {
             for (SkillType skillType : SkillType.values()) {
                 for (SkillLevel skillLevel : SkillLevel.values()) {
-                    Set<NamespacedKey> namespacedKeys = new HashSet<>();
-                    Bukkit.recipeIterator().forEachRemaining((recipe) -> {
-                        if (recipe instanceof Keyed keyed) {
-                            namespacedKeys.add(keyed.getKey());
-                        }
-                    });
-                    fields.add(new Pair<>(skillType + "_" + skillLevel, namespacedKeys));
+                    fields.add(new Pair<>(skillType + "_" + skillLevel, new HashSet<NamespacedKey>()));
                 }
             }
         });
@@ -117,6 +130,16 @@ public class SpecializationConfig {
             fields.add(new Pair<>("CROSSBOW_BASE_QUICKCHARGE_VELOCITY", 1.3));
         });
 
+        hungerConfig = new ConfigFile(Specialization.getInstance(), "hungerConfig", null, fields -> {
+            fields.add(new Pair<>("SPRINTING_DRAIN", 2));
+            fields.add(new Pair<>("WALKING_DRAIN", 0.5));
+            fields.add(new Pair<>("CROUCHING_DRAIN", 0.2));
+            fields.add(new Pair<>("SWIMMING_DRAIN", 4));
+            fields.add(new Pair<>("IDLE_DRAIN", 0.1));
+            fields.add(new Pair<>("DRAIN_INTERVAL_IN_TICKS", 100L));
+            fields.add(new Pair<>("IDLE_CHECK_TIME_IN_TICKS", 100L));
+        });
+
         mobConfig = new ConfigFile(Specialization.getInstance(), "mobConfig", null, fields -> {
             fields.add(new Pair<>("DAYTIME_MOB_DAMAGE_MULTIPLIER", 4.0));
             fields.add(new Pair<>("NIGHTTIME_MOB_DAMAGE_MULTIPLIER", 10.0));
@@ -134,6 +157,43 @@ public class SpecializationConfig {
                 if (inputMaterial.isItem() && inputMaterial != Material.AIR && inputMaterial.getMaxDurability() > 0) {
                     fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.LIBRARIAN, "1")));
                 }
+            }
+        });
+
+        guardsmanConfig = new ConfigFile(Specialization.getInstance(), "guardsmanConfig", null, fields -> {
+            for(EntityType entityType : EntityType.values()) {
+                fields.add(new Pair<>(entityType, 1D));
+            }
+        });
+
+        downedConfig = new ConfigFile(Specialization.getInstance(), "downedConfig", null, fields -> {
+            for(PotionEffectType potionEffectType : Registry.EFFECT) {
+                fields.add(new Pair<>(potionEffectType.getKey().getKey(), new Pair<>(1D, 0D)));
+            }
+            fields.add(new Pair<>("TIME_TO_DEATH_IN_TICKS", 2400));
+            fields.add(new Pair<>("OFFSET_TO_GROUND", 1.9));
+        });
+
+        canFarmerBreakConfig = new ConfigFile(Specialization.getInstance(), "canFarmerBreakConfig", null, fields -> {
+            for (Material inputMaterial : Material.values()) {
+                if (inputMaterial.isBlock()) {
+                    fields.add(new Pair<>(inputMaterial.toString(), SkillLevel.NOVICE));
+                }
+            }
+        });
+
+        canMinerLvlBreakConfig = new ConfigFile(Specialization.getInstance(), "canMinerLvlBreakConfig", null, fields -> {
+            for (Material inputMaterial : Material.values()) {
+                if (inputMaterial.isBlock()) {
+                    fields.add(new Pair<>(inputMaterial.toString(), SkillLevel.NOVICE));
+                }
+            }
+        });
+
+
+        berserkConfig = new ConfigFile(Specialization.getInstance(), "berserkConfig", null, fields -> {
+            for(PotionEffectType potionEffectType : Registry.EFFECT) {
+                fields.add(new Pair<>(potionEffectType.getKey().getKey(), new Pair<>(1D, 0D)));
             }
         });
 
@@ -204,12 +264,39 @@ public class SpecializationConfig {
         });
 
 
-        defaultUnlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "defaultUnlockedRecipesConfig", null, fields ->
+
+        defaultUnlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "defaultUnlockedRecipesConfig", null, fields -> {
+            Set<NamespacedKey> allRecipes = new HashSet<>();
+
             Bukkit.recipeIterator().forEachRemaining((recipe) -> {
                 if (recipe instanceof Keyed keyed) {
-                    fields.add(new Pair<>("DEFAULT_UNLOCKED_RECIPES", keyed.getKey()));
+                    allRecipes.add(keyed.getKey());
                 }
-        }));
+            });
+
+            // Remove recipes that are already in unlockedRecipesConfig
+            Set<NamespacedKey> recipesToRemove = new HashSet<>();
+            for (SkillType skillType : SkillType.values()) {
+                for (SkillLevel skillLevel : SkillLevel.values()) {
+                    String configKey = skillType + "_" + skillLevel;
+                    try {
+                        @SuppressWarnings("unchecked")
+                        Set<NamespacedKey> skillRecipes = (Set<NamespacedKey>) unlockedRecipesConfig.get(configKey, new com.google.gson.reflect.TypeToken<Set<NamespacedKey>>(){});
+                        if (skillRecipes != null) {
+                            recipesToRemove.addAll(skillRecipes);
+                        }
+                    } catch (Exception e) {
+                        // If there's an error reading the config, continue without removing recipes
+                        Specialization.logger.warning("Could not read recipes from " + configKey + ": " + e.getMessage());
+                    }
+                }
+            }
+            
+            // Remove the recipes that are already in skill-specific configs
+            allRecipes.removeAll(recipesToRemove);
+            
+            fields.add(new Pair<>("DEFAULT_UNLOCKED_RECIPES", allRecipes));
+        });
 
         blockHardnessConfig = new ConfigFile(Specialization.getInstance(), "blockHardnessConfig", null, fields -> {
             for (Material material : Material.values()) {
@@ -217,9 +304,9 @@ public class SpecializationConfig {
                     fields.add(new Pair<>(material, 1D));
                 }
             }
-            fields.add(new Pair<>("LIGHT_REINFORCEMENT_MULTIPLIER", 3D));
-            fields.add(new Pair<>("HEAVY_REINFORCEMENT_MULTIPLIER", 8D));
         });
+
+
 
         skillsConfig = new ConfigFile(Specialization.getInstance(), "skillsConfig", null, fields -> {
             for (SkillType skillType : SkillType.values()) {
@@ -254,4 +341,6 @@ public class SpecializationConfig {
             fields.add(new Pair<>("ANNOUNCEMENT_PREFIX", "#"));
         });
     }
+
+
 }

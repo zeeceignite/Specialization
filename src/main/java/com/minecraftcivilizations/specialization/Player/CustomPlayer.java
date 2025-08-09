@@ -43,6 +43,11 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     @Getter
     @Setter
     private AnalyticPlayerData analyticPlayerData = new AnalyticPlayerData();
+    @Getter
+    private boolean isDowned = false;
+    @Getter
+    @Setter
+    private long lastDowned = System.currentTimeMillis();
 
     public CustomPlayer(UUID uuid) {
         super(uuid);
@@ -67,13 +72,6 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
         if (player == null) return;
 
-        for (Iterator<Recipe> it = Bukkit.recipeIterator(); it.hasNext(); ) {
-            Recipe recipe = it.next();
-            if (recipe instanceof Keyed keyed) {
-                player.undiscoverRecipe(keyed.getKey());
-            }
-        }
-
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -85,8 +83,8 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
             }
         }.runTaskLater(Specialization.getInstance(), 1);
 
-        player.getAttribute(Attribute.MINING_EFFICIENCY).setBaseValue(0);
-        player.getAttribute(Attribute.BLOCK_BREAK_SPEED).setBaseValue(0);
+        Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_BREAK_SPEED)).setBaseValue(0);
+        Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_BREAK_SPEED)).setBaseValue(0);
     }
 
     public void addSkillXp(SkillType skillType, double xp) {
@@ -165,8 +163,38 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         return Math.round(XPProgressAsPercentage * percentageProgressAsPercentage * .01);
     }
 
+    public boolean isDownedTimeout() {
+        if (isDowned) {
+            return lastDowned + 80 <= System.currentTimeMillis();
+        }
+        return false;
+    }
+
     public double getPercentOfTotal(SkillType skillType) {
         return mapValue(getSkill(skillType).getXp(), 0, getTotalXp(), 0, 100);
+    }
+
+    public void setDowned(boolean downed) {
+        if (this.isDowned != downed) {
+            this.isDowned = downed;
+            if (!downed) return;
+            lastDowned = System.currentTimeMillis();
+            new BukkitRunnable() {
+                final double totalTime = SpecializationConfig.getDownedConfig().get("TIME_TO_DEATH_IN_TICKS", Double.class);
+                double currentTime = 0;
+                @Override
+                public void run() {
+                    if (!isDowned) {
+                        this.cancel();
+                        return;
+                    }
+                    if (currentTime >= totalTime && CustomPlayer.this.isDowned()) {
+                        Bukkit.getPlayer(CustomPlayer.this.getUuid()).setHealth(0);
+                    }
+                    currentTime ++;
+                }
+            }.runTaskTimer(MinecraftCivilizationsCore.getInstance(), 0, 1);
+        }
     }
 
     public Skill getSkill(SkillType skillType) {

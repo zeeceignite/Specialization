@@ -24,12 +24,14 @@ public class RightClickListener implements Listener {
                 event.getPlayer().swingHand(EquipmentSlot.HAND);
                 event.getPlayer().getInventory().getItemInMainHand().setAmount(event.getPlayer().getInventory().getItemInMainHand().getAmount() - 1);
                 event.getPlayer().sendMessage(Component.text("Block now lightly reinforced!").color(NamedTextColor.WHITE).decorations(Set.of(TextDecoration.BOLD, TextDecoration.ITALIC), false));
+                return;
             }
         } else if (event.getPlayer().getInventory().getItemInMainHand().getType() == Material.IRON_INGOT) {
             if (ReinforcementManager.addReinforcement(event.getClickedBlock(), true)) {
                 event.getPlayer().swingHand(EquipmentSlot.HAND);
                 event.getPlayer().getInventory().getItemInMainHand().setAmount(event.getPlayer().getInventory().getItemInMainHand().getAmount() - 1);
                 event.getPlayer().sendMessage(Component.text("Block now heavily reinforced!").color(NamedTextColor.WHITE).decorations(Set.of(TextDecoration.BOLD, TextDecoration.ITALIC), false));
+                return;
             }
         }
     }
