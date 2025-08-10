@@ -3,11 +3,13 @@ package com.minecraftcivilizations.specialization.Listener.Player.Interactions;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
-import com.minecraftcivilizations.specialization.util.CoreUtil;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.util.CoreUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItem;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -16,9 +18,9 @@ import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.ChatColor;
 
 import java.util.List;
+import java.util.Random;
 
 import static com.minecraftcivilizations.specialization.Listener.Player.PlayerDeathListener.removeDownedArmorStand;
 
@@ -69,10 +71,12 @@ public class FoodInteractionListener implements Listener {
         Player player = event.getPlayer();
         CustomPlayer  customPlayer = CoreUtil.getPlayer(player.getUniqueId());
         ItemStack item = event.getItem();
+
         if (isBlessedFood(item)) {
             int healerLevel = getBlessedFoodLevel(item);
             applyBlessedFoodEffects(player, healerLevel);
         }
+
         if (customPlayer != null && customPlayer.isDowned() && isBlessedFood(item)) {
             customPlayer.setDowned(false);
             removeDownedArmorStand(player);
@@ -81,6 +85,17 @@ public class FoodInteractionListener implements Listener {
             player.removePotionEffect(PotionEffectType.WITHER);
         }
 
+        if (item.getType().equals(Material.DRIED_KELP)) {
+            giveKelpEffects(player);
+        }
+
+    }
+
+    private void giveKelpEffects(Player player){
+        if(new Random().nextDouble() < .2) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 20 * 15, 1));
+            player.sendRichMessage("<#456e55>You feel a little seasick from eating the kelp.");
+        }
     }
 
     private void blessFood(ItemStack item, int healerLevel) {

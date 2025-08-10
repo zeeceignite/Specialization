@@ -11,6 +11,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.event.EventHandler;
@@ -19,6 +20,8 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.inventory.ItemStack;
+
+import java.util.List;
 
 import static com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager.*;
 
@@ -37,7 +40,6 @@ public class BreakBlockListener implements Listener {
             if (blockData instanceof Ageable age) {
                 if (age.getAge() < 7) {
                     player.addSkillXp(pair.firstValue(), 0);
-                    System.out.println("I broke a baby plant or something");
                 }
             }
 
@@ -64,7 +66,7 @@ public class BreakBlockListener implements Listener {
     public void minerListener(BlockBreakEvent event) {
         CustomPlayer player = CoreUtil.getPlayer(event.getPlayer());
         Material materialName = event.getBlock().getType();
-        SkillLevel skillRequired = SpecializationConfig.getCanMinerLvlBreakConfig().get(materialName.toString(), new TypeToken<SkillLevel>() {});
+        SkillLevel skillRequired = SpecializationConfig.getCanMinerLvlBreakConfig().get(materialName.toString(), new TypeToken<>() {});
         if (skillRequired != null && player.getSkillLevel(SkillType.MINER) < skillRequired.getLevel()) {
             event.setDropItems(false);
             event.getPlayer().sendMessage(org.bukkit.ChatColor.RED + "You are unable to mine this ore.");
@@ -73,24 +75,16 @@ public class BreakBlockListener implements Listener {
 
     @EventHandler
     public void onEntityExplode(EntityExplodeEvent event) {
-        event.blockList().forEach(block -> {
-            if(isReinforced(block)) {
-                Location dropLocation = block.getLocation().add(0.5, 0.5, 0.5);
-
-                if(isHeavilyReinforced(block)) {
-                    block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT, 1));
-                }
-                if(isLightlyReinforced(block)) {
-                    block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_NUGGET, 1));
-                }
-                removeReinforcement(block);
-            }
-        });
+        onBlocksExplode(event.blockList());
     }
 
     @EventHandler
     public void onBlockExplode(BlockExplodeEvent event) {
-        event.blockList().forEach(block -> {
+        onBlocksExplode(event.blockList());
+    }
+
+    private void onBlocksExplode(List<Block> blocks) {
+        blocks.forEach(block -> {
             if(isReinforced(block)) {
                 Location dropLocation = block.getLocation().add(0.5, 0.5, 0.5);
 
