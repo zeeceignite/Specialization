@@ -13,6 +13,5 @@ public class PreJoinEventListener implements Listener {
         onPreLogin(event.getPlayerProfile(), event.getUniqueId());
     }
     private void onPreLogin(PlayerProfile playerProfile, UUID uuid){
-        // Method intentionally left empty
     }
 }

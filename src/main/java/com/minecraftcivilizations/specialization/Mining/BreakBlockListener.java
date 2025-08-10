@@ -13,7 +13,10 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.Ageable;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
@@ -28,10 +31,19 @@ public class BreakBlockListener implements Listener {
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
         AttributeInstance breakSpeedAttr = event.getPlayer().getAttribute(Attribute.BLOCK_BREAK_SPEED);
+
         if (breakSpeedAttr != null) {
-            breakSpeedAttr.setBaseValue(1.0);
+            breakSpeedAttr.setBaseValue(SpecializationConfig.getBlockHardnessConfig().get(event.getBlock().getType(), Double.class));
             Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromBreakingConfig().get(event.getBlock().getType(), new TypeToken<>() {});
             CustomPlayer player = CoreUtil.getPlayer(event.getPlayer().getUniqueId());
+            BlockData blockData = event.getBlock().getType().createBlockData();
+
+            if (blockData instanceof Ageable age) {
+                if (age.getAge() < 7) {
+                    player.addSkillXp(pair.firstValue(), 0);
+                    System.out.println("I broke a baby plant or something");
+                }
+            }
 
             if(isReinforced(event.getBlock())) {
                 Location dropLocation = event.getBlock().getLocation().add(0.5, 0.5, 0.5);
@@ -46,7 +58,9 @@ public class BreakBlockListener implements Listener {
                 }
                 removeReinforcement(event.getBlock());
             }
-            player.addSkillXp(pair.firstValue(), pair.secondValue());
+            if (pair != null && pair.firstValue() != null && pair.secondValue() != null) {
+                player.addSkillXp(pair.firstValue(), pair.secondValue());
+            }
         }
         minerListener(event);
     }
@@ -105,4 +119,5 @@ public class BreakBlockListener implements Listener {
             event.getPlayer().sendMessage(org.bukkit.ChatColor.RED + "You are unable to farm this");
         }
     }
+
 }

@@ -66,59 +66,154 @@ public class LocalNameGenerator {
     }
     
     /**
-     * Loads names from playerdata directory by checking CustomPlayer files
+     * Loads names from MinecraftCivilizationsCore directory by checking all UUID files
      */
     private void loadNamesFromPlayerdata(File playerdataDir) {
         try {
-            // Look for CustomPlayer data files in the MinecraftCivilizationsCore plugin directory
+            // Look for MinecraftCivilizationsCore plugin directory
             File pluginDataDir = new File(Bukkit.getWorldContainer(), "plugins/MinecraftCivilizationsCore");
             
-            if (pluginDataDir.exists()) {
-                File customPlayersDir = new File(pluginDataDir, "CustomPlayers");
+            if (pluginDataDir.exists() && pluginDataDir.isDirectory()) {
+                Specialization.logger.info("[LocalNameGenerator] Scanning MinecraftCivilizationsCore directory: " + pluginDataDir.getAbsolutePath());
                 
-                if (customPlayersDir.exists() && customPlayersDir.isDirectory()) {
-                    File[] playerFiles = customPlayersDir.listFiles((dir, name) -> name.endsWith(".json"));
+                // Get all files in the directory except db.properties
+                File[] allFiles = pluginDataDir.listFiles((dir, name) -> 
+                    !name.equals("db.properties") && !name.startsWith("."));
+                
+                if (allFiles != null) {
+                    Specialization.logger.info("[LocalNameGenerator] Found " + allFiles.length + " files to scan");
                     
-                    if (playerFiles != null) {
-                        for (File playerFile : playerFiles) {
+                    int filesProcessed = 0;
+                    int namesFound = 0;
+                    
+                    for (File file : allFiles) {
+                        if (file.isFile()) {
                             try {
-                                String content = Files.readString(playerFile.toPath());
+                                String content = Files.readString(file.toPath());
+                                int namesInThisFile = 0;
                                 
-                                // Extract name from JSON - look for "name" field
-                                String namePattern = "\"name\":\"";
-                                int nameStart = content.indexOf(namePattern);
-                                if (nameStart != -1) {
-                                    nameStart += namePattern.length();
-                                    int nameEnd = content.indexOf("\"", nameStart);
-                                    if (nameEnd != -1) {
-                                        String existingName = content.substring(nameStart, nameEnd);
+                                // Look for the name field with nested JSON: "name": "{...}"
+                                String namePattern = "\"name\":\\s*\"\\{";
+                                java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(namePattern);
+                                java.util.regex.Matcher matcher = pattern.matcher(content);
+                                
+                                while (matcher.find()) {
+                                    int nameStart = matcher.end() - 1; // Start at the opening brace
+                                    
+                                    // Find the matching closing brace and quote
+                                    int braceCount = 0;
+                                    int pos = nameStart;
+                                    boolean inString = false;
+                                    boolean escaped = false;
+                                    
+                                    while (pos < content.length()) {
+                                        char c = content.charAt(pos);
                                         
-                                        // Convert from display name format to internal format
-                                        String internalName = extractInternalName(existingName);
-                                        if (internalName != null && !internalName.isEmpty()) {
-                                            boolean wasNew = usedNames.add(internalName);
-                                            if (wasNew) {
-                                                Specialization.logger.info("[LocalNameGenerator] Added existing name to used set: " + internalName);
+                                        if (escaped) {
+                                            escaped = false;
+                                        } else if (c == '\\') {
+                                            escaped = true;
+                                        } else if (c == '"' && !escaped) {
+                                            inString = !inString;
+                                        } else if (!inString) {
+                                            if (c == '{') {
+                                                braceCount++;
+                                            } else if (c == '}') {
+                                                braceCount--;
+                                                if (braceCount == 0) {
+                                                    // Found the end of the JSON object
+                                                    pos++; // Include the closing brace
+                                                    break;
+                                                }
                                             }
-                                        } else {
-                                            Specialization.logger.warning("[LocalNameGenerator] Failed to extract internal name from: '" + existingName + "'");
+                                        }
+                                        pos++;
+                                    }
+                                    
+                                    if (braceCount == 0 && pos < content.length()) {
+                                        // Extract the JSON string
+                                        String jsonString = content.substring(nameStart, pos);
+                                        
+                                        // Parse the nested JSON to extract the "text" field
+                                        String extractedName = extractTextFromNestedJson(jsonString);
+                                        
+                                        if (extractedName != null && !extractedName.isEmpty()) {
+                                            // Convert to internal format
+                                            String internalName = extractInternalName(extractedName);
+                                            if (internalName != null && !internalName.isEmpty()) {
+                                                boolean wasNew = usedNames.add(internalName);
+                                                if (wasNew) {
+                                                    namesInThisFile++;
+                                                    namesFound++;
+                                                    Specialization.logger.info("[LocalNameGenerator] Found name in " + file.getName() + ": " + internalName);
+                                                }
+                                            }
                                         }
                                     }
                                 }
+                                
+                                filesProcessed++;
+                                if (namesInThisFile == 0) {
+                                    Specialization.logger.fine("[LocalNameGenerator] No names found in file: " + file.getName());
+                                }
+                                
                             } catch (Exception e) {
-                                Specialization.logger.warning("[LocalNameGenerator] Failed to read player file " + playerFile.getName() + ": " + e.getMessage());
-                                e.printStackTrace();
+                                Specialization.logger.warning("[LocalNameGenerator] Failed to read file " + file.getName() + ": " + e.getMessage());
                             }
                         }
                     }
+                    
+                    Specialization.logger.info("[LocalNameGenerator] Scan complete - Processed " + filesProcessed + " files, found " + namesFound + " unique names");
+                    
+                } else {
+                    Specialization.logger.warning("[LocalNameGenerator] No files found in MinecraftCivilizationsCore directory");
                 }
+            } else {
+                Specialization.logger.warning("[LocalNameGenerator] MinecraftCivilizationsCore directory not found: " + pluginDataDir.getAbsolutePath());
             }
         } catch (Exception e) {
-            Specialization.logger.warning("[LocalNameGenerator] Failed to load names from playerdata: " + e.getMessage());
+            Specialization.logger.warning("[LocalNameGenerator] Failed to load names from MinecraftCivilizationsCore: " + e.getMessage());
             e.printStackTrace();
         }
     }
     
+    /**
+     * Extracts the "text" field value from a nested JSON string
+     * @param jsonString The JSON string like {"italic":false,"color":"white","text":"Participant_973"}
+     * @return The text value or null if extraction fails
+     */
+    private String extractTextFromNestedJson(String jsonString) {
+        try {
+            Specialization.logger.info("[LocalNameGenerator] Raw JSON string to parse: " + jsonString);
+
+            String textPattern = "\\\\\"text\\\\\"\\s*:\\s*\\\\\"([^\\\\\"]+)\\\\\"";
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(textPattern);
+            java.util.regex.Matcher matcher = pattern.matcher(jsonString);
+
+            if (matcher.find()) {
+                String textValue = matcher.group(1);
+                Specialization.logger.info("[LocalNameGenerator] Extracted text from JSON: " + textValue);
+                return textValue;
+            } else {
+                String altPattern = "\"text\"\\s*:\\s*\"([^\"]+)\"";
+                java.util.regex.Pattern altRegex = java.util.regex.Pattern.compile(altPattern);
+                java.util.regex.Matcher altMatcher = altRegex.matcher(jsonString);
+
+                if (altMatcher.find()) {
+                    String textValue = altMatcher.group(1);
+                    Specialization.logger.info("[LocalNameGenerator] Extracted text using alternative pattern: " + textValue);
+                    return textValue;
+                }
+
+                Specialization.logger.warning("[LocalNameGenerator] No 'text' field found in JSON: " + jsonString);
+                return null;
+            }
+        } catch (Exception e) {
+            Specialization.logger.warning("[LocalNameGenerator] Failed to extract text from JSON: " + jsonString + " - " + e.getMessage());
+            return null;
+        }
+    }
+
     /**
      * Extracts the internal name format (FirstName_LastName) from a display name
      * @param displayName The display name that might contain formatting

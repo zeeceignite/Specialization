@@ -13,6 +13,7 @@ import com.minecraftcivilizations.specialization.Analytics.AnalyticsData;
 import com.minecraftcivilizations.specialization.Command.ClassCommand;
 import com.minecraftcivilizations.specialization.Command.SetLoreCommand;
 import com.minecraftcivilizations.specialization.Command.SetXpCommand;
+import com.minecraftcivilizations.specialization.Command.SuicideCommand;
 import com.minecraftcivilizations.specialization.Command.TownsCommand;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Data.DataManager;
@@ -81,7 +82,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new HungerSystemListener(this), this);
 
         getServer().getPluginManager().registerEvents(new StonecutterListener(), this);
-        getServer().getPluginManager().registerEvents(new CraftingListener(), this);
+        getServer().getPluginManager().registerEvents(new CraftingListener(this), this);
         getServer().getPluginManager().registerEvents(new FurnaceListener(), this);
         getServer().getPluginManager().registerEvents(new PreJoinEventListener(), this);
         getServer().getPluginManager().registerEvents(new TownManager(), this);
@@ -207,6 +208,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new SetXpCommand());
         commandManager.registerCommand(new SetLoreCommand());
         commandManager.registerCommand(new TownsCommand());
+        commandManager.registerCommand(new SuicideCommand());
     }
 
     public void applyCustomName(Player player, Component name){
