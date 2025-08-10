@@ -21,7 +21,7 @@ public class DataManager {
         scheduler.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.SECONDS);
     }
 
-    private static Runnable runnable = () -> {
+    private static final Runnable runnable = () -> {
         Specialization.logger.info("Running task at " + LocalDateTime.now());
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().saveAll();
     };

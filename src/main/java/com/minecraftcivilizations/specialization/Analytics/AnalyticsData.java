@@ -59,7 +59,12 @@ public record AnalyticsData(
                                 Integer::sum)
                 );
 
-        return new AnalyticsData(now, onlinePlayers, totalDeaths, playerDensity, totalSkills, TownManager.getTowns(), deaths);
+        return new AnalyticsData(now,
+                onlinePlayers, totalDeaths,
+                playerDensity,
+                totalSkills,
+                TownManager.getTowns(),
+                deaths);
     }
 
     private static Map<String, Integer> getPlayerDensity(){
