@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Listener;
+package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.comphenix.protocol.wrappers.Pair;
 import com.google.gson.reflect.TypeToken;
@@ -7,7 +7,6 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
@@ -17,8 +16,6 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-
-import java.util.Set;
 
 public class PlayerDeathListener implements Listener {
     @EventHandler

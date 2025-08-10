@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Listener;
+package com.minecraftcivilizations.specialization.Listener.Player.Interactions;
 
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
@@ -20,7 +20,7 @@ import org.bukkit.ChatColor;
 
 import java.util.List;
 
-import static com.minecraftcivilizations.specialization.Listener.PlayerDeathListener.removeDownedArmorStand;
+import static com.minecraftcivilizations.specialization.Listener.Player.PlayerDeathListener.removeDownedArmorStand;
 
 public class FoodInteractionListener implements Listener {
 

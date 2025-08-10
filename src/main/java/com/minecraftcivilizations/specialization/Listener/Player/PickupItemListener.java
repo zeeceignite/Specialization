@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Listener;
+package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.minecraftcivilizations.specialization.Specialization;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItem;

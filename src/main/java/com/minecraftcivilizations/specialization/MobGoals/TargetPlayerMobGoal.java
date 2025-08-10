@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Mobs;
+package com.minecraftcivilizations.specialization.MobGoals;
 
 import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalKey;

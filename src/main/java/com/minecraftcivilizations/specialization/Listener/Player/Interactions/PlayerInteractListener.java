@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Listener;
+package com.minecraftcivilizations.specialization.Listener.Player.Interactions;
 
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;

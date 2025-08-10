@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Listener;
+package com.minecraftcivilizations.specialization.Listener.Player.Combat;
 
 import com.comphenix.protocol.wrappers.Pair;
 import com.google.gson.reflect.TypeToken;

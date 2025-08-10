@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Listener;
+package com.minecraftcivilizations.specialization.Listener.Player.Interactions;
 
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import net.kyori.adventure.text.Component;

@@ -1,8 +1,8 @@
-package com.minecraftcivilizations.specialization.Listener;
+package com.minecraftcivilizations.specialization.Listener.Mobs;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
-import com.minecraftcivilizations.specialization.Mobs.BreakBlockMobGoal;
-import com.minecraftcivilizations.specialization.Mobs.TargetPlayerMobGoal;
+import com.minecraftcivilizations.specialization.MobGoals.BreakBlockMobGoal;
+import com.minecraftcivilizations.specialization.MobGoals.TargetPlayerMobGoal;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;

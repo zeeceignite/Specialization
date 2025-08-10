@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Listener;
+package com.minecraftcivilizations.specialization.Listener.Player.Combat;
 
 import org.bukkit.enchantments.Enchantment;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;

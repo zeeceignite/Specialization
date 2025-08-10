@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Mining;
+package com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;

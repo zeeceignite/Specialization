@@ -20,11 +20,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
-import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
 
-import static com.minecraftcivilizations.specialization.Listener.PlayerDeathListener.removeDownedArmorStand;
+import static com.minecraftcivilizations.specialization.Listener.Player.PlayerDeathListener.removeDownedArmorStand;
 
 public class Recipes {
 

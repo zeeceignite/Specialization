@@ -3,7 +3,7 @@ package com.minecraftcivilizations.specialization.Command;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
-import com.minecraftcivilizations.specialization.Listener.PlayerDeathListener;
+import com.minecraftcivilizations.specialization.Listener.Player.PlayerDeathListener;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import net.kyori.adventure.text.Component;
