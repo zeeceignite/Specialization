@@ -30,7 +30,7 @@ public class SpecializationConfig {
     @Getter
     private static ConfigFile unlockedRecipesConfig;
     @Getter
-    private static ConfigFile defaultUnlockedRecipesConfig;
+    private static ConfigFile allRecipeBank;
     @Getter
     private static ConfigFile xpGainFromStonecuttingConfig;
     @Getter
@@ -265,7 +265,7 @@ public class SpecializationConfig {
 
 
 
-        defaultUnlockedRecipesConfig = new ConfigFile(Specialization.getInstance(), "defaultUnlockedRecipesConfig", null, fields -> {
+        allRecipeBank = new ConfigFile(Specialization.getInstance(), "allRecipeBank", null, fields -> {
             Set<NamespacedKey> allRecipes = new HashSet<>();
 
             Bukkit.recipeIterator().forEachRemaining((recipe) -> {
@@ -274,7 +274,7 @@ public class SpecializationConfig {
                 }
             });
 
-            fields.add(new Pair<>("DEFAULT_UNLOCKED_RECIPES", allRecipes));
+            fields.add(new Pair<>("ALL_RECIPES", allRecipes));
         });
 
         blockHardnessConfig = new ConfigFile(Specialization.getInstance(), "blockHardnessConfig", null, fields -> {

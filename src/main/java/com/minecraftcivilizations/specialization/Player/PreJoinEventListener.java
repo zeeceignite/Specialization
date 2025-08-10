@@ -13,14 +13,6 @@ public class PreJoinEventListener implements Listener {
         onPreLogin(event.getPlayerProfile(), event.getUniqueId());
     }
     private void onPreLogin(PlayerProfile playerProfile, UUID uuid){
-//        try {
-//            CraftPlayerProfile profile = (CraftPlayerProfile) playerProfile;
-//            GameProfile gameProfile = profile.getGameProfile();
-//            Field ff = gameProfile.getClass().getDeclaredField("name");
-//            ff.setAccessible(true);
-//            ff.set(gameProfile, "DUMBASS");
-//        } catch (NoSuchFieldException | IllegalAccessException e) {
-//            e.printStackTrace();
-//        }
+        // Method intentionally left empty
     }
 }

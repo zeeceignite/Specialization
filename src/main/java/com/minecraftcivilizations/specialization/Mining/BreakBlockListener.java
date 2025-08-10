@@ -57,7 +57,6 @@ public class BreakBlockListener implements Listener {
         SkillLevel skillRequired = SpecializationConfig.getCanMinerLvlBreakConfig().get(materialName.toString(), new TypeToken<SkillLevel>() {});
         if (skillRequired != null && player.getSkillLevel(SkillType.MINER) < skillRequired.getLevel()) {
             event.setDropItems(false);
-            System.out.println("Hey this guy wasnt supposed to break this!");
             event.getPlayer().sendMessage(org.bukkit.ChatColor.RED + "You are unable to mine this ore.");
         }
     }
@@ -103,7 +102,6 @@ public class BreakBlockListener implements Listener {
         SkillLevel skillRequired = SpecializationConfig.getCanMinerLvlBreakConfig().get(materialName.toString(), new TypeToken<>() {});
         if (skillRequired != null && player.getSkillLevel(SkillType.FARMER) < skillRequired.getLevel()) {
             event.setDropItems(false);
-            System.out.println("Hey this guy wasnt supposed to break this!");
             event.getPlayer().sendMessage(org.bukkit.ChatColor.RED + "You are unable to farm this");
         }
     }

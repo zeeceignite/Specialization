@@ -73,17 +73,6 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
         if (player == null) return;
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                Set<NamespacedKey> recipes =
-                        SpecializationConfig.getDefaultUnlockedRecipesConfig().get("DEFAULT_UNLOCKED_RECIPES", new TypeToken<>(){});
-                for (NamespacedKey entry : recipes) {
-                    player.discoverRecipe(entry);
-                }
-            }
-        }.runTaskLater(Specialization.getInstance(), 1);
-
         Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_BREAK_SPEED)).setBaseValue(0);
         Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_BREAK_SPEED)).setBaseValue(0);
     }

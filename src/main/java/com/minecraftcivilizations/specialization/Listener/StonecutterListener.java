@@ -21,15 +21,10 @@ public class StonecutterListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(InventoryClickEvent event) {
         if (event.getView().getType() != InventoryType.STONECUTTER) return;
-
         if (event.getSlot() != 1) return;
-
         if (!(event.getWhoClicked() instanceof Player player)) return;
 
         int amount = 1;
-
-
-
         if (!event.getAction().toString().startsWith("PICKUP")) {
             if (event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
                 amount = event.getCurrentItem().getAmount() * event.getView().getItem(0).getAmount() == 0 ? 1 : event.getCurrentItem().getAmount() * event.getView().getItem(0).getAmount();
@@ -38,8 +33,6 @@ public class StonecutterListener implements Listener {
 
         ItemStack result = event.getCurrentItem();
         if (result == null || result.getType() == Material.AIR) return;
-
-        Specialization.logger.info(String.valueOf(event.getView().getItem(event.getSlot()).getAmount()));
 
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
         Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromStonecuttingConfig().get(result.getType(), new TypeToken<>(){});

@@ -34,6 +34,16 @@ public class PlayerDeathListener implements Listener {
             return;
         }
 
+        // Only trigger downed state if killed by another player
+        Player killer = event.getPlayer().getKiller();
+        if (killer == null) {
+            // Player was not killed by another player (e.g., mobs, environment, etc.)
+            // Let them die normally
+            playerActuallyDied(event.getPlayer());
+            return;
+        }
+
+        // Player was killed by another player - trigger downed state
         customPlayer.setDowned(true);
         event.getPlayer().setHealth(10);
 
@@ -115,14 +125,6 @@ public class PlayerDeathListener implements Listener {
         CustomPlayer customplayer = CoreUtil.getPlayer(player);
         customplayer.getSkills().forEach(skill -> {
             customplayer.addSkillXp(skill.getSkillType(), -skill.getXp());
-        });
-
-        Set<NamespacedKey> defaultRecipes = SpecializationConfig.getDefaultUnlockedRecipesConfig().get("DEFAULT_UNLOCKED_RECIPES", new TypeToken<>(){});
-
-        player.getDiscoveredRecipes().forEach(recipe -> {
-            if(defaultRecipes.contains(recipe)) {
-                player.undiscoverRecipe(recipe);
-            }
         });
     }
 
