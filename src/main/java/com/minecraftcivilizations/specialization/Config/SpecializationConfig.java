@@ -193,8 +193,8 @@ public class SpecializationConfig {
 
 
         berserkConfig = new ConfigFile(Specialization.getInstance(), "berserkConfig", null, fields -> {
-            for(PotionEffectType potionEffectType : Registry.EFFECT) {
-                fields.add(new Pair<>(potionEffectType.getKey().getKey(), new Pair<>(1D, 0D)));
+            for(PotionEffectType potionEffectType : Registry.MOB_EFFECT) {
+                fields.add(new Pair<>(potionEffectType.getKey(), new PotionEffectData(0, 0)));
             }
         });
 

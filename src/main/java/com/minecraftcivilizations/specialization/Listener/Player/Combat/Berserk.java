@@ -1,7 +1,7 @@
 package com.minecraftcivilizations.specialization.Listener.Player.Combat;
 
-import com.comphenix.protocol.wrappers.Pair;
 import com.google.gson.reflect.TypeToken;
+import com.minecraftcivilizations.specialization.Config.PotionEffectData;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -10,6 +10,7 @@ import lombok.NonNull;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -49,21 +50,15 @@ public class Berserk implements Listener {
     }
 
     public void applyBerserk(Player player) {
-        for (PotionEffectType potionEffectType : Registry.EFFECT) {
+        for (PotionEffectType potionEffectType : Registry.MOB_EFFECT) {
             try {
+                NamespacedKey effectKey = potionEffectType.getKey();
+                PotionEffectData effectData = SpecializationConfig.getBerserkConfig().get(effectKey, new TypeToken<>() {});
 
-                String effectKey = potionEffectType.getKey().getKey();
-                Pair<Double, Double> effectData = SpecializationConfig.getBerserkConfig().get(effectKey, new TypeToken<Pair<Double, Double>>(){});
-
-                if (effectData != null && effectData.getFirst() != null && effectData.getSecond() != null) {
-
-                    int duration = effectData.getFirst().intValue();
-                    int amplifier = effectData.getSecond().intValue();
-
-                    if (duration > 0) {
-                        player.addPotionEffect(new PotionEffect(potionEffectType, duration, amplifier, false, false));
-                    }
+                if (effectData != null && effectData.amplifier() > 0 && effectData.duration() > 0) {
+                    player.addPotionEffect(new PotionEffect(potionEffectType, effectData.duration(), effectData.amplifier(), false, false));
                 }
+
             } catch (Exception e) {
                 System.err.println("Failed to apply berserk effect " + potionEffectType.getKey() + ": " + e.getMessage());
             }
