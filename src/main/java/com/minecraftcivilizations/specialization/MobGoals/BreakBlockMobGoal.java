@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Mobs;
+package com.minecraftcivilizations.specialization.MobGoals;
 
 import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalKey;
@@ -7,15 +7,12 @@ import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import com.minecraftcivilizations.specialization.Specialization;
-import lombok.Getter;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.pathfinder.Path;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftMob;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
@@ -53,10 +50,9 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
         if(random.nextDouble() > percentage / 100d) return false;
 
         Path path = ((CraftMob) monster).getHandle().getNavigation().getPath();
-        if(path == null) return false;
-        if(path.canReach()) return false;
+        if(path != null && path.canReach()) return false;
 
-        Vector directionToPlayer = monster.getTarget().getLocation().subtract(monster.getLocation()).toVector().normalize();
+        Vector directionToPlayer = monster.getTarget().getLocation().subtract(monster.getEyeLocation()).toVector().normalize();
         RayTraceResult result = monster.getWorld().rayTrace(monster.getLocation().add(0, monster.getHeight()*.5, 0), directionToPlayer, 5, FluidCollisionMode.NEVER, true, .25, null);
         if(result == null || result.getHitBlock() == null) return false;
 
