@@ -75,7 +75,7 @@ public record AnalyticsData(
             int z = (int)(player.getLocation().getZ() / chunkAmount);
 
             playerDensity.compute(x + "," + z,
-                    (_, value) -> value == null ? 0 : value + 1);
+                    (_, value) -> value == null ? 1 : value + 1);
         }
         return playerDensity;
     }
