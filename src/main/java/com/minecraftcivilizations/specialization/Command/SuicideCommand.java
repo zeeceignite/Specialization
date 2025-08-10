@@ -16,12 +16,7 @@ public class SuicideCommand extends BaseCommand {
 
     @Default
     public void onSuicide(@NotNull Player player) {
-        CustomPlayer customPlayer = CoreUtil.getPlayer(player.getUniqueId());
-        
-        if (customPlayer == null) {
-            player.sendMessage(Component.text("Error: Could not find player data.").color(NamedTextColor.RED));
-            return;
-        }
+        CustomPlayer customPlayer = CoreUtil.getPlayer(player);
 
         if (!customPlayer.isDowned()) {
             player.sendMessage(Component.text("You can only use this command while downed.").color(NamedTextColor.RED));

@@ -50,14 +50,7 @@ public record AnalyticsData(
         int onlinePlayers = Bukkit.getOnlinePlayers().size();
         int totalDeaths = allData.stream().mapToInt(CustomPlayer.AnalyticPlayerData::getDeaths).sum();
         Map<String, Integer> playerDensity = getPlayerDensity();
-        Map<SkillType, Integer> totalSkills = allPlayers.stream()
-                .flatMap(player -> Arrays.stream(SkillType.values()).map(skillType -> new AbstractMap.SimpleEntry<>(skillType, player.getSkillLevel(skillType))))
-                .collect(
-                        Collectors.toMap(
-                                AbstractMap.SimpleEntry::getKey,
-                                Map.Entry::getValue,
-                                Integer::sum)
-                );
+        Map<SkillType, Integer> totalSkills = skillPopularity(allPlayers);
 
         return new AnalyticsData(now,
                 onlinePlayers, totalDeaths,
@@ -65,6 +58,17 @@ public record AnalyticsData(
                 totalSkills,
                 TownManager.getTowns(),
                 deaths);
+    }
+
+    private static Map<SkillType, Integer> skillPopularity(List<CustomPlayer> allPlayers){
+        return allPlayers.stream()
+                .flatMap(player -> Arrays.stream(SkillType.values()).map(skillType -> new AbstractMap.SimpleEntry<>(skillType, player.getSkillLevel(skillType))))
+                .collect(
+                        Collectors.toMap(
+                                AbstractMap.SimpleEntry::getKey,
+                                Map.Entry::getValue,
+                                Integer::sum)
+                );
     }
 
     private static Map<String, Integer> getPlayerDensity(){

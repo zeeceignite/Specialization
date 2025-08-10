@@ -4,9 +4,9 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
+import com.minecraftcivilizations.specialization.util.CoreUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUI;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem;
-import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -30,32 +30,38 @@ public class ClassGUI extends GUI {
 
     @Override
     public void open(Player player) {
-        if (MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId()) != null) {
-            CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-            this.getItems().clear();
-            if (customPlayer.isAdvancedClassesGUIEnabled()) {
-                advancedClassGUI(customPlayer);
-            } else {
-                defaultClassGUI(customPlayer);
-            }
-            ItemStack user = ItemStack.of(Material.EMERALD);
-            ItemMeta userItemMeta = user.getItemMeta();
-            userItemMeta.addItemFlags(ItemFlag.values());
-            userItemMeta.addItemFlags(ItemFlag.values());
-            userItemMeta.displayName(customPlayer.getName().decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
-            user.setItemMeta(userItemMeta);
-            this.getItems().put(4, new GUIItem(user, null));
+        CustomPlayer customPlayer = CoreUtil.getPlayer(player);
+        this.getItems().clear();
 
-            ItemStack settings = ItemStack.of(Material.BOOK);
-            ItemMeta settingsItemMeta = settings.getItemMeta();
-            settingsItemMeta.addItemFlags(ItemFlag.values());
-            settingsItemMeta.displayName(Component.text("Settings").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
-            settings.setItemMeta(settingsItemMeta);
-            this.getItems().put(53, new GUIItem(settings, () -> new SettingsGUI().setParentGUI(this).open(player)));
+        if (customPlayer.isAdvancedClassesGUIEnabled()) {
+            advancedClassGUI(customPlayer);
+        } else {
+            defaultClassGUI(customPlayer);
         }
+
+        this.getItems().put(4, makeUserItem(customPlayer.getName()));
+        this.getItems().put(53, makeSettingsItem(player));
+
         player.openInventory(Bukkit.createInventory(player, 54));
         super.open(player);
-        Bukkit.getPlayer(player.getUniqueId());
+    }
+
+    private GUIItem makeSettingsItem(Player player){
+        ItemStack settings = ItemStack.of(Material.BOOK);
+        ItemMeta settingsItemMeta = settings.getItemMeta();
+        settingsItemMeta.addItemFlags(ItemFlag.values());
+        settingsItemMeta.displayName(Component.text("Settings").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+        settings.setItemMeta(settingsItemMeta);
+        return new GUIItem(settings, () -> new SettingsGUI().setParentGUI(this).open(player));
+    }
+
+    private GUIItem makeUserItem(Component name){
+        ItemStack user = ItemStack.of(Material.EMERALD);
+        ItemMeta userItemMeta = user.getItemMeta();
+        userItemMeta.addItemFlags(ItemFlag.values());
+        userItemMeta.displayName(name.decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+        user.setItemMeta(userItemMeta);
+        return new GUIItem(user, null);
     }
 
     private GUIItem makeGlassDistributionPaneAdvanced(String name, Material material, double percent) {
@@ -109,17 +115,12 @@ public class ClassGUI extends GUI {
         return Objects.requireNonNull(Material.getMaterial(color + "_" + materialType));
     }
 
-
-
-
     private void advancedClassGUI(CustomPlayer customPlayer) {
         int i = 37;
         for (Skill skill : customPlayer.getSkills()) {
             int temp = i;
             for (int score = 0; score < 3; score++) {
                 double diff = customPlayer.getGUIDistributionOfTotalSkills(skill.getSkillType()) - score;
-
-
 
                 if (diff >= 1) {
                     this.getItems().put(temp-=9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.GREEN_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
@@ -132,7 +133,6 @@ public class ClassGUI extends GUI {
                 } else {
                     this.getItems().put(temp-=9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.RED_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                 }
-
             }
 
             int currentSkillLevel = customPlayer.getSkillLevel(skill.getSkillType());
@@ -142,7 +142,7 @@ public class ClassGUI extends GUI {
                 double currentXp = Math.round(skill.getXp() * 100) / 100D;
                 double xpToNextLevel = Math.round((Skill.getXPNeededForLevel(currentSkillLevel + 1) - skill.getXp()) * 100) / 100D ;
                 double percentOfTotalForNextLevel = Math.round(
-                        (Double) SpecializationConfig.getSkillRequirementsConfig().get(
+                        SpecializationConfig.getSkillRequirementsConfig().get(
                                 skill.getSkillType() + "_" + SkillLevel.getSkillLevelFromInt(currentSkillLevel + 1) + "_REQUIREMENT", Double.TYPE) * 100) / 100D;
 
                 ItemStack itemStack = ItemStack.of(skill.getSkillType().getSkillWorkstation());
@@ -194,6 +194,7 @@ public class ClassGUI extends GUI {
             int temp = i;
             double distribution = customPlayer.getGUIDistributionOfTotalLevels(skill.getSkillType());
             int currentSkillLevel =  Math.min(customPlayer.getSkillLevel(skill.getSkillType()), SkillLevel.values().length-1);
+
             for (int score = 0; score < 3; score++) {
                 if((distribution * .03 - score) < 0 ) break;
                 int type = Math.min((int) (distribution * .09 - score * 3), 2);
@@ -233,9 +234,6 @@ public class ClassGUI extends GUI {
             });
             itemStack.setItemMeta(itemMeta);
             this.getItems().put(i++, new GUIItem(itemStack, null));
-
         }
-
-
     }
 }
