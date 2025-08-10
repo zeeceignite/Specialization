@@ -2,6 +2,7 @@ package com.minecraftcivilizations.specialization.Player;
 
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Player.TeamManager;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -83,6 +84,9 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         getSkill(skillType).addXp(xp);
         Bukkit.getPlayer(getUuid()).sendActionBar(Component.text("+" + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));
         int currentLevel = this.getSkillLevel(skillType);
+
+        // Update team assignment based on highest skill
+        TeamManager.setTeam(Bukkit.getPlayer(getUuid()));
 
         if (previousLevel != currentLevel) {
             while (currentLevel > 0) {

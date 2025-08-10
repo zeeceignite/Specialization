@@ -164,6 +164,7 @@ public class SpecializationConfig {
             for(EntityType entityType : EntityType.values()) {
                 fields.add(new Pair<>(entityType, 1D));
             }
+            fields.add(new Pair<>("NON_GUARDSMAN_DAMAGE_REDUCTION", 0.25));
         });
 
         downedConfig = new ConfigFile(Specialization.getInstance(), "downedConfig", null, fields -> {
