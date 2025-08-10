@@ -145,9 +145,39 @@ public final class Specialization extends JavaPlugin {
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerJoin(playerJoinEvent -> {
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(playerJoinEvent.getUniqueId());
             applyCustomName(playerJoinEvent.getPlayer(), customPlayer.getName());
+            
+            // Restore downed state if they were downed when they logged out
+            if (customPlayer.isWasDownedOnLogout()) {
+                // Use Bukkit.getScheduler() to delay this until after the player has fully joined
+                Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
+                    Player player = playerJoinEvent.getPlayer();
+                    if (player != null && player.isOnline()) {
+                        // Restore downed state without starting the death timer
+                        PlayerDeathListener.restoreDownedState(player, customPlayer);
+                        // Clear the flag since we've restored the state
+                        customPlayer.setWasDownedOnLogout(false);
+                    }
+                }, 5L); // 5 ticks delay to ensure player is fully loaded
+            }
         });
 
-        MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerQuit(playerQuitEvent -> MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().removeCustomPlayer(playerQuitEvent.getPlayer().getUniqueId()));
+        MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerQuit(playerQuitEvent -> {
+            // Save downed state to restore on rejoin, then clean up current session state
+            CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(playerQuitEvent.getPlayer().getUniqueId());
+            if (customPlayer != null) {
+                if (customPlayer.isDowned()) {
+                    // Save that they were downed when they logged out
+                    customPlayer.setWasDownedOnLogout(true);
+                    // Clean up current session state to prevent infinite death loop
+                    customPlayer.setDowned(false);
+                    PlayerDeathListener.removeDownedArmorStand(playerQuitEvent.getPlayer());
+                } else {
+                    // They weren't downed, so clear the flag
+                    customPlayer.setWasDownedOnLogout(false);
+                }
+            }
+            MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().removeCustomPlayer(playerQuitEvent.getPlayer().getUniqueId());
+        });
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             Specialization.logger.info("Loaded player: " + player.getName());

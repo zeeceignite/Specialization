@@ -104,23 +104,19 @@ public class CraftingListener implements Listener {
         // If recipe is in skill config but player doesn't meet requirements, block access
         // This takes priority over defaultRecipes config (handles overlaps)
         if (isInSkillConfig && !meetsSkillRequirement) {
-            LOGGER.info("Recipe " + recipeKey + " is in skill config but player " + player.getName() + " doesn't meet requirements");
             return true;
         }
         
         // If recipe is in skill config and player meets requirements, allow access
         if (isInSkillConfig && meetsSkillRequirement) {
-            LOGGER.info("Recipe " + recipeKey + " is in skill config and player " + player.getName() + " meets requirements");
             return false;
         }
         
         // If recipe is not in skill config, check if it's in default recipes
         // Only block if it's not in default recipes
         if (!defaultRecipes.contains(recipeKey)) {
-            LOGGER.info("Recipe " + recipeKey + " is not in default recipes, blocking for player " + player.getName());
             return true;
         }
-        LOGGER.info("Recipe " + recipeKey + " is in default recipes, allowing for player " + player.getName());
         return false;
     }
 
@@ -159,11 +155,6 @@ public class CraftingListener implements Listener {
                     // Check if player meets the skill requirement
                     if (customPlayer.getSkillLevel(skillType) >= skillLevel.ordinal()) {
                         allowedRecipes.addAll(skillRecipes);
-                        LOGGER.info("Player " + player.getName() + " meets " + skillType + "_" + skillLevel + 
-                                   " requirements, adding " + skillRecipes.size() + " recipes");
-                    } else {
-                        LOGGER.info("Player " + player.getName() + " does NOT meet " + skillType + "_" + skillLevel + 
-                                   " requirements, skipping " + skillRecipes.size() + " recipes");
                     }
                 }
             }

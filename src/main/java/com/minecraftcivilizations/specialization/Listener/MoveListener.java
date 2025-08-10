@@ -37,24 +37,5 @@ public class MoveListener implements Listener {
                 minDistanceSq = town.getCenterLocation().distanceSquared(from);
             }
         }
-
-        double minDistance = Math.sqrt(minDistanceSq);
-
-        BossBar bar = Bukkit.getBossBar(new NamespacedKey(Specialization.getInstance(), "distanceBar"));
-        if (minDistance > 100) {
-            if (bar == null) {
-                bar = Bukkit.createBossBar(new NamespacedKey(Specialization.getInstance(), "distanceBar"), "Distance from Town: " + minDistance + " blocks", BarColor.RED, BarStyle.SEGMENTED_10);
-            }
-            bar.setProgress(mapValue(Math.clamp(minDistance, 0, 1000), 0, 1000, 0, 1)); // 0.0 to 1.0
-            bar.addFlag(BarFlag.DARKEN_SKY);
-            bar.addFlag(BarFlag.CREATE_FOG);
-            bar.addPlayer(event.getPlayer());
-            bar.setTitle("Distance from Town: " + minDistance + " blocks");
-            bar.setVisible(true);
-        } else {
-            if (bar != null) {
-                bar.removePlayer(event.getPlayer());
-            }
-        }
     }
 }

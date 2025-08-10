@@ -46,6 +46,9 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     @Getter
     @Setter
     private long lastDowned = System.currentTimeMillis();
+    @Getter
+    @Setter
+    private boolean wasDownedOnLogout = false;
 
     public CustomPlayer(UUID uuid) {
         super(uuid);

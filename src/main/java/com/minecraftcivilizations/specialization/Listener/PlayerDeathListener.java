@@ -65,6 +65,46 @@ public class PlayerDeathListener implements Listener {
         }
     }
 
+    public static void restoreDownedState(Player player, CustomPlayer customPlayer) {
+        // Set the downed flag directly without starting the death timer
+        // We need to set this manually to avoid triggering the death timer in setDowned()
+        try {
+            java.lang.reflect.Field downedField = CustomPlayer.class.getDeclaredField("isDowned");
+            downedField.setAccessible(true);
+            downedField.set(customPlayer, true);
+        } catch (Exception e) {
+            // Fallback: use setDowned but immediately cancel any timer
+            customPlayer.setDowned(true);
+        }
+        
+        customPlayer.setLastDowned(System.currentTimeMillis());
+        
+        // Set player health to downed health
+        player.setHealth(10);
+        
+        // Apply downed effects
+        PlayerDeathListener listener = new PlayerDeathListener();
+        listener.applyDownedEffects(player);
+        
+        // Create and attach armor stand
+        Location playerLoc = player.getLocation();
+        Location armorStandLoc = playerLoc.clone().subtract(0, SpecializationConfig.getDownedConfig().get("OFFSET_TO_GROUND", Double.class), 0);
+        
+        ArmorStand armorStand = player.getWorld().spawn(armorStandLoc, ArmorStand.class);
+        armorStand.setVisible(false);
+        armorStand.setInvulnerable(true);
+        armorStand.setGravity(false);
+        armorStand.setCanPickupItems(false);
+        armorStand.setCustomNameVisible(false);
+        armorStand.setSilent(true);
+        armorStand.setCustomName("downed_" + player.getUniqueId());
+        
+        armorStand.addPassenger(player);
+        
+        // Note: We intentionally do NOT start the death timer here to prevent infinite loops
+        // The player will remain downed until healed or manually killed
+    }
+
     public void playerActuallyDied(Player player){
         CustomPlayer.AnalyticPlayerData data = CoreUtil.getPlayer(player).getAnalyticPlayerData();
         data.setDeaths(data.getDeaths() + 1);
