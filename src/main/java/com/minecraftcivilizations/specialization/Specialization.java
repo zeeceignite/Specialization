@@ -156,6 +156,7 @@ public final class Specialization extends JavaPlugin {
                 ff.set(gameProfile, ComponentUtils.serializeComponentAsString(localName));
 
             } catch (NoSuchFieldException | IllegalAccessException e) {
+                Bukkit.getLogger().severe("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
                 e.printStackTrace();
             }
         });

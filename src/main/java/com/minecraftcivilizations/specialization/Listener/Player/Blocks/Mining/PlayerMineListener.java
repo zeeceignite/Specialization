@@ -24,13 +24,17 @@ public class PlayerMineListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerInteractEarly(PlayerInteractEvent event) {
-        if (event.getAction() == Action.LEFT_CLICK_BLOCK && event.getClickedBlock() != null) {
+        if (event.getAction() == Action.LEFT_CLICK_BLOCK && event.getClickedBlock() != null && event.getClickedBlock().getType().isBlock()) {
             AttributeInstance breakSpeedAttr = event.getPlayer().getAttribute(Attribute.BLOCK_BREAK_SPEED);
             if (breakSpeedAttr != null && !originalBreakSpeed.containsKey(event.getPlayer().getUniqueId())) {
                 originalBreakSpeed.put(event.getPlayer().getUniqueId(), breakSpeedAttr.getBaseValue());
             }
-
-            double multiplier = getBlockBreakMultiplier(event.getClickedBlock());
+            double multiplier = 1;
+            try {
+                multiplier = getBlockBreakMultiplier(event.getClickedBlock());
+            } catch (Exception e) {
+                Bukkit.getLogger().info("AAAAAAAAAA: " + event.getClickedBlock());
+            }
             
 
             if (multiplier == 0) {
