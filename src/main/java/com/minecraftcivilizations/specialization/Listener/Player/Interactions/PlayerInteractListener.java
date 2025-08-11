@@ -29,8 +29,9 @@ import java.util.*;
 public class PlayerInteractListener implements Listener {
 
     @EventHandler
-    public void onRightClickBlock(InventoryOpenEvent e) {
+    public void onOpenBlockInventory(InventoryOpenEvent e) {
         if(e.getPlayer().isOp()) return;
+
         InventoryType type = e.getInventory().getType();
         List<InventoryType> defaultAllow = SpecializationConfig.getCanUseBlockConfig().get("default", new TypeToken<>(){});
         if(defaultAllow.contains(type)) return;
