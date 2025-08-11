@@ -8,6 +8,7 @@ import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Boat;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -31,8 +32,14 @@ public class PlayerInteractEntityListener implements Listener {
     public void onPlayerInteractEntity(PlayerInteractEntityEvent e) {
         Player p = e.getPlayer();
         if (p.isSneaking()) return;
+        CustomPlayer customPlayer = CoreUtil.getPlayer(p.getUniqueId());
+
+        if(e.getRightClicked() instanceof Boat){
+            if(customPlayer.isDowned()) e.setCancelled(true);
+            return;
+        }
+
         if (e.getRightClicked() instanceof Player clickedPlayer) {
-            CustomPlayer customPlayer = CoreUtil.getPlayer(p.getUniqueId());
             if (customPlayer == null) return;
             if (customPlayer.getSkillLevel(SkillType.HEALER) > SkillLevel.JOURNEYMAN.getLevel()) {
                 CustomPlayer downedPlayer = CoreUtil.getPlayer(clickedPlayer.getUniqueId());
