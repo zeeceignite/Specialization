@@ -52,8 +52,9 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
         Path path = ((CraftMob) monster).getHandle().getNavigation().getPath();
         if(path != null && path.canReach()) return false;
 
-        Vector directionToPlayer = monster.getTarget().getLocation().subtract(monster.getEyeLocation()).toVector().normalize();
-        RayTraceResult result = monster.getWorld().rayTrace(monster.getLocation().add(0, monster.getHeight()*.5, 0), directionToPlayer, 5, FluidCollisionMode.NEVER, true, .25, null);
+        Vector vectorToPlayer = monster.getTarget().getLocation().subtract(monster.getEyeLocation()).toVector();
+        if(vectorToPlayer.lengthSquared() > 48*48) return false;
+        RayTraceResult result = monster.getWorld().rayTrace(monster.getLocation().add(0, monster.getHeight()*.5, 0), vectorToPlayer.normalize(), 5, FluidCollisionMode.NEVER, true, .25, null);
         if(result == null || result.getHitBlock() == null) return false;
 
         block = result.getHitBlock();
