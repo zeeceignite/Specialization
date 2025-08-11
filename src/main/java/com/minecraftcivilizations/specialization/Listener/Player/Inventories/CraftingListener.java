@@ -184,9 +184,10 @@ public class CraftingListener implements Listener {
         }
     }
 
-    private boolean shouldBlockRecipe(Player player, NamespacedKey recipeKey) {
+    public static boolean shouldBlockRecipe(Player player, NamespacedKey recipeKey) {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance()
                 .getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
+        if(customPlayer.getAdditionUnlockedRecipes() != null && customPlayer.getAdditionUnlockedRecipes().contains(recipeKey)) return true;
 
         // Check if recipe is in any skill-specific unlocked recipes config
         for (SkillType skillType : SkillType.values()) {

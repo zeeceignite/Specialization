@@ -49,6 +49,8 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     @Getter
     @Setter
     private boolean wasDownedOnLogout = false;
+    @Getter
+    private final List<NamespacedKey> additionUnlockedRecipes = new ArrayList<>();
 
     public CustomPlayer(UUID uuid) {
         super(uuid);
@@ -77,8 +79,11 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_BREAK_SPEED)).setBaseValue(0);
     }
 
+
+
     public void addSkillXp(SkillType skillType, double xp) {
         if (skillType == null) return;
+        if(xp <= 0) return;
         int previousLevel = this.getSkillLevel(skillType);
         getSkill(skillType).addXp(xp);
         Objects.requireNonNull(Bukkit.getPlayer(getUuid())).sendActionBar(Component.text("+" + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));

@@ -22,7 +22,6 @@ import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
 
 import java.util.List;
-import java.util.Objects;
 
 import static com.minecraftcivilizations.specialization.Listener.Player.PlayerDeathListener.removeDownedArmorStand;
 
@@ -39,12 +38,11 @@ public class Recipes {
         customAbility.setAbilityFunction(customAbilityFunction -> {
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(customAbilityFunction.getUniqueId());
             if (customAbilityFunction.getTargetEntity(4) instanceof Player player && player.getHealth() < player.getAttribute(Attribute.MAX_HEALTH).getValue()) {
-                Player healer = Bukkit.getPlayer(customAbilityFunction.getUniqueId());
                 player.heal(10);
                 customPlayer.addSkillXp(SkillType.HEALER, 15);
                 CustomPlayer healedPlayer = CoreUtil.getPlayer(player.getUniqueId());
                 healedPlayer.setDowned(false);
-                Objects.requireNonNull(healer).getActiveItem().setAmount(player.getActiveItem().getAmount() - 1);
+                player.getActiveItem().setAmount(player.getActiveItem().getAmount() - 1);
                 removeDownedArmorStand(player);
             }
         });
