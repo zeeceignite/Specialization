@@ -23,6 +23,7 @@ public class MoveListener implements Listener {
 
         double minDistanceSq = Double.MAX_VALUE;
         for (Town town : TownManager.getTowns()) {
+            if(!town.getCenterLocation().getWorld().equals(from.getWorld())) continue;
             if (town.getCenterLocation().distanceSquared(from) < minDistanceSq) {
                 minDistanceSq = town.getCenterLocation().distanceSquared(from);
             }
