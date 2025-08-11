@@ -21,7 +21,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.*;
 
 import java.util.List;
-import java.util.regex.Pattern;
 
 public class Blueprints {
 
@@ -64,6 +63,7 @@ public class Blueprints {
             }
             player.getInventory().getItemInMainHand().setAmount(0);
             player.discoverRecipe(recipe);
+            customPlayer.getAdditionUnlockedRecipes().add(recipe);
             player.sendRichMessage("<green>Unlocked " + blueprintName + "</green>");
         });
         ability.setCastEvent(AbilityCastEvent.RIGHT_CLICK);
