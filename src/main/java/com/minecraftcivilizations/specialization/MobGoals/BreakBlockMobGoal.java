@@ -55,7 +55,7 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
         Vector vectorToPlayer = monster.getTarget().getLocation().subtract(monster.getEyeLocation()).toVector();
         int targetRange = SpecializationConfig.getMobConfig().get("MOB_RULE_TARGET_RANGE", Integer.class);
         if(vectorToPlayer.lengthSquared() > targetRange*targetRange) return false;
-        RayTraceResult result = monster.getWorld().rayTrace(monster.getLocation().add(0, monster.getHeight()*.5, 0), vectorToPlayer.normalize(), 5, FluidCollisionMode.NEVER, true, .25, null);
+        RayTraceResult result = monster.getWorld().rayTrace(monster.getEyeLocation(), vectorToPlayer.normalize(), 5, FluidCollisionMode.NEVER, true, .25, null);
         if(result == null || result.getHitBlock() == null) return false;
 
         block = result.getHitBlock();
