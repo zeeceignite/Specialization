@@ -1,10 +1,10 @@
 version: 2
+registries:
+  github:
+    key: ${{secrets.GPR_KEY}}
+    username: Shotrush
 updates:
   - package-ecosystem: "gradle"
     directory: "/"
     schedule:
       interval: "weekly"
-    registries:
-      github:
-        key: ${{secrets.GPR_KEY}}
-        username: Shotrush
