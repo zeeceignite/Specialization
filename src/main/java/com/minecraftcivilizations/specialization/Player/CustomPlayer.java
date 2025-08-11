@@ -79,10 +79,9 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
     public void addSkillXp(SkillType skillType, double xp) {
         if (skillType == null) return;
-        if(xp <= 0) return;
         int previousLevel = this.getSkillLevel(skillType);
         getSkill(skillType).addXp(xp);
-        Bukkit.getPlayer(getUuid()).sendActionBar(Component.text("+" + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));
+        Objects.requireNonNull(Bukkit.getPlayer(getUuid())).sendActionBar(Component.text("+" + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));
         int currentLevel = this.getSkillLevel(skillType);
 
         // Update team assignment based on highest skill
