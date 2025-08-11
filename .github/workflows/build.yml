@@ -17,7 +17,7 @@ jobs:
   build:
 
     env: 
-      GPR_USER: ${{vars.GPR_USER}}
+      GPR_USER: "Shotrush"
       GPR_KEY: ${{secrets.GPR_KEY}}
 
     runs-on: ubuntu-latest
