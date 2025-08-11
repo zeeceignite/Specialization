@@ -3,6 +3,7 @@ package com.minecraftcivilizations.specialization.MobGoals;
 import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.destroystokyo.paper.entity.ai.GoalType;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Specialization;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Monster;
@@ -26,7 +27,8 @@ public class TargetPlayerMobGoal implements Goal<@NotNull Monster> {
 
     @Override
     public void start() {
-        monster.getLocation().getNearbyPlayers(48).stream()
+        int targetRange = SpecializationConfig.getMobConfig().get("MOB_RULE_TARGET_RANGE", Integer.class);
+        monster.getLocation().getNearbyPlayers(targetRange).stream()
                 .min(Comparator.comparingDouble(p -> monster.getLocation().distance(p.getLocation())))
                 .ifPresent(player -> monster.setTarget(player));
         if (monster.getWorld().isDayTime()) {

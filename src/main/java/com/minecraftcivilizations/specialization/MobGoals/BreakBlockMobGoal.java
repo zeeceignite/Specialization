@@ -49,11 +49,12 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
         double percentage = SpecializationConfig.getMobConfig().get("BLOCK_BREAK_CHANCE_PERCENTAGE", Double.class);
         if(random.nextDouble() > percentage / 100d) return false;
 
-        Path path = ((CraftMob) monster).getHandle().getNavigation().getPath();
+        Path path = ((CraftMob) monster).getHandle().getNavigation().getPath(); //MOB_RULE_TARGET_RANGE
         if(path != null && path.canReach()) return false;
 
         Vector vectorToPlayer = monster.getTarget().getLocation().subtract(monster.getEyeLocation()).toVector();
-        if(vectorToPlayer.lengthSquared() > 48*48) return false;
+        int targetRange = SpecializationConfig.getMobConfig().get("MOB_RULE_TARGET_RANGE", Integer.class);
+        if(vectorToPlayer.lengthSquared() > targetRange*targetRange) return false;
         RayTraceResult result = monster.getWorld().rayTrace(monster.getLocation().add(0, monster.getHeight()*.5, 0), vectorToPlayer.normalize(), 5, FluidCollisionMode.NEVER, true, .25, null);
         if(result == null || result.getHitBlock() == null) return false;
 

@@ -146,6 +146,7 @@ public class SpecializationConfig {
             fields.add(new Pair<>("NIGHT_GUARDSMAN_MOB_DAMAGE_PERCENT_REDUCTION", 30));
             fields.add(new Pair<>("DAYTIME_SPEED_BUFF", .03));
             fields.add(new Pair<>("NIGHTTIME_SPEED_BUFF", .2));
+            fields.add(new Pair<>("MOB_RULE_TARGET_RANGE", 48));
 
             fields.add(new Pair<>("BLOCK_BREAK_CHANCE_PERCENTAGE", 30));
             fields.add(new Pair<>("BLOCK_BREAK_IGNORE_LIST_REGEX", List.of(".*BRICK.*", "OBSIDIAN")));
