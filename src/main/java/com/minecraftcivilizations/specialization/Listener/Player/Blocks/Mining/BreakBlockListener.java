@@ -103,7 +103,7 @@ public class BreakBlockListener implements Listener {
     public void farmerListener(BlockBreakEvent event) {
         CustomPlayer player = CoreUtil.getPlayer(event.getPlayer());
         Material materialName = event.getBlock().getType();
-        SkillLevel skillRequired = SpecializationConfig.getCanMinerLvlBreakConfig().get(materialName.toString(), new TypeToken<>() {});
+        SkillLevel skillRequired = SpecializationConfig.getCanFarmerBreakConfig().get(materialName.toString(), new TypeToken<>() {});
         if (skillRequired != null && player.getSkillLevel(SkillType.FARMER) < skillRequired.getLevel()) {
             event.setDropItems(false);
             event.getPlayer().sendMessage(org.bukkit.ChatColor.RED + "You are unable to farm this");
