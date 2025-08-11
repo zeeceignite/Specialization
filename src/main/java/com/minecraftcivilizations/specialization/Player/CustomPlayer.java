@@ -2,7 +2,6 @@ package com.minecraftcivilizations.specialization.Player;
 
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
-import com.minecraftcivilizations.specialization.Player.TeamManager;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -80,6 +79,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
     public void addSkillXp(SkillType skillType, double xp) {
         if (skillType == null) return;
+        if(xp <= 0) return;
         int previousLevel = this.getSkillLevel(skillType);
         getSkill(skillType).addXp(xp);
         Bukkit.getPlayer(getUuid()).sendActionBar(Component.text("+" + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));

@@ -6,6 +6,7 @@ import com.destroystokyo.paper.entity.ai.GoalType;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Specialization;
 import org.bukkit.NamespacedKey;
+import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Monster;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,7 +23,7 @@ public class TargetPlayerMobGoal implements Goal<@NotNull Monster> {
 
     @Override
     public boolean shouldActivate() {
-        return monster.getTarget() == null;
+        return monster.getTarget() == null && !monster.getWorld().isDayTime() && !(monster instanceof Enderman);
     }
 
     @Override
@@ -31,9 +32,6 @@ public class TargetPlayerMobGoal implements Goal<@NotNull Monster> {
         monster.getLocation().getNearbyPlayers(targetRange).stream()
                 .min(Comparator.comparingDouble(p -> monster.getLocation().distance(p.getLocation())))
                 .ifPresent(player -> monster.setTarget(player));
-        if (monster.getWorld().isDayTime()) {
-
-        }
     }
 
     @Override
