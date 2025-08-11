@@ -38,11 +38,14 @@ public class Recipes {
         customAbility.setAbilityFunction(customAbilityFunction -> {
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(customAbilityFunction.getUniqueId());
             if (customAbilityFunction.getTargetEntity(4) instanceof Player player && player.getHealth() < player.getAttribute(Attribute.MAX_HEALTH).getValue()) {
+                Player healer = Bukkit.getPlayer(customAbilityFunction.getUniqueId());
                 player.heal(10);
                 customPlayer.addSkillXp(SkillType.HEALER, 15);
                 CustomPlayer healedPlayer = CoreUtil.getPlayer(player.getUniqueId());
                 healedPlayer.setDowned(false);
-                player.getActiveItem().setAmount(player.getActiveItem().getAmount() - 1);
+                if (healer != null) {
+                    healer.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
+                }
                 removeDownedArmorStand(player);
             }
         });
