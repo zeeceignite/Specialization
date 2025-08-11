@@ -33,6 +33,8 @@ public class ClassGUI extends GUI {
         CustomPlayer customPlayer = CoreUtil.getPlayer(player);
         this.getItems().clear();
 
+        if(customPlayer == null) return;
+
         if (customPlayer.isAdvancedClassesGUIEnabled()) {
             advancedClassGUI(customPlayer);
         } else {
