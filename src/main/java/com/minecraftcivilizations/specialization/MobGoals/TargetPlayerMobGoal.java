@@ -26,7 +26,7 @@ public class TargetPlayerMobGoal implements Goal<@NotNull Monster> {
 
     @Override
     public void start() {
-        monster.getLocation().getNearbyPlayers(64).stream()
+        monster.getLocation().getNearbyPlayers(48).stream()
                 .min(Comparator.comparingDouble(p -> monster.getLocation().distance(p.getLocation())))
                 .ifPresent(player -> monster.setTarget(player));
         if (monster.getWorld().isDayTime()) {
