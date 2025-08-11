@@ -3,12 +3,12 @@ registries:
   core-repo:
     type: maven-repository
     url: https://maven.pkg.github.com/Emergent-Civilization/MinecraftCivilizationsCore
-    username: ${{secrets.GPR_USER}}
+    username: Shotrush
     password: ${{secrets.GPR_KEY}}
   weight-repo:
     type: maven-repository
     url: https://maven.pkg.github.com/Emergent-Civilization/Weight
-    username: ${{secrets.GPR_USER}}
+    username: Shotrush
     password: ${{secrets.GPR_KEY}}
 updates:
   - package-ecosystem: "gradle"
