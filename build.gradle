@@ -24,15 +24,15 @@ repositories {
     maven {
         url = uri("https://maven.pkg.github.com/Emergent-Civilization/MinecraftCivilizationsCore")
         credentials {
-            username = project.findProperty("gpr.user")
-            password = project.findProperty("gpr.key")
+            username = System.getenv("GPR_USER") ?: project.findProperty("gpr.user")
+            password = System.getenv("GPR_KEY") ?: project.findProperty("gpr.key")
         }
     }
     maven {
         url = uri("https://maven.pkg.github.com/Emergent-Civilization/Weight")
         credentials {
-            username = project.findProperty("gpr.user")
-            password = project.findProperty("gpr.key")
+            username = System.getenv("GPR_USER") ?: project.findProperty("gpr.user")
+            password = System.getenv("GPR_KEY") ?: project.findProperty("gpr.key")
         }
     }
     maven {
