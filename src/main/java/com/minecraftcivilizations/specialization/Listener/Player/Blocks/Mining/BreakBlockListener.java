@@ -35,7 +35,7 @@ public class BreakBlockListener implements Listener {
             breakSpeedAttr.setBaseValue(SpecializationConfig.getBlockHardnessConfig().get(event.getBlock().getType(), Double.class));
             Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromBreakingConfig().get(event.getBlock().getType(), new TypeToken<>() {});
             CustomPlayer player = CoreUtil.getPlayer(event.getPlayer().getUniqueId());
-            BlockData blockData = event.getBlock().getType().createBlockData();
+            BlockData blockData = event.getBlock().getBlockData();
 
             if (blockData instanceof Ageable age) {
                 if (age.getAge() < 7) {
