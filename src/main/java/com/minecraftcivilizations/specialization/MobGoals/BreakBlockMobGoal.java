@@ -61,7 +61,7 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
         block = result.getHitBlock();
         if (ReinforcementManager.isReinforced(block)) return false;
         List<String> deniedBlocks = SpecializationConfig.getMobConfig().get("BLOCK_BREAK_IGNORE_LIST_REGEX", new TypeToken<>(){});
-        return block.getType() != Material.AIR && deniedBlocks.stream().noneMatch(it -> it.matches(block.getType().name()));
+        return block.getType() != Material.AIR && deniedBlocks.stream().noneMatch(it -> block.getType().name().matches(it));
     }
 
     @Override
