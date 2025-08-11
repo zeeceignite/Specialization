@@ -42,7 +42,7 @@ public class Recipes {
                 customPlayer.addSkillXp(SkillType.HEALER, 15);
                 CustomPlayer healedPlayer = CoreUtil.getPlayer(player.getUniqueId());
                 healedPlayer.setDowned(false);
-                player.getActiveItem().setAmount(player.getActiveItem().getAmount() - 1);
+                player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
                 removeDownedArmorStand(player);
             }
         });
