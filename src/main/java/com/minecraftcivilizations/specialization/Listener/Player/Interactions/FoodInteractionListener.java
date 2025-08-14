@@ -78,8 +78,6 @@ public class FoodInteractionListener implements Listener {
         }
 
         if (customPlayer != null && customPlayer.isDowned() && isBlessedFood(item)) {
-            customPlayer.setDowned(false);
-            removeDownedArmorStand(player);
             int healerLevel = getBlessedFoodLevel(item);
             applyBlessedFoodEffects(player, healerLevel);
             player.removePotionEffect(PotionEffectType.WITHER);
@@ -110,7 +108,7 @@ public class FoodInteractionListener implements Listener {
         if (healerLevel >= SkillLevel.JOURNEYMAN.getLevel()) duration = 400;
         if (healerLevel >= SkillLevel.EXPERT.getLevel()) {
             duration = 600;
-            amplifier = 1;
+            amplifier = 0;
         }
         if (healerLevel >= SkillLevel.MASTER.getLevel()) {
             duration = 800;
@@ -119,7 +117,7 @@ public class FoodInteractionListener implements Listener {
         }
         if (healerLevel >= SkillLevel.GRANDMASTER.getLevel()) {
             duration = 1000;
-            amplifier = 2;
+            amplifier = 1;
             player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 1000, 1));
         }
         player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, duration, amplifier));
