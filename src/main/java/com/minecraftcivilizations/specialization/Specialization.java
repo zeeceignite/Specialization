@@ -24,6 +24,7 @@ import com.minecraftcivilizations.specialization.Listener.Mobs.ExplodeListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.MobKillListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.MobListeners;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.PlaceBlockListener;
+import com.minecraftcivilizations.specialization.Listener.Player.Combat.ArmorDamageReductionListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Combat.Berserk;
 import com.minecraftcivilizations.specialization.Listener.Player.Combat.CrossBowListener;
 import com.minecraftcivilizations.specialization.Listener.Player.HungerSystemListener;
@@ -108,6 +109,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new LocalChat(), this);
         getServer().getPluginManager().registerEvents(new MobListeners(), this);
         getServer().getPluginManager().registerEvents(new Berserk(), this);
+        getServer().getPluginManager().registerEvents(new ArmorDamageReductionListener(), this);
 
 
         new BukkitRunnable() {

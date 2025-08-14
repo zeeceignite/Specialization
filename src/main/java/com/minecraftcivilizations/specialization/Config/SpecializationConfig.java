@@ -77,6 +77,8 @@ public class SpecializationConfig {
     private static ConfigFile canMinerLvlBreakConfig;
     @Getter
     private static ConfigFile canFarmerBreakConfig;
+    @Getter
+    private static ConfigFile armorDamageReductionConfig;
 
 
     public static void initialize() {
@@ -287,7 +289,27 @@ public class SpecializationConfig {
             }
         });
 
-
+        armorDamageReductionConfig = new ConfigFile(Specialization.getInstance(), "armorDamageReductionConfig", "Flat percentage damage reduction against mobs for each armor piece. Values are percentages (0.1 = 10% reduction)", fields -> {
+            // Base armor slot reductions (applied to all armor materials)
+            fields.add(new Pair<>("HELMET_BASE_REDUCTION", 0.05));
+            fields.add(new Pair<>("CHESTPLATE_BASE_REDUCTION", 0.15));
+            fields.add(new Pair<>("LEGGINGS_BASE_REDUCTION", 0.10));
+            fields.add(new Pair<>("BOOTS_BASE_REDUCTION", 0.05));
+            
+            // Material-specific multipliers (multiply base reduction)
+            fields.add(new Pair<>("LEATHER_MULTIPLIER", 0.5));
+            fields.add(new Pair<>("CHAINMAIL_MULTIPLIER", 0.75));
+            fields.add(new Pair<>("IRON_MULTIPLIER", 1.0));
+            fields.add(new Pair<>("DIAMOND_MULTIPLIER", 1.5));
+            fields.add(new Pair<>("GOLDEN_MULTIPLIER", 0.8));
+            fields.add(new Pair<>("NETHERITE_MULTIPLIER", 2.0));
+            
+            // Maximum total damage reduction cap (prevents invincibility)
+            fields.add(new Pair<>("MAX_TOTAL_REDUCTION", 0.8));
+            
+            // Enable/disable the system
+            fields.add(new Pair<>("ENABLED", true));
+        });
 
         skillsConfig = new ConfigFile(Specialization.getInstance(), "skillsConfig", null, fields -> {
             for (SkillType skillType : SkillType.values()) {
