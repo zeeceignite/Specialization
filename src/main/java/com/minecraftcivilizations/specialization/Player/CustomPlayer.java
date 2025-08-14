@@ -120,6 +120,9 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
                 PotionEffectType potionEffectType = Registry.EFFECT.get(dataEffect.firstValue());
                 if(dataEffect.secondValue() <= 0) continue;
                 if(potionEffectType == null) throw new IllegalStateException("invalid potion effect type in config" + dataEffect.firstValue());
+                if(player.getActivePotionEffects().stream().anyMatch(effect -> effect.getType().equals(potionEffectType) && effect.getDuration() == -1)){
+                    player.removePotionEffect(potionEffectType);
+                }
                 if(player.getActivePotionEffects().stream().noneMatch(effect -> effect.getType().equals(potionEffectType) && effect.getAmplifier() > dataEffect.secondValue())){
                     player.removePotionEffect(potionEffectType);
                     player.addPotionEffect(new PotionEffect(potionEffectType,-1, dataEffect.secondValue()));
