@@ -3,6 +3,7 @@ package com.minecraftcivilizations.specialization.Listener.Mobs;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.MobGoals.BreakBlockMobGoal;
 import com.minecraftcivilizations.specialization.MobGoals.TargetPlayerMobGoal;
+import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
@@ -57,6 +58,14 @@ public class MobListeners implements Listener {
             }
         }
         event.setDamage(newDamage);
+    }
+
+    @EventHandler
+    public void onPlayerAttackMob(EntityDamageByEntityEvent event){
+        if(!(event.getDamager() instanceof Player player)) return;
+        if(!(event.getEntity() instanceof Monster)) return;
+        CustomPlayer cPlayer = CoreUtil.getPlayer(player);
+        event.setDamage(event.getDamage() + cPlayer.getSkillLevel(SkillType.GUARDSMAN) * 2);
     }
 
 }

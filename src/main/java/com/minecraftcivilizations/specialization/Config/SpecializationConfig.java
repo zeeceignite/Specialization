@@ -50,6 +50,8 @@ public class SpecializationConfig {
     @Getter
     private static ConfigFile xpGainFromCartographyConfig;
     @Getter
+    private static ConfigFile classSkillEffectsConfig;
+    @Getter
     private static ConfigFile librarianConfig;
     @Getter
     private static ConfigFile canUseBlockConfig;
@@ -267,7 +269,13 @@ public class SpecializationConfig {
             }
         });
 
-
+        classSkillEffectsConfig = new ConfigFile(Specialization.getInstance(), "classSkillEffectsConfig", "use potion effect type, full list here: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/potion/PotionEffectType.html", fields -> {
+            for (SkillType skillType : SkillType.values()) {
+                for (SkillLevel skillLevel : SkillLevel.values()) {
+                    fields.add(new Pair<>(skillType + "_" + skillLevel, List.of(new Pair<>(PotionEffectType.STRENGTH.getKey(), 0))));
+                }
+            }
+        });
 
         allRecipeBank = new ConfigFile(Specialization.getInstance(), "allRecipeBank", null, fields -> {
             Set<NamespacedKey> allRecipes = new HashSet<>();

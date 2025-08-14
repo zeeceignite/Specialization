@@ -10,12 +10,16 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
@@ -83,7 +87,6 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
     public void addSkillXp(SkillType skillType, double xp) {
         if (skillType == null) return;
-        if(xp <= 0) return;
         int previousLevel = this.getSkillLevel(skillType);
         getSkill(skillType).addXp(xp);
         Objects.requireNonNull(Bukkit.getPlayer(getUuid())).sendActionBar(Component.text("+" + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));
@@ -92,17 +95,40 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         // Update team assignment based on highest skill
         TeamManager.setTeam(Bukkit.getPlayer(getUuid()));
 
+
+
         if (previousLevel != currentLevel) {
+            applyEffects();
             while (currentLevel > 0) {
                 Set<NamespacedKey> recipes =
                         SpecializationConfig.getUnlockedRecipesConfig().get(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(currentLevel), new TypeToken<>(){});
                 for (NamespacedKey entry : recipes) {
                     Specialization.logger.info(String.valueOf(Bukkit.getPlayer(this.getUuid()).discoverRecipe(entry)));
                 }
-
                 currentLevel--;
             }
         }
+    }
+
+    public void applyEffects(){
+        Player player = Bukkit.getPlayer(getUuid());
+        Arrays.stream(SkillType.values()).forEach(skill ->{
+            List<Pair<NamespacedKey, Integer>> potions = SpecializationConfig.getClassSkillEffectsConfig().get(skill + "_" + getSkillLevelEnum(skill), new TypeToken<>(){});
+            assert player != null;
+            player.sendRichMessage("got " + potions);
+            for(Pair<NamespacedKey, Integer> dataEffect : potions) {
+                PotionEffectType potionEffectType = Registry.EFFECT.get(dataEffect.firstValue());
+                if(dataEffect.secondValue() <= 0) continue;
+                if(potionEffectType == null) throw new IllegalStateException("invalid potion effect type in config" + dataEffect.firstValue());
+                if(player.getActivePotionEffects().stream().anyMatch(effect -> effect.getType().equals(potionEffectType) && effect.getDuration() == -1)){
+                    player.removePotionEffect(potionEffectType);
+                }
+                if(player.getActivePotionEffects().stream().noneMatch(effect -> effect.getType().equals(potionEffectType) && effect.getAmplifier() > dataEffect.secondValue())){
+                    player.removePotionEffect(potionEffectType);
+                    player.addPotionEffect(new PotionEffect(potionEffectType,-1, dataEffect.secondValue()));
+                }
+            }
+        });
     }
 
     public int getSkillLevel(SkillType skillType) {

@@ -166,6 +166,7 @@ public final class Specialization extends JavaPlugin {
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerJoin(playerJoinEvent -> {
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(playerJoinEvent.getUniqueId());
             applyCustomName(playerJoinEvent.getPlayer(), customPlayer.getName());
+            customPlayer.applyEffects();
             
             // Assign player to team based on their highest skill
             TeamManager.setTeam(playerJoinEvent.getPlayer());
