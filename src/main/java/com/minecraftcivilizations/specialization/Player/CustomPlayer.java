@@ -55,6 +55,10 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     private boolean wasDownedOnLogout = false;
     @Getter
     private final List<NamespacedKey> additionUnlockedRecipes = new ArrayList<>();
+    @Getter
+    private final HashSet<UUID> leashedOtherPlayers = new HashSet<>();
+    @Setter
+    private UUID leashedTo = null;
 
     public CustomPlayer(UUID uuid) {
         super(uuid);

@@ -107,20 +107,20 @@ public class FoodInteractionListener implements Listener {
     private void applyBlessedFoodEffects(Player player, int healerLevel) {
         int duration = 400;
         int amplifier = 0;
-        if (healerLevel >= SkillLevel.JOURNEYMAN.getLevel()) duration = 600;
+        if (healerLevel >= SkillLevel.JOURNEYMAN.getLevel()) duration = 400;
         if (healerLevel >= SkillLevel.EXPERT.getLevel()) {
-            duration = 800;
+            duration = 600;
             amplifier = 1;
         }
         if (healerLevel >= SkillLevel.MASTER.getLevel()) {
-            duration = 1000;
+            duration = 800;
             amplifier = 1;
-            player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 1200, 0));
+            player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 800, 0));
         }
         if (healerLevel >= SkillLevel.GRANDMASTER.getLevel()) {
-            duration = 1200;
+            duration = 1000;
             amplifier = 2;
-            player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 1200, 1));
+            player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 1000, 1));
         }
         player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, duration, amplifier));
     }
