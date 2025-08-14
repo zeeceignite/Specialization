@@ -176,6 +176,7 @@ public class CraftingListener implements Listener {
         if (shouldBlockRecipe(player, recipeKey)) {
             LOGGER.info("Blocking recipe " + recipeKey + " for player " + player.getName() + " due to insufficient skill level");
             event.getInventory().setResult(null);
+            player.undiscoverRecipe(recipeKey);
         } else {
             if (!player.hasDiscoveredRecipe(recipeKey)) {
                 player.discoverRecipe(recipeKey);
