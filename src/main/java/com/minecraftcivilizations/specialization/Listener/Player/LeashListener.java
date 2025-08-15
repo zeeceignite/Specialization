@@ -189,7 +189,7 @@ public class LeashListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerLogin(PlayerLoginEvent e) {
+    public void onPlayerJoin(PlayerJoinEvent e) {
         CustomPlayer player = CoreUtil.getPlayer(e);
         if(player.getLeashedTo() != null){
             Player leashHolder = Bukkit.getPlayer(player.getLeashedTo());
@@ -513,6 +513,7 @@ public class LeashListener implements Listener {
             zombo.setGravity(true);
             zombo.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, Integer.MAX_VALUE, 255, false, false));
             zombo.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, Integer.MAX_VALUE, 255, false, false));
+            zombo.setLeashHolder(leashHolder);
         });
 
         // Set the leash holder AFTER the zombie is fully spawned and initialized
@@ -582,7 +583,7 @@ public class LeashListener implements Listener {
             }
         };
 
-        syncTask.runTaskTimer(Specialization.getInstance(), 0, 1);
+        syncTask.runTaskTimer(Specialization.getInstance(), 2, 1);
         activeRunnables.put(target, syncTask);
     }
 }
