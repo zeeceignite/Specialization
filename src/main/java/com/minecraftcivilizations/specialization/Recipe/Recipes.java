@@ -76,5 +76,31 @@ public class Recipes {
         shapedRecipe.setIngredient('S', Material.STICK);
         Bukkit.removeRecipe(NamespacedKey.minecraft("rail"));
         Bukkit.addRecipe(shapedRecipe);
+
+        addNetherRecipes();
     }
+
+    public static void addNetherRecipes(){
+        ShapelessRecipe netheriteUpgrade = new ShapelessRecipe(new NamespacedKey(Specialization.getInstance(), "netherite upgrade"), new ItemStack(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE));
+        netheriteUpgrade.addIngredient(1, Material.NETHERITE_INGOT);
+        netheriteUpgrade.addIngredient(6, Material.DIAMOND);
+        netheriteUpgrade.addIngredient(1, Material.NETHER_WART_BLOCK);
+        Bukkit.addRecipe(netheriteUpgrade, true);
+
+        ShapelessRecipe blazeRod = new ShapelessRecipe(new NamespacedKey(Specialization.getInstance(), "blaze rod"), new ItemStack(Material.BLAZE_ROD));
+        blazeRod.addIngredient(1, Material.GOLD_INGOT);
+        blazeRod.addIngredient(3, Material.GUNPOWDER);
+        blazeRod.addIngredient(1, Material.CRIMSON_NYLIUM);
+        blazeRod.addIngredient(1, Material.WARPED_NYLIUM);
+        Bukkit.addRecipe(blazeRod, true);
+
+        ShapedRecipe netherWart = new ShapedRecipe(new NamespacedKey(Specialization.getInstance(), "netherWart"), new ItemStack(Material.BLAZE_ROD));
+        netherWart.shape(" E ", "DDD", " B ");
+        netherWart.setIngredient('E', Material.BEETROOTS);
+        netherWart.setIngredient('D', Material.COARSE_DIRT);
+        netherWart.setIngredient('B', Material.BLAZE_POWDER);
+        Bukkit.addRecipe(netherWart, true);
+
+    }
+
 }
