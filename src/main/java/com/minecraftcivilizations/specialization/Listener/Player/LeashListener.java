@@ -1,30 +1,20 @@
 package com.minecraftcivilizations.specialization.Listener.Player;
 
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
+import com.minecraftcivilizations.specialization.Skill.SkillLevel;
+import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
-import com.minecraftcivilizations.specialization.Skill.SkillType;
-import com.minecraftcivilizations.specialization.Skill.SkillLevel;
-import com.minecraftcivilizations.specialization.Listener.Player.PlayerDeathListener;
-import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.entity.LeashHitch;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Zombie;
-import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityCombustEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityUnleashEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.entity.PlayerLeashEntityEvent;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -38,7 +28,6 @@ public class LeashListener implements Listener {
 
     private final List<Player> leashedPlayers = new ArrayList<>();
     private final List<LivingEntity> leashEntities = new ArrayList<>();
-    private final List<LivingEntity> distanceUnleash = new ArrayList<>();
     private final HashMap<Player, BukkitRunnable> activeRunnables = new HashMap<>();
     // Map to track which zombie belongs to which player to prevent duplicates
     private final HashMap<Player, LivingEntity> playerToZombie = new HashMap<>();
@@ -49,7 +38,6 @@ public class LeashListener implements Listener {
     public void onUnleash(EntityUnleashEvent e) {
         if(e.getReason() == EntityUnleashEvent.UnleashReason.PLAYER_UNLEASH) return;
         if(leashEntities.contains(e.getEntity())) {
-            distanceUnleash.add((LivingEntity) e.getEntity());
             // Find and unleash the player associated with this zombie
             Player targetPlayer = findPlayerByZombie((LivingEntity) e.getEntity());
             if(targetPlayer != null) {
@@ -76,16 +64,16 @@ public class LeashListener implements Listener {
             return;
         }
 
+        // If target is already leashed, unleash them
+        if(leashedPlayers.contains(target)) {
+            unleashPlayer(target);
+            return;
+        }
+
         // Check if target is downed
         CustomPlayer targetCustomPlayer = CoreUtil.getPlayer(target);
         if(!targetCustomPlayer.isDowned()) {
             player.sendMessage("You can only leash downed players.");
-            return;
-        }
-
-        // If target is already leashed, unleash them
-        if(leashedPlayers.contains(target)) {
-            unleashPlayer(target);
             return;
         }
 
@@ -268,6 +256,17 @@ public class LeashListener implements Listener {
     }
 
     @EventHandler
+    public void onUnLeash(PlayerUnleashEntityEvent e){
+        if(e.getEntity() instanceof LivingEntity living) {
+            if(leashEntities.contains(living)) {
+                leashEntities.remove(living);
+                living.remove();
+            }
+        }
+
+    }
+
+    @EventHandler
     public void onEntityCombust(EntityCombustEvent e) {
         if(leashEntities.contains(e.getEntity())) {
             e.setCancelled(true);
@@ -395,13 +394,6 @@ public class LeashListener implements Listener {
         LivingEntity zombieToRemove = playerToZombie.remove(target);
         if(zombieToRemove != null) {
             leashEntities.remove(zombieToRemove);
-
-            // Drop lead if not distance unleashed
-            if(!distanceUnleash.contains(zombieToRemove)) {
-                target.getWorld().dropItemNaturally(target.getLocation(), new ItemStack(Material.LEAD));
-            } else {
-                distanceUnleash.remove(zombieToRemove);
-            }
 
             // Remove the zombie entity
             zombieToRemove.remove();
@@ -537,9 +529,6 @@ public class LeashListener implements Listener {
         leashedPlayers.add(target);
         leashEntities.add(zombie);
         playerToZombie.put(target, zombie); // Track zombie-player relationship
-
-        // Give lead item back to leash holder so they can see the leash
-        leashHolder.getInventory().addItem(new ItemStack(Material.LEAD));
 
         // Ensure flight is disabled
         target.setAllowFlight(false);
