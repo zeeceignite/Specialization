@@ -16,7 +16,7 @@ on:
 jobs:
   build:
 
-    env: 
+    env:
       GPR_USER: "Shotrush"
       GPR_KEY: ${{secrets.GPR_KEY}}
 
@@ -43,16 +43,13 @@ jobs:
     - name: Build with Gradle Wrapper
       run: ./gradlew build
 
-    # NOTE: The Gradle Wrapper is the default and recommended way to run Gradle (https://docs.gradle.org/current/userguide/gradle_wrapper.html).
-    # If your project does not have the Gradle Wrapper configured, you can use the following configuration to run Gradle with a specified version.
-    #
-    # - name: Setup Gradle
-    #   uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
-    #   with:
-    #     gradle-version: '8.9'
-    #
-    # - name: Build with Gradle 8.9
-    #   run: gradle build
+    # NEW STEP
+    - name: Upload built file
+      uses: actions/upload-artifact@v4
+      with:
+        name: my-app-build
+        path: build/libs/
+        retention-days: 7
 
   dependency-submission:
 
