@@ -22,8 +22,6 @@ import org.bukkit.potion.PotionEffectType;
 import java.util.List;
 import java.util.Random;
 
-import static com.minecraftcivilizations.specialization.Listener.Player.PlayerDeathListener.removeDownedArmorStand;
-
 public class FoodInteractionListener implements Listener {
 
     @EventHandler
@@ -74,12 +72,12 @@ public class FoodInteractionListener implements Listener {
 
         if (isBlessedFood(item)) {
             int healerLevel = getBlessedFoodLevel(item);
-            applyBlessedFoodEffects(player, healerLevel);
+            applyBlessedFoodEffects(player, healerLevel, item.getType());
         }
 
         if (customPlayer != null && customPlayer.isDowned() && isBlessedFood(item)) {
             int healerLevel = getBlessedFoodLevel(item);
-            applyBlessedFoodEffects(player, healerLevel);
+            applyBlessedFoodEffects(player, healerLevel, item.getType());
             player.removePotionEffect(PotionEffectType.WITHER);
         }
 
@@ -102,21 +100,24 @@ public class FoodInteractionListener implements Listener {
         item.setItemMeta(customItem.getItem().getItemMeta());
     }
 
-    private void applyBlessedFoodEffects(Player player, int healerLevel) {
-        int duration = 400;
+
+
+    private void applyBlessedFoodEffects(Player player, int healerLevel, Material itemType) {
+        int duration = 40 + getItemRegen(itemType) * 20;
         int amplifier = 0;
+
         if (healerLevel >= SkillLevel.JOURNEYMAN.getLevel()) duration = 400;
         if (healerLevel >= SkillLevel.EXPERT.getLevel()) {
-            duration = 600;
+            duration = 140 + getItemRegen(itemType) * 25;
             amplifier = 0;
         }
         if (healerLevel >= SkillLevel.MASTER.getLevel()) {
-            duration = 800;
+            duration = 340 + getItemRegen(itemType) * 30;
             amplifier = 1;
             player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 800, 0));
         }
         if (healerLevel >= SkillLevel.GRANDMASTER.getLevel()) {
-            duration = 1000;
+            duration = 760 + getItemRegen(itemType) * 50;
             amplifier = 1;
             player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 1000, 1));
         }
@@ -166,5 +167,20 @@ public class FoodInteractionListener implements Listener {
             result.append(word.substring(0, 1).toUpperCase()).append(word.substring(1));
         }
         return result.toString();
+    }
+
+    private Integer getItemRegen(Material item){
+        return switch (item) {
+            case CHICKEN,MUTTON,COOKIE,GLOW_BERRIES,MELON_SLICE,POISONOUS_POTATO,
+                 COD,SALMON,SPIDER_EYE,SWEET_BERRIES -> 2;
+            case CARROT,BEEF,PORKCHOP,RABBIT -> 3;
+            case APPLE,CHORUS_FRUIT,GOLDEN_APPLE,ENCHANTED_GOLDEN_APPLE,ROTTEN_FLESH -> 4;
+            case BAKED_POTATO,BREAD,COOKED_COD,COOKED_RABBIT -> 5;
+            case BEETROOT_SOUP,COOKED_CHICKEN,COOKED_MUTTON,COOKED_SALMON,GOLDEN_CARROT,
+                 HONEY_BLOCK,MUSHROOM_STEW,SUSPICIOUS_STEW -> 6;
+            case COOKED_PORKCHOP,PUMPKIN_PIE,COOKED_BEEF -> 8;
+            case RABBIT_STEW -> 10;
+            default -> 1;
+        };
     }
 }
