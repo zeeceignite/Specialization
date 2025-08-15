@@ -44,7 +44,7 @@ public class Recipes {
                 CustomPlayer healedPlayer = CoreUtil.getPlayer(player.getUniqueId());
                 healedPlayer.setDowned(false);
                 if (healer != null) {
-                    healer.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
+                    healer.getInventory().getItemInMainHand().setAmount(healer.getInventory().getItemInMainHand().getAmount() - 1);
                 }
                 removeDownedArmorStand(player);
             }
