@@ -42,8 +42,19 @@ public class PlayerInteractListener implements Listener {
 
         CustomPlayer player = CoreUtil.getPlayer(e.getPlayer());
         for (Skill skill : player.getSkills()) {
-            List<InventoryType> types = SpecializationConfig.getCanUseBlockConfig().get(skill.getSkillType()+"_"+player.getSkillLevelEnum(skill.getSkillType()), new TypeToken<>(){});
-            if(types.contains(type)) return;
+            // Check all skill levels from NOVICE up to the player's current level
+            SkillType skillType = skill.getSkillType();
+            int playerSkillLevel = player.getSkillLevel(skillType);
+            
+            for (SkillLevel skillLevel : SkillLevel.values()) {
+                if (skillLevel.getLevel() <= playerSkillLevel) {
+                    String configKey = skillType + "_" + skillLevel;
+                    List<InventoryType> types = SpecializationConfig.getCanUseBlockConfig().get(configKey, new TypeToken<>(){});
+                    if (types != null && types.contains(type)) {
+                        return; // Player has access through this skill level
+                    }
+                }
+            }
         }
         e.setCancelled(true);
     }

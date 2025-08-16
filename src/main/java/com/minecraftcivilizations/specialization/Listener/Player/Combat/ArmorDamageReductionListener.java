@@ -26,6 +26,7 @@ public class ArmorDamageReductionListener implements Listener {
         }
         
         // Check if damage is from a mob (LivingEntity but not Player)
+        // This should ONLY apply to mob damage, not PVP damage
         if (!(event.getDamager() instanceof LivingEntity) || event.getDamager() instanceof Player) {
             return;
         }
@@ -81,7 +82,7 @@ public class ArmorDamageReductionListener implements Listener {
         
         Specialization.logger.info("Total calculated reduction: " + (totalDamageReduction * 100) + "%");
         
-        // Apply damage reduction with configured cap
+        // Apply damage reduction with configured cap - ONLY if there's actually reduction to apply
         if (totalDamageReduction > 0) {
             double maxReduction = SpecializationConfig.getArmorDamageReductionConfig().get("MAX_TOTAL_REDUCTION", Double.class);
             double originalTotalReduction = totalDamageReduction;
@@ -98,6 +99,7 @@ public class ArmorDamageReductionListener implements Listener {
             Specialization.logger.info("Final damage: " + reducedDamage + " (reduced by " + (originalDamage - reducedDamage) + ")");
         } else {
             Specialization.logger.info("No armor equipped - no damage reduction applied");
+            // DO NOT call setDamage() when totalDamageReduction is 0 - this was causing the bug
         }
         
         Specialization.logger.info("=== END ARMOR DAMAGE REDUCTION DEBUG ===");
