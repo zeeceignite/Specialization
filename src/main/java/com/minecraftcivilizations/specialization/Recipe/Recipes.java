@@ -94,7 +94,7 @@ public class Recipes {
         blazeRod.addIngredient(1, Material.WARPED_NYLIUM);
         Bukkit.addRecipe(blazeRod, true);
 
-        ShapedRecipe netherWart = new ShapedRecipe(new NamespacedKey(Specialization.getInstance(), "nether_wart"), new ItemStack(Material.BLAZE_ROD));
+        ShapedRecipe netherWart = new ShapedRecipe(new NamespacedKey(Specialization.getInstance(), "nether_wart"), new ItemStack(Material.NETHER_WART));
         netherWart.shape(" E ", "DDD", " B ");
         netherWart.setIngredient('E', Material.BEETROOT);
         netherWart.setIngredient('D', Material.COARSE_DIRT);
