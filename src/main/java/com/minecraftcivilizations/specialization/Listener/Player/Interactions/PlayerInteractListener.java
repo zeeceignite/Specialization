@@ -24,6 +24,7 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.view.AnvilView;
@@ -61,7 +62,7 @@ public class PlayerInteractListener implements Listener {
 
     @EventHandler
     public void onLibrarianEnchantItem(PlayerInteractEvent e){
-        if(!e.getAction().isRightClick() || !e.getPlayer().isSneaking() || e.getItem() == null) return;
+        if(!e.getAction().isRightClick() || !e.getPlayer().isSneaking() || e.getItem() == null|| e.getHand().equals(EquipmentSlot.HAND)) return;
         CustomPlayer player = CoreUtil.getPlayer(e.getPlayer());
 
         int xpBase = SpecializationConfig.getLibrarianConfig().get("BLESS_ITEM_XP_LEVEL_REQUIREMENT", Integer.class);
