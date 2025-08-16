@@ -65,7 +65,7 @@ public class MobListeners implements Listener {
         if(!(event.getDamager() instanceof Player player)) return;
         if(!(event.getEntity() instanceof Monster)) return;
         CustomPlayer cPlayer = CoreUtil.getPlayer(player);
-        event.setDamage(event.getDamage() + cPlayer.getSkillLevel(SkillType.GUARDSMAN) * 2);
+        event.setDamage(event.getDamage() + cPlayer.getSkillLevel(SkillType.GUARDSMAN) * 2.5);
     }
 
 }
