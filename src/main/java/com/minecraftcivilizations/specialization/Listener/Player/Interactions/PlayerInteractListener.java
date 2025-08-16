@@ -4,6 +4,7 @@ import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.Skill;
+import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import io.papermc.paper.datacomponent.DataComponentTypes;
@@ -12,6 +13,7 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.event.EventHandler;
@@ -19,6 +21,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.player.PlayerBucketEmptyEvent;
+import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -124,6 +128,22 @@ public class PlayerInteractListener implements Listener {
                 result.unsetData(DataComponentTypes.CUSTOM_NAME);
                 result.getData(DataComponentTypes.LORE).lines().add(number + 1, Component.text(renameText.substring(8)));
             }
+        }
+    }
+
+    @EventHandler
+    public void onBucketEmpty(PlayerBucketEmptyEvent e ) {
+        if(e.getBucket().equals(Material.LAVA_BUCKET)){
+            CustomPlayer player = CoreUtil.getPlayer(e);
+            if(player.getSkillLevel(SkillType.BLACKSMITH) < SkillLevel.EXPERT.getLevel()) e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onBucketFill(PlayerBucketFillEvent e ) {
+        if(e.getBucket().equals(Material.LAVA_BUCKET)){
+            CustomPlayer player = CoreUtil.getPlayer(e);
+            if(player.getSkillLevel(SkillType.BLACKSMITH) < SkillLevel.EXPERT.getLevel()) e.setCancelled(true);
         }
     }
 
