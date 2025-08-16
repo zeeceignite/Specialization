@@ -8,6 +8,7 @@ import com.minecraftcivilizations.specialization.Specialization;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Monster;
+import org.bukkit.entity.Piglin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Comparator;
@@ -23,7 +24,7 @@ public class TargetPlayerMobGoal implements Goal<@NotNull Monster> {
 
     @Override
     public boolean shouldActivate() {
-        return monster.getTarget() == null && !monster.getWorld().isDayTime() && !(monster instanceof Enderman);
+        return monster.getTarget() == null && !monster.getWorld().isDayTime() && !(monster instanceof Enderman) && !(monster instanceof Piglin);
     }
 
     @Override
