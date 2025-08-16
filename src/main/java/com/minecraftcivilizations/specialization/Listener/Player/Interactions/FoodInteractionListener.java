@@ -103,7 +103,7 @@ public class FoodInteractionListener implements Listener {
     }
 
     private void giveGoldenAppleEffects(Player player){
-        if(new Random().nextDouble() < .4) {
+        if(new Random().nextDouble() < .2) {
             player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 20 * 60, 2));
             player.sendRichMessage("<#dbae32>You feel solidified by the golden nature of the apple.");
         }
