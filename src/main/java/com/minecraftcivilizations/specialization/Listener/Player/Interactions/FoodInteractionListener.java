@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.Listener.Player.Interactions;
 
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -10,6 +11,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -20,6 +22,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 public class FoodInteractionListener implements Listener {
@@ -47,6 +50,7 @@ public class FoodInteractionListener implements Listener {
                         singleItem.setAmount(1);
                         blessFood(singleItem, healerLevel);
                         item.setAmount(item.getAmount() - 1);
+                        player.setFoodLevel(player.getFoodLevel()-10);
                         if (player.getInventory().firstEmpty() != -1) {
                             player.getInventory().addItem(singleItem);
                         } else {
@@ -122,6 +126,19 @@ public class FoodInteractionListener implements Listener {
             player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 1000, 1));
         }
         player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, duration, amplifier));
+        
+        // Restore max health if enabled and player's max health is below normal
+        if (SpecializationConfig.getHealthConfig().get("HEALTH_ENABLED", Boolean.class)) {
+            double currentMaxHealth = Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).getValue();
+            double normalMaxHealth = SpecializationConfig.getHealthConfig().get("MAX_HEALTH", Double.class);
+            double healthRestoreAmount = SpecializationConfig.getHealthConfig().get("BLESSED_FOOD_HEALTH_RESTORE_AMOUNT", Double.class);
+            
+            if (currentMaxHealth < normalMaxHealth) {
+                double newMaxHealth = Math.min(normalMaxHealth, currentMaxHealth + healthRestoreAmount);
+                Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(newMaxHealth);
+                player.sendMessage(ChatColor.GREEN + "You feel your vitality returning! Max health restored to " + (int)newMaxHealth);
+            }
+        }
     }
 
     private int getBlessedFoodLevel(ItemStack item) {

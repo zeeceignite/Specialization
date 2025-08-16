@@ -5,9 +5,11 @@ import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Analytics.AnalyticsData;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
+import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import org.bukkit.Location;
 import org.bukkit.Registry;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,6 +18,8 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+
+import java.util.Objects;
 
 public class PlayerDeathListener implements Listener {
     @EventHandler
@@ -113,16 +117,22 @@ public class PlayerDeathListener implements Listener {
     }
 
     public void playerActuallyDied(Player player){
-        CustomPlayer.AnalyticPlayerData data = CoreUtil.getPlayer(player).getAnalyticPlayerData();
-        data.setDeaths(data.getDeaths() + 1);
+        CustomPlayer customPlayer = CoreUtil.getPlayer(player);
+        customPlayer.getAnalyticPlayerData().setDeaths(customPlayer.getAnalyticPlayerData().getDeaths() + 1);
         if(player.getLastDamageCause() == null) return;
         EntityDamageEvent.DamageCause cause = player.getLastDamageCause().getCause();
         AnalyticsData.deaths.putIfAbsent(cause, 0);
         AnalyticsData.deaths.put(cause, AnalyticsData.deaths.get(cause) + 1);
-        CustomPlayer customplayer = CoreUtil.getPlayer(player);
-        customplayer.getSkills().forEach(skill -> {
-            customplayer.addSkillXp(skill.getSkillType(), -skill.getXp());
+        customPlayer.getSkills().forEach(skill -> {
+            customPlayer.addSkillXp(skill.getSkillType(), -skill.getXp());
         });
+        
+        // Reduce max health
+        double deathReducedMaxHealth = SpecializationConfig.getHealthConfig().get("DEATH_REDUCED_MAX_HEALTH", Double.class);
+        if (SpecializationConfig.getHealthConfig().get("HEALTH_ENABLED", Boolean.class) && deathReducedMaxHealth > 0) {
+            double currentMaxHealth = Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).getValue();
+            Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(deathReducedMaxHealth);
+        }
     }
 
     public void applyDownedEffects(Player player) {

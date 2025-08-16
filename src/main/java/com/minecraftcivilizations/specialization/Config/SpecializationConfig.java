@@ -81,6 +81,8 @@ public class SpecializationConfig {
     private static ConfigFile canFarmerBreakConfig;
     @Getter
     private static ConfigFile armorDamageReductionConfig;
+    @Getter
+    private static ConfigFile healthConfig;
 
 
     public static void initialize() {
@@ -317,6 +319,13 @@ public class SpecializationConfig {
             
             // Enable/disable the system
             fields.add(new Pair<>("ENABLED", true));
+        });
+
+        healthConfig = new ConfigFile(Specialization.getInstance(), "healthConfig", null, fields -> {
+            fields.add(new Pair<>("MAX_HEALTH", 20D));
+            fields.add(new Pair<>("DEATH_REDUCED_MAX_HEALTH", 8D));
+            fields.add(new Pair<>("BLESSED_FOOD_HEALTH_RESTORE_AMOUNT", 2D));
+            fields.add(new Pair<>("HEALTH_ENABLED", true));
         });
 
         skillsConfig = new ConfigFile(Specialization.getInstance(), "skillsConfig", null, fields -> {
