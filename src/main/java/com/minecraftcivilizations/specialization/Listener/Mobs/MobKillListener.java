@@ -36,6 +36,11 @@ public class MobKillListener implements Listener {
             return;
         }
         
+        // IMPORTANT: Only apply this to mob combat, not PVP combat
+        if (event.getEntity() instanceof Player) {
+            return; // Skip PVP damage - this was causing the bug
+        }
+        
         Player damager = (Player) event.getDamager();
         CustomPlayer customPlayer = CoreUtil.getPlayer(damager);
         
@@ -49,7 +54,7 @@ public class MobKillListener implements Listener {
             return;
         }
         
-        // Apply damage reduction for non-Guardsman players
+        // Apply damage reduction for non-Guardsman players attacking mobs
         double damageReduction = SpecializationConfig.getGuardsmanConfig().get("NON_GUARDSMAN_DAMAGE_REDUCTION", Double.class);
         double currentDamage = event.getFinalDamage();
         double reducedDamage = currentDamage * (1.0 - damageReduction);
