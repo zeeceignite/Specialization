@@ -119,7 +119,8 @@ public class PlayerDeathListener implements Listener {
 
     public void playerActuallyDied(Player player){
         CustomPlayer customPlayer = CoreUtil.getPlayer(player);
-        customPlayer.getAnalyticPlayerData().setDeaths(customPlayer.getAnalyticPlayerData().getDeaths() + 1);
+        // Use new non-cumulative death tracking
+        customPlayer.getAnalyticPlayerData().incrementDeathsThisPeriod();
         if(player.getLastDamageCause() == null) return;
         EntityDamageEvent.DamageCause cause = player.getLastDamageCause().getCause();
         AnalyticsData.deaths.putIfAbsent(cause, 0);

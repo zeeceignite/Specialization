@@ -5,7 +5,12 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import com.minecraftcivilizations.specialization.Distance.Town;
+import com.minecraftcivilizations.specialization.Distance.TownManager;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.block.Biome;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent;
 
@@ -17,48 +22,96 @@ import java.util.stream.Collectors;
 
 public record AnalyticsData(
         Timestamp timestamp,
-        int onlinePlayers,
-        int totalDeaths,
-        Map<String,Integer> playerDensity,
-        Map<SkillType, Integer> classPopularity,
-        Map<EntityDamageEvent.DamageCause, Integer> deathCauses
+        
+        // Server-wide metrics
+        int serverPopulation,
+        int serverDeathsInPeriod,
+        Map<SkillType, Integer> serverClassPopulation,
+        Map<SkillType, Map<Integer, Integer>> serverPlayersPerSkillLevel,
+        Map<String, Integer> serverUrbanAreaPopulation,
+        Map<EntityDamageEvent.DamageCause, Integer> serverDeathCauses,
+        
+        // Town-specific metrics (for towns with 5+ beds)
+        Map<String, TownSpecificData> townSpecificData
 ){
+    
+    public record TownSpecificData(
+            int townPopulation,
+            int townDeathsInPeriod,
+            Map<SkillType, Integer> townClassPopulation,
+            Map<SkillType, Map<Integer, Integer>> townPlayersPerSkillLevel,
+            Biome townBiome,
+            double distanceFromClosestTown,
+            double distanceFromSpawn,
+            long townAgeInDays
+    ){};
 
     public static ConcurrentHashMap<EntityDamageEvent.DamageCause, Integer> deaths = new ConcurrentHashMap<>();
 
     public static void autoPoll(){
         Bukkit.getLogger().info("polling analytics");
         Bukkit.getAsyncScheduler().runAtFixedRate(Specialization.getInstance(), (_) -> {
-            MongoConnection.getCollection(MongoConnection.Collections.ANALYTICS).insertOne(poll());
+            // Only record data if there are at least 10 online players
+            if (Bukkit.getOnlinePlayers().size() >= 10) {
+                AnalyticsData data = poll();
+                if (data != null) {
+                    MongoConnection.getCollection(MongoConnection.Collections.ANALYTICS).insertOne(data);
+                    Bukkit.getLogger().info("polled analytics");
+                }
+            } else {
+                Bukkit.getLogger().info("Skipping analytics poll - less than 10 players online");
+            }
             wipe();
-            Bukkit.getLogger().info("polled analytics");
         }, 0, 5, TimeUnit.MINUTES);
     }
 
     private static void wipe(){
         deaths.clear();
+        // Reset death counters for all online players
+        Bukkit.getOnlinePlayers().stream()
+                .map(player -> CoreUtil.getPlayer(player.getUniqueId()))
+                .filter(Objects::nonNull)
+                .forEach(customPlayer -> customPlayer.getAnalyticPlayerData().resetDeathsForPeriod());
     }
 
     private static AnalyticsData poll(){
-        List<CustomPlayer> allPlayers = Bukkit.getOnlinePlayers().stream().map(CoreUtil::getPlayer).filter(Objects::nonNull) .toList();
-        List<CustomPlayer.AnalyticPlayerData> allData = allPlayers.stream().map(CustomPlayer::getAnalyticPlayerData).filter(Objects::nonNull).toList();
+        List<CustomPlayer> allPlayers = Bukkit.getOnlinePlayers().stream()
+                .map(CoreUtil::getPlayer)
+                .filter(Objects::nonNull)
+                .toList();
+        
+        if (allPlayers.isEmpty()) {
+            return null;
+        }
 
         Timestamp now = new Timestamp(System.currentTimeMillis());
-        int onlinePlayers = Bukkit.getOnlinePlayers().size();
-        int totalDeaths = allData.stream().mapToInt(CustomPlayer.AnalyticPlayerData::getDeaths).sum();
-        Map<String, Integer> playerDensity = getPlayerDensity();
-        Map<SkillType, Integer> totalSkills = skillPopularity(allPlayers);
+        
+        // Server-wide metrics
+        int serverPopulation = allPlayers.size();
+        int serverDeathsInPeriod = allPlayers.stream()
+                .mapToInt(player -> player.getAnalyticPlayerData().getDeathsThisPeriod())
+                .sum();
+        Map<SkillType, Integer> serverClassPopulation = getSkillPopularity(allPlayers);
+        Map<SkillType, Map<Integer, Integer>> serverPlayersPerSkillLevel = getPlayersPerSkillLevel(allPlayers);
+        Map<String, Integer> serverUrbanAreaPopulation = getUrbanAreaPopulation();
+        
+        // Town-specific data
+        Map<String, TownSpecificData> townSpecificData = getTownSpecificData(allPlayers);
 
         return new AnalyticsData(now,
-                onlinePlayers, totalDeaths,
-                playerDensity,
-                totalSkills,
-                deaths);
+                serverPopulation,
+                serverDeathsInPeriod,
+                serverClassPopulation,
+                serverPlayersPerSkillLevel,
+                serverUrbanAreaPopulation,
+                deaths,
+                townSpecificData);
     }
 
-    private static Map<SkillType, Integer> skillPopularity(List<CustomPlayer> allPlayers){
+    private static Map<SkillType, Integer> getSkillPopularity(List<CustomPlayer> allPlayers){
         return allPlayers.stream()
-                .flatMap(player -> Arrays.stream(SkillType.values()).map(skillType -> new AbstractMap.SimpleEntry<>(skillType, player.getSkillLevel(skillType))))
+                .flatMap(player -> Arrays.stream(SkillType.values())
+                        .map(skillType -> new AbstractMap.SimpleEntry<>(skillType, player.getSkillLevel(skillType))))
                 .collect(
                         Collectors.toMap(
                                 AbstractMap.SimpleEntry::getKey,
@@ -66,18 +119,120 @@ public record AnalyticsData(
                                 Integer::sum)
                 );
     }
-
-    private static Map<String, Integer> getPlayerDensity(){
-        HashMap<String, Integer> playerDensity = new HashMap<>();
-        int chunkAmount = 50;
-        for(Player player : Bukkit.getOnlinePlayers()){
-            int x = (int)(player.getLocation().getX() / chunkAmount);
-            int z = (int)(player.getLocation().getZ() / chunkAmount);
-
-            playerDensity.compute(x + "," + z,
-                    (_, value) -> value == null ? 1 : value + 1);
+    
+    private static Map<SkillType, Map<Integer, Integer>> getPlayersPerSkillLevel(List<CustomPlayer> allPlayers) {
+        Map<SkillType, Map<Integer, Integer>> result = new HashMap<>();
+        
+        for (SkillType skillType : SkillType.values()) {
+            Map<Integer, Integer> levelCounts = new HashMap<>();
+            
+            for (CustomPlayer player : allPlayers) {
+                int level = player.getSkillLevel(skillType);
+                levelCounts.merge(level, 1, Integer::sum);
+            }
+            
+            result.put(skillType, levelCounts);
         }
-        return playerDensity;
+        
+        return result;
     }
+
+    private static Map<String, Integer> getUrbanAreaPopulation(){
+        HashMap<String, Integer> urbanAreas = new HashMap<>();
+        int urbanRadius = 250; // 250 blocks radius
+        
+        for(Player player : Bukkit.getOnlinePlayers()){
+            Location playerLoc = player.getLocation();
+            
+            // Count players within 250 blocks
+            long nearbyPlayers = Bukkit.getOnlinePlayers().stream()
+                    .filter(otherPlayer -> !otherPlayer.equals(player))
+                    .filter(otherPlayer -> otherPlayer.getLocation().distance(playerLoc) <= urbanRadius)
+                    .count();
+            
+            // Only consider areas with 10+ players as urban
+            if (nearbyPlayers >= 10) {
+                int x = (int)(playerLoc.getX() / 500); // 500 block grid for urban areas
+                int z = (int)(playerLoc.getZ() / 500);
+                String areaKey = x + "," + z;
+                urbanAreas.merge(areaKey, 1, Integer::sum);
+            }
+        }
+        return urbanAreas;
+    }
+    
+    private static Map<String, TownSpecificData> getTownSpecificData(List<CustomPlayer> allPlayers) {
+        Map<String, TownSpecificData> townData = new HashMap<>();
+        
+        // Get all towns with 5+ beds (MIN_BEDS from TownManager)
+        List<Town> eligibleTowns = TownManager.getTowns().stream()
+                .filter(town -> town.getBedCount() >= 5)
+                .toList();
+        
+        for (Town town : eligibleTowns) {
+            List<CustomPlayer> townPlayers = allPlayers.stream()
+                    .filter(player -> {
+                        Player bukkitPlayer = Bukkit.getPlayer(player.getUuid());
+                        if (bukkitPlayer == null) return false;
+                        
+                        // Check if player's spawn location is within town radius (150 blocks)
+                        Location playerSpawn = TownManager.getPlayerSpawnLocations().get(player.getUuid());
+                        if (playerSpawn == null) playerSpawn = bukkitPlayer.getBedSpawnLocation();
+                        if (playerSpawn == null) return false;
+                        
+                        return playerSpawn.distance(town.getCenterLocation()) <= 150; // TOWN_RADIUS from TownManager
+                    })
+                    .toList();
+            
+            if (!townPlayers.isEmpty()) {
+                TownSpecificData data = calculateTownSpecificData(town, townPlayers, eligibleTowns);
+                townData.put("Town_" + townPlayers.size() + "beds_" + 
+                    (int)town.getCenterLocation().getX() + "_" + (int)town.getCenterLocation().getZ(), data);
+            }
+        }
+        
+        return townData;
+    }
+    
+    private static TownSpecificData calculateTownSpecificData(Town town, List<CustomPlayer> townPlayers, List<Town> allTowns) {
+        int townPopulation = townPlayers.size();
+        int townDeathsInPeriod = townPlayers.stream()
+                .mapToInt(player -> player.getAnalyticPlayerData().getDeathsThisPeriod())
+                .sum();
+        
+        Map<SkillType, Integer> townClassPopulation = getSkillPopularity(townPlayers);
+        Map<SkillType, Map<Integer, Integer>> townPlayersPerSkillLevel = getPlayersPerSkillLevel(townPlayers);
+        
+        // Get town center location
+        Location townCenter = town.getCenterLocation();
+        Biome townBiome = townCenter.getBlock().getBiome();
+        
+        // Calculate distance to closest other town
+        double distanceFromClosestTown = allTowns.stream()
+                .filter(otherTown -> !otherTown.equals(town))
+                .mapToDouble(otherTown -> townCenter.distance(otherTown.getCenterLocation()))
+                .min()
+                .orElse(0.0);
+        
+        // Distance from world spawn
+        World world = townCenter.getWorld();
+        Location worldSpawn = world.getSpawnLocation();
+        double distanceFromSpawn = townCenter.distance(worldSpawn);
+        
+        // Calculate town age in days
+        long townAgeInDays = (System.currentTimeMillis() - town.getDiscoveredTime()) / (1000 * 60 * 60 * 24);
+        
+        return new TownSpecificData(
+                townPopulation,
+                townDeathsInPeriod,
+                townClassPopulation,
+                townPlayersPerSkillLevel,
+                townBiome,
+                distanceFromClosestTown,
+                distanceFromSpawn,
+                townAgeInDays
+        );
+    }
+    
 
 }

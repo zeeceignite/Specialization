@@ -239,7 +239,17 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
     @Data
     public static class AnalyticPlayerData {
-        int deaths;
+        int deaths; // Total cumulative deaths (kept for backward compatibility)
+        int deathsThisPeriod; // Deaths in current 5-minute period
+        
+        public void incrementDeathsThisPeriod() {
+            this.deathsThisPeriod++;
+            this.deaths++; // Also increment total for backward compatibility
+        }
+        
+        public void resetDeathsForPeriod() {
+            this.deathsThisPeriod = 0;
+        }
     }
 
 }
