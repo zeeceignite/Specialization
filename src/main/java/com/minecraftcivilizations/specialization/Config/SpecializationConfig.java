@@ -66,6 +66,8 @@ public class SpecializationConfig {
     @Getter
     private static ConfigFile mobConfig;
     @Getter
+    private static ConfigFile mobDropsConfig;
+    @Getter
     private static ConfigFile guardsmanConfig;
     @Getter
     private static ConfigFile berserkConfig;
@@ -157,6 +159,14 @@ public class SpecializationConfig {
             fields.add(new Pair<>("BLOCK_BREAK_CHANCE_PERCENTAGE", 30));
             fields.add(new Pair<>("BLOCK_BREAK_IGNORE_LIST_REGEX", List.of(".*BRICK.*", "OBSIDIAN")));
             fields.add(new Pair<>("VISUAL_BREAKING_INCREASE_PER_TICK_PERCENTAGE", 1f));
+        });
+
+        mobDropsConfig = new ConfigFile(Specialization.getInstance(), "mobDrops", null, fields -> {
+            for(EntityType entityType : EntityType.values()) {
+                if(entityType.isAlive()){
+                    fields.add(new Pair<>(entityType, List.of(Material.AIR.getKey())));
+                }
+            }
         });
 
         xpGainFromRepairingConfig = new ConfigFile(Specialization.getInstance(), "xpGainFromRepairing", null, fields -> {

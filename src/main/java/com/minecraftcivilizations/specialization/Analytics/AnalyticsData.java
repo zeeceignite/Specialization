@@ -1,8 +1,6 @@
 package com.minecraftcivilizations.specialization.Analytics;
 
 import com.minecraftcivilizations.specialization.Data.MongoConnection;
-import com.minecraftcivilizations.specialization.Distance.Town;
-import com.minecraftcivilizations.specialization.Distance.TownManager;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
@@ -23,7 +21,6 @@ public record AnalyticsData(
         int totalDeaths,
         Map<String,Integer> playerDensity,
         Map<SkillType, Integer> classPopularity,
-        List<Town> towns,
         Map<EntityDamageEvent.DamageCause, Integer> deathCauses
 ){
 
@@ -56,7 +53,6 @@ public record AnalyticsData(
                 onlinePlayers, totalDeaths,
                 playerDensity,
                 totalSkills,
-                TownManager.getTowns(),
                 deaths);
     }
 

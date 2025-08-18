@@ -100,7 +100,6 @@ public class Recipes {
         netherWart.setIngredient('D', Material.COARSE_DIRT);
         netherWart.setIngredient('B', Material.BLAZE_POWDER);
         Bukkit.addRecipe(netherWart, true);
-
     }
 
 }
