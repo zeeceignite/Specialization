@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityBreedEvent;
 import org.bukkit.event.entity.EntityDismountEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -167,6 +168,16 @@ public class PlayerInteractEntityListener implements Listener {
                         break;
                     }
                 }
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onPlayerBreed(EntityBreedEvent e){
+        if(e.getBreeder() instanceof Player player) {
+            CustomPlayer cPlayer = CoreUtil.getPlayer(player);
+            if(cPlayer.getSkillLevel(SkillType.FARMER) <= 2){
+                e.setCancelled(true);
             }
         }
     }
