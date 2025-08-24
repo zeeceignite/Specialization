@@ -14,8 +14,10 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
@@ -59,6 +61,25 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     private final HashSet<UUID> leashedOtherPlayers = new HashSet<>();
     @Setter
     private UUID leashedTo = null;
+    
+    // Make bedLocation transient to prevent Gson serialization issues
+    @Setter
+    @Getter
+    private transient Location bedLocation = null;
+    
+    // Serializable bed location data
+    @Getter
+    @Setter
+    private String bedWorldName = null;
+    @Getter
+    @Setter
+    private double bedX = 0;
+    @Getter
+    @Setter
+    private double bedY = 0;
+    @Getter
+    @Setter
+    private double bedZ = 0;
 
     public CustomPlayer(UUID uuid) {
         super(uuid);
@@ -237,19 +258,92 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         throw new IllegalStateException("Couldn't get skill " + skillType.toString());
     }
 
+    /**
+     * Sets the player's bed location and clears any previous bed claim
+     */
+    public void setBedLocation(Location bedLocation) {
+        this.bedLocation = bedLocation;
+        if (bedLocation != null) {
+            // Store serializable data
+            this.bedWorldName = bedLocation.getWorld().getName();
+            this.bedX = bedLocation.getX();
+            this.bedY = bedLocation.getY();
+            this.bedZ = bedLocation.getZ();
+        } else {
+            clearBedLocation();
+        }
+    }
+
+    /**
+     * Clears the player's bed location
+     */
+    public void clearBedLocation() {
+        this.bedLocation = null;
+        this.bedWorldName = null;
+        this.bedX = 0;
+        this.bedY = 0;
+        this.bedZ = 0;
+    }
+
+    /**
+     * Checks if the player has a bed location set
+     */
+    public boolean hasBedLocation() {
+        // Try to reconstruct location if we have serialized data but no transient location
+        if (this.bedLocation == null && this.bedWorldName != null) {
+            reconstructBedLocation();
+        }
+        return this.bedLocation != null;
+    }
+
+    /**
+     * Gets the bed location, reconstructing it from serialized data if necessary
+     */
+    public Location getBedLocation() {
+        if (this.bedLocation == null && this.bedWorldName != null) {
+            reconstructBedLocation();
+        }
+        return this.bedLocation;
+    }
+
+    /**
+     * Reconstructs the bed location from serialized data
+     */
+    private void reconstructBedLocation() {
+        if (this.bedWorldName != null) {
+            World world = Bukkit.getWorld(this.bedWorldName);
+            if (world != null) {
+                this.bedLocation = new Location(world, this.bedX, this.bedY, this.bedZ);
+            } else {
+                Bukkit.getLogger().warning("Could not find world '" + this.bedWorldName + "' for player bed location");
+                clearBedLocation();
+            }
+        }
+    }
+
+    /**
+     * Checks if the given location matches the player's bed location
+     */
+    public boolean isBedLocation(Location location) {
+        Location playerBedLocation = getBedLocation(); // This will reconstruct if needed
+        if (playerBedLocation == null || location == null) {
+            return false;
+        }
+        return playerBedLocation.equals(location);
+    }
+
     @Data
     public static class AnalyticPlayerData {
         int deaths; // Total cumulative deaths (kept for backward compatibility)
         int deathsThisPeriod; // Deaths in current 5-minute period
-        
+
         public void incrementDeathsThisPeriod() {
             this.deathsThisPeriod++;
             this.deaths++; // Also increment total for backward compatibility
         }
-        
+
         public void resetDeathsForPeriod() {
             this.deathsThisPeriod = 0;
         }
     }
-
 }

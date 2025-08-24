@@ -87,7 +87,8 @@ public class SpecializationConfig {
     private static ConfigFile armorDamageReductionConfig;
     @Getter
     private static ConfigFile healthConfig;
-
+    @Getter
+    private static ConfigFile bedOwnershipConfig;
 
     public static void initialize() {
         playerConfig = new ConfigFile(Specialization.getInstance(), "playerConfig", null, fields -> {
@@ -340,6 +341,14 @@ public class SpecializationConfig {
             fields.add(new Pair<>("HEALTH_ENABLED", true));
         });
 
+        bedOwnershipConfig = new ConfigFile(Specialization.getInstance(), "bedOwnershipConfig", null, fields -> {
+            fields.add(new Pair<>("BED_OWNERSHIP_ENABLED", true));
+            fields.add(new Pair<>("ALLOW_BED_SHARING", false));
+            fields.add(new Pair<>("BED_OWNERSHIP_MESSAGE", "§cThis bed is already claimed by another player!"));
+            fields.add(new Pair<>("BED_CLAIM_MESSAGE", "§aYou have claimed this bed as your spawn point!"));
+            fields.add(new Pair<>("BED_UNCLAIM_MESSAGE", "§7Your previous bed has been unclaimed."));
+        });
+
         skillsConfig = new ConfigFile(Specialization.getInstance(), "skillsConfig", null, fields -> {
             for (SkillType skillType : SkillType.values()) {
                 fields.add(new Pair<>(skillType + "_WORKSTATION", Material.COMPOSTER));
@@ -381,6 +390,5 @@ public class SpecializationConfig {
             fields.add(new Pair<>("ANNOUNCEMENT_PREFIX", "#"));
         });
     }
-
 
 }

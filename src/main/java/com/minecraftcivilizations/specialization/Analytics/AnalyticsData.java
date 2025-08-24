@@ -109,15 +109,34 @@ public record AnalyticsData(
     }
 
     private static Map<SkillType, Integer> getSkillPopularity(List<CustomPlayer> allPlayers){
-        return allPlayers.stream()
-                .flatMap(player -> Arrays.stream(SkillType.values())
-                        .map(skillType -> new AbstractMap.SimpleEntry<>(skillType, player.getSkillLevel(skillType))))
-                .collect(
-                        Collectors.toMap(
-                                AbstractMap.SimpleEntry::getKey,
-                                Map.Entry::getValue,
-                                Integer::sum)
-                );
+        Map<SkillType, Integer> skillCounts = new HashMap<>();
+        
+        // Initialize all skill types with 0
+        for (SkillType skillType : SkillType.values()) {
+            skillCounts.put(skillType, 0);
+        }
+        
+        // Count players for each skill type based on their highest skill
+        for (CustomPlayer player : allPlayers) {
+            SkillType highestSkill = null;
+            int highestLevel = 0;
+            
+            // Find the player's highest skill level
+            for (SkillType skillType : SkillType.values()) {
+                int level = player.getSkillLevel(skillType);
+                if (level > highestLevel) {
+                    highestLevel = level;
+                    highestSkill = skillType;
+                }
+            }
+            
+            // Count this player for their highest skill (if they have any skill levels)
+            if (highestSkill != null && highestLevel > 0) {
+                skillCounts.merge(highestSkill, 1, Integer::sum);
+            }
+        }
+        
+        return skillCounts;
     }
     
     private static Map<SkillType, Map<Integer, Integer>> getPlayersPerSkillLevel(List<CustomPlayer> allPlayers) {
@@ -169,28 +188,68 @@ public record AnalyticsData(
                 .filter(town -> town.getBedCount() >= 5)
                 .toList();
         
+        Bukkit.getLogger().info("Found " + TownManager.getTowns().size() + " total towns, " + eligibleTowns.size() + " eligible towns (5+ beds)");
+        
         for (Town town : eligibleTowns) {
+            Bukkit.getLogger().info("Processing town with " + town.getBedCount() + " beds at " + town.getCenterLocation());
+            
             List<CustomPlayer> townPlayers = allPlayers.stream()
                     .filter(player -> {
                         Player bukkitPlayer = Bukkit.getPlayer(player.getUuid());
-                        if (bukkitPlayer == null) return false;
+                        if (bukkitPlayer == null) {
+                            Bukkit.getLogger().info("Player " + player.getUuid() + " not online, skipping");
+                            return false;
+                        }
                         
-                        // Check if player's spawn location is within town radius (150 blocks)
+                        // Try multiple methods to get player location for town association
+                        Location playerLocation = null;
+                        
+                        // Method 1: Check spawn location from TownManager
                         Location playerSpawn = TownManager.getPlayerSpawnLocations().get(player.getUuid());
-                        if (playerSpawn == null) playerSpawn = bukkitPlayer.getBedSpawnLocation();
-                        if (playerSpawn == null) return false;
+                        if (playerSpawn != null) {
+                            playerLocation = playerSpawn;
+                            Bukkit.getLogger().info("Using TownManager spawn location for " + bukkitPlayer.getName());
+                        } else {
+                            // Method 2: Check bed spawn location
+                            playerSpawn = bukkitPlayer.getBedSpawnLocation();
+                            if (playerSpawn != null) {
+                                playerLocation = playerSpawn;
+                                Bukkit.getLogger().info("Using bed spawn location for " + bukkitPlayer.getName());
+                            } else {
+                                // Method 3: Use current location as fallback
+                                playerLocation = bukkitPlayer.getLocation();
+                                Bukkit.getLogger().info("Using current location for " + bukkitPlayer.getName() + " (no spawn/bed location found)");
+                            }
+                        }
                         
-                        return playerSpawn.distance(town.getCenterLocation()) <= 150; // TOWN_RADIUS from TownManager
+                        if (playerLocation == null) {
+                            Bukkit.getLogger().warning("No location found for player " + bukkitPlayer.getName());
+                            return false;
+                        }
+                        
+                        double distance = playerLocation.distance(town.getCenterLocation());
+                        boolean isInTown = distance <= 150; // TOWN_RADIUS from TownManager
+                        
+                        if (isInTown) {
+                            Bukkit.getLogger().info("Player " + bukkitPlayer.getName() + " is in town (distance: " + distance + ")");
+                        }
+                        
+                        return isInTown;
                     })
                     .toList();
             
+            Bukkit.getLogger().info("Town has " + townPlayers.size() + " associated players");
+            
             if (!townPlayers.isEmpty()) {
                 TownSpecificData data = calculateTownSpecificData(town, townPlayers, eligibleTowns);
-                townData.put("Town_" + townPlayers.size() + "beds_" + 
-                    (int)town.getCenterLocation().getX() + "_" + (int)town.getCenterLocation().getZ(), data);
+                String townKey = "Town_" + town.getBedCount() + "beds_" + 
+                    (int)town.getCenterLocation().getX() + "_" + (int)town.getCenterLocation().getZ();
+                townData.put(townKey, data);
+                Bukkit.getLogger().info("Added town data for: " + townKey);
             }
         }
         
+        Bukkit.getLogger().info("Generated town data for " + townData.size() + " towns");
         return townData;
     }
     

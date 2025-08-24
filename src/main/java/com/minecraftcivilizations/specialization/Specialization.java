@@ -16,6 +16,7 @@ import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Data.MongoConnection;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
 import com.minecraftcivilizations.specialization.Listener.BurnListener;
+import com.minecraftcivilizations.specialization.Listener.Player.BedListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.ExplodeListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.MobKillListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.MobListeners;
@@ -95,6 +96,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new FoodInteractionListener(), this);
         getServer().getPluginManager().registerEvents(new HungerSystemListener(this), this);
         getServer().getPluginManager().registerEvents(new LeashListener(), this);
+        getServer().getPluginManager().registerEvents(new BedListener(), this);
 
         getServer().getPluginManager().registerEvents(new StonecutterListener(), this);
         getServer().getPluginManager().registerEvents(new CraftingListener(this), this);
@@ -230,6 +232,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new SetLoreCommand());
         commandManager.registerCommand(new TownsCommand());
         commandManager.registerCommand(new SuicideCommand());
+        commandManager.registerCommand(new AnalyticsCommand());
     }
 
     public void applyCustomName(Player player, Component name){
