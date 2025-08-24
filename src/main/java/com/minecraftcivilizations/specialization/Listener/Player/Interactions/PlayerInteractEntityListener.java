@@ -176,7 +176,8 @@ public class PlayerInteractEntityListener implements Listener {
     public void onPlayerBreed(EntityBreedEvent e){
         if(e.getBreeder() instanceof Player player) {
             CustomPlayer cPlayer = CoreUtil.getPlayer(player);
-            if(cPlayer.getSkillLevel(SkillType.FARMER) <= 2){
+            int level = SpecializationConfig.getFarmerConfig().get("FARMER_BREED_LEVEL", Integer.class);
+            if(cPlayer.getSkillLevel(SkillType.FARMER) < level){
                 e.setCancelled(true);
             }
         }

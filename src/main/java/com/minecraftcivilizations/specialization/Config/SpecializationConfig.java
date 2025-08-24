@@ -54,6 +54,8 @@ public class SpecializationConfig {
     @Getter
     private static ConfigFile librarianConfig;
     @Getter
+    private static ConfigFile farmerConfig;
+    @Getter
     private static ConfigFile canUseBlockConfig;
     @Getter
     private static ConfigFile xpGainFromRepairingConfig;
@@ -359,6 +361,14 @@ public class SpecializationConfig {
             fields.add(new Pair<>("BLESS_ITEM_LIBRARIAN_LEVEL", 2));
             fields.add(new Pair<>("BLESS_ITEM_XP_LEVEL_REQUIREMENT", 3));
             fields.add(new Pair<>("ITEM_LORE_LIBRARIAN_LEVEL", 3));
+        });
+
+        farmerConfig = new ConfigFile(Specialization.getInstance(), "farmerConfig", null, fields -> {
+            fields.add(new Pair<>("FARMER_BREED_LEVEL", SkillLevel.JOURNEYMAN.getLevel()));
+            fields.add(new Pair<>("FARMER_GET_DROPS_CHANCE", 0.05));
+            fields.add(new Pair<>("FARMER_PER_LEVEL_DROPS_CHANCE_INCREASE", 0.15));
+
+
         });
 
         blueprintConfig = new ConfigFile(Specialization.getInstance(), "librarianConfig", null, fields -> {

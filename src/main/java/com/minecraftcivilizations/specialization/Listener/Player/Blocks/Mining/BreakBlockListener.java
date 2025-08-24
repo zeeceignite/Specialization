@@ -73,6 +73,7 @@ public class BreakBlockListener implements Listener {
         }
     }
 
+
     @EventHandler
     public void onEntityExplode(EntityExplodeEvent event) {
         onBlocksExplode(event.blockList());
@@ -107,6 +108,16 @@ public class BreakBlockListener implements Listener {
         if (skillRequired != null && player.getSkillLevel(SkillType.FARMER) < skillRequired.getLevel()) {
             event.setDropItems(false);
             event.getPlayer().sendMessage(org.bukkit.ChatColor.RED + "You are unable to farm this");
+        }
+        List<Material> otherFarmables = List.of(Material.COCOA_BEANS, Material.SUGAR_CANE, Material.CACTUS, Material.MELON, Material.PUMPKIN);
+        double base = SpecializationConfig.getFarmerConfig().get("FARMER_GET_DROPS_CHANCE", Double.class);
+        double additional = SpecializationConfig.getFarmerConfig().get("FARMER_PER_LEVEL_DROPS_CHANCE_INCREASE", Double.class);
+        double chance = base + additional * player.getSkillLevel(SkillType.FARMER);
+        double random = Math.random();
+        if(random > chance) {
+            if (event.getBlock().getBlockData() instanceof Ageable || otherFarmables.contains(materialName)) {
+                event.setDropItems(false);
+            }
         }
     }
 
