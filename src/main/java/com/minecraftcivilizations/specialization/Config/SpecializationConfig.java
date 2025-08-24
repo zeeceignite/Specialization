@@ -377,6 +377,7 @@ public class SpecializationConfig {
             for(SkillLevel skillLevel : SkillLevel.values()) {
                 fields.add(new Pair<>("FARMER_GET_DROPS_CHANCE_" + skillLevel, 0.5));
             }
+            //push
         });
 
         blueprintConfig = new ConfigFile(Specialization.getInstance(), "librarianConfig", null, fields -> {
