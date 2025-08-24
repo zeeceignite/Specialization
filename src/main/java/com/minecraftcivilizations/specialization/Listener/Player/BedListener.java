@@ -8,11 +8,13 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.player.PlayerBedEnterEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
 import java.util.HashMap;
@@ -25,9 +27,19 @@ public class BedListener implements Listener {
     private static final Map<Location, UUID> bedOwnership = new HashMap<>();
 
     @EventHandler(priority = EventPriority.HIGH)
-    public void onPlayerBedEnter(PlayerBedEnterEvent event) {
+    public void onPlayerInteractWithBed(PlayerInteractEvent event) {
         // Check if bed ownership is enabled
         if (!SpecializationConfig.getBedOwnershipConfig().get("BED_OWNERSHIP_ENABLED", Boolean.class)) {
+            return;
+        }
+
+        // Only handle right-click on blocks
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+
+        Block clickedBlock = event.getClickedBlock();
+        if (clickedBlock == null || !isBed(clickedBlock.getType())) {
             return;
         }
 
@@ -37,19 +49,23 @@ public class BedListener implements Listener {
             return;
         }
 
-        Location bedLocation = event.getBed().getLocation();
+        Location bedLocation = clickedBlock.getLocation();
         UUID currentOwner = bedOwnership.get(bedLocation);
 
         // Check if bed is already owned by another player
         if (currentOwner != null && !currentOwner.equals(player.getUniqueId())) {
             // Check if bed sharing is allowed
             if (!SpecializationConfig.getBedOwnershipConfig().get("ALLOW_BED_SHARING", Boolean.class)) {
+                // Cancel the event completely to prevent any bed interaction
                 event.setCancelled(true);
                 String message = SpecializationConfig.getBedOwnershipConfig().get("BED_OWNERSHIP_MESSAGE", String.class);
                 player.sendMessage(message);
                 return;
             }
         }
+
+        // Cancel the default bed behavior - we'll handle spawn point setting manually
+        event.setCancelled(true);
 
         // Clear player's previous bed if they had one
         if (customPlayer.hasBedLocation()) {
@@ -65,10 +81,13 @@ public class BedListener implements Listener {
         bedOwnership.put(bedLocation, player.getUniqueId());
         customPlayer.setBedLocation(bedLocation);
 
+        // Manually set the spawn point using the new API
+        player.setRespawnLocation(bedLocation, true);
+
         String claimMessage = SpecializationConfig.getBedOwnershipConfig().get("BED_CLAIM_MESSAGE", String.class);
         player.sendMessage(claimMessage);
 
-        Bukkit.getLogger().info("Player " + player.getName() + " claimed bed at " + bedLocation);
+        Bukkit.getLogger().info("Player " + player.getName() + " claimed bed at " + bedLocation + " and set respawn location");
     }
 
     @EventHandler(priority = EventPriority.HIGH)
