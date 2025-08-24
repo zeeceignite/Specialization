@@ -15,8 +15,8 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Data.MongoConnection;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
-import com.minecraftcivilizations.specialization.Listener.BurnListener;
 import com.minecraftcivilizations.specialization.Listener.Player.BedListener;
+import com.minecraftcivilizations.specialization.Listener.BurnListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.ExplodeListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.MobKillListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.MobListeners;
@@ -200,6 +200,7 @@ public final class Specialization extends JavaPlugin {
                     customPlayer.setWasDownedOnLogout(false);
                 }
             }
+            
             MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().removeCustomPlayer(playerQuitEvent.getPlayer().getUniqueId());
         });
 
@@ -213,7 +214,6 @@ public final class Specialization extends JavaPlugin {
 
         AnalyticsData.autoPoll();
     }
-
     @Override
     public void onDisable() {
         // Plugin shutdown logic
