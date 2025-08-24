@@ -46,7 +46,7 @@ jobs:
     - name: Find and upload Specialization file
       uses: actions/upload-artifact@v4
       with:
-        name: Specialization.jar
+        name: Specialization
         path: build/libs/Specialization*.jar
         retention-days: 7
 
