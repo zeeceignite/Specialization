@@ -26,7 +26,7 @@ public class PlayerMineListener implements Listener {
     public void onPlayerInteractEarly(PlayerInteractEvent event) {
         if (event.getAction() == Action.LEFT_CLICK_BLOCK && event.getClickedBlock() != null && event.getClickedBlock().getType().isBlock() && !event.getClickedBlock().getType().isAir()) {
             AttributeInstance breakSpeedAttr = event.getPlayer().getAttribute(Attribute.BLOCK_BREAK_SPEED);
-            if (breakSpeedAttr != null && !originalBreakSpeed.containsKey(event.getPlayer().getUniqueId())) {
+            if (breakSpeedAttr != null && !originalBreakSpeed.containsKey(event.getPlayer().getUniqueId())){
                 originalBreakSpeed.put(event.getPlayer().getUniqueId(), breakSpeedAttr.getBaseValue());
             }
             double multiplier = 1;
@@ -51,7 +51,7 @@ public class PlayerMineListener implements Listener {
 
     @EventHandler
     private void startBreakingBlock(BlockDamageEvent event) {
-
+        if(!event.getBlock().getType().isBlock() || event.getBlock().getType().isAir()) return;
         double multiplier = getBlockBreakMultiplier(event.getBlock());
 
         if (multiplier == 0) {
