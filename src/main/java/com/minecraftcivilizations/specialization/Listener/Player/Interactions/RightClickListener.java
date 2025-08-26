@@ -33,7 +33,7 @@ public class RightClickListener implements Listener {
             }
         }
 
-        if (player.getInventory().getItemInMainHand().getType() == Material.IRON_NUGGET) {
+        if (player.getInventory().getItemInMainHand().getType() == Material.COPPER_INGOT) {
             if (ReinforcementManager.addReinforcement(event.getClickedBlock(), false)) {
                 player.swingHand(EquipmentSlot.HAND);
                 player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
