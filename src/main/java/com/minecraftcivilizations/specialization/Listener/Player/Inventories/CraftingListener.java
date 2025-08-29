@@ -61,6 +61,8 @@ public class CraftingListener implements Listener {
                 }
             }, 1L);
         }
+        int reduction = 5 - Math.min(3,5-customPlayer.getSkillLevel(SkillType.BLACKSMITH));
+        player.setFoodLevel(player.getFoodLevel() - reduction);
     }
 
     /**
