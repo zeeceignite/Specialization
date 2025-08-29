@@ -63,6 +63,7 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     public void onLibrarianEnchantItem(PlayerInteractEvent e){
         if(!e.getAction().isRightClick() || !e.getPlayer().isSneaking() || e.getItem() == null|| e.getHand().equals(EquipmentSlot.HAND)) return;
+        if(!e.getPlayer().getInventory().getItemInOffHand().isSimilar(ItemStack.of(Material.BOOK))) return;
         CustomPlayer player = CoreUtil.getPlayer(e.getPlayer());
 
         int xpBase = SpecializationConfig.getLibrarianConfig().get("BLESS_ITEM_XP_LEVEL_REQUIREMENT", Integer.class);
@@ -97,6 +98,7 @@ public class PlayerInteractListener implements Listener {
             List<ItemStack> items = Arrays.stream(e.getPlayer().getInventory().getContents()).filter(Objects::nonNull).toList();
             int index = new Random().nextInt(items.size());
             items.get(index).setAmount(items.get(index).getAmount() - 1);
+            e.getPlayer().getInventory().getItemInOffHand().setAmount(e.getPlayer().getInventory().getItemInOffHand().getAmount() - 1);
         }
     }
 
