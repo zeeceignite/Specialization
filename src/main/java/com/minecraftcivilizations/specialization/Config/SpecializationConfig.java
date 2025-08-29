@@ -101,6 +101,8 @@ public class SpecializationConfig {
         reinforcementConfig = new ConfigFile(Specialization.getInstance(), "reinforcementConfig", null, fields -> {
             fields.add(new Pair<>("LIGHT_REINFORCEMENT_MULTIPLIER", 0.2D));
             fields.add(new Pair<>("HEAVY_REINFORCEMENT_MULTIPLIER", 0.1D));
+            fields.add(new Pair<>("LIGHT_REINFORCEMENT_LEVEL", 1));
+            fields.add(new Pair<>("HEAVY_REINFORCEMENT_LEVEL", 2));
         });
 
 
@@ -373,6 +375,7 @@ public class SpecializationConfig {
         });
 
         farmerConfig = new ConfigFile(Specialization.getInstance(), "farmerConfig", null, fields -> {
+
             fields.add(new Pair<>("FARMER_BREED_LEVEL", SkillLevel.JOURNEYMAN.getLevel()));
             for(SkillLevel skillLevel : SkillLevel.values()) {
                 fields.add(new Pair<>("FARMER_GET_DROPS_CHANCE_" + skillLevel, 0.5));

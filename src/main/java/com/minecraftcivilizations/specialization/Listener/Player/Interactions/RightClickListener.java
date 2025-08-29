@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.Listener.Player.Interactions;
 
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -34,16 +35,23 @@ public class RightClickListener implements Listener {
         }
 
         if (player.getInventory().getItemInMainHand().getType() == Material.COPPER_INGOT) {
-            if (ReinforcementManager.addReinforcement(event.getClickedBlock(), false)) {
-                player.swingHand(EquipmentSlot.HAND);
-                player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
-                player.sendMessage(Component.text("Block now lightly reinforced!").color(NamedTextColor.WHITE).decorations(Set.of(TextDecoration.BOLD, TextDecoration.ITALIC), false));
+            CustomPlayer customPlayer = CoreUtil.getPlayer(player.getUniqueId());
+            if (customPlayer.getSkillLevel(SkillType.BUILDER) >= SpecializationConfig.getReinforcementConfig().get("LIGHT_REINFORCEMENT_LEVEL", Integer.class)) {
+                if (ReinforcementManager.addReinforcement(event.getClickedBlock(), false)) {
+                    player.swingHand(EquipmentSlot.HAND);
+                    player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
+                    player.sendMessage(Component.text("Block now lightly reinforced!").color(NamedTextColor.WHITE).decorations(Set.of(TextDecoration.BOLD, TextDecoration.ITALIC), false));
+                }
             }
         } else if (player.getInventory().getItemInMainHand().getType() == Material.IRON_INGOT) {
-            if (ReinforcementManager.addReinforcement(event.getClickedBlock(), true)) {
-                player.swingHand(EquipmentSlot.HAND);
-                player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
-                player.sendMessage(Component.text("Block now heavily reinforced!").color(NamedTextColor.WHITE).decorations(Set.of(TextDecoration.BOLD, TextDecoration.ITALIC), false));
+            CustomPlayer customPlayer = CoreUtil.getPlayer(player.getUniqueId());
+
+            if (customPlayer.getSkillLevel(SkillType.BUILDER) >= SpecializationConfig.getReinforcementConfig().get("HEAVY_REINFORCEMENT_LEVEL", Integer.class)) {
+                if (ReinforcementManager.addReinforcement(event.getClickedBlock(), true)) {
+                    player.swingHand(EquipmentSlot.HAND);
+                    player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
+                    player.sendMessage(Component.text("Block now heavily reinforced!").color(NamedTextColor.WHITE).decorations(Set.of(TextDecoration.BOLD, TextDecoration.ITALIC), false));
+                }
             }
         }
     }
