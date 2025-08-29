@@ -79,6 +79,11 @@ public class FoodInteractionListener implements Listener {
             applyBlessedFoodEffects(player, healerLevel, item.getType());
         }
 
+        if(!customPlayer.eatFood(event.getItem().getType())){
+            int reduction = SpecializationConfig.getHungerConfig().get("HUNGER_REDUCTION_ON_NON_UNIQUE_CONSECUTIVE_FOOD", Integer.class);
+            player.setSaturation(event.getPlayer().getSaturation() - reduction);
+        }
+
         if (customPlayer != null && customPlayer.isDowned() && isBlessedFood(item)) {
             int healerLevel = getBlessedFoodLevel(item);
             applyBlessedFoodEffects(player, healerLevel, item.getType());

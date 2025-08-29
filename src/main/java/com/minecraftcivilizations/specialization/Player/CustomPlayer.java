@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.Player;
 
+import com.google.common.collect.Queues;
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Skill.Skill;
@@ -14,6 +15,7 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
@@ -59,6 +61,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     private final HashSet<UUID> leashedOtherPlayers = new HashSet<>();
     @Setter
     private UUID leashedTo = null;
+    private final Queue<Material> lastEatenFood = Queues.newConcurrentLinkedQueue();
 
     public CustomPlayer(UUID uuid) {
         super(uuid);
@@ -250,5 +253,17 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         public void resetDeathsForPeriod() {
             this.deathsThisPeriod = 0;
         }
+    }
+
+    /**
+        returns true if the food hasn't been eaten in the last 5 foods, false otherwise
+     */
+    public boolean eatFood(Material food){
+        boolean result = !lastEatenFood.contains(food);
+        lastEatenFood.add(food);
+        if(lastEatenFood.size() > 5){
+            lastEatenFood.poll();
+        }
+        return result;
     }
 }

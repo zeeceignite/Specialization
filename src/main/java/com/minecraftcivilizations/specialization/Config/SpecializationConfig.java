@@ -96,6 +96,7 @@ public class SpecializationConfig {
             fields.add(new Pair<>("MULTI_CLASS_PENALTY", 0.15));
             fields.add(new Pair<>("LINEAR_DECAY_RATE", 0.02));
             fields.add(new Pair<>("CROSS_SKILL_PENALTY", 0.25));
+
         });
 
         reinforcementConfig = new ConfigFile(Specialization.getInstance(), "reinforcementConfig", null, fields -> {
@@ -149,6 +150,7 @@ public class SpecializationConfig {
             fields.add(new Pair<>("IDLE_DRAIN", 0.1));
             fields.add(new Pair<>("DRAIN_INTERVAL_IN_TICKS", 100L));
             fields.add(new Pair<>("IDLE_CHECK_TIME_IN_TICKS", 100L));
+            fields.add(new Pair<>("HUNGER_REDUCTION_ON_NON_UNIQUE_CONSECUTIVE_FOOD", 1));
         });
 
         mobConfig = new ConfigFile(Specialization.getInstance(), "mobConfig", null, fields -> {
