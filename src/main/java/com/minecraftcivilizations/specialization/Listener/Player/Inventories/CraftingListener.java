@@ -36,7 +36,6 @@ public class CraftingListener implements Listener {
     public void onCraft(CraftItemEvent event) {
         if (!(event.getWhoClicked() instanceof Player player) || event.getCurrentItem() == null) return;
 
-
         if (!isCraftingActionValid(event)) {
             return;
         }
@@ -45,6 +44,9 @@ public class CraftingListener implements Listener {
 
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance()
                 .getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
+
+        if(player.getFoodLevel() == 0 && customPlayer.getSkillLevel(SkillType.BLACKSMITH) < 5) return;
+
 
         Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromCraftingConfig()
                 .get(crafted.getType(), new TypeToken<>() {});
