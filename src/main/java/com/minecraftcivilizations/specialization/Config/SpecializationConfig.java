@@ -56,6 +56,8 @@ public class SpecializationConfig {
     @Getter
     private static ConfigFile farmerConfig;
     @Getter
+    private static ConfigFile tameableConfig;
+    @Getter
     private static ConfigFile canUseBlockConfig;
     @Getter
     private static ConfigFile xpGainFromRepairingConfig;
@@ -89,6 +91,9 @@ public class SpecializationConfig {
     private static ConfigFile healthConfig;
     @Getter
     private static ConfigFile bedOwnershipConfig;
+
+    private static List<EntityType> BREEDABLE =  List.of(EntityType.AXOLOTL, EntityType.CAMEL, EntityType.CAT, EntityType.CHICKEN, EntityType.COD, EntityType.COW, EntityType.DONKEY, EntityType.FOX, EntityType.FROG, EntityType.GOAT, EntityType.HOGLIN, EntityType.HORSE, EntityType.LLAMA, EntityType.MOOSHROOM, EntityType.OCELOT, EntityType.PANDA, EntityType.PARROT, EntityType.PIG, EntityType.RABBIT, EntityType.SHEEP, EntityType.STRIDER, EntityType.TADPOLE, EntityType.TURTLE, EntityType.WOLF);
+    public static final List<EntityType> TAMEABLE = List.of(EntityType.WOLF, EntityType.OCELOT, EntityType.CAT, EntityType.PARROT, EntityType.HORSE, EntityType.DONKEY, EntityType.MULE, EntityType.LLAMA, EntityType.TRADER_LLAMA);
 
     public static void initialize() {
         playerConfig = new ConfigFile(Specialization.getInstance(), "playerConfig", null, fields -> {
@@ -375,11 +380,19 @@ public class SpecializationConfig {
         });
 
         farmerConfig = new ConfigFile(Specialization.getInstance(), "farmerConfig", null, fields -> {
-            fields.add(new Pair<>("FARMER_BREED_LEVEL", SkillLevel.JOURNEYMAN.getLevel()));
+            for(EntityType animal : BREEDABLE) {
+                fields.add(new Pair<>("FARMER_BREED_LEVEL_" + animal,  SkillLevel.JOURNEYMAN.getLevel()));
+            }
             for(SkillLevel skillLevel : SkillLevel.values()) {
                 fields.add(new Pair<>("FARMER_GET_DROPS_CHANCE_" + skillLevel, 0.5));
             }
             //push
+        });
+
+        tameableConfig = new ConfigFile(Specialization.getInstance(), "tamingConfig", null, fields -> {
+            for(EntityType tameable : TAMEABLE) {
+                fields.add(new Pair<>("TAME_" + tameable, new Pair<>(SkillType.FARMER, SkillLevel.NOVICE.getLevel())));
+            }
         });
 
         blueprintConfig = new ConfigFile(Specialization.getInstance(), "librarianConfig", null, fields -> {
