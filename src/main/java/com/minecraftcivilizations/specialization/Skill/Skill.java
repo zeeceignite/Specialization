@@ -20,6 +20,10 @@ public class Skill {
     }
 
     public static double mapValue(double x, double in_min, double in_max, double out_min, double out_max) {
+        // Handle division by zero case when in_max equals in_min
+        if (in_max == in_min) {
+            return out_min; // Return minimum output value when input range is zero
+        }
         return out_min + (x - in_min) * (out_max - out_min) / (in_max - in_min);
     }
 
