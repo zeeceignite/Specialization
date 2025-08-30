@@ -33,7 +33,7 @@ public record AnalyticsData(
         Map<SkillType, Map<Integer, Integer>> serverPlayersPerSkillLevel,
         Map<String, Integer> serverUrbanAreaPopulation,
         @JsonSerialize(keyUsing = ToStringSerializer.class)
-        Map<EntityDamageEvent.DamageCause, Integer> serverDeathCauses,
+        Map<String, Integer> serverDeathCauses,
         
         // Town-specific metrics (for towns with 5+ beds)
         Map<String, TownSpecificData> townSpecificData
@@ -100,6 +100,12 @@ public record AnalyticsData(
         Map<SkillType, Map<Integer, Integer>> serverPlayersPerSkillLevel = getPlayersPerSkillLevel(allPlayers);
         Map<String, Integer> serverUrbanAreaPopulation = getUrbanAreaPopulation();
         
+        // Convert enum keys to strings to avoid Jackson serialization issues
+        Map<String, Integer> serverDeathCausesAsStrings = new HashMap<>();
+        for (Map.Entry<EntityDamageEvent.DamageCause, Integer> entry : deaths.entrySet()) {
+            serverDeathCausesAsStrings.put(entry.getKey().toString(), entry.getValue());
+        }
+
         // Town-specific data
         Map<String, TownSpecificData> townSpecificData = getTownSpecificData(allPlayers);
 
@@ -109,7 +115,7 @@ public record AnalyticsData(
                 serverClassPopulation,
                 serverPlayersPerSkillLevel,
                 serverUrbanAreaPopulation,
-                deaths,
+                serverDeathCausesAsStrings,
                 townSpecificData);
     }
 

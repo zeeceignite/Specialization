@@ -47,7 +47,7 @@ public class AnalyticsCommand extends BaseCommand {
             // Display death causes
             if (!data.serverDeathCauses().isEmpty()) {
                 player.sendMessage("§7Death Causes:");
-                for (Map.Entry<EntityDamageEvent.DamageCause, Integer> entry : data.serverDeathCauses().entrySet()) {
+                for (Map.Entry<String, Integer> entry : data.serverDeathCauses().entrySet()) {
                     player.sendMessage("  §7" + entry.getKey() + ": §f" + entry.getValue());
                 }
             }
