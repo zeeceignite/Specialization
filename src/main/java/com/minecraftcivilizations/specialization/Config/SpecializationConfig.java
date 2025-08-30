@@ -107,6 +107,8 @@ public class SpecializationConfig {
         reinforcementConfig = new ConfigFile(Specialization.getInstance(), "reinforcementConfig", null, fields -> {
             fields.add(new Pair<>("LIGHT_REINFORCEMENT_MULTIPLIER", 0.2D));
             fields.add(new Pair<>("HEAVY_REINFORCEMENT_MULTIPLIER", 0.1D));
+            fields.add(new Pair<>("LIGHT_REINFORCEMENT_LEVEL", 1));
+            fields.add(new Pair<>("HEAVY_REINFORCEMENT_LEVEL", 2));
         });
 
 

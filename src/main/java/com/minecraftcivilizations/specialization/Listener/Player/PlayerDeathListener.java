@@ -132,8 +132,11 @@ public class PlayerDeathListener implements Listener {
         // Reduce max health
         double deathReducedMaxHealth = SpecializationConfig.getHealthConfig().get("DEATH_REDUCED_MAX_HEALTH", Double.class);
         if (SpecializationConfig.getHealthConfig().get("HEALTH_ENABLED", Boolean.class) && deathReducedMaxHealth > 0) {
-            boolean hasLevel = Arrays.stream(SkillType.values()).anyMatch(skill -> customPlayer.getSkillLevel(skill) > 1);
-            if(hasLevel){
+
+            if(customPlayer.getSkillLevel(SkillType.BUILDER) >= 1 || customPlayer.getSkillLevel(SkillType.HEALER) >= 1 ||
+            customPlayer.getSkillLevel(SkillType.BLACKSMITH) >= 1 || customPlayer.getSkillLevel(SkillType.GUARDSMAN) >= 1 ||
+                    customPlayer.getSkillLevel(SkillType.MINER) >= 1 || customPlayer.getSkillLevel(SkillType.LIBRARIAN) >= 1 ||
+                    customPlayer.getSkillLevel(SkillType.FARMER) >= 1){
                 double currentMaxHealth = Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).getValue();
                 Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(deathReducedMaxHealth);
             }

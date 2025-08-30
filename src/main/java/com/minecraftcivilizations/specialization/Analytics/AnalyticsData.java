@@ -1,5 +1,8 @@
 package com.minecraftcivilizations.specialization.Analytics;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.minecraftcivilizations.specialization.Data.MongoConnection;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -29,7 +32,8 @@ public record AnalyticsData(
         Map<SkillType, Integer> serverClassPopulation,
         Map<SkillType, Map<Integer, Integer>> serverPlayersPerSkillLevel,
         Map<String, Integer> serverUrbanAreaPopulation,
-        Map<EntityDamageEvent.DamageCause, Integer> serverDeathCauses,
+        @JsonSerialize(keyUsing = ToStringSerializer.class)
+        Map<String, Integer> serverDeathCauses,
         
         // Town-specific metrics (for towns with 5+ beds)
         Map<String, TownSpecificData> townSpecificData
@@ -40,10 +44,11 @@ public record AnalyticsData(
             int townDeathsInPeriod,
             Map<SkillType, Integer> townClassPopulation,
             Map<SkillType, Map<Integer, Integer>> townPlayersPerSkillLevel,
-            Biome townBiome,
+            Map<SkillType, Double> townClassMasteryPercentages,
+            String townBiome,
             double distanceFromClosestTown,
             double distanceFromSpawn,
-            long townAgeInDays
+            long townAgeInHours
     ){};
 
     public static ConcurrentHashMap<EntityDamageEvent.DamageCause, Integer> deaths = new ConcurrentHashMap<>();
@@ -95,6 +100,12 @@ public record AnalyticsData(
         Map<SkillType, Map<Integer, Integer>> serverPlayersPerSkillLevel = getPlayersPerSkillLevel(allPlayers);
         Map<String, Integer> serverUrbanAreaPopulation = getUrbanAreaPopulation();
         
+        // Convert enum keys to strings to avoid Jackson serialization issues
+        Map<String, Integer> serverDeathCausesAsStrings = new HashMap<>();
+        for (Map.Entry<EntityDamageEvent.DamageCause, Integer> entry : deaths.entrySet()) {
+            serverDeathCausesAsStrings.put(entry.getKey().toString(), entry.getValue());
+        }
+
         // Town-specific data
         Map<String, TownSpecificData> townSpecificData = getTownSpecificData(allPlayers);
 
@@ -104,7 +115,7 @@ public record AnalyticsData(
                 serverClassPopulation,
                 serverPlayersPerSkillLevel,
                 serverUrbanAreaPopulation,
-                deaths,
+                serverDeathCausesAsStrings,
                 townSpecificData);
     }
 
@@ -262,9 +273,12 @@ public record AnalyticsData(
         Map<SkillType, Integer> townClassPopulation = getSkillPopularity(townPlayers);
         Map<SkillType, Map<Integer, Integer>> townPlayersPerSkillLevel = getPlayersPerSkillLevel(townPlayers);
         
+        // Calculate average mastery percentages per class
+        Map<SkillType, Double> townClassMasteryPercentages = getTownClassMasteryPercentages(townPlayers);
+        
         // Get town center location
         Location townCenter = town.getCenterLocation();
-        Biome townBiome = townCenter.getBlock().getBiome();
+        String townBiome = townCenter.getBlock().getBiome().toString();
         
         // Calculate distance to closest other town
         double distanceFromClosestTown = allTowns.stream()
@@ -272,26 +286,60 @@ public record AnalyticsData(
                 .mapToDouble(otherTown -> townCenter.distance(otherTown.getCenterLocation()))
                 .min()
                 .orElse(0.0);
-        
+
         // Distance from world spawn
         World world = townCenter.getWorld();
         Location worldSpawn = world.getSpawnLocation();
         double distanceFromSpawn = townCenter.distance(worldSpawn);
         
-        // Calculate town age in days
-        long townAgeInDays = (System.currentTimeMillis() - town.getDiscoveredTime()) / (1000 * 60 * 60 * 24);
+        // Calculate town age in hours
+        long townAgeInHours = (System.currentTimeMillis() - town.getDiscoveredTime()) / (1000 * 60 * 60);
         
         return new TownSpecificData(
                 townPopulation,
                 townDeathsInPeriod,
                 townClassPopulation,
                 townPlayersPerSkillLevel,
+                townClassMasteryPercentages,
                 townBiome,
                 distanceFromClosestTown,
                 distanceFromSpawn,
-                townAgeInDays
+                townAgeInHours
         );
     }
     
+    private static Map<SkillType, Double> getTownClassMasteryPercentages(List<CustomPlayer> townPlayers) {
+        Map<SkillType, Double> masteryPercentages = new HashMap<>();
+        
+        // Initialize all skill types with 0.0
+        for (SkillType skillType : SkillType.values()) {
+            masteryPercentages.put(skillType, 0.0);
+        }
+        
+        // Calculate average mastery percentage for each skill type
+        for (SkillType skillType : SkillType.values()) {
+            List<Double> skillMasteryPercentages = townPlayers.stream()
+                    .mapToDouble(player -> player.getPercentOfTotal(skillType))
+                    .filter(Double::isFinite) // Filter out NaN and Infinity values
+                    .boxed()
+                    .toList();
+
+            if (!skillMasteryPercentages.isEmpty()) {
+                double averageMastery = skillMasteryPercentages.stream()
+                        .mapToDouble(Double::doubleValue)
+                        .average()
+                        .orElse(0.0);
+
+                // Additional safety check for NaN/Infinity before storing
+                if (Double.isFinite(averageMastery)) {
+                    masteryPercentages.put(skillType, Math.round(averageMastery * 100.0) / 100.0);
+                } else {
+                    masteryPercentages.put(skillType, 0.0); // Default to 0.0 for invalid values
+                }
+            }
+        }
+        
+        return masteryPercentages;
+    }
 
 }

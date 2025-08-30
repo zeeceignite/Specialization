@@ -47,7 +47,7 @@ public class AnalyticsCommand extends BaseCommand {
             // Display death causes
             if (!data.serverDeathCauses().isEmpty()) {
                 player.sendMessage("§7Death Causes:");
-                for (Map.Entry<EntityDamageEvent.DamageCause, Integer> entry : data.serverDeathCauses().entrySet()) {
+                for (Map.Entry<String, Integer> entry : data.serverDeathCauses().entrySet()) {
                     player.sendMessage("  §7" + entry.getKey() + ": §f" + entry.getValue());
                 }
             }
@@ -71,7 +71,7 @@ public class AnalyticsCommand extends BaseCommand {
                     player.sendMessage("  §7Biome: §f" + townData.townBiome());
                     player.sendMessage("  §7Distance to closest town: §f" + String.format("%.1f", townData.distanceFromClosestTown()));
                     player.sendMessage("  §7Distance from spawn: §f" + String.format("%.1f", townData.distanceFromSpawn()));
-                    player.sendMessage("  §7Age: §f" + townData.townAgeInDays() + " days");
+                    player.sendMessage("  §7Age: §f" + townData.townAgeInHours() + " hours");
                 }
             } else {
                 player.sendMessage("§7No eligible towns found (need 5+ beds)");
