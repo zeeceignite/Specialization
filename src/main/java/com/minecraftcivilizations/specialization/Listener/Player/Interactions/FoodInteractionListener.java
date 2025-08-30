@@ -101,8 +101,8 @@ public class FoodInteractionListener implements Listener {
     }
 
     private void giveKelpEffects(Player player){
-        if(new Random().nextDouble() < .2) {
-            player.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 20 * 10, 1));
+        if(new Random().nextDouble() < .1) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 20 * 6, 1));
             player.sendRichMessage("<#456e55>You feel a little seasick from eating the kelp.");
         }
     }
