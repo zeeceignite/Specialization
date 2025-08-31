@@ -126,9 +126,9 @@ public class CraftingListener implements Listener {
         // based on available ingredients in the crafting matrix
         org.bukkit.inventory.CraftingInventory craftingInventory = event.getInventory();
         ItemStack[] matrix = craftingInventory.getMatrix();
-
+        
         int maxCrafts = Integer.MAX_VALUE;
-
+        
         // Check each ingredient slot to find the limiting factor
         for (ItemStack ingredient : matrix) {
             if (ingredient != null && ingredient.getAmount() > 0) {
@@ -136,12 +136,12 @@ public class CraftingListener implements Listener {
                 maxCrafts = Math.min(maxCrafts, ingredient.getAmount());
             }
         }
-
+        
         // If no ingredients found or unlimited, default to result amount divided by recipe yield
         if (maxCrafts == Integer.MAX_VALUE) {
             return result.getAmount();
         }
-
+        
         // The actual number of items crafted is maxCrafts * result.getAmount() per craft
         // But we want the number of crafting operations, so return maxCrafts
         return maxCrafts;
@@ -182,10 +182,9 @@ public class CraftingListener implements Listener {
             event.getInventory().setResult(null);
             player.undiscoverRecipe(recipeKey);
         } else {
-            // Auto-discover recipe if player doesn't have it yet
             if (!player.hasDiscoveredRecipe(recipeKey)) {
                 player.discoverRecipe(recipeKey);
-                LOGGER.fine("Auto-discovered recipe " + recipeKey + " for player " + player.getName());
+                LOGGER.fine("Discovered recipe " + recipeKey + " for player " + player.getName() + " on-demand");
             }
         }
     }
@@ -193,14 +192,9 @@ public class CraftingListener implements Listener {
     public static boolean shouldBlockRecipe(Player player, NamespacedKey recipeKey) {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance()
                 .getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
+        if(customPlayer.getAdditionUnlockedRecipes() != null && customPlayer.getAdditionUnlockedRecipes().contains(recipeKey)) return true;
 
-        // Priority 1: additionalUnlockedRecipes (player-specific) always allowed
-        if (customPlayer.getAdditionUnlockedRecipes() != null &&
-            customPlayer.getAdditionUnlockedRecipes().contains(recipeKey)) {
-            return false;
-        }
-
-        // Priority 2: Check if recipe is in skill-specific unlocked recipes config (skill-restricted)
+        // Check if recipe is in any skill-specific unlocked recipes config
         for (SkillType skillType : SkillType.values()) {
             for (SkillLevel skillLevel : SkillLevel.values()) {
                 String configKey = skillType + "_" + skillLevel;
@@ -209,23 +203,12 @@ public class CraftingListener implements Listener {
                         });
 
                 if (skillRecipes != null && skillRecipes.contains(recipeKey)) {
-                    // Recipe is skill-locked, check if player meets requirements
                     return customPlayer.getSkillLevel(skillType) < skillLevel.ordinal();
                 }
             }
         }
 
-        // Priority 3: Check if recipe is in allRecipeBank (default allowed recipes)
-        Set<NamespacedKey> allRecipes = SpecializationConfig.getAllRecipeBank()
-                .get("ALL_RECIPES", new TypeToken<>() {
-                });
-        
-        if (allRecipes != null && allRecipes.contains(recipeKey)) {
-            // Recipe is in allRecipeBank and NOT skill-locked, so allow it
-            return false;
-        }
-
-        // Priority 4: Unknown recipes blocked by default
+        // Recipe is not in any skill config - allow it
         return false;
     }
 }
