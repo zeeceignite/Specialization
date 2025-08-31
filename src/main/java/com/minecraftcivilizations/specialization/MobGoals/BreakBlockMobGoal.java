@@ -45,7 +45,7 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
     public boolean shouldActivate() {
         if(monster.getTarget() == null) return false;
         if(monster.getWorld().isDayTime()) return false;
-        if(monster.getLocation().getY() > 60) return false;
+        // if(monster.getLocation().getY() > 60) return false;
 
         double percentage = SpecializationConfig.getMobConfig().get("BLOCK_BREAK_CHANCE_PERCENTAGE", Double.class);
         if(random.nextDouble() > percentage / 100d) return false;

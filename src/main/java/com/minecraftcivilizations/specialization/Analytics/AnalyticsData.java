@@ -32,7 +32,6 @@ public record AnalyticsData(
         Map<SkillType, Integer> serverClassPopulation,
         Map<SkillType, Map<Integer, Integer>> serverPlayersPerSkillLevel,
         Map<String, Integer> serverUrbanAreaPopulation,
-        @JsonSerialize(keyUsing = ToStringSerializer.class)
         Map<String, Integer> serverDeathCauses,
         
         // Town-specific metrics (for towns with 5+ beds)
