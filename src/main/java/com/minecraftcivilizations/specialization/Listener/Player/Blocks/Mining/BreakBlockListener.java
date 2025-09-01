@@ -105,14 +105,19 @@ public class BreakBlockListener implements Listener {
         CustomPlayer player = CoreUtil.getPlayer(event.getPlayer());
         Material materialName = event.getBlock().getType();
         SkillLevel skillRequired = SpecializationConfig.getCanFarmerBreakConfig().get(materialName.toString(), new TypeToken<>() {});
+
         if (skillRequired != null && player.getSkillLevel(SkillType.FARMER) < skillRequired.getLevel()) {
             event.setDropItems(false);
             event.getPlayer().sendMessage(org.bukkit.ChatColor.RED + "You are unable to farm this");
         }
+
         List<Material> otherFarmables = List.of(Material.COCOA_BEANS, Material.SUGAR_CANE, Material.CACTUS, Material.MELON, Material.PUMPKIN);
         double chance = SpecializationConfig.getFarmerConfig().get("FARMER_GET_DROPS_CHANCE_" + player.getSkillLevelEnum(SkillType.FARMER), Double.class);
         double random = Math.random();
-        if(random > chance) {
+
+        if(random < chance) {
+            event.setDropItems(true);
+        }else {
             if (event.getBlock().getBlockData() instanceof Ageable || otherFarmables.contains(materialName)) {
                 event.setDropItems(false);
             }
