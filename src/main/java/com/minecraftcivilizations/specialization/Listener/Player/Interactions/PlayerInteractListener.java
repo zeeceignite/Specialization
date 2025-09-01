@@ -62,9 +62,10 @@ public class PlayerInteractListener implements Listener {
 
     @EventHandler
     public void onLibrarianEnchantItem(PlayerInteractEvent e){
-        if(!e.getAction().isRightClick() || !e.getPlayer().isSneaking() || e.getItem() == null || e.getHand().equals(EquipmentSlot.HAND)) return;
+        if(!e.getAction().isRightClick() || !e.getPlayer().isSneaking() || e.getItem() == null || e.getHand().equals(EquipmentSlot.OFF_HAND)) return;
         e.getPlayer().sendMessage(e.getPlayer().getInventory().getItemInOffHand().toString());
         if(!e.getPlayer().getInventory().getItemInOffHand().getType().equals(Material.BOOK)) return;
+        e.getPlayer().sendMessage("abc");
 
         CustomPlayer player = CoreUtil.getPlayer(e.getPlayer());
 
@@ -72,9 +73,13 @@ public class PlayerInteractListener implements Listener {
         int skillMin = SpecializationConfig.getLibrarianConfig().get("BLESS_ITEM_LIBRARIAN_LEVEL", Integer.class);
         int xpLevelAmount = xpBase * (player.getSkillLevel(SkillType.LIBRARIAN) - skillMin + 1);
         if(xpLevelAmount > e.getPlayer().getLevel()) return;
+        e.getPlayer().sendMessage("def");
+
 
         String regex = SpecializationConfig.getLibrarianConfig().get("ENCHANTABLE_TOOL_REGEX", String.class);
-        if(e.getItem().getType().name().matches(regex) && player.getSkillLevel(SkillType.LIBRARIAN) >= skillMin) {
+        if(e.getItem().getType().name().toLowerCase().matches(regex) && player.getSkillLevel(SkillType.LIBRARIAN) >= skillMin) {
+            e.getPlayer().sendMessage("ghi");
+
             List<NamespacedKey> bannedBlessEnchants = SpecializationConfig.getLibrarianConfig().get("BANNED_BLESS_ENCHANTS", new TypeToken<>(){});
 
             ArrayList<Enchantment> validEnchants = new ArrayList<>(RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT)
@@ -84,9 +89,11 @@ public class PlayerInteractListener implements Listener {
                     }).toList());
 
             if(validEnchants.isEmpty()) return;
+
             Collections.shuffle(validEnchants);
             ItemMeta meta = e.getItem().getItemMeta();
             Enchantment enchant = validEnchants.getFirst();
+            e.getPlayer().sendMessage("Enchantment added:" + enchant.getKey());
 
             int level = new Random().nextInt(1 + player.getSkillLevel(SkillType.LIBRARIAN) - skillMin);
             meta.addEnchant(enchant, Math.min(enchant.getMaxLevel(), level), false);

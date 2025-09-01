@@ -109,6 +109,8 @@ public class SpecializationConfig {
             fields.add(new Pair<>("HEAVY_REINFORCEMENT_MULTIPLIER", 0.1D));
             fields.add(new Pair<>("LIGHT_REINFORCEMENT_LEVEL", 1));
             fields.add(new Pair<>("HEAVY_REINFORCEMENT_LEVEL", 2));
+            fields.add(new Pair<>("LIGHT_EXPLOSION_RESISTANCE", 0.75));
+            fields.add(new Pair<>("HEAVY_EXPLOSION_RESISTANCE", 0.95));
         });
 
 

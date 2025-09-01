@@ -45,7 +45,7 @@ public class FoodInteractionListener implements Listener {
                     }
 
                     int healerLevel = customPlayer.getSkillLevel(SkillType.HEALER);
-                    if (item.getAmount() > 1) {
+                    if (item.getAmount() >= 1) {
                         ItemStack singleItem = item.clone();
                         singleItem.setAmount(1);
                         blessFood(singleItem, healerLevel);
@@ -58,9 +58,6 @@ public class FoodInteractionListener implements Listener {
                             player.sendMessage(ChatColor.YELLOW + "Your inventory is full! The blessed food was dropped.");
                         }
                         player.sendMessage(ChatColor.GOLD + "You have blessed one " + getItemName(singleItem));
-                    } else {
-                        blessFood(item, healerLevel);
-                        player.sendMessage(ChatColor.GOLD + "You have blessed this food");
                     }
                     event.setCancelled(true);
                 }

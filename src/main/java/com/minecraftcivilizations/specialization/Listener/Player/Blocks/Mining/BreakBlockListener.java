@@ -5,8 +5,10 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -90,10 +92,26 @@ public class BreakBlockListener implements Listener {
                 Location dropLocation = block.getLocation().add(0.5, 0.5, 0.5);
 
                 if(isHeavilyReinforced(block)) {
-                    block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT, 1));
+                    double heavy = SpecializationConfig.getReinforcementConfig().get("HEAVY_EXPLOSION_RESISTANCE", Double.class);
+                    Material type = block.getType();
+                    BlockData data = block.getBlockData();
+                    Bukkit.getScheduler().runTaskLater(Specialization.getInstance(),() -> {
+                        if(Math.random() < heavy) {
+                            block.setType(type);
+                            block.setBlockData(data);
+                        }else block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT, 1));
+                    }, 3);
                 }
                 if(isLightlyReinforced(block)) {
-                    block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_NUGGET, 1));
+                    double light = SpecializationConfig.getReinforcementConfig().get("LIGHT_EXPLOSION_RESISTANCE", Double.class);
+                    Material type = block.getType();
+                    BlockData data = block.getBlockData();
+                    Bukkit.getScheduler().runTaskLater(Specialization.getInstance(),() -> {
+                        if(Math.random() < light) {
+                            block.setType(type);
+                            block.setBlockData(data);
+                        }else block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT, 1));
+                    },3);
                 }
                 removeReinforcement(block);
             }
