@@ -49,11 +49,6 @@ public class MobKillListener implements Listener {
             return;
         }
         
-        // IMPORTANT: Only apply this to mob combat, not PVP combat
-        if (event.getEntity() instanceof Player) {
-            return; // Skip PVP damage - this was causing the bug
-        }
-        
         Player damager = (Player) event.getDamager();
         CustomPlayer customPlayer = CoreUtil.getPlayer(damager);
         
