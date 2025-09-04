@@ -85,7 +85,7 @@ public record AnalyticsData(
                 .map(CoreUtil::getPlayer)
                 .filter(Objects::nonNull)
                 .toList();
-        
+        //change
         if (allPlayers.isEmpty()) {
             return null;
         }

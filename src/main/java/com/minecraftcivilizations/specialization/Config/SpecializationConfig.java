@@ -413,6 +413,6 @@ public class SpecializationConfig {
             fields.add(new Pair<>("ANNOUNCEMENT_FORMAT", "<aqua>[Announcement]<gray> %s"));
             fields.add(new Pair<>("ANNOUNCEMENT_PREFIX", "#"));
         });
-    }
+    }//change
 
 }

@@ -25,7 +25,7 @@ public class AnalyticsCommand extends BaseCommand {
         
         player.sendMessage("§6=== Manual Analytics Poll ===");
         player.sendMessage("§eServer: §f" + serverName);
-
+//change
         try {
             Method pollMethod = AnalyticsData.class.getDeclaredMethod("poll");
             pollMethod.setAccessible(true);
