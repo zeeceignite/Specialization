@@ -7,13 +7,11 @@ import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import com.minecraftcivilizations.specialization.Specialization;
-import net.minecraft.world.level.pathfinder.Path;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.entity.CraftMob;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.util.RayTraceResult;
@@ -50,14 +48,15 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
         double percentage = SpecializationConfig.getMobConfig().get("BLOCK_BREAK_CHANCE_PERCENTAGE", Double.class);
         if(random.nextDouble() > percentage / 100d) return false;
 
-        Path path = ((CraftMob) monster).getHandle().getNavigation().getPath(); //MOB_RULE_TARGET_RANGE
-        if(path != null && path.canReach()) return false;
-
         Vector vectorToPlayer = monster.getTarget().getLocation().subtract(monster.getEyeLocation()).toVector();
         int targetRange = SpecializationConfig.getMobConfig().get("MOB_RULE_TARGET_RANGE", Integer.class);
         if(vectorToPlayer.lengthSquared() > targetRange*targetRange) return false;
-        RayTraceResult result = monster.getWorld().rayTrace(monster.getEyeLocation(), vectorToPlayer.normalize(), 5, FluidCollisionMode.NEVER, true, .25, null);
-        if(result == null || result.getHitBlock() == null) return false;
+        RayTraceResult result = monster.getWorld().rayTrace(monster.getEyeLocation(), vectorToPlayer.normalize(), 5, FluidCollisionMode.NEVER, true, .35, null);
+        if(result == null || result.getHitBlock() == null) {
+            result = monster.getWorld().rayTrace(monster.getEyeLocation().subtract(0,1,0), vectorToPlayer.normalize(), 5, FluidCollisionMode.NEVER, true, .35, null);
+            if(result == null || result.getHitBlock() == null) return false;
+        }
+
 
         block = result.getHitBlock();
         if (ReinforcementManager.isReinforced(block)) return false;

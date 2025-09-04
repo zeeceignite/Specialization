@@ -5,8 +5,10 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -90,10 +92,26 @@ public class BreakBlockListener implements Listener {
                 Location dropLocation = block.getLocation().add(0.5, 0.5, 0.5);
 
                 if(isHeavilyReinforced(block)) {
-                    block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT, 1));
+                    double heavy = SpecializationConfig.getReinforcementConfig().get("HEAVY_EXPLOSION_RESISTANCE", Double.class);
+                    Material type = block.getType();
+                    BlockData data = block.getBlockData();
+                    Bukkit.getScheduler().runTaskLater(Specialization.getInstance(),() -> {
+                        if(Math.random() < heavy) {
+                            block.setType(type);
+                            block.setBlockData(data);
+                        }else block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT, 1));
+                    }, 3);
                 }
                 if(isLightlyReinforced(block)) {
-                    block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_NUGGET, 1));
+                    double light = SpecializationConfig.getReinforcementConfig().get("LIGHT_EXPLOSION_RESISTANCE", Double.class);
+                    Material type = block.getType();
+                    BlockData data = block.getBlockData();
+                    Bukkit.getScheduler().runTaskLater(Specialization.getInstance(),() -> {
+                        if(Math.random() < light) {
+                            block.setType(type);
+                            block.setBlockData(data);
+                        }else block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT, 1));
+                    },3);
                 }
                 removeReinforcement(block);
             }
@@ -105,14 +123,19 @@ public class BreakBlockListener implements Listener {
         CustomPlayer player = CoreUtil.getPlayer(event.getPlayer());
         Material materialName = event.getBlock().getType();
         SkillLevel skillRequired = SpecializationConfig.getCanFarmerBreakConfig().get(materialName.toString(), new TypeToken<>() {});
+
         if (skillRequired != null && player.getSkillLevel(SkillType.FARMER) < skillRequired.getLevel()) {
             event.setDropItems(false);
             event.getPlayer().sendMessage(org.bukkit.ChatColor.RED + "You are unable to farm this");
         }
+
         List<Material> otherFarmables = List.of(Material.COCOA_BEANS, Material.SUGAR_CANE, Material.CACTUS, Material.MELON, Material.PUMPKIN);
         double chance = SpecializationConfig.getFarmerConfig().get("FARMER_GET_DROPS_CHANCE_" + player.getSkillLevelEnum(SkillType.FARMER), Double.class);
         double random = Math.random();
-        if(random > chance) {
+
+        if(random < chance) {
+            event.setDropItems(true);
+        }else {
             if (event.getBlock().getBlockData() instanceof Ageable || otherFarmables.contains(materialName)) {
                 event.setDropItems(false);
             }

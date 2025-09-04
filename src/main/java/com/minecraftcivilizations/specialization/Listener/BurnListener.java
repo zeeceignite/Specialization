@@ -12,5 +12,4 @@ public class BurnListener implements Listener {
             event.setCancelled(true);
         }
     }
-
 }

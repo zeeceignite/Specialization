@@ -36,16 +36,18 @@ public class Recipes {
 
         CustomAbility customAbility = new CustomAbility();
         customAbility.setAbilityFunction(customAbilityFunction -> {
-            CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(customAbilityFunction.getUniqueId());
+            CustomPlayer cHealer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(customAbilityFunction.getUniqueId());
+            if(cHealer.getSkillLevel(SkillType.HEALER) == 0) return;
             if (customAbilityFunction.getTargetEntity(4) instanceof Player player && player.getHealth() < player.getAttribute(Attribute.MAX_HEALTH).getValue()) {
                 Player healer = Bukkit.getPlayer(customAbilityFunction.getUniqueId());
+                if(healer == null || healer.getFoodLevel() < 3) return;
+
+                healer.setFoodLevel(healer.getFoodLevel() - 3);
                 player.heal(10);
-                customPlayer.addSkillXp(SkillType.HEALER, 15);
+                cHealer.addSkillXp(SkillType.HEALER, 15);
                 CustomPlayer healedPlayer = CoreUtil.getPlayer(player.getUniqueId());
                 healedPlayer.setDowned(false);
-                if (healer != null) {
-                    healer.getInventory().getItemInMainHand().setAmount(healer.getInventory().getItemInMainHand().getAmount() - 1);
-                }
+                healer.getInventory().getItemInMainHand().setAmount(healer.getInventory().getItemInMainHand().getAmount() - 1);
                 removeDownedArmorStand(player);
             }
         });
@@ -59,7 +61,6 @@ public class Recipes {
         customItem.addAbility(new NamespacedKey(Specialization.getInstance(), "bandage"));
 
         CustomItemRegistry.register(new NamespacedKey(Specialization.getInstance(), "bandage"), customItem);
-
 
         ShapelessRecipe shapelessRecipe = new ShapelessRecipe(new NamespacedKey(Specialization.getInstance(), "bandage"), customItem.getItem());
         shapelessRecipe.addIngredient(8, Material.PAPER);

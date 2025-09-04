@@ -35,7 +35,7 @@ public class MobListeners implements Listener {
         }
         attribute.setBaseValue(attribute.getValue() + speedAddition);
 
-        Bukkit.getMobGoals().addGoal(monster,2, new BreakBlockMobGoal(monster));
+        Bukkit.getMobGoals().addGoal(monster,0, new BreakBlockMobGoal(monster));
         Bukkit.getMobGoals().addGoal(monster,3, new TargetPlayerMobGoal(monster));
 
     }

@@ -119,13 +119,12 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
     public void applyEffects(){
         Player player = Bukkit.getPlayer(getUuid());
-        Arrays.stream(SkillType.values()).forEach(skill ->{
+        Arrays.stream(SkillType.values()).forEach(skill -> {
             List<Pair<NamespacedKey, Integer>> potions = SpecializationConfig.getClassSkillEffectsConfig().get(skill + "_" + getSkillLevelEnum(skill), new TypeToken<>(){});
             assert player != null;
-            player.sendRichMessage("got " + potions);
             for(Pair<NamespacedKey, Integer> dataEffect : potions) {
                 PotionEffectType potionEffectType = Registry.EFFECT.get(dataEffect.firstValue());
-                if(dataEffect.secondValue() <= 0) continue;
+                if(dataEffect.secondValue() < 0) continue;
                 if(potionEffectType == null) throw new IllegalStateException("invalid potion effect type in config" + dataEffect.firstValue());
                 if(player.getActivePotionEffects().stream().anyMatch(effect -> effect.getType().equals(potionEffectType) && effect.getDuration() == -1)){
                     player.removePotionEffect(potionEffectType);
