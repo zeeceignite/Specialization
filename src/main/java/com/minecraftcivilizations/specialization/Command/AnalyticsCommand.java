@@ -5,6 +5,7 @@ import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.commands.annotation.Default;
 import com.minecraftcivilizations.specialization.Analytics.AnalyticsData;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Data.MongoConnection;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import org.bukkit.Bukkit;
@@ -20,10 +21,12 @@ public class AnalyticsCommand extends BaseCommand {
     @Default
     @CommandPermission("specialization.analytics")
     public void onAnalytics(Player player) {
+        String serverName = SpecializationConfig.getServerConfig().get("SERVER_ANALYTIC", String.class);
+        
         player.sendMessage("§6=== Manual Analytics Poll ===");
+        player.sendMessage("§eServer: §f" + serverName);
 
         try {
-            // Use reflection to access the private poll() method
             Method pollMethod = AnalyticsData.class.getDeclaredMethod("poll");
             pollMethod.setAccessible(true);
             AnalyticsData data = (AnalyticsData) pollMethod.invoke(null);

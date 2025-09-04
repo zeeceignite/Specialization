@@ -91,6 +91,8 @@ public class SpecializationConfig {
     private static ConfigFile healthConfig;
     @Getter
     private static ConfigFile bedOwnershipConfig;
+    @Getter
+    private static ConfigFile serverConfig;
 
     private static List<EntityType> BREEDABLE =  List.of(EntityType.AXOLOTL, EntityType.CAMEL, EntityType.CAT, EntityType.CHICKEN, EntityType.COD, EntityType.COW, EntityType.DONKEY, EntityType.FOX, EntityType.FROG, EntityType.GOAT, EntityType.HOGLIN, EntityType.HORSE, EntityType.LLAMA, EntityType.MOOSHROOM, EntityType.OCELOT, EntityType.PANDA, EntityType.PARROT, EntityType.PIG, EntityType.RABBIT, EntityType.SHEEP, EntityType.STRIDER, EntityType.TADPOLE, EntityType.TURTLE, EntityType.WOLF);
     public static final List<EntityType> TAMEABLE = List.of(EntityType.WOLF, EntityType.OCELOT, EntityType.CAT, EntityType.PARROT, EntityType.HORSE, EntityType.DONKEY, EntityType.MULE, EntityType.LLAMA, EntityType.TRADER_LLAMA);
@@ -147,6 +149,10 @@ public class SpecializationConfig {
             fields.add(new Pair<>("CROSSBOW_BASE_PIERCING_VELOCITY", 1.3));
             fields.add(new Pair<>("CROSSBOW_BASE_MULTISHOT_VELOCITY", 2.5));
             fields.add(new Pair<>("CROSSBOW_BASE_QUICKCHARGE_VELOCITY", 1.3));
+        });
+
+        serverConfig = new ConfigFile(Specialization.getInstance(), "serverConfig", null, fields -> {
+            fields.add(new Pair<>("SERVER_ANALYTIC","server_1"));
         });
 
         hungerConfig = new ConfigFile(Specialization.getInstance(), "hungerConfig", null, fields -> {

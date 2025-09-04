@@ -3,6 +3,7 @@ package com.minecraftcivilizations.specialization.Analytics;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Data.MongoConnection;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 
 public record AnalyticsData(
         Timestamp timestamp,
+        String serverName,
         
         // Server-wide metrics
         int serverPopulation,
@@ -91,6 +93,7 @@ public record AnalyticsData(
         Timestamp now = new Timestamp(System.currentTimeMillis());
         
         // Server-wide metrics
+        String serverName = SpecializationConfig.getServerConfig().get("SERVER_ANALYTIC", String.class);
         int serverPopulation = allPlayers.size();
         int serverDeathsInPeriod = allPlayers.stream()
                 .mapToInt(player -> player.getAnalyticPlayerData().getDeathsThisPeriod())
@@ -109,6 +112,7 @@ public record AnalyticsData(
         Map<String, TownSpecificData> townSpecificData = getTownSpecificData(allPlayers);
 
         return new AnalyticsData(now,
+                serverName,
                 serverPopulation,
                 serverDeathsInPeriod,
                 serverClassPopulation,
