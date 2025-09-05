@@ -37,7 +37,6 @@ public class MobListeners implements Listener {
 
         Bukkit.getMobGoals().addGoal(monster,2, new BreakBlockMobGoal(monster));
         Bukkit.getMobGoals().addGoal(monster,3, new TargetPlayerMobGoal(monster));
-
     }
 
     @EventHandler

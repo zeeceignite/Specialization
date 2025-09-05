@@ -45,9 +45,6 @@ public class CraftingListener implements Listener {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance()
                 .getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
 
-        if(player.getFoodLevel() == 0 && customPlayer.getSkillLevel(SkillType.BLACKSMITH) < 5) return;
-
-
         Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromCraftingConfig()
                 .get(crafted.getType(), new TypeToken<>() {});
 
@@ -60,11 +57,12 @@ public class CraftingListener implements Listener {
                     customPlayer.addSkillXp(pair.firstValue(), xpToGive);
                     LOGGER.fine("Gave " + xpToGive + " XP to " + player.getName() +
                             " for crafting " + craftedAmount + "x " + crafted.getType());
+                    int reduction = 5 - Math.min(3,5-customPlayer.getSkillLevel(SkillType.BLACKSMITH));
+                    player.setFoodLevel(player.getFoodLevel() - reduction);
                 }
             }, 1L);
         }
-        int reduction = 5 - Math.min(3,5-customPlayer.getSkillLevel(SkillType.BLACKSMITH));
-        player.setFoodLevel(player.getFoodLevel() - reduction);
+
     }
 
     /**
