@@ -22,7 +22,6 @@ public class DataManager {
     }
 
     private static final Runnable runnable = () -> {
-        Specialization.logger.info("Running task at " + LocalDateTime.now());
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().saveAll();
     };
 

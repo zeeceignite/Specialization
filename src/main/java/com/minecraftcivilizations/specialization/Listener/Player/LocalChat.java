@@ -29,7 +29,6 @@ public class LocalChat implements Listener {
             });
         });
         sender.sendRichMessage(defaultFormat.formatted(sender.getName(), originalMessage));
-        Specialization.logger.info("<" + sender + "> " + originalMessage);
     }
 
     private boolean tryHandleGlobalChat(Player player, String message) {
