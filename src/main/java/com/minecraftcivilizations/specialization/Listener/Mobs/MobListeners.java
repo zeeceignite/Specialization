@@ -30,7 +30,6 @@ public class MobListeners implements Listener {
 
         AttributeInstance attribute = monster.getAttribute(Attribute.MOVEMENT_SPEED);
         if(attribute == null) {
-            Specialization.logger.warning("Mob spawned and didn't have movement speed:" + monster.getType());
             return;
         }
         attribute.setBaseValue(attribute.getValue() + speedAddition);

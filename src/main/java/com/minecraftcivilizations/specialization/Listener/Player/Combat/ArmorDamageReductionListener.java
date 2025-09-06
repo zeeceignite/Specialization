@@ -33,11 +33,7 @@ public class ArmorDamageReductionListener implements Listener {
 
         Player player = (Player) event.getEntity();
         PlayerInventory inventory = player.getInventory();
-        
-        Specialization.logger.info("=== ARMOR DAMAGE REDUCTION DEBUG ===");
-        Specialization.logger.info("Player: " + player.getName() + " damaged by: " + event.getDamager().getType());
-        Specialization.logger.info("Original damage: " + event.getDamage());
-        
+
         double totalDamageReduction = 0.0;
         
         // Check helmet
@@ -45,9 +41,6 @@ public class ArmorDamageReductionListener implements Listener {
         if (helmet != null && isArmor(helmet)) {
             double helmetReduction = calculateArmorReduction(helmet, "HELMET_BASE_REDUCTION");
             totalDamageReduction += helmetReduction;
-            Specialization.logger.info("Helmet (" + helmet.getType() + "): " + (helmetReduction * 100) + "% reduction");
-        } else {
-            Specialization.logger.info("No helmet equipped");
         }
         
         // Check chestplate
@@ -55,9 +48,6 @@ public class ArmorDamageReductionListener implements Listener {
         if (chestplate != null && isArmor(chestplate)) {
             double chestplateReduction = calculateArmorReduction(chestplate, "CHESTPLATE_BASE_REDUCTION");
             totalDamageReduction += chestplateReduction;
-            Specialization.logger.info("Chestplate (" + chestplate.getType() + "): " + (chestplateReduction * 100) + "% reduction");
-        } else {
-            Specialization.logger.info("No chestplate equipped");
         }
         
         // Check leggings
@@ -65,9 +55,6 @@ public class ArmorDamageReductionListener implements Listener {
         if (leggings != null && isArmor(leggings)) {
             double leggingsReduction = calculateArmorReduction(leggings, "LEGGINGS_BASE_REDUCTION");
             totalDamageReduction += leggingsReduction;
-            Specialization.logger.info("Leggings (" + leggings.getType() + "): " + (leggingsReduction * 100) + "% reduction");
-        } else {
-            Specialization.logger.info("No leggings equipped");
         }
         
         // Check boots
@@ -75,34 +62,20 @@ public class ArmorDamageReductionListener implements Listener {
         if (boots != null && isArmor(boots)) {
             double bootsReduction = calculateArmorReduction(boots, "BOOTS_BASE_REDUCTION");
             totalDamageReduction += bootsReduction;
-            Specialization.logger.info("Boots (" + boots.getType() + "): " + (bootsReduction * 100) + "% reduction");
-        } else {
-            Specialization.logger.info("No boots equipped");
         }
-        
-        Specialization.logger.info("Total calculated reduction: " + (totalDamageReduction * 100) + "%");
-        
+
         // Apply damage reduction with configured cap - ONLY if there's actually reduction to apply
         if (totalDamageReduction > 0) {
             double maxReduction = SpecializationConfig.getArmorDamageReductionConfig().get("MAX_TOTAL_REDUCTION", Double.class);
             double originalTotalReduction = totalDamageReduction;
             totalDamageReduction = Math.min(totalDamageReduction, maxReduction);
             
-            if (originalTotalReduction > maxReduction) {
-                Specialization.logger.info("Reduction capped at: " + (maxReduction * 100) + "% (was " + (originalTotalReduction * 100) + "%)");
-            }
-            
             double originalDamage = event.getDamage();
             double reducedDamage = originalDamage * (1.0 - totalDamageReduction);
             event.setDamage(reducedDamage);
-            
-            Specialization.logger.info("Final damage: " + reducedDamage + " (reduced by " + (originalDamage - reducedDamage) + ")");
-        } else {
-            Specialization.logger.info("No armor equipped - no damage reduction applied");
-            // DO NOT call setDamage() when totalDamageReduction is 0 - this was causing the bug
         }
-        
-        Specialization.logger.info("=== END ARMOR DAMAGE REDUCTION DEBUG ===");
+        // DO NOT call setDamage() when totalDamageReduction is 0 - this was causing the bug
+
     }
     
     /**
@@ -111,14 +84,8 @@ public class ArmorDamageReductionListener implements Listener {
     private double calculateArmorReduction(ItemStack armor, String slotReductionKey) {
         double baseReduction = SpecializationConfig.getArmorDamageReductionConfig().get(slotReductionKey, Double.class);
         double materialMultiplier = getMaterialMultiplier(armor);
-        
-        double finalReduction = baseReduction * materialMultiplier;
-        
-        Specialization.logger.info("  - Base reduction (" + slotReductionKey + "): " + (baseReduction * 100) + "%");
-        Specialization.logger.info("  - Material multiplier (" + armor.getType() + "): " + materialMultiplier + "x");
-        Specialization.logger.info("  - Final piece reduction: " + (finalReduction * 100) + "%");
-        
-        return finalReduction;
+
+        return baseReduction * materialMultiplier;
     }
     
     /**

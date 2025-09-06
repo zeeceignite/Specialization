@@ -128,7 +128,7 @@ public class HungerSystemListener implements Listener {
                     drainHunger(player, activity);
                 }
             }
-        }.runTaskTimer(plugin, DRAIN_INTERVAL, DRAIN_INTERVAL);
+        }.runTaskTimerAsynchronously(plugin, 0, DRAIN_INTERVAL * 2);
     }
 
     private void drainHunger(Player player, PlayerActivity activity) {
