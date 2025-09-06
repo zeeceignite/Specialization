@@ -7,6 +7,7 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
@@ -19,7 +20,6 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 public class PlayerDeathListener implements Listener {
@@ -141,6 +141,8 @@ public class PlayerDeathListener implements Listener {
                 Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(deathReducedMaxHealth);
             }
         }
+
+        player.kick(Component.text("You died."));
     }
 
     public void applyDownedEffects(Player player) {
