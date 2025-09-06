@@ -25,10 +25,6 @@ public class TownManager implements Listener {
         instance = this;
     }
 
-    public static void reloadConfig() {
-
-    }
-
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent event) {
         Location spawnLocation = event.getRespawnLocation();
@@ -70,18 +66,6 @@ public class TownManager implements Listener {
         }
 
         updateTownsList();
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                Specialization.logger.info("Town scan complete! Found " + towns.size() + " towns:");
-                for (int i = 0; i < towns.size(); i++) {
-                    Town town = towns.get(i);
-                    Specialization.logger.info("Town " + (i + 1) + ": " + town.getBedCount() +
-                            " beds at " + formatLocation(town.getCenterLocation()));
-                }
-            }
-        }.runTask(Specialization.getInstance());
     }
 
     private static boolean isLocationNearScanned(Location location, Set<Location> scannedLocations, int radius) {
