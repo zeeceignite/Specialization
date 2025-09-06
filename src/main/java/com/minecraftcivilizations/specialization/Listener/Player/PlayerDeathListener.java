@@ -6,8 +6,10 @@ import com.minecraftcivilizations.specialization.Analytics.AnalyticsData;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
@@ -141,8 +143,9 @@ public class PlayerDeathListener implements Listener {
                 Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(deathReducedMaxHealth);
             }
         }
-
-        player.kick(Component.text("You died."));
+        Bukkit.getScheduler().runTaskLater(Specialization.getInstance(),() -> {
+            player.kick(Component.text("You died."));
+        }, 3);
     }
 
     public void applyDownedEffects(Player player) {
