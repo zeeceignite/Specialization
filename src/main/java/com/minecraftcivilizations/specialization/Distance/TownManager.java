@@ -19,7 +19,7 @@ public class TownManager implements Listener {
     private static final List<Town> towns = Collections.synchronizedList(new ArrayList<>());
     private static final Map<UUID, Location> playerSpawnLocations = new ConcurrentHashMap<>();
     private static final int TOWN_RADIUS = 150;
-    private static final int MIN_BEDS = 5;
+    private static final int MIN_BEDS = 4;
 
     public TownManager() {
         instance = this;
@@ -44,7 +44,7 @@ public class TownManager implements Listener {
     }
 
     public static void scanAllPlayersForTowns() {
-        Specialization.logger.info("Starting comprehensive town scan...");
+        Specialization.logger.info("Starting town scan...");
 
         // Clear existing towns for fresh scan
         towns.clear();
@@ -66,6 +66,18 @@ public class TownManager implements Listener {
         }
 
         updateTownsList();
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                Specialization.logger.info("Town scan complete! Found " + towns.size() + " towns:");
+                for (int i = 0; i < towns.size(); i++) {
+                    Town town = towns.get(i);
+                    Specialization.logger.info("Town " + (i + 1) + ": " + town.getBedCount() +
+                            " beds at " + formatLocation(town.getCenterLocation()));
+                }
+            }
+        }.runTask(Specialization.getInstance());
     }
 
     private static boolean isLocationNearScanned(Location location, Set<Location> scannedLocations, int radius) {
