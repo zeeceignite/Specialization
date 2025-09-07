@@ -123,6 +123,7 @@ public final class Specialization extends JavaPlugin {
         world.setGameRule(GameRule.SPAWN_RADIUS,100);
         world.setGameRule(GameRule.REDUCED_DEBUG_INFO,true);
         world.setGameRule(GameRule.NATURAL_REGENERATION,false);
+        world.setGameRule(GameRule.SHOW_DEATH_MESSAGES,false);
         world.setGameRule(GameRule.LOCATOR_BAR,false);
 
 
