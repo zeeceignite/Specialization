@@ -7,6 +7,7 @@ import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
@@ -94,9 +95,18 @@ public class TownManager implements Listener {
         World world = centerLocation.getWorld();
         if (world == null) return;
 
-        List<Location> bedsInArea = TownManager.findBedsInRadius(centerLocation, TOWN_RADIUS);
+        // Use two-tier bed detection system
+        List<Location> claimedBeds = getClaimedBedsInRadius(centerLocation, TOWN_RADIUS);
+        List<Location> unclaimedBeds = findUnclaimedBedsInRadius(centerLocation, TOWN_RADIUS, claimedBeds);
+        
+        // Combine both lists for total bed count
+        List<Location> allBeds = new ArrayList<>(claimedBeds);
+        allBeds.addAll(unclaimedBeds);
 
-        if (bedsInArea.size() >= MIN_BEDS) {
+        Specialization.logger.info("Found " + claimedBeds.size() + " claimed beds and " + 
+                                 unclaimedBeds.size() + " unclaimed beds around " + formatLocation(centerLocation));
+
+        if (allBeds.size() >= MIN_BEDS) {
             // Check if this area already has a town
             boolean townExists = false;
             synchronized (towns) {
@@ -104,8 +114,9 @@ public class TownManager implements Listener {
                     if (existingTown.getCenterLocation().getWorld().equals(world) &&
                             existingTown.getCenterLocation().distance(centerLocation) <= TOWN_RADIUS) {
                         // Update existing town with new beds if found more
-                        if (bedsInArea.size() > existingTown.getBedCount()) {
-                            existingTown.updateBeds(bedsInArea);
+                        if (allBeds.size() > existingTown.getBedCount()) {
+                            existingTown.updateBeds(allBeds);
+                            Specialization.logger.info("Updated existing town with " + allBeds.size() + " beds");
                         }
                         townExists = true;
                         break;
@@ -114,17 +125,87 @@ public class TownManager implements Listener {
             }
 
             if (!townExists) {
-                Location townCenter = calculateTownCenter(bedsInArea);
-                Town newTown = new Town(townCenter, bedsInArea);
+                Location townCenter = calculateTownCenter(allBeds);
+                Town newTown = new Town(townCenter, allBeds);
                 towns.add(newTown);
+                Specialization.logger.info("Created new town with " + allBeds.size() + " beds at " + formatLocation(townCenter));
             }
+        } else {
+            Specialization.logger.info("Not enough beds (" + allBeds.size() + "/" + MIN_BEDS + ") to create town around " + formatLocation(centerLocation));
         }
     }
 
-    private static List<Location> findBedsInRadius(Location center, int radius) {
-        List<Location> beds = new ArrayList<>();
+    /**
+     * Priority 1: Get claimed beds from PDC system within radius
+     */
+    private static List<Location> getClaimedBedsInRadius(Location center, int radius) {
+        List<Location> claimedBeds = new ArrayList<>();
         World world = center.getWorld();
-        if (world == null) return beds;
+        if (world == null) return claimedBeds;
+
+        int centerChunkX = center.getBlockX() >> 4;
+        int centerChunkZ = center.getBlockZ() >> 4;
+        int chunkRadius = (radius >> 4) + 1; // Convert block radius to chunk radius
+
+        for (int chunkX = centerChunkX - chunkRadius; chunkX <= centerChunkX + chunkRadius; chunkX++) {
+            for (int chunkZ = centerChunkZ - chunkRadius; chunkZ <= centerChunkZ + chunkRadius; chunkZ++) {
+                try {
+                    org.bukkit.Chunk chunk = world.getChunkAt(chunkX, chunkZ);
+                    PersistentDataContainer chunkPDC = chunk.getPersistentDataContainer();
+
+                    // Scan for bed ownership keys
+                    for (NamespacedKey key : chunkPDC.getKeys()) {
+                        if (key.getNamespace().equals(Specialization.getInstance().getName()) &&
+                            key.getKey().startsWith("bed_")) {
+                            
+                            // Parse location from key: "bed_x_y_z"
+                            String[] parts = key.getKey().split("_");
+                            if (parts.length == 4) {
+                                try {
+                                    int x = Integer.parseInt(parts[1]);
+                                    int y = Integer.parseInt(parts[2]);
+                                    int z = Integer.parseInt(parts[3]);
+                                    
+                                    Location bedLoc = new Location(world, x, y, z);
+                                    
+                                    // Check if within radius and bed still exists
+                                    if (center.distance(bedLoc) <= radius) {
+                                        Block bedBlock = world.getBlockAt(x, y, z);
+                                        if (isBed(bedBlock)) {
+                                            claimedBeds.add(bedLoc);
+                                        } else {
+                                            // Clean up stale PDC data
+                                            chunkPDC.remove(key);
+                                        }
+                                    }
+                                } catch (NumberFormatException e) {
+                                    // Invalid key format, skip
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // Skip problematic chunks
+                }
+            }
+        }
+
+        return claimedBeds;
+    }
+
+    /**
+     * Priority 2: Find unclaimed beds using raw block detection, excluding already found claimed beds
+     */
+    private static List<Location> findUnclaimedBedsInRadius(Location center, int radius, List<Location> claimedBeds) {
+        List<Location> unclaimedBeds = new ArrayList<>();
+        World world = center.getWorld();
+        if (world == null) return unclaimedBeds;
+
+        // Convert claimed beds to a HashSet for fast lookup
+        Set<String> claimedBedKeys = new HashSet<>();
+        for (Location claimedBed : claimedBeds) {
+            claimedBedKeys.add(claimedBed.getBlockX() + "_" + claimedBed.getBlockY() + "_" + claimedBed.getBlockZ());
+        }
 
         int centerX = center.getBlockX();
         int centerY = center.getBlockY();
@@ -140,16 +221,30 @@ public class TownManager implements Listener {
 
                     // Check if within actual radius (sphere)
                     if (center.distance(checkLoc) <= radius) {
-                        Block block = world.getBlockAt(x, y, z);
-                        if (isBed(block)) {
-                            beds.add(checkLoc);
+                        // Skip if this bed is already in claimed beds list
+                        String locationKey = x + "_" + y + "_" + z;
+                        if (!claimedBedKeys.contains(locationKey)) {
+                            Block block = world.getBlockAt(x, y, z);
+                            if (isBed(block)) {
+                                unclaimedBeds.add(checkLoc);
+                            }
                         }
                     }
                 }
             }
         }
 
-        return beds;
+        return unclaimedBeds;
+    }
+
+    private static List<Location> findBedsInRadius(Location center, int radius) {
+        // This method is kept for backward compatibility but now uses the two-tier system
+        List<Location> claimedBeds = getClaimedBedsInRadius(center, radius);
+        List<Location> unclaimedBeds = findUnclaimedBedsInRadius(center, radius, claimedBeds);
+        
+        List<Location> allBeds = new ArrayList<>(claimedBeds);
+        allBeds.addAll(unclaimedBeds);
+        return allBeds;
     }
 
     private static boolean isBed(Block block) {
