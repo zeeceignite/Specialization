@@ -75,6 +75,27 @@ public class TownsCommand extends BaseCommand {
         }
     }
     
+    @Subcommand("scan")
+    @CommandPermission("towndetector.admin")
+    public void onForceScan(CommandSender sender) {
+        sender.sendRichMessage("<yellow>Starting town scan...");
+        
+        // Run the scan asynchronously to avoid blocking the main thread
+        Bukkit.getScheduler().runTaskAsynchronously(Bukkit.getPluginManager().getPlugin("Specialization"), () -> {
+            TownManager.scanAllPlayersForTowns();
+            
+            // Send results back on main thread
+            Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("Specialization"), () -> {
+                int townCount = TownManager.getTowns().size();
+                sender.sendRichMessage("<green>Town scan complete! Found " + townCount + " towns.");
+                
+                if (townCount > 0) {
+                    sender.sendRichMessage("<gray>Use '/towns' to view detected towns.");
+                }
+            });
+        });
+    }
+    
     private List<CustomPlayer> getTownPlayers(Town town, List<CustomPlayer> allPlayers) {
         return allPlayers.stream()
                 .filter(player -> {

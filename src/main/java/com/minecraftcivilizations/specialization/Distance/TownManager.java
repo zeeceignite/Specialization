@@ -4,7 +4,6 @@ import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -20,7 +19,7 @@ public class TownManager implements Listener {
     private static final List<Town> towns = Collections.synchronizedList(new ArrayList<>());
     private static final Map<UUID, Location> playerSpawnLocations = new ConcurrentHashMap<>();
     private static final int TOWN_RADIUS = 150;
-    private static final int MIN_BEDS = 4;
+    private static final int MIN_BEDS = 5;
 
     public TownManager() {
         instance = this;
@@ -33,7 +32,6 @@ public class TownManager implements Listener {
 
         // Store player spawn location
         playerSpawnLocations.put(playerId, spawnLocation);
-        Specialization.logger.info("Player " + event.getPlayer().getName() + " respawned at " + formatLocation(spawnLocation));
 
         // Scan for towns around this spawn location
         new BukkitRunnable() {
@@ -46,67 +44,38 @@ public class TownManager implements Listener {
     }
 
     public static void scanAllPlayersForTowns() {
-        Specialization.logger.info("Starting comprehensive town scan...");
+        Specialization.logger.info("Starting town scan...");
 
         // Clear existing towns for fresh scan
         towns.clear();
-        playerSpawnLocations.clear();
 
         OfflinePlayer[] allPlayers = Bukkit.getOfflinePlayers();
         Set<Location> scannedLocations = new HashSet<>();
-        int playersWithBeds = 0;
-        int totalPlayers = allPlayers.length;
-
-        Specialization.logger.info("Scanning " + totalPlayers + " players for spawn locations...");
 
         for (OfflinePlayer player : allPlayers) {
-            Location spawnLocation = null;
-            
-            // Try multiple methods to get player spawn location
-            if (player.getBedSpawnLocation() != null) {
-                spawnLocation = player.getBedSpawnLocation();
-                Specialization.logger.info("Player " + player.getName() + " has bed spawn at " + formatLocation(spawnLocation));
-                playersWithBeds++;
-            } else if (player instanceof Player onlinePlayer) {
-                // For online players, try getRespawnLocation
-                Location respawnLoc = onlinePlayer.getRespawnLocation();
-                if (respawnLoc != null) {
-                    spawnLocation = respawnLoc;
-                    Specialization.logger.info("Player " + player.getName() + " has respawn location at " + formatLocation(spawnLocation));
-                }
-            }
-
-            if (spawnLocation != null) {
-                playerSpawnLocations.put(player.getUniqueId(), spawnLocation);
+            if (player.getRespawnLocation() != null) {
+                Location bedLocation = player.getRespawnLocation();
+                playerSpawnLocations.put(player.getUniqueId(), bedLocation);
 
                 // Only scan if we haven't scanned this area before
-                if (!isLocationNearScanned(spawnLocation, scannedLocations, TOWN_RADIUS)) {
-                    Specialization.logger.info("Scanning area around " + formatLocation(spawnLocation) + " for beds...");
-                    scanForTownsAroundLocation(spawnLocation);
-                    scannedLocations.add(spawnLocation);
+                if (!isLocationNearScanned(bedLocation, scannedLocations, TOWN_RADIUS)) {
+                    scanForTownsAroundLocation(bedLocation);
+                    scannedLocations.add(bedLocation);
                 }
             }
         }
 
         updateTownsList();
 
-        Specialization.logger.info("Scan summary: " + playersWithBeds + "/" + totalPlayers + " players have bed spawns");
-        Specialization.logger.info("Scanned " + scannedLocations.size() + " unique areas");
-
         new BukkitRunnable() {
             @Override
             public void run() {
-                Specialization.logger.info("=== TOWN SCAN COMPLETE ===");
-                Specialization.logger.info("Found " + towns.size() + " towns:");
+                Specialization.logger.info("Town scan complete! Found " + towns.size() + " towns:");
                 for (int i = 0; i < towns.size(); i++) {
                     Town town = towns.get(i);
                     Specialization.logger.info("Town " + (i + 1) + ": " + town.getBedCount() +
                             " beds at " + formatLocation(town.getCenterLocation()));
                 }
-                if (towns.isEmpty()) {
-                    Specialization.logger.warning("No towns detected! This might indicate an issue with bed detection.");
-                }
-                Specialization.logger.info("=========================");
             }
         }.runTask(Specialization.getInstance());
     }
@@ -123,18 +92,11 @@ public class TownManager implements Listener {
 
     private static void scanForTownsAroundLocation(Location centerLocation) {
         World world = centerLocation.getWorld();
-        if (world == null) {
-            Specialization.logger.warning("Cannot scan - world is null for location " + formatLocation(centerLocation));
-            return;
-        }
+        if (world == null) return;
 
-        Specialization.logger.info("Scanning for beds within " + TOWN_RADIUS + " blocks of " + formatLocation(centerLocation));
-        
-        List<Location> bedsFound = findBedsInRadius(centerLocation, TOWN_RADIUS);
-        
-        Specialization.logger.info("Found " + bedsFound.size() + " beds around " + formatLocation(centerLocation));
+        List<Location> bedsInArea = TownManager.findBedsInRadius(centerLocation, TOWN_RADIUS);
 
-        if (bedsFound.size() >= MIN_BEDS) {
+        if (bedsInArea.size() >= MIN_BEDS) {
             // Check if this area already has a town
             boolean townExists = false;
             synchronized (towns) {
@@ -142,9 +104,8 @@ public class TownManager implements Listener {
                     if (existingTown.getCenterLocation().getWorld().equals(world) &&
                             existingTown.getCenterLocation().distance(centerLocation) <= TOWN_RADIUS) {
                         // Update existing town with new beds if found more
-                        if (bedsFound.size() > existingTown.getBedCount()) {
-                            existingTown.updateBeds(bedsFound);
-                            Specialization.logger.info("Updated existing town with " + bedsFound.size() + " beds");
+                        if (bedsInArea.size() > existingTown.getBedCount()) {
+                            existingTown.updateBeds(bedsInArea);
                         }
                         townExists = true;
                         break;
@@ -153,32 +114,21 @@ public class TownManager implements Listener {
             }
 
             if (!townExists) {
-                Location townCenter = calculateTownCenter(bedsFound);
-                Town newTown = new Town(townCenter, bedsFound);
+                Location townCenter = calculateTownCenter(bedsInArea);
+                Town newTown = new Town(townCenter, bedsInArea);
                 towns.add(newTown);
-                Specialization.logger.info("*** CREATED NEW TOWN *** with " + bedsFound.size() + " beds at " + formatLocation(townCenter));
             }
-        } else {
-            Specialization.logger.info("Not enough beds (" + bedsFound.size() + "/" + MIN_BEDS + ") to create town around " + formatLocation(centerLocation));
         }
     }
 
     private static List<Location> findBedsInRadius(Location center, int radius) {
         List<Location> beds = new ArrayList<>();
         World world = center.getWorld();
-        if (world == null) {
-            Specialization.logger.warning("Cannot find beds - world is null");
-            return beds;
-        }
+        if (world == null) return beds;
 
         int centerX = center.getBlockX();
         int centerY = center.getBlockY();
         int centerZ = center.getBlockZ();
-        
-        int blocksScanned = 0;
-        int bedsFound = 0;
-
-        Specialization.logger.info("Starting bed scan in " + (radius * 2) + "x" + (radius * 2) + "x" + (radius * 2) + " area...");
 
         // Search in a cube around the center, then filter by actual distance
         for (int x = centerX - radius; x <= centerX + radius; x++) {
@@ -186,7 +136,6 @@ public class TownManager implements Listener {
                 for (int y = Math.max(world.getMinHeight(), centerY - radius);
                      y <= Math.min(world.getMaxHeight(), centerY + radius); y++) {
 
-                    blocksScanned++;
                     Location checkLoc = new Location(world, x, y, z);
 
                     // Check if within actual radius (sphere)
@@ -194,39 +143,28 @@ public class TownManager implements Listener {
                         Block block = world.getBlockAt(x, y, z);
                         if (isBed(block)) {
                             beds.add(checkLoc);
-                            bedsFound++;
-                            if (bedsFound <= 10) { // Log first 10 beds found
-                                Specialization.logger.info("Found bed #" + bedsFound + " at " + formatLocation(checkLoc) + " (Material: " + block.getType() + ")");
-                            }
                         }
                     }
                 }
             }
         }
 
-        Specialization.logger.info("Bed scan complete: " + bedsFound + " beds found after scanning " + blocksScanned + " blocks");
         return beds;
     }
 
     private static boolean isBed(Block block) {
-        if (block == null) return false;
-        
         Material material = block.getType();
-        boolean isBedMaterial = material.name().endsWith("_BED");
+        if (!material.name().endsWith("BED")) return false;
         
-        if (isBedMaterial) {
-            try {
-                // Count ALL bed blocks (both head and foot parts)
-                if (block.getBlockData() instanceof org.bukkit.block.data.type.Bed) {
-                    return true;
-                }
-            } catch (Exception e) {
-                // Fallback: if we can't determine the bed data, still count it if it's a bed material
-                Specialization.logger.warning("Could not get bed data for " + material + " at " + formatLocation(block.getLocation()) + ", but counting as bed anyway");
-                return true;
+        try {
+            if (block.getBlockData() instanceof org.bukkit.block.data.type.Bed bed) {
+                return bed.getPart() == org.bukkit.block.data.type.Bed.Part.HEAD || 
+                       bed.getPart() == org.bukkit.block.data.type.Bed.Part.FOOT;
             }
+        } catch (Exception e) {
+            return true;
         }
-        
+
         return false;
     }
 
@@ -234,7 +172,7 @@ public class TownManager implements Listener {
         if (beds.isEmpty()) return null;
 
         double totalX = 0, totalY = 0, totalZ = 0;
-        World world = beds.get(0).getWorld();
+        World world = beds.getFirst().getWorld();
 
         for (Location bed : beds) {
             totalX += bed.getX();
@@ -261,10 +199,8 @@ public class TownManager implements Listener {
                     // Merge towns - keep the one with more beds
                     if (town1.getBedCount() >= town2.getBedCount()) {
                         towns.remove(j);
-                        Specialization.logger.info("Merged duplicate towns - kept town with " + town1.getBedCount() + " beds");
                     } else {
                         towns.remove(i);
-                        Specialization.logger.info("Merged duplicate towns - kept town with " + town2.getBedCount() + " beds");
                         i--; // Adjust index after removal
                     }
                     break;
@@ -272,6 +208,7 @@ public class TownManager implements Listener {
             }
         }
     }
+
 
     public static List<Town> getTowns() {
         return new ArrayList<>(towns);
@@ -282,7 +219,6 @@ public class TownManager implements Listener {
     }
 
     public static String formatLocation(Location loc) {
-        if (loc == null) return "null";
         return String.format("%.1f, %.1f, %.1f in %s",
                 loc.getX(), loc.getY(), loc.getZ(), loc.getWorld().getName());
     }
