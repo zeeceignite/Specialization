@@ -40,16 +40,27 @@ public class CraftingListener implements Listener {
             return;
         }
 
-        ItemStack crafted = event.getCurrentItem();
-
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance()
                 .getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
+
+        int craftedAmount = getCraftedAmount(event);
+
+        int reduction = (int) ((5-customPlayer.getSkillLevel(SkillType.BLACKSMITH))/1.5) * craftedAmount;
+
+        int foodLevel = player.getFoodLevel();
+
+        if(foodLevel < reduction){
+            event.setCancelled(true);
+            return;
+        }
+
+        ItemStack crafted = event.getCurrentItem();
+
 
         Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromCraftingConfig()
                 .get(crafted.getType(), new TypeToken<>() {});
 
         if (pair != null && pair.firstValue() != null && pair.secondValue() != null) {
-            int craftedAmount = getCraftedAmount(event);
             double xpToGive = pair.secondValue() * craftedAmount;
 
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -57,7 +68,6 @@ public class CraftingListener implements Listener {
                     customPlayer.addSkillXp(pair.firstValue(), xpToGive);
                     LOGGER.fine("Gave " + xpToGive + " XP to " + player.getName() +
                             " for crafting " + craftedAmount + "x " + crafted.getType());
-                    int reduction = 5 - Math.min(3,5-customPlayer.getSkillLevel(SkillType.BLACKSMITH));
                     player.setFoodLevel(player.getFoodLevel() - reduction);
                 }
             }, 1L);
