@@ -53,7 +53,7 @@ public class BreakBlockListener implements Listener {
                     event.getPlayer().sendMessage("You have received 1 iron ingot for breaking heavily reinforced blocks!");
                 }
                 if(isLightlyReinforced(event.getBlock())) {
-                    event.getBlock().getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_NUGGET, 1));
+                    event.getBlock().getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT, 1));
                     event.getPlayer().sendMessage("You have received 1 iron nugget for breaking lightly reinforced blocks!");
                 }
                 removeReinforcement(event.getBlock());
