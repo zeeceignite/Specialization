@@ -9,6 +9,6 @@ public class Growing implements Listener {
 
     @EventHandler
     public void onCropGrow(BlockGrowEvent e) {
-        if(e.getBlock().getRelative(BlockFace.UP).getLightFromSky() == 0) e.setCancelled(true);
+        if(e.getBlock().getRelative(BlockFace.UP).getLightFromSky() <= 1) e.setCancelled(true);
     }
 }
