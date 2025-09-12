@@ -51,4 +51,5 @@ public class Town {
                 centerLocation, bedLocations.size(), discoveredTime);
     }
 
+
 }
