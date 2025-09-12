@@ -146,7 +146,7 @@ public class PlayerDeathListener implements Listener {
 
         Bukkit.getScheduler().runTaskLater(Specialization.getInstance(),() -> {
             player.kick(Component.text("You died."));
-        }, 3);
+        }, 10);
     }
 
     public void applyDownedEffects(Player player) {
