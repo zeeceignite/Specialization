@@ -80,7 +80,7 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
         breakAmount += breakPercentagePerTick / 100f;
         if(breakAmount >= 1.0){
             if(block.getBlockData().getMaterial().getHardness() > 0) {
-                block.breakNaturally();
+                block.breakNaturally(true, true);
             }
             return;
         }
