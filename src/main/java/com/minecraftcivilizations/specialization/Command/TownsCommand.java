@@ -4,6 +4,7 @@ import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.commands.annotation.Default;
+import co.aikar.commands.annotation.Subcommand;
 import com.minecraftcivilizations.specialization.Analytics.AnalyticsData;
 import com.minecraftcivilizations.specialization.Distance.Town;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
@@ -14,6 +15,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.List;
 import java.util.Map;
@@ -72,6 +74,38 @@ public class TownsCommand extends BaseCommand {
                 sender.sendRichMessage(""); // Empty line for spacing
             }
         }
+    }
+    
+    @Subcommand("scan")
+    @CommandPermission("towndetector.scan")
+    public void onTownScan(CommandSender sender) {
+        sender.sendRichMessage("<yellow>Starting comprehensive town scan...");
+        sender.sendRichMessage("<gray>This will scan the entire world for towns. This may take a while.");
+        
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                // First scan all players for towns
+                TownManager.scanAllPlayersForTowns();
+                
+                // Then do a systematic world scan
+                TownManager.scanEntireWorld();
+                
+                // Send completion message on main thread
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        sender.sendRichMessage("<green>Town scan completed!");
+                        sender.sendRichMessage("<aqua>Found " + TownManager.getTowns().size() + " towns total.");
+                        
+                        // Show some statistics
+                        if (TownManager.getInstance() != null) {
+                            TownManager.getInstance().getDetectionStats();
+                        }
+                    }
+                }.runTask(com.minecraftcivilizations.specialization.Specialization.getInstance());
+            }
+        }.runTaskAsynchronously(com.minecraftcivilizations.specialization.Specialization.getInstance());
     }
     
     private List<CustomPlayer> getTownPlayers(Town town, List<CustomPlayer> allPlayers) {

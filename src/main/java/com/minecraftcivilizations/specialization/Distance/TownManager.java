@@ -7,6 +7,9 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerBedEnterEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -38,6 +41,10 @@ public class TownManager implements Listener {
 
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent event) {
+        if (debugLogging) {
+            Specialization.logger.info("[DEBUG] PlayerRespawnEvent triggered for " + event.getPlayer().getName());
+        }
+        
         Location spawnLocation = event.getRespawnLocation();
         UUID playerId = event.getPlayer().getUniqueId();
 
@@ -46,6 +53,10 @@ public class TownManager implements Listener {
         new BukkitRunnable() {
             @Override
             public void run() {
+                if (debugLogging) {
+                    Specialization.logger.info("[DEBUG] Processing respawn scan for " + event.getPlayer().getName() + 
+                        " at " + formatLocation(spawnLocation));
+                }
                 scanForTownsAroundLocation(spawnLocation, "Player Respawn: " + event.getPlayer().getName());
                 updateTownsList();
                 getDetectionStats();
@@ -55,12 +66,20 @@ public class TownManager implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
+        if (debugLogging) {
+            Specialization.logger.info("[DEBUG] PlayerJoinEvent triggered for " + event.getPlayer().getName());
+        }
+        
         Location loc = event.getPlayer().getLocation();
         UUID playerId = event.getPlayer().getUniqueId();
 
         new BukkitRunnable() {
             @Override
             public void run() {
+                if (debugLogging) {
+                    Specialization.logger.info("[DEBUG] Processing join scan for " + event.getPlayer().getName() + 
+                        " at " + formatLocation(loc));
+                }
                 scanForTownsAroundLocation(loc, "Player Join: " + event.getPlayer().getName());
                 updateTownsList();
                 getDetectionStats();
@@ -88,6 +107,11 @@ public class TownManager implements Listener {
         }
 
         if (shouldScan) {
+            if (debugLogging) {
+                Specialization.logger.info("[DEBUG] PlayerMoveEvent triggered scan for " + event.getPlayer().getName() + 
+                    " - moved " + (lastScan != null ? String.format("%.1f", lastScan.distance(to)) : "first scan") + " blocks");
+            }
+            
             lastScanLocations.put(playerId, to.clone());
 
             new BukkitRunnable() {
@@ -99,6 +123,80 @@ public class TownManager implements Listener {
                 }
             }.runTaskAsynchronously(Specialization.getInstance());
         }
+    }
+
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent event) {
+        if (debugLogging) {
+            Specialization.logger.info("[DEBUG] BlockPlaceEvent triggered for " + event.getPlayer().getName() + 
+                " placing " + event.getBlock().getType() + " at " + formatLocation(event.getBlock().getLocation()));
+        }
+        
+        Location blockLocation = event.getBlock().getLocation();
+        Player player = event.getPlayer();
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                scanForTownsAroundLocation(blockLocation, "Block Place: " + player.getName());
+                updateTownsList();
+                if (debugLogging) {
+                    getDetectionStats();
+                }
+            }
+        }.runTaskAsynchronously(Specialization.getInstance());
+    }
+
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        if (debugLogging) {
+            Specialization.logger.info("[DEBUG] BlockBreakEvent triggered for " + event.getPlayer().getName() + 
+                " breaking " + event.getBlock().getType() + " at " + formatLocation(event.getBlock().getLocation()));
+        }
+        
+        Location blockLocation = event.getBlock().getLocation();
+        Player player = event.getPlayer();
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                scanForTownsAroundLocation(blockLocation, "Block Break: " + player.getName());
+                updateTownsList();
+                if (debugLogging) {
+                    getDetectionStats();
+                }
+            }
+        }.runTaskAsynchronously(Specialization.getInstance());
+    }
+
+    @EventHandler
+    public void onPlayerSleep(PlayerBedEnterEvent event) {
+        if (event.getBedEnterResult() != PlayerBedEnterEvent.BedEnterResult.OK) {
+            return; // Only process successful bed entries
+        }
+        
+        if (debugLogging) {
+            Specialization.logger.info("[DEBUG] PlayerBedEnterEvent triggered for " + event.getPlayer().getName() + 
+                " sleeping at " + formatLocation(event.getBed().getLocation()));
+        }
+        
+        Location bedLocation = event.getBed().getLocation();
+        Player player = event.getPlayer();
+        UUID playerId = player.getUniqueId();
+
+        // Store this as a potential spawn location
+        playerSpawnLocations.put(playerId, bedLocation);
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                scanForTownsAroundLocation(bedLocation, "Player Sleep: " + player.getName());
+                updateTownsList();
+                if (debugLogging) {
+                    getDetectionStats();
+                }
+            }
+        }.runTaskAsynchronously(Specialization.getInstance());
     }
 
     public void startPeriodicScanning() {
@@ -130,26 +228,64 @@ public class TownManager implements Listener {
     }
 
     public static void scanAllPlayersForTowns() {
-        Specialization.logger.info("Starting comprehensive town scan...");
+        if (instance != null && instance.debugLogging) {
+            Specialization.logger.info("[DEBUG] Starting comprehensive town scan...");
+        }
 
         towns.clear();
 
         OfflinePlayer[] allPlayers = Bukkit.getOfflinePlayers();
         Set<Location> scannedLocations = new HashSet<>();
+        int playersProcessed = 0;
+        int locationsScanned = 0;
+
+        if (instance != null && instance.debugLogging) {
+            Specialization.logger.info("[DEBUG] Processing " + allPlayers.length + " total players for town detection");
+        }
 
         for (OfflinePlayer player : allPlayers) {
+            playersProcessed++;
+            
+            // Check bed spawn location
             if (player.getBedSpawnLocation() != null) {
                 Location bedLocation = player.getBedSpawnLocation();
                 playerSpawnLocations.put(player.getUniqueId(), bedLocation);
 
                 if (!isLocationNearScanned(bedLocation, scannedLocations, TOWN_RADIUS / SCAN_RADIUS_REDUCTION)) {
+                    if (instance != null && instance.debugLogging) {
+                        Specialization.logger.info("[DEBUG] Scanning bed location for " + player.getName() + 
+                            " at " + formatLocation(bedLocation));
+                    }
                     scanForTownsAroundLocation(bedLocation, "Comprehensive Scan: " + player.getName());
                     scannedLocations.add(bedLocation);
+                    locationsScanned++;
+                }
+            }
+            
+            // Also check if player is online and scan their current location
+            if (player.isOnline() && player.getPlayer() != null) {
+                Location currentLocation = player.getPlayer().getLocation();
+                if (!isLocationNearScanned(currentLocation, scannedLocations, TOWN_RADIUS / SCAN_RADIUS_REDUCTION)) {
+                    if (instance != null && instance.debugLogging) {
+                        Specialization.logger.info("[DEBUG] Scanning current location for online player " + player.getName() + 
+                            " at " + formatLocation(currentLocation));
+                    }
+                    scanForTownsAroundLocation(currentLocation, "Online Player Scan: " + player.getName());
+                    scannedLocations.add(currentLocation);
+                    locationsScanned++;
                 }
             }
         }
 
         updateTownsList();
+        
+        if (instance != null && instance.debugLogging) {
+            Specialization.logger.info("[DEBUG] Comprehensive scan completed:");
+            Specialization.logger.info("[DEBUG] - Processed " + playersProcessed + " players");
+            Specialization.logger.info("[DEBUG] - Scanned " + locationsScanned + " unique locations");
+            Specialization.logger.info("[DEBUG] - Found " + towns.size() + " towns");
+        }
+        
         Specialization.logger.info("Comprehensive scan completed. Found " + towns.size() + " towns.");
     }
 
@@ -200,10 +336,15 @@ public class TownManager implements Listener {
         World world = centerLocation.getWorld();
         if (world == null) return;
 
+        if (instance != null && instance.debugLogging) {
+            Specialization.logger.info(String.format("[DEBUG] [%s] Starting scan at %s", 
+                source, formatLocation(centerLocation)));
+        }
+
         List<Location> bedsInArea = findBedsInRadius(centerLocation, TOWN_RADIUS);
 
-        if (instance.debugLogging && bedsInArea.size() > 0) {
-            Specialization.logger.info(String.format("[%s] Scanning %s: found %d beds",
+        if (instance != null && instance.debugLogging && bedsInArea.size() > 0) {
+            Specialization.logger.info(String.format("[DEBUG] [%s] Scanning %s: found %d beds",
                     source, formatLocation(centerLocation), bedsInArea.size()));
         }
 
@@ -215,8 +356,8 @@ public class TownManager implements Listener {
                             existingTown.getCenterLocation().distance(centerLocation) <= TOWN_RADIUS) {
                         if (bedsInArea.size() > existingTown.getBedCount()) {
                             existingTown.updateBeds(bedsInArea);
-                            if (instance.debugLogging) {
-                                Specialization.logger.info(String.format("[%s] Updated existing town at %s with %d beds",
+                            if (instance != null && instance.debugLogging) {
+                                Specialization.logger.info(String.format("[DEBUG] [%s] Updated existing town at %s with %d beds",
                                         source, formatLocation(existingTown.getCenterLocation()), bedsInArea.size()));
                             }
                         }
@@ -231,11 +372,14 @@ public class TownManager implements Listener {
                 Town newTown = new Town(townCenter, bedsInArea);
                 towns.add(newTown);
 
-                if (instance.debugLogging) {
-                    Specialization.logger.info(String.format("[%s] Created new town at %s with %d beds",
+                if (instance != null && instance.debugLogging) {
+                    Specialization.logger.info(String.format("[DEBUG] [%s] Created new town at %s with %d beds",
                             source, formatLocation(townCenter), bedsInArea.size()));
                 }
             }
+        } else if (instance != null && instance.debugLogging && bedsInArea.size() > 0) {
+            Specialization.logger.info(String.format("[DEBUG] [%s] Found %d beds at %s but need %d minimum for town",
+                    source, bedsInArea.size(), formatLocation(centerLocation), MIN_BEDS));
         }
     }
 
