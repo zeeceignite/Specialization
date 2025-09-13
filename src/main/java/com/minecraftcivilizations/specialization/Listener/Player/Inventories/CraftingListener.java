@@ -45,7 +45,7 @@ public class CraftingListener implements Listener {
 
         int craftedAmount = (int) (getCraftedAmount(event) / (Math.random() * 3 + 1));
 
-        int reduction = (int) ((4-customPlayer.getSkillLevel(SkillType.BLACKSMITH))/1.5) * craftedAmount;
+        int reduction = (int) ((5-customPlayer.getSkillLevel(SkillType.BLACKSMITH))/1.5) * craftedAmount;
         reduction -= (int) (Math.random() * 4);
 
         int foodLevel = player.getFoodLevel();
@@ -88,7 +88,7 @@ public class CraftingListener implements Listener {
 
         return switch (action) {
             case PICKUP_ALL, PICKUP_SOME, PICKUP_HALF, PICKUP_ONE, MOVE_TO_OTHER_INVENTORY, PLACE_ALL, PLACE_SOME,
-                 PLACE_ONE, SWAP_WITH_CURSOR, HOTBAR_SWAP -> true;
+                 PLACE_ONE, SWAP_WITH_CURSOR, HOTBAR_SWAP, DROP_ALL_CURSOR, DROP_ALL_SLOT, DROP_ONE_CURSOR, DROP_ONE_SLOT -> true;
             default -> false;
         };
     }
