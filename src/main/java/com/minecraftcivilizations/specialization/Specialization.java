@@ -126,6 +126,9 @@ public final class Specialization extends JavaPlugin {
         world.setGameRule(GameRule.NATURAL_REGENERATION,false);
         world.setGameRule(GameRule.SHOW_DEATH_MESSAGES,false);
         world.setGameRule(GameRule.LOCATOR_BAR,false);
+        world.setGameRule(GameRule.WATER_SOURCE_CONVERSION, false);
+        world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS,false);
+
 
 
         Recipes.init();

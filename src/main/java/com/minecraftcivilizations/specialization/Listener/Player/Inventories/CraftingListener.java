@@ -46,6 +46,7 @@ public class CraftingListener implements Listener {
         int craftedAmount = getCraftedAmount(event);
 
         int reduction = (int) ((5-customPlayer.getSkillLevel(SkillType.BLACKSMITH))/1.5) * craftedAmount;
+        reduction -= Math.random() * 4;
 
         int foodLevel = player.getFoodLevel();
 
@@ -63,12 +64,15 @@ public class CraftingListener implements Listener {
         if (pair != null && pair.firstValue() != null && pair.secondValue() != null) {
             double xpToGive = pair.secondValue() * craftedAmount;
 
+            int finalReduction = reduction;
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (player.isOnline()) {
                     customPlayer.addSkillXp(pair.firstValue(), xpToGive);
                     LOGGER.fine("Gave " + xpToGive + " XP to " + player.getName() +
                             " for crafting " + craftedAmount + "x " + crafted.getType());
-                    player.setFoodLevel(player.getFoodLevel() - reduction);
+                    if(finalReduction > 0) {
+                        player.setFoodLevel(player.getFoodLevel() - finalReduction);
+                    }
                 }
             }, 1L);
         }
