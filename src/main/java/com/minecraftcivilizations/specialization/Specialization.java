@@ -103,7 +103,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CraftingListener(this), this);
         getServer().getPluginManager().registerEvents(new FurnaceListener(), this);
         getServer().getPluginManager().registerEvents(new PreJoinEventListener(), this);
-        getServer().getPluginManager().registerEvents(new TownManager(), this);
+        new TownManager();
         getServer().getPluginManager().registerEvents(new MoveListener(), this);
         getServer().getPluginManager().registerEvents(new CrossBowListener(), this);
         getServer().getPluginManager().registerEvents(new LocalChat(), this);
@@ -112,12 +112,15 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ArmorDamageReductionListener(), this);
 
 
+        // Trigger initial town scan after server startup
         new BukkitRunnable() {
             @Override
             public void run() {
-                TownManager.scanAllPlayersForTowns();
+                if (TownManager.getInstance() != null) {
+                    TownManager.getInstance().scanAllPlayersForTowns();
+                }
             }
-        }.runTaskAsynchronously(this);
+        }.runTaskLater(this, 100L); // Run after 5 seconds to allow server to fully start
 
         World world = Bukkit.getWorlds().get(0);
         world.setGameRule(GameRule.SPAWN_RADIUS,100);
