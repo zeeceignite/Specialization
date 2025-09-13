@@ -39,12 +39,6 @@ public class BreakBlockListener implements Listener {
             CustomPlayer player = CoreUtil.getPlayer(event.getPlayer().getUniqueId());
             BlockData blockData = event.getBlock().getBlockData();
 
-            if (blockData instanceof Ageable age) {
-                if (age.getAge() < 7) {
-                    player.addSkillXp(pair.firstValue(), 0);
-                }
-            }
-
             if(isReinforced(event.getBlock())) {
                 Location dropLocation = event.getBlock().getLocation().add(0.5, 0.5, 0.5);
 
@@ -59,7 +53,11 @@ public class BreakBlockListener implements Listener {
                 removeReinforcement(event.getBlock());
             }
             if (pair != null && pair.firstValue() != null && pair.secondValue() != null) {
-                player.addSkillXp(pair.firstValue(), pair.secondValue());
+                if (blockData instanceof Ageable age && age.getAge() < 7) {
+                    player.addSkillXp(pair.firstValue(), 0);
+                }else {
+                    player.addSkillXp(pair.firstValue(), pair.secondValue());
+                }
             }
         }
         minerListener(event);
