@@ -43,9 +43,9 @@ public class CraftingListener implements Listener {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance()
                 .getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
 
-        int craftedAmount = getCraftedAmount(event);
+        int craftedAmount = (int) (getCraftedAmount(event) / (Math.random() * 3 + 1));
 
-        int reduction = (int) ((5-customPlayer.getSkillLevel(SkillType.BLACKSMITH))/1.5) * craftedAmount;
+        int reduction = (int) ((4-customPlayer.getSkillLevel(SkillType.BLACKSMITH))/1.5) * craftedAmount;
         reduction -= (int) (Math.random() * 4);
 
         int foodLevel = player.getFoodLevel();
