@@ -15,9 +15,14 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.Ageable;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
@@ -60,25 +65,53 @@ public class PlayerInteractListener implements Listener {
         e.setCancelled(true);
     }
 
+
+    @EventHandler
+    public void onWaterSmushCrop(BlockFromToEvent e){
+        if(e.getToBlock().getBlockData() instanceof Ageable){
+            e.getToBlock().setType(Material.AIR);
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerDestoryFarmland(BlockBreakEvent e){
+        if(e.getBlock().getType().equals(Material.FARMLAND)){
+            e.getBlock().getRelative(BlockFace.UP).setType(Material.AIR);
+            e.getBlock().setType(Material.AIR);
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerSmushCrop(PlayerInteractEvent e){
+        if(e.getAction().equals(Action.PHYSICAL)){
+            if(e.getClickedBlock() == null){
+                return;
+            }
+
+            if(e.getClickedBlock().getType().equals(Material.FARMLAND)){
+                e.setCancelled(true);
+                e.getClickedBlock().setType(Material.DIRT);
+                e.getClickedBlock().getRelative(BlockFace.UP).setType(Material.AIR);
+            }
+        }
+    }
+
     @EventHandler
     public void onLibrarianEnchantItem(PlayerInteractEvent e){
         if(!e.getAction().isRightClick() || !e.getPlayer().isSneaking() || e.getItem() == null || e.getHand().equals(EquipmentSlot.OFF_HAND)) return;
-        e.getPlayer().sendMessage(e.getPlayer().getInventory().getItemInOffHand().toString());
         if(!e.getPlayer().getInventory().getItemInOffHand().getType().equals(Material.BOOK)) return;
-        e.getPlayer().sendMessage("abc");
-
         CustomPlayer player = CoreUtil.getPlayer(e.getPlayer());
 
         int xpBase = SpecializationConfig.getLibrarianConfig().get("BLESS_ITEM_XP_LEVEL_REQUIREMENT", Integer.class);
         int skillMin = SpecializationConfig.getLibrarianConfig().get("BLESS_ITEM_LIBRARIAN_LEVEL", Integer.class);
         int xpLevelAmount = xpBase * (player.getSkillLevel(SkillType.LIBRARIAN) - skillMin + 1);
         if(xpLevelAmount > e.getPlayer().getLevel()) return;
-        e.getPlayer().sendMessage("def");
 
 
         String regex = SpecializationConfig.getLibrarianConfig().get("ENCHANTABLE_TOOL_REGEX", String.class);
         if(e.getItem().getType().name().toLowerCase().matches(regex) && player.getSkillLevel(SkillType.LIBRARIAN) >= skillMin) {
-            e.getPlayer().sendMessage("ghi");
 
             List<NamespacedKey> bannedBlessEnchants = SpecializationConfig.getLibrarianConfig().get("BANNED_BLESS_ENCHANTS", new TypeToken<>(){});
 
