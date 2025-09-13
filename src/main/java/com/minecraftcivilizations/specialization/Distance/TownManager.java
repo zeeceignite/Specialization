@@ -3,16 +3,7 @@ package com.minecraftcivilizations.specialization.Distance;
 import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
 import org.bukkit.*;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.player.PlayerBedEnterEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -20,523 +11,267 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Getter
-public class TownManager implements Listener {
+public class TownManager {
     @Getter
     public static TownManager instance;
+    
     private static final List<Town> towns = Collections.synchronizedList(new ArrayList<>());
     private static final Map<UUID, Location> playerSpawnLocations = new ConcurrentHashMap<>();
-    private static final Map<UUID, Location> lastScanLocations = new ConcurrentHashMap<>();
-    private static final int TOWN_RADIUS = 150;
-    private static final int MIN_BEDS = 5;
-    private static final int MOVEMENT_SCAN_THRESHOLD = 100;
-    private static final int SCAN_RADIUS_REDUCTION = 2;
-
-    private BukkitTask periodicScanTask;
+    
+    // Configuration
+    private static final int TOWN_RADIUS = 150; // Distance to consider spawns as same town
+    private static final int MIN_SPAWNS = 5;    // Minimum spawns needed to form a town
+    private static final int UPDATE_INTERVAL = 6000; // 5 minutes in ticks (20 ticks = 1 second)
+    
+    private BukkitTask updateTask;
     private boolean debugLogging = true;
 
     public TownManager() {
         instance = this;
-        startPeriodicScanning();
+        startPeriodicUpdates();
+        Specialization.logger.info("TownManager initialized - will update towns every 5 minutes");
     }
 
-    @EventHandler
-    public void onPlayerRespawn(PlayerRespawnEvent event) {
-        if (debugLogging) {
-            Specialization.logger.info("[DEBUG] PlayerRespawnEvent triggered for " + event.getPlayer().getName());
+    /**
+     * Start the periodic town detection system
+     */
+    public void startPeriodicUpdates() {
+        if (updateTask != null) {
+            updateTask.cancel();
         }
-        
-        Location spawnLocation = event.getRespawnLocation();
-        UUID playerId = event.getPlayer().getUniqueId();
 
-        playerSpawnLocations.put(playerId, spawnLocation);
-
-        new BukkitRunnable() {
+        updateTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (debugLogging) {
-                    Specialization.logger.info("[DEBUG] Processing respawn scan for " + event.getPlayer().getName() + 
-                        " at " + formatLocation(spawnLocation));
-                }
-                scanForTownsAroundLocation(spawnLocation, "Player Respawn: " + event.getPlayer().getName());
-                updateTownsList();
-                getDetectionStats();
+                updateTowns();
             }
-        }.runTaskAsynchronously(Specialization.getInstance());
-    }
-
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        if (debugLogging) {
-            Specialization.logger.info("[DEBUG] PlayerJoinEvent triggered for " + event.getPlayer().getName());
-        }
-        
-        Location loc = event.getPlayer().getLocation();
-        UUID playerId = event.getPlayer().getUniqueId();
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (debugLogging) {
-                    Specialization.logger.info("[DEBUG] Processing join scan for " + event.getPlayer().getName() + 
-                        " at " + formatLocation(loc));
-                }
-                scanForTownsAroundLocation(loc, "Player Join: " + event.getPlayer().getName());
-                updateTownsList();
-                getDetectionStats();
-            }
-        }.runTaskAsynchronously(Specialization.getInstance());
-    }
-
-    @EventHandler
-    public void onPlayerMove(PlayerMoveEvent event) {
-        Location to = event.getTo();
-        Location from = event.getFrom();
-        UUID playerId = event.getPlayer().getUniqueId();
-
-        if (to == null) return;
-
-        Location lastScan = lastScanLocations.get(playerId);
-
-        boolean shouldScan = false;
-        if (lastScan == null) {
-            shouldScan = true;
-        } else if (!lastScan.getWorld().equals(to.getWorld())) {
-            shouldScan = true;
-        } else if (lastScan.distance(to) > MOVEMENT_SCAN_THRESHOLD) {
-            shouldScan = true;
-        }
-
-        if (shouldScan) {
-            if (debugLogging) {
-                Specialization.logger.info("[DEBUG] PlayerMoveEvent triggered scan for " + event.getPlayer().getName() + 
-                    " - moved " + (lastScan != null ? String.format("%.1f", lastScan.distance(to)) : "first scan") + " blocks");
-            }
-            
-            lastScanLocations.put(playerId, to.clone());
-
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    scanForTownsAroundLocation(to, "Player Movement: " + event.getPlayer().getName());
-                    updateTownsList();
-                    getDetectionStats();
-                }
-            }.runTaskAsynchronously(Specialization.getInstance());
-        }
-    }
-
-    @EventHandler
-    public void onBlockPlace(BlockPlaceEvent event) {
-        if (debugLogging) {
-            Specialization.logger.info("[DEBUG] BlockPlaceEvent triggered for " + event.getPlayer().getName() + 
-                " placing " + event.getBlock().getType() + " at " + formatLocation(event.getBlock().getLocation()));
-        }
-        
-        Location blockLocation = event.getBlock().getLocation();
-        Player player = event.getPlayer();
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                scanForTownsAroundLocation(blockLocation, "Block Place: " + player.getName());
-                updateTownsList();
-                if (debugLogging) {
-                    getDetectionStats();
-                }
-            }
-        }.runTaskAsynchronously(Specialization.getInstance());
-    }
-
-    @EventHandler
-    public void onBlockBreak(BlockBreakEvent event) {
-        if (debugLogging) {
-            Specialization.logger.info("[DEBUG] BlockBreakEvent triggered for " + event.getPlayer().getName() + 
-                " breaking " + event.getBlock().getType() + " at " + formatLocation(event.getBlock().getLocation()));
-        }
-        
-        Location blockLocation = event.getBlock().getLocation();
-        Player player = event.getPlayer();
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                scanForTownsAroundLocation(blockLocation, "Block Break: " + player.getName());
-                updateTownsList();
-                if (debugLogging) {
-                    getDetectionStats();
-                }
-            }
-        }.runTaskAsynchronously(Specialization.getInstance());
-    }
-
-    @EventHandler
-    public void onPlayerSleep(PlayerBedEnterEvent event) {
-        if (event.getBedEnterResult() != PlayerBedEnterEvent.BedEnterResult.OK) {
-            return; // Only process successful bed entries
-        }
+        }.runTaskTimer(Specialization.getInstance(), 100L, UPDATE_INTERVAL); // Start after 5 seconds, repeat every 5 minutes
         
         if (debugLogging) {
-            Specialization.logger.info("[DEBUG] PlayerBedEnterEvent triggered for " + event.getPlayer().getName() + 
-                " sleeping at " + formatLocation(event.getBed().getLocation()));
-        }
-        
-        Location bedLocation = event.getBed().getLocation();
-        Player player = event.getPlayer();
-        UUID playerId = player.getUniqueId();
-
-        // Store this as a potential spawn location
-        playerSpawnLocations.put(playerId, bedLocation);
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                scanForTownsAroundLocation(bedLocation, "Player Sleep: " + player.getName());
-                updateTownsList();
-                if (debugLogging) {
-                    getDetectionStats();
-                }
-            }
-        }.runTaskAsynchronously(Specialization.getInstance());
-    }
-
-    public void startPeriodicScanning() {
-        if (periodicScanTask != null) {
-            periodicScanTask.cancel();
-        }
-
-        periodicScanTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    scanForTownsAroundLocation(player.getLocation(), "Periodic Scan: " + player.getName());
-                }
-                updateTownsList();
-
-                if (debugLogging) {
-                    Specialization.logger.info("Periodic scan completed. Total towns: " + towns.size());
-                    getDetectionStats();
-                }
-            }
-        }.runTaskTimerAsynchronously(Specialization.getInstance(), 6000, 6000);
-    }
-
-    public void stopPeriodicScanning() {
-        if (periodicScanTask != null) {
-            periodicScanTask.cancel();
-            periodicScanTask = null;
+            Specialization.logger.info("Started periodic town updates every 5 minutes");
         }
     }
 
-    public static void scanAllPlayersForTowns() {
-        if (instance != null && instance.debugLogging) {
-            Specialization.logger.info("[DEBUG] Starting comprehensive town scan...");
+    /**
+     * Stop the periodic updates
+     */
+    public void stopPeriodicUpdates() {
+        if (updateTask != null) {
+            updateTask.cancel();
+            updateTask = null;
+        }
+        if (debugLogging) {
+            Specialization.logger.info("Stopped periodic town updates");
+        }
+    }
+
+    /**
+     * Main method that collects all player spawn locations and clusters them into towns
+     */
+    public void updateTowns() {
+        if (debugLogging) {
+            Specialization.logger.info("[TownManager] Starting town update cycle...");
         }
 
+        // Clear existing towns
         towns.clear();
+        
+        // Collect all player spawn locations
+        collectPlayerSpawnLocations();
+        
+        if (playerSpawnLocations.isEmpty()) {
+            if (debugLogging) {
+                Specialization.logger.info("[TownManager] No player spawn locations found");
+            }
+            return;
+        }
 
+        // Cluster spawn locations into towns
+        List<List<Location>> clusters = clusterSpawnLocations();
+        
+        // Create towns from clusters
+        int townsCreated = 0;
+        for (List<Location> cluster : clusters) {
+            if (cluster.size() >= MIN_SPAWNS) {
+                Location center = calculateCenter(cluster);
+                Town town = new Town(center, cluster);
+                towns.add(town);
+                townsCreated++;
+                
+                if (debugLogging) {
+                    Specialization.logger.info(String.format("[TownManager] Created town at %s with %d spawns", 
+                        formatLocation(center), cluster.size()));
+                }
+            }
+        }
+
+        if (debugLogging) {
+            Specialization.logger.info(String.format("[TownManager] Update complete: %d towns created from %d spawn locations", 
+                townsCreated, playerSpawnLocations.size()));
+        }
+        
+        Specialization.logger.info(String.format("Town update complete: Found %d towns from %d player spawns", 
+            townsCreated, playerSpawnLocations.size()));
+    }
+
+    /**
+     * Collect spawn locations from all players (online and offline)
+     */
+    private void collectPlayerSpawnLocations() {
+        playerSpawnLocations.clear();
+        
+        // Get all players (online and offline)
         OfflinePlayer[] allPlayers = Bukkit.getOfflinePlayers();
-        Set<Location> scannedLocations = new HashSet<>();
         int playersProcessed = 0;
-        int locationsScanned = 0;
-
-        if (instance != null && instance.debugLogging) {
-            Specialization.logger.info("[DEBUG] Processing " + allPlayers.length + " total players for town detection");
-        }
-
+        
         for (OfflinePlayer player : allPlayers) {
-            playersProcessed++;
+            Location spawnLocation = null;
             
-            // Check bed spawn location
+            // Only get bed spawn location - ignore default world spawn
             if (player.getBedSpawnLocation() != null) {
-                Location bedLocation = player.getBedSpawnLocation();
-                playerSpawnLocations.put(player.getUniqueId(), bedLocation);
-
-                if (!isLocationNearScanned(bedLocation, scannedLocations, TOWN_RADIUS / SCAN_RADIUS_REDUCTION)) {
-                    if (instance != null && instance.debugLogging) {
-                        Specialization.logger.info("[DEBUG] Scanning bed location for " + player.getName() + 
-                            " at " + formatLocation(bedLocation));
+                Location bedSpawn = player.getBedSpawnLocation();
+                World world = bedSpawn.getWorld();
+                
+                if (world != null) {
+                    // Check if this is NOT the default world spawn location
+                    Location worldSpawn = world.getSpawnLocation();
+                    
+                    // Only use bed spawn if it's different from world spawn (with some tolerance)
+                    if (bedSpawn.distance(worldSpawn) > 10) { // 10 block tolerance
+                        spawnLocation = bedSpawn;
+                    } else if (debugLogging && playersProcessed < 5) {
+                        Specialization.logger.info(String.format("[TownManager] Ignoring %s's spawn - too close to world spawn", 
+                            player.getName()));
                     }
-                    scanForTownsAroundLocation(bedLocation, "Comprehensive Scan: " + player.getName());
-                    scannedLocations.add(bedLocation);
-                    locationsScanned++;
                 }
             }
             
-            // Also check if player is online and scan their current location
-            if (player.isOnline() && player.getPlayer() != null) {
-                Location currentLocation = player.getPlayer().getLocation();
-                if (!isLocationNearScanned(currentLocation, scannedLocations, TOWN_RADIUS / SCAN_RADIUS_REDUCTION)) {
-                    if (instance != null && instance.debugLogging) {
-                        Specialization.logger.info("[DEBUG] Scanning current location for online player " + player.getName() + 
-                            " at " + formatLocation(currentLocation));
+            if (spawnLocation != null && spawnLocation.getWorld() != null) {
+                // Only consider overworld spawns
+                if (spawnLocation.getWorld().getEnvironment() == World.Environment.NORMAL) {
+                    playerSpawnLocations.put(player.getUniqueId(), spawnLocation);
+                    playersProcessed++;
+                    
+                    if (debugLogging && playersProcessed <= 10) { // Only log first 10 to avoid spam
+                        Specialization.logger.info(String.format("[TownManager] Added bed spawn for %s at %s", 
+                            player.getName(), formatLocation(spawnLocation)));
                     }
-                    scanForTownsAroundLocation(currentLocation, "Online Player Scan: " + player.getName());
-                    scannedLocations.add(currentLocation);
-                    locationsScanned++;
                 }
             }
-        }
-
-        updateTownsList();
-        
-        if (instance != null && instance.debugLogging) {
-            Specialization.logger.info("[DEBUG] Comprehensive scan completed:");
-            Specialization.logger.info("[DEBUG] - Processed " + playersProcessed + " players");
-            Specialization.logger.info("[DEBUG] - Scanned " + locationsScanned + " unique locations");
-            Specialization.logger.info("[DEBUG] - Found " + towns.size() + " towns");
         }
         
-        Specialization.logger.info("Comprehensive scan completed. Found " + towns.size() + " towns.");
-    }
-
-    public static void scanEntireWorld() {
-        Specialization.logger.info("Starting systematic world scan...");
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (World world : Bukkit.getWorlds()) {
-                    if (world.getEnvironment() != World.Environment.NORMAL) {
-                        continue;
-                    }
-
-                    Specialization.logger.info("Scanning world: " + world.getName());
-
-                    int step = TOWN_RADIUS;
-                    int worldSize = 5000;
-
-                    for (int x = -worldSize; x <= worldSize; x += step) {
-                        for (int z = -worldSize; z <= worldSize; z += step) {
-                            int y = world.getHighestBlockYAt(x, z);
-                            if (y < world.getMinHeight()) y = 64;
-
-                            Location scanPoint = new Location(world, x, y, z);
-                            scanForTownsAroundLocation(scanPoint, "Systematic World Scan");
-                        }
-                    }
-                }
-
-                updateTownsList();
-                Specialization.logger.info("Systematic world scan completed. Total towns: " + towns.size());
-            }
-        }.runTaskAsynchronously(Specialization.getInstance());
-    }
-
-    private static boolean isLocationNearScanned(Location location, Set<Location> scannedLocations, int radius) {
-        for (Location scanned : scannedLocations) {
-            if (scanned.getWorld().equals(location.getWorld()) &&
-                    scanned.distance(location) <= radius) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static void scanForTownsAroundLocation(Location centerLocation, String source) {
-        World world = centerLocation.getWorld();
-        if (world == null) return;
-
-        if (instance != null && instance.debugLogging) {
-            Specialization.logger.info(String.format("[DEBUG] [%s] Starting scan at %s", 
-                source, formatLocation(centerLocation)));
-        }
-
-        List<Location> bedsInArea = findBedsInRadius(centerLocation, TOWN_RADIUS);
-
-        if (instance != null && instance.debugLogging && bedsInArea.size() > 0) {
-            Specialization.logger.info(String.format("[DEBUG] [%s] Scanning %s: found %d beds",
-                    source, formatLocation(centerLocation), bedsInArea.size()));
-        }
-
-        if (bedsInArea.size() >= MIN_BEDS) {
-            boolean townExists = false;
-            synchronized (towns) {
-                for (Town existingTown : towns) {
-                    if (existingTown.getCenterLocation().getWorld().equals(world) &&
-                            existingTown.getCenterLocation().distance(centerLocation) <= TOWN_RADIUS) {
-                        if (bedsInArea.size() > existingTown.getBedCount()) {
-                            existingTown.updateBeds(bedsInArea);
-                            if (instance != null && instance.debugLogging) {
-                                Specialization.logger.info(String.format("[DEBUG] [%s] Updated existing town at %s with %d beds",
-                                        source, formatLocation(existingTown.getCenterLocation()), bedsInArea.size()));
-                            }
-                        }
-                        townExists = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!townExists) {
-                Location townCenter = calculateTownCenter(bedsInArea);
-                Town newTown = new Town(townCenter, bedsInArea);
-                towns.add(newTown);
-
-                if (instance != null && instance.debugLogging) {
-                    Specialization.logger.info(String.format("[DEBUG] [%s] Created new town at %s with %d beds",
-                            source, formatLocation(townCenter), bedsInArea.size()));
-                }
-            }
-        } else if (instance != null && instance.debugLogging && bedsInArea.size() > 0) {
-            Specialization.logger.info(String.format("[DEBUG] [%s] Found %d beds at %s but need %d minimum for town",
-                    source, bedsInArea.size(), formatLocation(centerLocation), MIN_BEDS));
+        if (debugLogging) {
+            Specialization.logger.info(String.format("[TownManager] Collected %d valid bed spawn locations from %d total players", 
+                playersProcessed, allPlayers.length));
         }
     }
 
-    private static void scanForTownsAroundLocation(Location centerLocation) {
-        scanForTownsAroundLocation(centerLocation, "Legacy Scan");
-    }
-
-    private static List<Location> findBedsInRadius(Location center, int radius) {
-        List<Location> beds = new ArrayList<>();
-        World world = center.getWorld();
-        if (world == null) return beds;
-
-        if (instance != null && instance.debugLogging) {
-            Specialization.logger.info(String.format("[DEBUG] Starting bed search at %s with radius %d", 
-                formatLocation(center), radius));
-        }
-
-        int chunkRadius = (radius / 16) + 1;
-        int centerChunkX = center.getBlockX() >> 4;
-        int centerChunkZ = center.getBlockZ() >> 4;
+    /**
+     * Cluster spawn locations that are close together
+     */
+    private List<List<Location>> clusterSpawnLocations() {
+        List<Location> locations = new ArrayList<>(playerSpawnLocations.values());
+        List<List<Location>> clusters = new ArrayList<>();
+        Set<Location> processed = new HashSet<>();
         
-        int chunksScanned = 0;
-        int blocksScanned = 0;
-
-        for (int chunkX = centerChunkX - chunkRadius; chunkX <= centerChunkX + chunkRadius; chunkX++) {
-            for (int chunkZ = centerChunkZ - chunkRadius; chunkZ <= centerChunkZ + chunkRadius; chunkZ++) {
-
-                boolean wasLoaded = world.isChunkLoaded(chunkX, chunkZ);
-                if (!wasLoaded) {
-                    world.loadChunk(chunkX, chunkZ, true);
+        for (Location location : locations) {
+            if (processed.contains(location)) {
+                continue;
+            }
+            
+            // Start a new cluster
+            List<Location> cluster = new ArrayList<>();
+            Queue<Location> toProcess = new LinkedList<>();
+            toProcess.add(location);
+            
+            while (!toProcess.isEmpty()) {
+                Location current = toProcess.poll();
+                if (processed.contains(current)) {
+                    continue;
                 }
                 
-                chunksScanned++;
-
-                // Scan each block position in the chunk
-                for (int x = 0; x < 16; x++) {
-                    for (int z = 0; z < 16; z++) {
-                        int worldX = (chunkX << 4) + x;
-                        int worldZ = (chunkZ << 4) + z;
-                        
-                        // Check if this position is within our radius
-                        double distanceSquared = Math.pow(worldX - center.getX(), 2) + Math.pow(worldZ - center.getZ(), 2);
-                        if (distanceSquared > radius * radius) {
-                            continue;
-                        }
-
-                        int highestY = world.getHighestBlockYAt(worldX, worldZ);
-                        int minY = Math.max(world.getMinHeight(), highestY - 50);
-                        int maxY = Math.min(world.getMaxHeight() - 1, highestY + 10);
-                        
-                        for (int y = maxY; y >= minY; y--) {
-                            Block block = world.getBlockAt(worldX, y, worldZ);
-                            blocksScanned++;
-                            
-                            if (isBed(block)) {
-                                Location bedLoc = block.getLocation();
-                                // Double-check distance calculation with actual location
-                                if (center.distance(bedLoc) <= radius) {
-                                    beds.add(bedLoc);
-                                    if (instance != null && instance.debugLogging) {
-                                        Specialization.logger.info(String.format("[DEBUG] Found bed at %s (distance: %.1f)", 
-                                            formatLocation(bedLoc), center.distance(bedLoc)));
-                                    }
-                                }
-                            }
-                        }
+                processed.add(current);
+                cluster.add(current);
+                
+                // Find all nearby locations
+                for (Location other : locations) {
+                    if (!processed.contains(other) && 
+                        current.getWorld().equals(other.getWorld()) && 
+                        current.distance(other) <= TOWN_RADIUS) {
+                        toProcess.add(other);
                     }
                 }
-                
-                // Unload the chunk if we loaded it (to prevent memory issues)
-                if (!wasLoaded) {
-                    world.unloadChunk(chunkX, chunkZ, true);
+            }
+            
+            if (!cluster.isEmpty()) {
+                clusters.add(cluster);
+                if (debugLogging) {
+                    Specialization.logger.info(String.format("[TownManager] Found cluster with %d spawns near %s", 
+                        cluster.size(), formatLocation(cluster.get(0))));
                 }
             }
         }
-
-        if (instance != null && instance.debugLogging) {
-            Specialization.logger.info(String.format("[DEBUG] Bed search completed: scanned %d chunks, %d blocks, found %d beds", 
-                chunksScanned, blocksScanned, beds.size()));
-        }
-
-        return beds;
+        
+        return clusters;
     }
 
-    private static boolean isBed(Block block) {
-        Material material = block.getType();
-        
-        // Check if it's a bed material by name (covers all bed colors)
-        if (!material.name().endsWith("_BED")) {
-            return false;
-        }
-        
-        // Additional validation to ensure it's actually a bed block
-        try {
-            // Try to get bed data - this will fail if it's not actually a bed
-            if (block.getBlockData() instanceof org.bukkit.block.data.type.Bed bed) {
-                // Only count bed heads to avoid counting the same bed twice
-                boolean isHead = bed.getPart() == org.bukkit.block.data.type.Bed.Part.HEAD;
-                if (instance != null && instance.debugLogging && isHead) {
-                    Specialization.logger.info(String.format("[DEBUG] Validated bed head at %s (type: %s)", 
-                        formatLocation(block.getLocation()), material.name()));
-                }
-                return isHead;
-            }
-        } catch (Exception e) {
-            // Fallback for older versions or edge cases
-            if (instance != null && instance.debugLogging) {
-                Specialization.logger.warning(String.format("[DEBUG] Bed validation failed for %s: %s", 
-                    formatLocation(block.getLocation()), e.getMessage()));
-            }
-        }
-        
-        return false;
-    }
-
-    static Location calculateTownCenter(List<Location> beds) {
-        if (beds.isEmpty()) return null;
+    /**
+     * Calculate the center point of a group of locations
+     */
+    private Location calculateCenter(List<Location> locations) {
+        if (locations.isEmpty()) return null;
 
         double totalX = 0, totalY = 0, totalZ = 0;
-        World world = beds.getFirst().getWorld();
+        World world = locations.get(0).getWorld();
 
-        for (Location bed : beds) {
-            totalX += bed.getX();
-            totalY += bed.getY();
-            totalZ += bed.getZ();
+        for (Location loc : locations) {
+            totalX += loc.getX();
+            totalY += loc.getY();
+            totalZ += loc.getZ();
         }
 
         return new Location(world,
-                totalX / beds.size(),
-                totalY / beds.size(),
-                totalZ / beds.size());
+                totalX / locations.size(),
+                totalY / locations.size(),
+                totalZ / locations.size());
     }
 
-    private static void updateTownsList() {
-        synchronized (towns) {
-            for (int i = 0; i < towns.size(); i++) {
-                for (int j = i + 1; j < towns.size(); j++) {
-                    Town town1 = towns.get(i);
-                    Town town2 = towns.get(j);
+    /**
+     * Manually trigger a town update (for commands)
+     */
+    public void scanAllPlayersForTowns() {
+        Specialization.logger.info("Manual town scan triggered...");
+        updateTowns();
+    }
 
-                    if (town1.getCenterLocation().getWorld().equals(town2.getCenterLocation().getWorld()) &&
-                            town1.getCenterLocation().distance(town2.getCenterLocation()) <= TOWN_RADIUS) {
+    /**
+     * Get detection statistics
+     */
+    public void getDetectionStats() {
+        Specialization.logger.info("=== Town Detection Statistics ===");
+        Specialization.logger.info("Total towns: " + towns.size());
+        Specialization.logger.info("Player spawns tracked: " + playerSpawnLocations.size());
+        Specialization.logger.info("Update interval: 5 minutes");
+        Specialization.logger.info("Debug logging: " + (debugLogging ? "Enabled" : "Disabled"));
+        Specialization.logger.info("Town detection radius: " + TOWN_RADIUS + " blocks");
+        Specialization.logger.info("Minimum spawns for town: " + MIN_SPAWNS);
 
-                        if (town1.getBedCount() >= town2.getBedCount()) {
-                            towns.remove(j);
-                            j--;
-                        } else {
-                            towns.remove(i);
-                            i--;
-                            break;
-                        }
-                    }
-                }
+        if (!towns.isEmpty()) {
+            Specialization.logger.info("Current towns:");
+            for (int i = 0; i < Math.min(towns.size(), 10); i++) { // Show max 10 towns
+                Town town = towns.get(i);
+                Specialization.logger.info(String.format("  %d. %s (%d spawns)", 
+                    i + 1, formatLocation(town.getCenterLocation()), town.getBedCount()));
+            }
+            if (towns.size() > 10) {
+                Specialization.logger.info("  ... and " + (towns.size() - 10) + " more towns");
             }
         }
     }
 
+    /**
+     * Enable or disable debug logging
+     */
     public void setDebugLogging(boolean enabled) {
         this.debugLogging = enabled;
         if (enabled) {
@@ -546,41 +281,32 @@ public class TownManager implements Listener {
         }
     }
 
-    public void getDetectionStats() {
-        Specialization.logger.info("=== Town Detection Statistics ===");
-        Specialization.logger.info("Total towns discovered: " + towns.size());
-        Specialization.logger.info("Players tracked: " + playerSpawnLocations.size());
-        Specialization.logger.info("Periodic scanning: " + (periodicScanTask != null ? "Enabled" : "Disabled"));
-        Specialization.logger.info("Debug logging: " + (debugLogging ? "Enabled" : "Disabled"));
-
-        synchronized (towns) {
-            List<Town> recentTowns = towns.stream()
-                    .sorted((t1, t2) -> Long.compare(t2.getDiscoveredTime(), t1.getDiscoveredTime()))
-                    .limit(5)
-                    .toList();
-
-            Specialization.logger.info("Recent towns discovered:");
-            for (int i = 0; i < recentTowns.size(); i++) {
-                Town town = recentTowns.get(i);
-                Specialization.logger.info(String.format("  %d. %s (%d beds)",
-                        i + 1, formatLocation(town.getCenterLocation()), town.getBedCount()));
-            }
-        }
-    }
-
+    /**
+     * Cleanup when plugin is disabled
+     */
     public void cleanup() {
-        stopPeriodicScanning();
-        lastScanLocations.clear();
+        stopPeriodicUpdates();
+        playerSpawnLocations.clear();
+        towns.clear();
     }
 
+    /**
+     * Get all discovered towns
+     */
     public static List<Town> getTowns() {
         return new ArrayList<>(towns);
     }
 
+    /**
+     * Get all player spawn locations
+     */
     public static Map<UUID, Location> getPlayerSpawnLocations() {
         return new HashMap<>(playerSpawnLocations);
     }
 
+    /**
+     * Format a location for logging
+     */
     public static String formatLocation(Location loc) {
         return String.format("%.1f, %.1f, %.1f in %s",
                 loc.getX(), loc.getY(), loc.getZ(), loc.getWorld().getName());
