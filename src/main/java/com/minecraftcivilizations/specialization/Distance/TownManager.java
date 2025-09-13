@@ -392,32 +392,73 @@ public class TownManager implements Listener {
         World world = center.getWorld();
         if (world == null) return beds;
 
+        if (instance != null && instance.debugLogging) {
+            Specialization.logger.info(String.format("[DEBUG] Starting bed search at %s with radius %d", 
+                formatLocation(center), radius));
+        }
+
         int chunkRadius = (radius / 16) + 1;
         int centerChunkX = center.getBlockX() >> 4;
         int centerChunkZ = center.getBlockZ() >> 4;
+        
+        int chunksScanned = 0;
+        int blocksScanned = 0;
 
         for (int chunkX = centerChunkX - chunkRadius; chunkX <= centerChunkX + chunkRadius; chunkX++) {
             for (int chunkZ = centerChunkZ - chunkRadius; chunkZ <= centerChunkZ + chunkRadius; chunkZ++) {
 
-                if (!world.isChunkLoaded(chunkX, chunkZ)) {
-                    continue;
+                boolean wasLoaded = world.isChunkLoaded(chunkX, chunkZ);
+                if (!wasLoaded) {
+                    world.loadChunk(chunkX, chunkZ, true);
                 }
+                
+                chunksScanned++;
 
-                Chunk chunk = world.getChunkAt(chunkX, chunkZ);
-
+                // Scan each block position in the chunk
                 for (int x = 0; x < 16; x++) {
                     for (int z = 0; z < 16; z++) {
-                        for (int y = world.getMinHeight(); y < world.getMaxHeight(); y++) {
-                            Block block = chunk.getBlock(x, y, z);
-                            Location blockLoc = block.getLocation();
+                        int worldX = (chunkX << 4) + x;
+                        int worldZ = (chunkZ << 4) + z;
+                        
+                        // Check if this position is within our radius
+                        double distanceSquared = Math.pow(worldX - center.getX(), 2) + Math.pow(worldZ - center.getZ(), 2);
+                        if (distanceSquared > radius * radius) {
+                            continue;
+                        }
 
-                            if (center.distance(blockLoc) <= radius && isBed(block)) {
-                                beds.add(blockLoc);
+                        int highestY = world.getHighestBlockYAt(worldX, worldZ);
+                        int minY = Math.max(world.getMinHeight(), highestY - 50);
+                        int maxY = Math.min(world.getMaxHeight() - 1, highestY + 10);
+                        
+                        for (int y = maxY; y >= minY; y--) {
+                            Block block = world.getBlockAt(worldX, y, worldZ);
+                            blocksScanned++;
+                            
+                            if (isBed(block)) {
+                                Location bedLoc = block.getLocation();
+                                // Double-check distance calculation with actual location
+                                if (center.distance(bedLoc) <= radius) {
+                                    beds.add(bedLoc);
+                                    if (instance != null && instance.debugLogging) {
+                                        Specialization.logger.info(String.format("[DEBUG] Found bed at %s (distance: %.1f)", 
+                                            formatLocation(bedLoc), center.distance(bedLoc)));
+                                    }
+                                }
                             }
                         }
                     }
                 }
+                
+                // Unload the chunk if we loaded it (to prevent memory issues)
+                if (!wasLoaded) {
+                    world.unloadChunk(chunkX, chunkZ, true);
+                }
             }
+        }
+
+        if (instance != null && instance.debugLogging) {
+            Specialization.logger.info(String.format("[DEBUG] Bed search completed: scanned %d chunks, %d blocks, found %d beds", 
+                chunksScanned, blocksScanned, beds.size()));
         }
 
         return beds;
@@ -425,15 +466,32 @@ public class TownManager implements Listener {
 
     private static boolean isBed(Block block) {
         Material material = block.getType();
-        if (!material.name().endsWith("BED")) return false;
+        
+        // Check if it's a bed material by name (covers all bed colors)
+        if (!material.name().endsWith("_BED")) {
+            return false;
+        }
+        
+        // Additional validation to ensure it's actually a bed block
         try {
+            // Try to get bed data - this will fail if it's not actually a bed
             if (block.getBlockData() instanceof org.bukkit.block.data.type.Bed bed) {
-                return bed.getPart() == org.bukkit.block.data.type.Bed.Part.HEAD;
+                // Only count bed heads to avoid counting the same bed twice
+                boolean isHead = bed.getPart() == org.bukkit.block.data.type.Bed.Part.HEAD;
+                if (instance != null && instance.debugLogging && isHead) {
+                    Specialization.logger.info(String.format("[DEBUG] Validated bed head at %s (type: %s)", 
+                        formatLocation(block.getLocation()), material.name()));
+                }
+                return isHead;
             }
         } catch (Exception e) {
-            return (block.getX() + block.getY() + block.getZ()) % 2 == 0;
+            // Fallback for older versions or edge cases
+            if (instance != null && instance.debugLogging) {
+                Specialization.logger.warning(String.format("[DEBUG] Bed validation failed for %s: %s", 
+                    formatLocation(block.getLocation()), e.getMessage()));
+            }
         }
-
+        
         return false;
     }
 
