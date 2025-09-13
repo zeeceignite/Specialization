@@ -4,6 +4,7 @@ import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.commands.annotation.Default;
+import co.aikar.commands.annotation.Subcommand;
 import com.minecraftcivilizations.specialization.Analytics.AnalyticsData;
 import com.minecraftcivilizations.specialization.Distance.Town;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
@@ -14,6 +15,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,7 @@ public class TownsCommand extends BaseCommand {
         sender.sendRichMessage("<green>=== Detected Towns ===");
         if (TownManager.getTowns().isEmpty()) {
             sender.sendRichMessage("<yellow>No towns detected yet.");
+            sender.sendRichMessage("<gray>Towns are automatically detected every 5 minutes based on player spawn locations.");
         } else {
             // Get current online players for analytics
             List<CustomPlayer> allPlayers = Bukkit.getOnlinePlayers().stream()
@@ -37,7 +40,7 @@ public class TownsCommand extends BaseCommand {
             for (int i = 0; i < TownManager.getTowns().size(); i++) {
                 Town town = TownManager.getTowns().get(i);
                 sender.sendRichMessage("<aqua>Town " + (i + 1) + ": <white>" +
-                        town.getBedCount() + " beds at " +
+                        town.getSpawnCount() + " spawns at " +
                         TownManager.formatLocation(town.getCenterLocation()));
                 
                 // Get town players for analytics
@@ -71,6 +74,54 @@ public class TownsCommand extends BaseCommand {
                 
                 sender.sendRichMessage(""); // Empty line for spacing
             }
+        }
+    }
+    
+    @Subcommand("scan")
+    @CommandPermission("towndetector.scan")
+    public void onTownScan(CommandSender sender) {
+        sender.sendRichMessage("<yellow>Starting manual town scan...");
+        sender.sendRichMessage("<gray>This will scan all player spawn locations for town clusters.");
+        
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                // Trigger manual town update using new TownManager method
+                TownManager.getInstance().scanAllPlayersForTowns();
+                
+                // Send completion message on main thread
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        sender.sendRichMessage("<green>Town scan completed!");
+                        sender.sendRichMessage("<aqua>Found " + TownManager.getTowns().size() + " towns total.");
+                        
+                        // Show some statistics
+                        if (TownManager.getInstance() != null) {
+                            TownManager.getInstance().getDetectionStats();
+                        }
+                    }
+                }.runTask(com.minecraftcivilizations.specialization.Specialization.getInstance());
+            }
+        }.runTaskAsynchronously(com.minecraftcivilizations.specialization.Specialization.getInstance());
+    }
+    
+    @Subcommand("stats")
+    @CommandPermission("towndetector.stats")
+    public void onTownStats(CommandSender sender) {
+        sender.sendRichMessage("<green>=== Town Detection Statistics ===");
+        sender.sendRichMessage("<gray>Total towns: <white>" + TownManager.getTowns().size());
+        sender.sendRichMessage("<gray>Player spawns tracked: <white>" + TownManager.getPlayerSpawnLocations().size());
+        sender.sendRichMessage("<gray>Update interval: <white>5 minutes");
+        sender.sendRichMessage("<gray>Town detection radius: <white>150 blocks");
+        sender.sendRichMessage("<gray>Minimum spawns for town: <white>5");
+        
+        if (!TownManager.getTowns().isEmpty()) {
+            sender.sendRichMessage("<gray>Largest town: <white>" + 
+                TownManager.getTowns().stream()
+                    .mapToInt(Town::getSpawnCount)
+                    .max()
+                    .orElse(0) + " spawns");
         }
     }
     
@@ -149,6 +200,7 @@ public class TownsCommand extends BaseCommand {
         for (SkillType skillType : SkillType.values()) {
             List<Double> skillMasteryPercentages = townPlayers.stream()
                     .mapToDouble(player -> player.getPercentOfTotal(skillType))
+                    .filter(Double::isFinite) // Filter out NaN and Infinity values
                     .boxed()
                     .toList();
             
@@ -157,7 +209,13 @@ public class TownsCommand extends BaseCommand {
                         .mapToDouble(Double::doubleValue)
                         .average()
                         .orElse(0.0);
-                masteryPercentages.put(skillType, Math.round(averageMastery * 100.0) / 100.0); // Round to 2 decimal places
+                
+                // Additional safety check for NaN/Infinity before storing
+                if (Double.isFinite(averageMastery)) {
+                    masteryPercentages.put(skillType, Math.round(averageMastery * 100.0) / 100.0);
+                } else {
+                    masteryPercentages.put(skillType, 0.0); // Default to 0.0 for invalid values
+                }
             }
         }
         
@@ -168,5 +226,4 @@ public class TownsCommand extends BaseCommand {
         return skillType.name().substring(0, 1).toUpperCase() + 
                skillType.name().toLowerCase().substring(1);
     }
-
 }
