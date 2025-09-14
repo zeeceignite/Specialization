@@ -86,6 +86,7 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     public void onPlayerDestroySugarcaneSource(BlockBreakEvent e){
         Block nextBlock = e.getBlock().getRelative(BlockFace.UP);
+        if(e.getBlock().getType().equals(Material.SUGAR_CANE)) return;
         while(nextBlock.getType().equals(Material.SUGAR_CANE)){
             nextBlock.setType(Material.AIR);
             nextBlock = nextBlock.getRelative(BlockFace.UP);
