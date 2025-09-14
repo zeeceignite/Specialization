@@ -15,6 +15,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.enchantments.Enchantment;
@@ -65,7 +66,6 @@ public class PlayerInteractListener implements Listener {
         e.setCancelled(true);
     }
 
-
     @EventHandler
     public void onWaterSmushCrop(BlockFromToEvent e){
         if(e.getToBlock().getBlockData() instanceof Ageable){
@@ -80,6 +80,15 @@ public class PlayerInteractListener implements Listener {
             e.getBlock().getRelative(BlockFace.UP).setType(Material.AIR);
             e.getBlock().setType(Material.AIR);
             e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerDestroySugarcaneSource(BlockBreakEvent e){
+        Block nextBlock = e.getBlock().getRelative(BlockFace.UP);
+        while(nextBlock.getType().equals(Material.SUGAR_CANE)){
+            nextBlock.setType(Material.AIR);
+            nextBlock = nextBlock.getRelative(BlockFace.UP);
         }
     }
 
