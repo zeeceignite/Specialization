@@ -53,7 +53,7 @@ public class BreakBlockListener implements Listener {
                 removeReinforcement(event.getBlock());
             }
             if (pair != null && pair.firstValue() != null && pair.secondValue() != null) {
-                if (blockData instanceof Ageable age && age.getAge() < 7) {
+                if (blockData instanceof Ageable age && age.getMaximumAge() == age.getAge()) {
                     player.addSkillXp(pair.firstValue(), 0);
                 }else {
                     player.addSkillXp(pair.firstValue(), pair.secondValue());
