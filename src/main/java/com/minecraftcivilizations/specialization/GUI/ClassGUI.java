@@ -7,6 +7,8 @@ import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUI;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem;
+import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Player.CustomPlayerManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -24,8 +26,8 @@ import static com.minecraftcivilizations.specialization.Skill.SkillType.getDispl
 
 public class ClassGUI extends GUI {
 
-    public ClassGUI(String title) {
-        super(Component.text(title), 54);
+    public ClassGUI() {
+        super(Component.text("Your Specialization Stats"), 54);
     }
 
     @Override
@@ -42,6 +44,7 @@ public class ClassGUI extends GUI {
         }
 
         this.getItems().put(4, makeUserItem(customPlayer.getName()));
+        this.getItems().put(45, makeRecipesItem(player));
         this.getItems().put(53, makeSettingsItem(player));
 
         player.openInventory(Bukkit.createInventory(player, 54));
@@ -55,6 +58,15 @@ public class ClassGUI extends GUI {
         settingsItemMeta.displayName(Component.text("Settings").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
         settings.setItemMeta(settingsItemMeta);
         return new GUIItem(settings, () -> new SettingsGUI().setParentGUI(this).open(player));
+    }
+
+    private GUIItem makeRecipesItem(Player player){
+        ItemStack recipes = ItemStack.of(Material.WRITTEN_BOOK);
+        ItemMeta recipesItemMeta = recipes.getItemMeta();
+        recipesItemMeta.addItemFlags(ItemFlag.values());
+        recipesItemMeta.displayName(Component.text("Recipes").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+        recipes.setItemMeta(recipesItemMeta);
+        return new GUIItem(recipes, () -> new RecipesGUI((CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId()), null).open(player));
     }
 
     private GUIItem makeUserItem(Component name){
