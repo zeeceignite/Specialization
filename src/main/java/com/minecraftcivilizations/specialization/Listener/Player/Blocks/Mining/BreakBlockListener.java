@@ -39,12 +39,6 @@ public class BreakBlockListener implements Listener {
             CustomPlayer player = CoreUtil.getPlayer(event.getPlayer().getUniqueId());
             BlockData blockData = event.getBlock().getBlockData();
 
-            if (blockData instanceof Ageable age) {
-                if (age.getAge() < 7) {
-                    player.addSkillXp(pair.firstValue(), 0);
-                }
-            }
-
             if(isReinforced(event.getBlock())) {
                 Location dropLocation = event.getBlock().getLocation().add(0.5, 0.5, 0.5);
 
@@ -53,13 +47,17 @@ public class BreakBlockListener implements Listener {
                     event.getPlayer().sendMessage("You have received 1 iron ingot for breaking heavily reinforced blocks!");
                 }
                 if(isLightlyReinforced(event.getBlock())) {
-                    event.getBlock().getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_NUGGET, 1));
+                    event.getBlock().getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT, 1));
                     event.getPlayer().sendMessage("You have received 1 iron nugget for breaking lightly reinforced blocks!");
                 }
                 removeReinforcement(event.getBlock());
             }
             if (pair != null && pair.firstValue() != null && pair.secondValue() != null) {
-                player.addSkillXp(pair.firstValue(), pair.secondValue());
+                if (blockData instanceof Ageable age && age.getMaximumAge() == age.getAge()) {
+                    player.addSkillXp(pair.firstValue(), 0);
+                }else {
+                    player.addSkillXp(pair.firstValue(), pair.secondValue());
+                }
             }
         }
         minerListener(event);
