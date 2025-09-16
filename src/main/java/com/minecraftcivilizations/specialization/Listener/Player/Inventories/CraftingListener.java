@@ -40,39 +40,25 @@ public class CraftingListener implements Listener {
             return;
         }
 
-        CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance()
-                .getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-
-        int craftedAmount = getCraftedAmount(event);
-
-        int reduction = (int) ((5-customPlayer.getSkillLevel(SkillType.BLACKSMITH))/1.5) *  (int) (craftedAmount/ (Math.random() * 3 + 1));
-        reduction -= (int) (Math.random() * 4);
-
-        int foodLevel = player.getFoodLevel();
-
-        if(foodLevel < reduction){
-            event.setCancelled(true);
-            return;
-        }
-
         ItemStack crafted = event.getCurrentItem();
 
+        CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance()
+                .getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
 
         Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromCraftingConfig()
                 .get(crafted.getType(), new TypeToken<>() {});
 
         if (pair != null && pair.firstValue() != null && pair.secondValue() != null) {
+            int craftedAmount = getCraftedAmount(event);
             double xpToGive = pair.secondValue() * craftedAmount;
 
-            int finalReduction = reduction;
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (player.isOnline()) {
                     customPlayer.addSkillXp(pair.firstValue(), xpToGive);
                     LOGGER.fine("Gave " + xpToGive + " XP to " + player.getName() +
                             " for crafting " + craftedAmount + "x " + crafted.getType());
-                    if(finalReduction > 0) {
-                        player.setFoodLevel(player.getFoodLevel() - finalReduction);
-                    }
+                    int reduction = 5 - Math.min(3,5-customPlayer.getSkillLevel(SkillType.BLACKSMITH));
+                    player.setFoodLevel(player.getFoodLevel() - reduction);
                 }
             }, 1L);
         }
@@ -88,7 +74,7 @@ public class CraftingListener implements Listener {
 
         return switch (action) {
             case PICKUP_ALL, PICKUP_SOME, PICKUP_HALF, PICKUP_ONE, MOVE_TO_OTHER_INVENTORY, PLACE_ALL, PLACE_SOME,
-                 PLACE_ONE, SWAP_WITH_CURSOR, HOTBAR_SWAP, DROP_ALL_CURSOR, DROP_ALL_SLOT, DROP_ONE_CURSOR, DROP_ONE_SLOT -> true;
+                 PLACE_ONE, SWAP_WITH_CURSOR -> true;
             default -> false;
         };
     }

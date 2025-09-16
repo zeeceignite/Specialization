@@ -123,30 +123,29 @@ public class PlayerDeathListener implements Listener {
         CustomPlayer customPlayer = CoreUtil.getPlayer(player);
         // Use new non-cumulative death tracking
         customPlayer.getAnalyticPlayerData().incrementDeathsThisPeriod();
-        
-        // Reduce max health
-        double deathReducedMaxHealth = SpecializationConfig.getHealthConfig().get("DEATH_REDUCED_MAX_HEALTH", Double.class);
-        if (SpecializationConfig.getHealthConfig().get("HEALTH_ENABLED", Boolean.class) && deathReducedMaxHealth > 0) {
-            if(customPlayer.getSkillLevel(SkillType.BUILDER) >= 1 || customPlayer.getSkillLevel(SkillType.HEALER) >= 1 ||
-            customPlayer.getSkillLevel(SkillType.BLACKSMITH) >= 1 || customPlayer.getSkillLevel(SkillType.GUARDSMAN) >= 1 ||
-                    customPlayer.getSkillLevel(SkillType.MINER) >= 1 || customPlayer.getSkillLevel(SkillType.LIBRARIAN) >= 1 ||
-                    customPlayer.getSkillLevel(SkillType.FARMER) >= 1){
-                Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(deathReducedMaxHealth);
-            }
-        }
-
         if(player.getLastDamageCause() == null) return;
-
         EntityDamageEvent.DamageCause cause = player.getLastDamageCause().getCause();
         AnalyticsData.deaths.putIfAbsent(cause, 0);
         AnalyticsData.deaths.put(cause, AnalyticsData.deaths.get(cause) + 1);
         customPlayer.getSkills().forEach(skill -> {
             customPlayer.addSkillXp(skill.getSkillType(), -skill.getXp());
         });
+        
+        // Reduce max health
+        double deathReducedMaxHealth = SpecializationConfig.getHealthConfig().get("DEATH_REDUCED_MAX_HEALTH", Double.class);
+        if (SpecializationConfig.getHealthConfig().get("HEALTH_ENABLED", Boolean.class) && deathReducedMaxHealth > 0) {
 
+            if(customPlayer.getSkillLevel(SkillType.BUILDER) >= 1 || customPlayer.getSkillLevel(SkillType.HEALER) >= 1 ||
+            customPlayer.getSkillLevel(SkillType.BLACKSMITH) >= 1 || customPlayer.getSkillLevel(SkillType.GUARDSMAN) >= 1 ||
+                    customPlayer.getSkillLevel(SkillType.MINER) >= 1 || customPlayer.getSkillLevel(SkillType.LIBRARIAN) >= 1 ||
+                    customPlayer.getSkillLevel(SkillType.FARMER) >= 1){
+                double currentMaxHealth = Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).getValue();
+                Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(deathReducedMaxHealth);
+            }
+        }
         Bukkit.getScheduler().runTaskLater(Specialization.getInstance(),() -> {
             player.kick(Component.text("You died."));
-        }, 10);
+        }, 3);
     }
 
     public void applyDownedEffects(Player player) {

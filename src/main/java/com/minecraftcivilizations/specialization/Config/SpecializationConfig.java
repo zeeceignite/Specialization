@@ -280,7 +280,7 @@ public class SpecializationConfig {
         xpGainFromBreakingConfig = new ConfigFile(Specialization.getInstance(), "xpGainFromBreaking", null, fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isBlock()) {
-                    fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.FARMER, "0")));
+                    fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.FARMER, "1")));
                 }
             }
         });
@@ -288,7 +288,7 @@ public class SpecializationConfig {
         xpGainFromPlacingConfig = new ConfigFile(Specialization.getInstance(), "xpGainFromPlacing", null, fields -> {
             for (Material inputMaterial : Material.values()) {
                 if (inputMaterial.isBlock()) {
-                    fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.FARMER, "0")));
+                    fields.add(new Pair<>(inputMaterial, new Pair<>(SkillType.FARMER, "1")));
                 }
             }
         });

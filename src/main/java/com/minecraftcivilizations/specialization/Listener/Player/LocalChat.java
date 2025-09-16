@@ -9,8 +9,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.List;
 
@@ -31,16 +29,6 @@ public class LocalChat implements Listener {
             });
         });
         sender.sendRichMessage(defaultFormat.formatted(sender.getName(), originalMessage));
-    }
-
-    @EventHandler
-    public void onJoin(PlayerJoinEvent e){
-        e.joinMessage(null);
-    }
-
-    @EventHandler
-    public void onLeave(PlayerQuitEvent e){
-        e.quitMessage(null);
     }
 
     private boolean tryHandleGlobalChat(Player player, String message) {
