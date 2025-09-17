@@ -42,6 +42,22 @@ public class SettingsGUI extends GUI {
             getItems().clear();
             SettingsGUI.this.open(player);
         }));
+
+        if (customPlayer.isNewRecipeGUIIteration()) {
+            settings = ItemStack.of(Material.GREEN_DYE);
+        } else {
+            settings = ItemStack.of(Material.RED_DYE);
+        }
+        settingsItemMeta = settings.getItemMeta();
+        settingsItemMeta.addItemFlags(ItemFlag.values());
+        settingsItemMeta.displayName(Component.text("Enable/Disable The Different Recipes GUI").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+        settings.setItemMeta(settingsItemMeta);
+        this.getItems().put(11, new GUIItem(settings, () -> {
+            customPlayer.setNewRecipeGUIIteration(!customPlayer.isNewRecipeGUIIteration());
+            getItems().clear();
+            SettingsGUI.this.open(player);
+        }));
+
         super.open(player);
     }
 }

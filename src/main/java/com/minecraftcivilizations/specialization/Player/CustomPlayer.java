@@ -46,6 +46,9 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     private boolean isAdvancedClassesGUIEnabled = false;
     @Getter
     @Setter
+    private boolean isNewRecipeGUIIteration = false;
+    @Getter
+    @Setter
     private AnalyticPlayerData analyticPlayerData = new AnalyticPlayerData();
     @Getter
     private boolean isDowned = false;

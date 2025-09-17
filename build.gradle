@@ -51,7 +51,7 @@ configurations {
 
 dependencies {
     paperweight.paperDevBundle("1.21.6-R0.1-SNAPSHOT")
-    implementation("com.minecraftcivilizations:minecraftcivilizationscore:0.5.0")
+    implementation("com.minecraftcivilizations:minecraftcivilizationscore:0.5.1")
     implementation("com.minecraftcivilizations:weight:1.2.1")
     implementation "com.google.code.gson:gson:2.13.1"
     implementation "co.aikar:acf-paper:0.5.1-SNAPSHOT"
