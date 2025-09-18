@@ -61,7 +61,7 @@ public class ClassGUI extends GUI {
     }
 
     private GUIItem makeRecipesItem(Player player){
-        ItemStack recipes = ItemStack.of(Material.WRITTEN_BOOK);
+        ItemStack recipes = ItemStack.of(Material.KNOWLEDGE_BOOK);
         ItemMeta recipesItemMeta = recipes.getItemMeta();
         recipesItemMeta.addItemFlags(ItemFlag.values());
         recipesItemMeta.displayName(Component.text("Recipes").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
