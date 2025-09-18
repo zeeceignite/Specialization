@@ -196,7 +196,9 @@ public class ClassGUI extends GUI {
                     }
                 });
                 itemStack.setItemMeta(itemMeta);
-                this.getItems().put(i++, new GUIItem(itemStack, null));
+                this.getItems().put(i++, new GUIItem(itemStack, () -> {
+                    new RecipesGUI(customPlayer, skill.getSkillType()).open(Bukkit.getPlayer(customPlayer.getUuid()));
+                }));
             }
 
         }
@@ -247,7 +249,9 @@ public class ClassGUI extends GUI {
                 }
             });
             itemStack.setItemMeta(itemMeta);
-            this.getItems().put(i++, new GUIItem(itemStack, null));
+            this.getItems().put(i++, new GUIItem(itemStack, () -> {
+                new RecipesGUI(customPlayer, skill.getSkillType()).open(Bukkit.getPlayer(customPlayer.getUuid()));
+            }));
         }
     }
 }

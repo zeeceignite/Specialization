@@ -27,7 +27,7 @@ public class Skill {
         return out_min + (x - in_min) * (out_max - out_min) / (in_max - in_min);
     }
 
-    public void addXp(double xp) {
+    public void xp(double xp) {
         this.xp += xp;
         this.lastUpdate = System.currentTimeMillis();
     }
