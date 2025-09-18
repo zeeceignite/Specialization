@@ -120,7 +120,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
                 Set<NamespacedKey> recipes =
                         SpecializationConfig.getUnlockedRecipesConfig().get(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(currentLevel), new TypeToken<>(){});
                 for (NamespacedKey entry : recipes) {
-                    Bukkit.getPlayer(this.getUuid()).discoverRecipe(entry);
+                    player.discoverRecipe(entry);
                 }
                 currentLevel--;
             }
