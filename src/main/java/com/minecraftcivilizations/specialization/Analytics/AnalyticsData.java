@@ -197,15 +197,15 @@ public record AnalyticsData(
     private static Map<String, TownSpecificData> getTownSpecificData(List<CustomPlayer> allPlayers) {
         Map<String, TownSpecificData> townData = new HashMap<>();
         
-        // Get all towns with 3+ spawns (MIN_SPAWNS from TownManager)
+        // Get all towns with 5+ beds (MIN_BEDS from TownManager)
         List<Town> eligibleTowns = TownManager.getTowns().stream()
-                .filter(town -> town.getSpawnCount() >= 5)
+                .filter(town -> town.getBedCount() >= 5)
                 .toList();
         
-        Bukkit.getLogger().info("Found " + TownManager.getTowns().size() + " total towns, " + eligibleTowns.size() + " eligible towns (3+ spawns)");
+        Bukkit.getLogger().info("Found " + TownManager.getTowns().size() + " total towns, " + eligibleTowns.size() + " eligible towns (5+ beds)");
         
         for (Town town : eligibleTowns) {
-            Bukkit.getLogger().info("Processing town with " + town.getSpawnCount() + " spawns at " + town.getCenterLocation());
+            Bukkit.getLogger().info("Processing town with " + town.getBedCount() + " beds at " + town.getCenterLocation());
             
             List<CustomPlayer> townPlayers = allPlayers.stream()
                     .filter(player -> {
@@ -256,7 +256,7 @@ public record AnalyticsData(
             
             if (!townPlayers.isEmpty()) {
                 TownSpecificData data = calculateTownSpecificData(town, townPlayers, eligibleTowns);
-                String townKey = "Town_" + town.getSpawnCount() + "spawns_" + 
+                String townKey = "Town_" + town.getBedCount() + "beds_" + 
                     (int)town.getCenterLocation().getX() + "_" + (int)town.getCenterLocation().getZ();
                 townData.put(townKey, data);
                 Bukkit.getLogger().info("Added town data for: " + townKey);

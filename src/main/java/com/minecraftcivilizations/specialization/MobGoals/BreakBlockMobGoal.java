@@ -79,9 +79,7 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
         float breakPercentagePerTick = SpecializationConfig.getMobConfig().get("VISUAL_BREAKING_INCREASE_PER_TICK_PERCENTAGE", Float.class);
         breakAmount += breakPercentagePerTick / 100f;
         if(breakAmount >= 1.0){
-            if(block.getBlockData().getMaterial().getHardness() > 0) {
-                block.breakNaturally(true, true);
-            }
+            block.breakNaturally();
             return;
         }
 

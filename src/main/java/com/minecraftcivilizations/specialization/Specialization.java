@@ -15,17 +15,18 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Data.MongoConnection;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
+import com.minecraftcivilizations.specialization.Listener.Player.BedListener;
 import com.minecraftcivilizations.specialization.Listener.BurnListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.ExplodeListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.MobKillListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.MobListeners;
-import com.minecraftcivilizations.specialization.Listener.Player.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.BreakBlockListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.PlayerMineListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.PlaceBlockListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Combat.ArmorDamageReductionListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Combat.Berserk;
 import com.minecraftcivilizations.specialization.Listener.Player.Combat.CrossBowListener;
+import com.minecraftcivilizations.specialization.Listener.Player.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.FoodInteractionListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.PlayerInteractEntityListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.PlayerInteractListener;
@@ -50,8 +51,6 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
-import org.bukkit.GameRule;
-import org.bukkit.World;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -103,7 +102,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CraftingListener(this), this);
         getServer().getPluginManager().registerEvents(new FurnaceListener(), this);
         getServer().getPluginManager().registerEvents(new PreJoinEventListener(), this);
-        new TownManager();
+        getServer().getPluginManager().registerEvents(new TownManager(), this);
         getServer().getPluginManager().registerEvents(new MoveListener(), this);
         getServer().getPluginManager().registerEvents(new CrossBowListener(), this);
         getServer().getPluginManager().registerEvents(new LocalChat(), this);
@@ -112,26 +111,12 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ArmorDamageReductionListener(), this);
 
 
-        // Trigger initial town scan after server startup
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (TownManager.getInstance() != null) {
-                    TownManager.getInstance().scanAllPlayersForTowns();
-                }
+                TownManager.scanAllPlayersForTowns();
             }
-        }.runTaskLater(this, 100L); // Run after 5 seconds to allow server to fully start
-
-        World world = Bukkit.getWorlds().get(0);
-        world.setGameRule(GameRule.SPAWN_RADIUS,100);
-        world.setGameRule(GameRule.REDUCED_DEBUG_INFO,true);
-        world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN,true);
-        world.setGameRule(GameRule.NATURAL_REGENERATION,false);
-        world.setGameRule(GameRule.SHOW_DEATH_MESSAGES,false);
-        world.setGameRule(GameRule.LOCATOR_BAR,false);
-        world.setGameRule(GameRule.WATER_SOURCE_CONVERSION, false);
-        world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS,false);
-
+        }.runTaskAsynchronously(this);
 
 
         Recipes.init();
@@ -229,7 +214,6 @@ public final class Specialization extends JavaPlugin {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
-        TownManager.getInstance().cleanup();
         DataManager.getScheduler().shutdown();
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().saveAll();
     }
