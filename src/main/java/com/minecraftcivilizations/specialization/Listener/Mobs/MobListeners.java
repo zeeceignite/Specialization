@@ -5,7 +5,6 @@ import com.minecraftcivilizations.specialization.MobGoals.BreakBlockMobGoal;
 import com.minecraftcivilizations.specialization.MobGoals.TargetPlayerMobGoal;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
-import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
@@ -34,8 +33,8 @@ public class MobListeners implements Listener {
         }
         attribute.setBaseValue(attribute.getValue() + speedAddition);
 
-        Bukkit.getMobGoals().addGoal(monster,2, new BreakBlockMobGoal(monster));
-        Bukkit.getMobGoals().addGoal(monster,3, new TargetPlayerMobGoal(monster));
+        Bukkit.getMobGoals().addGoal(monster,3, new BreakBlockMobGoal(monster));
+        Bukkit.getMobGoals().addGoal(monster,0, new TargetPlayerMobGoal(monster));
     }
 
     @EventHandler
