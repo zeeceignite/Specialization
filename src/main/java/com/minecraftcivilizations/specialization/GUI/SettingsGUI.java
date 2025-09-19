@@ -58,6 +58,20 @@ public class SettingsGUI extends GUI {
             SettingsGUI.this.open(player);
         }));
 
+        if (customPlayer.isSoundEnabled()) {
+            settings = ItemStack.of(Material.GREEN_DYE);
+        } else {
+            settings = ItemStack.of(Material.RED_DYE);
+        }
+        settingsItemMeta = settings.getItemMeta();
+        settingsItemMeta.addItemFlags(ItemFlag.values());
+        settingsItemMeta.displayName(Component.text("Enable/Disable XP gain sound").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+        settings.setItemMeta(settingsItemMeta);
+        this.getItems().put(12, new GUIItem(settings, () -> {
+            customPlayer.setSoundEnabled(!customPlayer.isSoundEnabled());
+            getItems().clear();
+            SettingsGUI.this.open(player);
+        }));
         super.open(player);
     }
 }

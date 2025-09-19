@@ -43,6 +43,9 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     private boolean isAdvancedClassesGUIEnabled = false;
     @Getter
     @Setter
+    private boolean isSoundEnabled = true;
+    @Getter
+    @Setter
     private boolean isNewRecipeGUIIteration = false;
     @Getter
     @Setter
