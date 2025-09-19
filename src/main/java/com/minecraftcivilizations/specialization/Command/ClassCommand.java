@@ -14,7 +14,7 @@ public class ClassCommand extends BaseCommand {
 
     @Default
     public void onClass(@NotNull Player player) {
-        new ClassGUI("Your Specialization Stats").open(player);
+        new ClassGUI().open(player);
     }
 
 }
