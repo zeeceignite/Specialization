@@ -231,7 +231,6 @@ public final class Specialization extends JavaPlugin {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
-        TownManager.getInstance().cleanup();
         DataManager.getScheduler().shutdown();
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().saveAll();
     }

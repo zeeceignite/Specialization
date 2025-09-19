@@ -6,7 +6,6 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
-import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -101,7 +100,6 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
         // Update team assignment based on highest skill
         TeamManager.setTeam(Bukkit.getPlayer(getUuid()));
-
 
 
         if (previousLevel != currentLevel) {
