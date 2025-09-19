@@ -6,6 +6,7 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.util.LoreUtils;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,10 +14,7 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizati
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
@@ -43,6 +41,12 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     @Getter
     @Setter
     private boolean isAdvancedClassesGUIEnabled = false;
+    @Getter
+    @Setter
+    private boolean isSoundEnabled = true;
+    @Getter
+    @Setter
+    private boolean isNewRecipeGUIIteration = false;
     @Getter
     @Setter
     private AnalyticPlayerData analyticPlayerData = new AnalyticPlayerData();
@@ -92,11 +96,14 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
 
     public void addSkillXp(SkillType skillType, double xp) {
-        if (skillType == null) return;
+        if (skillType == null || xp == 0) return;
         int previousLevel = this.getSkillLevel(skillType);
-        getSkill(skillType).addXp(xp);
-        Objects.requireNonNull(Bukkit.getPlayer(getUuid())).sendActionBar(Component.text("+" + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));
+        getSkill(skillType).xp(xp);
+        Player player = Bukkit.getPlayer(getUuid());
+        player.sendActionBar(Component.text((xp <= 0 ? "" : "+") + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));
         int currentLevel = this.getSkillLevel(skillType);
+
+        player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 100, 1);
 
         // Update team assignment based on highest skill
         TeamManager.setTeam(Bukkit.getPlayer(getUuid()));
@@ -104,14 +111,22 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
         if (previousLevel != currentLevel) {
             applyEffects();
+            if (previousLevel < currentLevel) {
+                player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 100, 1);
+                player.sendMessage(LoreUtils.createLoreLine("You have leveled up " + SkillType.getDisplayName(skillType) + ", you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
+            } else {
+                player.playSound(player, Sound.ITEM_BOTTLE_FILL_DRAGONBREATH, 100F, 1.5F);
+                player.sendMessage(LoreUtils.createLoreLine("Your " + SkillType.getDisplayName(skillType) + "ing ability has deteriorated, you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
+            }
             while (currentLevel > 0) {
                 Set<NamespacedKey> recipes =
                         SpecializationConfig.getUnlockedRecipesConfig().get(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(currentLevel), new TypeToken<>(){});
                 for (NamespacedKey entry : recipes) {
-                    Bukkit.getPlayer(this.getUuid()).discoverRecipe(entry);
+                    player.discoverRecipe(entry);
                 }
                 currentLevel--;
             }
+
         }
     }
 
