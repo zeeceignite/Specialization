@@ -16,6 +16,7 @@ public class PlaceBlockListener implements Listener {
     public void onBlockPlace(BlockPlaceEvent event) {
         Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromPlacingConfig().get(event.getBlockPlaced().getType(), new TypeToken<>() {});
         if (pair != null) {
+            if(!event.getBlock().getType().isBlock()) return;
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(event.getPlayer().getUniqueId());
             customPlayer.addSkillXp(pair.firstValue(), pair.secondValue());
         }

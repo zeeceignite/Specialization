@@ -109,7 +109,6 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         TeamManager.setTeam(Bukkit.getPlayer(getUuid()));
 
 
-
         if (previousLevel != currentLevel) {
             applyEffects();
             if (previousLevel < currentLevel) {
