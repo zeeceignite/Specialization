@@ -104,7 +104,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         int currentLevel = this.getSkillLevel(skillType);
 
         if (this.isSoundEnabled) {
-            player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 100, 1);
+            player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.MASTER, 100, 1);
         }
 
         // Update team assignment based on highest skill
