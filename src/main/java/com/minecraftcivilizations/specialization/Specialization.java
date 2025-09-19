@@ -30,6 +30,7 @@ import com.minecraftcivilizations.specialization.Listener.Player.Interactions.Fo
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.PlayerInteractEntityListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.PlayerInteractListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.RightClickListener;
+import com.minecraftcivilizations.specialization.Listener.Player.Interactions.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Inventories.CraftingListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Inventories.FurnaceListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Inventories.StonecutterListener;
@@ -93,6 +94,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
+        getServer().getPluginManager().registerEvents(new FishingListener(), this);
         getServer().getPluginManager().registerEvents(new MobKillListener(), this);
         getServer().getPluginManager().registerEvents(new FoodInteractionListener(), this);
         getServer().getPluginManager().registerEvents(new HungerSystemListener(this), this);
