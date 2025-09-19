@@ -14,7 +14,7 @@ public class FishingListener implements Listener {
         if(event.getCaught() instanceof Item) {
             Item item = (Item) event.getCaught();
             if(item.getItemStack().getType().toString().toLowerCase().matches("(Enchanted Book|Bow)/i")){
-                if(Math.random() > 0.05){
+                if(Math.random() > 0.0005){
                     event.setCancelled(true);
                 }
             }
