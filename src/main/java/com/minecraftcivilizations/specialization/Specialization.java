@@ -231,6 +231,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new SuicideCommand());
         commandManager.registerCommand(new AnalyticsCommand());
         commandManager.registerCommand(new RestoreHealthCommand());
+        commandManager.registerCommand(new RecipesCommand());
     }
 
     public void applyCustomName(Player player, Component name){
