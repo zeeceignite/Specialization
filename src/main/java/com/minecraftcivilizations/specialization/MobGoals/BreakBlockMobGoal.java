@@ -36,7 +36,7 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
     public BreakBlockMobGoal(Monster monster) {
         // The constructor takes the Player to follow and the Camel that is following
         this.monster = monster;
-    }
+    } // change
 
 
     @Override
