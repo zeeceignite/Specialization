@@ -103,7 +103,9 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         player.sendActionBar(Component.text((xp <= 0 ? "" : "+") + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));
         int currentLevel = this.getSkillLevel(skillType);
 
-        player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 100, 1);
+        if (this.isSoundEnabled) {
+            player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.MASTER, 100, 1);
+        }
 
         // Update team assignment based on highest skill
         TeamManager.setTeam(Bukkit.getPlayer(getUuid()));
