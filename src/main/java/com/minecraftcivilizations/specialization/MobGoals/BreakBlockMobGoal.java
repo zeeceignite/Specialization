@@ -48,6 +48,8 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
         double percentage = SpecializationConfig.getMobConfig().get("BLOCK_BREAK_CHANCE_PERCENTAGE", Double.class);
         if(random.nextDouble() > percentage / 100d) return false;
 
+        if(!monster.getWorld().equals(monster.getTarget().getWorld())) return false;
+
         Vector vectorToPlayer = monster.getTarget().getLocation().subtract(monster.getEyeLocation()).toVector();
         int targetRange = SpecializationConfig.getMobConfig().get("MOB_RULE_TARGET_RANGE", Integer.class);
         if(vectorToPlayer.lengthSquared() > targetRange*targetRange) return false;
