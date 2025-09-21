@@ -125,7 +125,7 @@ public final class Specialization extends JavaPlugin {
         }.runTaskLater(this, 100L); // Run after 5 seconds to allow server to fully start
 
         World world = Bukkit.getWorlds().get(0);
-        world.setGameRule(GameRule.SPAWN_RADIUS,100);
+        world.setGameRule(GameRule.SPAWN_RADIUS,350);
         world.setGameRule(GameRule.REDUCED_DEBUG_INFO,true);
         world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN,true);
         world.setGameRule(GameRule.NATURAL_REGENERATION,false);
@@ -248,6 +248,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new SuicideCommand());
         commandManager.registerCommand(new AnalyticsCommand());
         commandManager.registerCommand(new RestoreHealthCommand());
+        commandManager.registerCommand(new NotifyRestartCommand());
         commandManager.registerCommand(new RecipesCommand());
     }
 
