@@ -4,10 +4,7 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Bed;
@@ -137,13 +134,19 @@ public class BedListener implements Listener {
             bedPDC.remove(ownerKey);
 
             try {
-                UUID ownerUUID = UUID.fromString(ownerUUIDString);
-                Player owner = Bukkit.getPlayer(ownerUUID);
-                if (owner != null) {
-                    owner.sendMessage("§cYour bed has been destroyed!");
-                }
+                Bukkit.getAsyncScheduler().runNow(Specialization.getInstance(), (task) -> {
+                    UUID ownerUUID = UUID.fromString(ownerUUIDString);
+                    OfflinePlayer owner = Bukkit.getOfflinePlayer(ownerUUID);
+                    if (owner != null) {
+                        if(owner.isOnline()) {
+                            owner.getPlayer().sendMessage("§cYour bed has been destroyed, Spawn Point set to World Spawn!");
+                            owner.getPlayer().setBedSpawnLocation(null);
+                            owner.getPlayer().setRespawnLocation(null);
+                        }
+                    }
 
-                Bukkit.getLogger().info("Bed at " + block.getLocation() + " was broken, cleared PDC ownership for player " + ownerUUID);
+                    Bukkit.getLogger().info("Bed at " + block.getLocation() + " was broken, cleared PDC ownership for player " + ownerUUID);
+                });
             } catch (IllegalArgumentException e) {
                 Bukkit.getLogger().warning("Invalid UUID found in bed PDC: " + ownerUUIDString);
             }
