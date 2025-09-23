@@ -38,6 +38,13 @@ public class FoodInteractionListener implements Listener {
             if (item.getType().isEdible() && player.isSneaking()) {
                 if (customPlayer.getSkillLevel(SkillType.HEALER) > SkillLevel.APPRENTICE.getLevel()) {
 
+                    // Prevent blessing of golden apples and enchanted golden apples
+                    if (item.getType() == Material.GOLDEN_APPLE || item.getType() == Material.ENCHANTED_GOLDEN_APPLE) {
+                        player.sendMessage(ChatColor.RED + "Golden apples cannot be blessed!");
+                        event.setCancelled(true);
+                        return;
+                    }
+
                     if (player.getFoodLevel() < 10) {
                         player.sendMessage(ChatColor.RED + "You need more hunger to bless food");
                         event.setCancelled(true);
