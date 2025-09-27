@@ -35,7 +35,7 @@ public class Berserk implements Listener {
         CustomPlayer damaged = CoreUtil.getPlayer(player);
 
         if (damaged.getSkillLevel(SkillType.GUARDSMAN) >= 1) {
-            if (player.getHealth() - e.getFinalDamage() <= 3) {
+            if (player.getHealth() - e.getFinalDamage() <= 5) {
                 showMyTitleWithDurations(player);
                 applyBerserk(player);
             }
