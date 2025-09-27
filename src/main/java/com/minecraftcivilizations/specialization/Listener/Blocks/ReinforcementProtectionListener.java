@@ -1,6 +1,8 @@
 package com.minecraftcivilizations.specialization.Listener.Blocks;
 
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
@@ -11,79 +13,127 @@ import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.entity.FallingBlock;
+import org.bukkit.util.Vector;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class ReinforcementProtectionListener implements Listener {
 
-    private final Map<Block, Boolean> temporaryReinforcementStorage = new HashMap<>();
+    private final Map<Location, Boolean> temporaryReinforcementStorage = new HashMap<>();
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
-        if (!(event.getEntity() instanceof FallingBlock)) {
+        if (!(event.getEntity() instanceof FallingBlock fallingBlock)) {
+            return;
+        }
+
+        if (event.isCancelled()) {
             return;
         }
 
         Block block = event.getBlock();
-
-        if (ReinforcementManager.isReinforced(block)) {
-            event.setCancelled(true);
-            return;
+        Location fallingBlockLocation = fallingBlock.getLocation();
+        if (temporaryReinforcementStorage.containsKey(fallingBlockLocation)) {
+            boolean isHeavy = temporaryReinforcementStorage.get(fallingBlockLocation);
+            ReinforcementManager.addReinforcement(block, isHeavy);
+            temporaryReinforcementStorage.remove(fallingBlockLocation);
         }
-
-        FallingBlock fallingBlock = (FallingBlock) event.getEntity();
-        Material blockType = fallingBlock.getBlockData().getMaterial();
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onBlockStartFalling(org.bukkit.event.block.BlockPhysicsEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
+
         Block block = event.getBlock();
-
         if (isFallingBlockType(block.getType()) && ReinforcementManager.isReinforced(block)) {
-            event.setCancelled(true);
+            boolean isHeavy = ReinforcementManager.isHeavilyReinforced(block);
+            Bukkit.getScheduler().runTaskLater(Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("Specialization")), () -> {
+                block.getWorld().getEntitiesByClass(FallingBlock.class).stream()
+                    .filter(fb -> fb.getLocation().distance(block.getLocation()) < 2.0)
+                    .forEach(fb -> {
+                        temporaryReinforcementStorage.put(fb.getLocation(), isHeavy);
+                    });
+            }, 1L);
+            ReinforcementManager.removeReinforcement(block);
         }
     }
-
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPistonExtend(BlockPistonExtendEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
+
         List<Block> blocks = event.getBlocks();
+        Vector direction = event.getDirection().getDirection();
+        Map<Block, Boolean> reinforcementData = new HashMap<>();
+        
         for (Block block : blocks) {
             if (ReinforcementManager.isReinforced(block)) {
-                event.setCancelled(true);
-                return;
+                boolean isHeavy = ReinforcementManager.isHeavilyReinforced(block);
+                reinforcementData.put(block, isHeavy);
+                ReinforcementManager.removeReinforcement(block);
             }
         }
+        if (!reinforcementData.isEmpty()) {
+            Bukkit.getScheduler().runTaskLater(Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("Specialization")), () -> {
+                for (Map.Entry<Block, Boolean> entry : reinforcementData.entrySet()) {
+                    Block originalBlock = entry.getKey();
+                    boolean isHeavy = entry.getValue();
+                    Location newLocation = originalBlock.getLocation().add(direction);
+                    Block newBlock = newLocation.getBlock();
+                    ReinforcementManager.addReinforcement(newBlock, isHeavy);
+                }
+            }, 2L);
+        }
     }
-
-    /**
-     * Handle piston retraction - when sticky pistons pull blocks
-     */
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPistonRetract(BlockPistonRetractEvent event) {
-        List<Block> blocks = event.getBlocks();
+        if (event.isCancelled()) {
+            return;
+        }
 
+        List<Block> blocks = event.getBlocks();
+        Vector direction = event.getDirection().getDirection();
+        Map<Block, Boolean> reinforcementData = new HashMap<>();
+        
         for (Block block : blocks) {
             if (ReinforcementManager.isReinforced(block)) {
-                event.setCancelled(true);
-                return;
+                boolean isHeavy = ReinforcementManager.isHeavilyReinforced(block);
+                reinforcementData.put(block, isHeavy);
+                ReinforcementManager.removeReinforcement(block);
             }
         }
+        if (!reinforcementData.isEmpty()) {
+            Bukkit.getScheduler().runTaskLater(Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("Specialization")), () -> {
+                for (Map.Entry<Block, Boolean> entry : reinforcementData.entrySet()) {
+                    Block originalBlock = entry.getKey();
+                    boolean isHeavy = entry.getValue();
+                    Location newLocation = originalBlock.getLocation().add(direction);
+                    Block newBlock = newLocation.getBlock();
+                    ReinforcementManager.addReinforcement(newBlock, isHeavy);
+                }
+            }, 2L);
+        }
     }
+
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onEntityExplode(EntityExplodeEvent event) {
-        // Remove reinforced blocks from the explosion block list
         event.blockList().removeIf(ReinforcementManager::isReinforced);
     }
 
+
     private boolean isFallingBlockType(Material material) {
-        return material == Material.SAND ||
-               material == Material.RED_SAND ||
-               material == Material.GRAVEL ||
-               material == Material.ANVIL ||
-               material == Material.CHIPPED_ANVIL ||
+        return material == Material.SAND || 
+               material == Material.RED_SAND || 
+               material == Material.GRAVEL || 
+               material == Material.ANVIL || 
+               material == Material.CHIPPED_ANVIL || 
                material == Material.DAMAGED_ANVIL ||
                material == Material.DRAGON_EGG ||
                material == Material.POINTED_DRIPSTONE ||
