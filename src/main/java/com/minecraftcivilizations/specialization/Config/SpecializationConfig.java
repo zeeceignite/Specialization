@@ -438,7 +438,7 @@ public class SpecializationConfig {
             fields.add(new Pair<>("INSTINCT_DETECTION_RADIUS_LEVEL_1", 8.0));
             fields.add(new Pair<>("INSTINCT_DETECTION_RADIUS_LEVEL_2", 12.0));
             fields.add(new Pair<>("INSTINCT_DETECTION_RADIUS_LEVEL_3", 16.0));
-            fields.add(new Pair<>("INSTINCT_GLOW_DURATION_TICKS", 100));
+            fields.add(new Pair<>("INSTINCT_GLOW_DURATION_TICKS", 300));
         });
     }//change
 

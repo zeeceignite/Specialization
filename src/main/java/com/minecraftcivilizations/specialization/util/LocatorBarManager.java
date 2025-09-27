@@ -32,33 +32,23 @@ public class LocatorBarManager implements Listener {
     public LocatorBarManager(Plugin plugin) {
         this.plugin = plugin;
         instance = this;
-        Bukkit.getLogger().info("LocatorBarManager initialized");
     }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        Bukkit.getLogger().info("Player " + player.getName() + " joined, initializing locator bar");
         initializePlayerLocatorBar(player);
     }
 
     public void initializePlayerLocatorBar(Player player) {
-        Bukkit.getLogger().info("Initializing locator bar for player: " + player.getName());
-
-        boolean enabled = SpecializationConfig.getLocatorBarConfig().get("LOCATOR_BAR_ENABLED", Boolean.class);
-        Bukkit.getLogger().info("Locator bar enabled: " + enabled);
-
         double defaultReceiveRange = SpecializationConfig.getLocatorBarConfig().get("DEFAULT_RECEIVE_RANGE", Double.class);
         double defaultTransmitRange = SpecializationConfig.getLocatorBarConfig().get("DEFAULT_TRANSMIT_RANGE", Double.class);
-
-        Bukkit.getLogger().info("Setting default ranges - Receive: " + defaultReceiveRange + ", Transmit: " + defaultTransmitRange);
-
+        
         try {
             player.getAttribute(Attribute.WAYPOINT_RECEIVE_RANGE).setBaseValue(defaultReceiveRange);
             player.getAttribute(Attribute.WAYPOINT_TRANSMIT_RANGE).setBaseValue(defaultTransmitRange);
-            Bukkit.getLogger().info("Successfully set attributes for player: " + player.getName());
         } catch (Exception e) {
-            Bukkit.getLogger().severe("Error setting attributes for player " + player.getName() + ": " + e.getMessage());
+            Bukkit.getLogger().severe("[LOCATOR_BAR] Error setting attributes for player " + player.getName() + ": " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -70,14 +60,7 @@ public class LocatorBarManager implements Listener {
      * @param durationTicks How long the visibility lasts
      */
     public void grantTemporaryVisibility(Player observer, Entity target, int durationTicks) {
-        Bukkit.getLogger().info("grantTemporaryVisibility called - Observer: " + observer.getName() +
-                                ", Target: " + target.getType() + ", Duration: " + durationTicks + " ticks");
-
-        boolean enabled = SpecializationConfig.getLocatorBarConfig().get("LOCATOR_BAR_ENABLED", Boolean.class);
-        Bukkit.getLogger().info("Locator bar enabled check: " + enabled);
-
-        if (!enabled) {
-            Bukkit.getLogger().info("Locator bar is disabled, returning");
+        if (!SpecializationConfig.getLocatorBarConfig().get("LOCATOR_BAR_ENABLED", Boolean.class)) {
             return;
         }
 
@@ -86,35 +69,28 @@ public class LocatorBarManager implements Listener {
 
         temporaryVisibility.computeIfAbsent(observerId, k -> new HashMap<>())
                           .put(targetId, System.currentTimeMillis() + (durationTicks * 50L));
-
-        Bukkit.getLogger().info("Added visibility grant to map");
-
+        
         if (target instanceof LivingEntity livingTarget) {
             double visibilityRange = SpecializationConfig.getLocatorBarConfig().get("TEMPORARY_VISIBILITY_RANGE", Double.class);
-            Bukkit.getLogger().info("Setting target transmit range to: " + visibilityRange);
-
+            
             try {
                 livingTarget.getAttribute(Attribute.WAYPOINT_TRANSMIT_RANGE).setBaseValue(visibilityRange);
-                Bukkit.getLogger().info("Successfully set target transmit range");
             } catch (Exception e) {
-                Bukkit.getLogger().severe("Error setting target transmit range: " + e.getMessage());
+                Bukkit.getLogger().severe("[LOCATOR_BAR] Error setting target transmit range: " + e.getMessage());
                 e.printStackTrace();
             }
         }
-
+        
         double observerRange = SpecializationConfig.getLocatorBarConfig().get("OBSERVER_RECEIVE_RANGE", Double.class);
-        Bukkit.getLogger().info("Setting observer receive range to: " + observerRange);
-
+        
         try {
             observer.getAttribute(Attribute.WAYPOINT_RECEIVE_RANGE).setBaseValue(observerRange);
-            Bukkit.getLogger().info("Successfully set observer receive range");
         } catch (Exception e) {
-            Bukkit.getLogger().severe("Error setting observer receive range: " + e.getMessage());
+            Bukkit.getLogger().severe("[LOCATOR_BAR] Error setting observer receive range: " + e.getMessage());
             e.printStackTrace();
         }
-
+        
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            Bukkit.getLogger().info("Cleaning up temporary visibility after " + durationTicks + " ticks");
             cleanupTemporaryVisibility(observer, target);
         }, durationTicks);
     }

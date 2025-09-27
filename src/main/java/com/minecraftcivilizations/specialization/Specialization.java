@@ -16,6 +16,7 @@ import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Data.MongoConnection;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
 import com.minecraftcivilizations.specialization.Listener.BurnListener;
+import com.minecraftcivilizations.specialization.Listener.Blocks.ReinforcementProtectionListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.ExplodeListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.MobKillListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.MobListeners;
@@ -104,7 +105,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new LeashListener(), this);
         getServer().getPluginManager().registerEvents(new BedListener(), this);
         getServer().getPluginManager().registerEvents(new LocatorBarManager(this), this);
-
+        getServer().getPluginManager().registerEvents(new ReinforcementProtectionListener(), this);
 
         getServer().getPluginManager().registerEvents(new StonecutterListener(), this);
         getServer().getPluginManager().registerEvents(new CraftingListener(this), this);
