@@ -5,6 +5,7 @@ import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.destroystokyo.paper.entity.ai.GoalType;
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Listener.Player.Combat.Instinct;
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import com.minecraftcivilizations.specialization.Specialization;
 import org.bukkit.FluidCollisionMode;
@@ -74,6 +75,7 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
     @Override
     public void start() {
         nearbyPlayers = block.getLocation().getNearbyPlayers(16).stream().filter(player -> player.getGameMode().equals(GameMode.SURVIVAL)).collect(Collectors.toSet());
+        Instinct.onMobStartBreakingBlock(monster);
     }
 
     @Override
