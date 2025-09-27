@@ -75,6 +75,9 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
     @Override
     public void start() {
         nearbyPlayers = block.getLocation().getNearbyPlayers(16).stream().filter(player -> player.getGameMode().equals(GameMode.SURVIVAL)).collect(Collectors.toSet());
+        
+        // Trigger Instinct system for nearby Guardsmen
+        org.bukkit.Bukkit.getLogger().info("[BREAK_BLOCK_GOAL DEBUG] Mob " + monster.getType() + " starting to break block at " + block.getLocation() + ", triggering Instinct system");
         Instinct.onMobStartBreakingBlock(monster);
     }
 
