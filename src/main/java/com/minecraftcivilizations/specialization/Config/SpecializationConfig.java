@@ -434,9 +434,11 @@ public class SpecializationConfig {
         });
 
         instinctConfig = new ConfigFile(Specialization.getInstance(), "instinctConfig", null, fields -> {
-            fields.add(new Pair<>("INSTINCT_LEVEL_1", 1D));
-            fields.add(new Pair<>("INSTINCT_LEVEL_2", 2D));
-            fields.add(new Pair<>("INSTINCT_LEVEL_3", 3D));
+            fields.add(new Pair<>("INSTINCT_ENABLED", true));
+            fields.add(new Pair<>("INSTINCT_DETECTION_RADIUS_LEVEL_1", 8.0));
+            fields.add(new Pair<>("INSTINCT_DETECTION_RADIUS_LEVEL_2", 12.0));
+            fields.add(new Pair<>("INSTINCT_DETECTION_RADIUS_LEVEL_3", 16.0));
+            fields.add(new Pair<>("INSTINCT_GLOW_DURATION_TICKS", 100));
         });
     }//change
 
