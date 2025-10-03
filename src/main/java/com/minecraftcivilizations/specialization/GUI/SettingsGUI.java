@@ -1,10 +1,10 @@
 package com.minecraftcivilizations.specialization.GUI;
 
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
+import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUI.GUI;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem.GUIItem;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIPlaceOption;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIPlacement;
-import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIs.GUI;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
