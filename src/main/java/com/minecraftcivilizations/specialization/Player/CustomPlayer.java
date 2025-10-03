@@ -6,12 +6,12 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
-import com.minecraftcivilizations.specialization.util.LoreUtils;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Util.LoreUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
@@ -40,13 +40,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     private double height = 0;
     @Getter
     @Setter
-    private boolean isAdvancedClassesGUIEnabled = false;
-    @Getter
-    @Setter
-    private boolean isSoundEnabled = true;
-    @Getter
-    @Setter
-    private boolean isNewRecipeGUIIteration = false;
+    private PlayerOptions playerOptions = new PlayerOptions();
     @Getter
     @Setter
     private AnalyticPlayerData analyticPlayerData = new AnalyticPlayerData();
@@ -103,7 +97,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         player.sendActionBar(Component.text((xp <= 0 ? "" : "+") + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));
         int currentLevel = this.getSkillLevel(skillType);
 
-        if (this.isSoundEnabled) {
+        if (this.playerOptions.isSoundEnabled()) {
             player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.MASTER, 100, 1);
         }
 

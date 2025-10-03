@@ -5,15 +5,14 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
-import com.minecraftcivilizations.specialization.Specialization;
-import com.minecraftcivilizations.specialization.util.CoreUtil;
-import com.minecraftcivilizations.specialization.util.LoreUtils;
-import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUI;
-import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem;
-import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.ListGUI;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Item.ItemUtils;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Options.GUIPlaceOption;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
+import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem.GUIItem;
+import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIPlaceOption;
+import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIPlacement;
+import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIs.GUI;
+import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIs.ListGUI;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Util.ItemUtils;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Util.LoreUtils;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Util.SearchUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -21,8 +20,8 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.Recipe;
 
 import java.util.*;
 
@@ -32,14 +31,13 @@ public class RecipesGUI extends GUI {
     public RecipesGUI(CustomPlayer customPlayer, SkillType skillType) {
         super(Component.text(skillType != null ? "Unlocked Recipes in " + SkillType.getDisplayName(skillType) : "Choose Recipe SkillTree To View").color(NamedTextColor.BLACK), 54, new HashMap<>() {
             {
-                put(45, new GUIItem(ItemUtils.makeItemGUIItem(ItemStack.of(Material.ARROW), "Back to Class Menu").getItem(), () -> {
-                    new ClassGUI().open(Bukkit.getPlayer(customPlayer.getUuid()));
-                }));
+                put(45, ItemUtils.makeItemGUIItem(ItemStack.of(Material.ARROW), "Back to Class Menu")
+                        .addOnClick(() -> new ClassGUI().open(Bukkit.getPlayer(customPlayer.getUuid())),  ClickType.UNKNOWN));
             }
         }, new HashMap<>() {
             {
-                put(GUIPlaceOption.SHOULD_PLACE_EXIT, true);
-                put(GUIPlaceOption.SHOULD_PLACE_BACK, true);
+                put(GUIPlaceOption.SHOULD_PLACE_EXIT, GUIPlacement.of(true));
+                put(GUIPlaceOption.SHOULD_PLACE_BACK, GUIPlacement.of(true));
             }
         });
         this.skillType = skillType;
@@ -50,12 +48,13 @@ public class RecipesGUI extends GUI {
     public void open(Player player) {
         for (int i = 0; i < SkillType.values().length; i++) {
             SkillType skillType1 = SkillType.values()[i];
-            GUIItem put = new GUIItem(ItemUtils.makeItemGUIItem(ItemStack.of(skillType1.getSkillWorkstation()), SkillType.getDisplayName(skillType1)).getItem(), () -> {
-                if (skillType == skillType1) {
-                    return;
-                }
-                new RecipesGUI(customPlayer, skillType1).setParentGUI(RecipesGUI.this).open(Bukkit.getPlayer(customPlayer.getUuid()));
-            });
+            GUIItem put = ItemUtils.makeItemGUIItem(ItemStack.of(skillType1.getSkillWorkstation()), SkillType.getDisplayName(skillType1))
+                    .addOnClick(() -> {
+                        if (skillType == skillType1) {
+                            return;
+                        }
+                        new RecipesGUI(customPlayer, skillType1).setParentGUI(RecipesGUI.this).open(Bukkit.getPlayer(customPlayer.getUuid()));
+                    }, ClickType.UNKNOWN);
             put.getItem().editMeta(itemMeta -> {
                 itemMeta.lore(LoreUtils.createDescriptionLoreLine(skillType1.getSkillDescription()));
             });
@@ -73,7 +72,7 @@ public class RecipesGUI extends GUI {
             itemMeta.lore(LoreUtils.createDescriptionLoreLine(skillType.getSkillDescription()));
         });
         getItems().put(13, guiItem);
-        if (!customPlayer.isNewRecipeGUIIteration()) {
+        if (!customPlayer.getPlayerOptions().isNewRecipeGUIIteration()) {
             getItems().put(21, ItemUtils.makeItemGUIItem(ItemStack.of(Material.YELLOW_STAINED_GLASS_PANE), "Your path"));
             getItems().put(22, ItemUtils.makeItemGUIItem(ItemStack.of(Material.YELLOW_STAINED_GLASS_PANE), "Your path"));
             getItems().put(23, ItemUtils.makeItemGUIItem(ItemStack.of(Material.YELLOW_STAINED_GLASS_PANE), "Your path"));
@@ -87,7 +86,7 @@ public class RecipesGUI extends GUI {
         getItems().put(29, recipeItem(2));
         getItems().put(38, viewRecipesItem(2));
 
-        if (customPlayer.isNewRecipeGUIIteration()) getItems().put(22, recipeItem(3));
+        if (customPlayer.getPlayerOptions().isNewRecipeGUIIteration()) getItems().put(22, recipeItem(3));
         getItems().put(31, recipeItem(3));
         getItems().put(40, viewRecipesItem(3));
 
@@ -113,16 +112,12 @@ public class RecipesGUI extends GUI {
         GUIItem guiItem;
         if (customPlayer.getSkillLevel(skillType) < requiredLevel - 1) {
             guiItem = ItemUtils.makeItemGUIItem(ItemStack.of(Material.BOOK), SkillLevel.getDisplayName(requiredLevel) + " Not Unlocked");
-            guiItem.getItem().editMeta(itemMeta -> {
-                itemMeta.lore(LoreUtils.createDescriptionLoreLine("You can't view recipes yet, you'll be able to see it once you're one level under the requirement (" + (requiredLevel - 1) + ")"));
-            });
+            guiItem.getItem().editMeta(itemMeta -> itemMeta.lore(LoreUtils.createDescriptionLoreLine("You can't view recipes yet, you'll be able to see it once you're one level under the requirement (" + (requiredLevel - 1) + ")")));
             return guiItem;
         } else if (customPlayer.getSkillLevel(skillType) == requiredLevel - 1) {
             guiItem = ItemUtils.makeItemGUIItem(ItemStack.of(Material.BOOK), SkillLevel.getDisplayName(requiredLevel) + " Not Unlocked");
-            guiItem.getItem().editMeta(itemMeta -> {
-                itemMeta.lore(LoreUtils.createDescriptionLoreLine("Click to view recipes you'll unlock"));
-            });
-            guiItem.setOnClick(() -> {
+            guiItem.getItem().editMeta(itemMeta -> itemMeta.lore(LoreUtils.createDescriptionLoreLine("Click to view recipes you'll unlock")));
+            guiItem.addOnClick(() -> {
                 Set<NamespacedKey> stringHashSetPair = SpecializationConfig.getUnlockedRecipesConfig().get(skillType + "_" + SkillLevel.getSkillLevelFromInt(requiredLevel), new TypeToken<>() {
                 });
                 ArrayList<ItemStack> itemStacks = new ArrayList<>(0);
@@ -130,9 +125,14 @@ public class RecipesGUI extends GUI {
                     for (NamespacedKey namespacedKey : stringHashSetPair) {
                         itemStacks.add(ItemStack.of(Registry.MATERIAL.get(namespacedKey)));
                     }
-                    HashMap<GUIPlaceOption, Boolean> map = new HashMap<>(0);
-                    map.putAll(Map.of(GUIPlaceOption.SHOULD_PLACE_EXIT, false, GUIPlaceOption.SHOULD_PLACE_BACK, true, GUIPlaceOption.SHOULD_PLACE_SEARCH, false));
-                    new ListGUI(Component.text("Recipes"), itemStacks, map).setParentGUI(this).open(Bukkit.getPlayer(customPlayer.getUuid()));
+                    HashMap<GUIPlaceOption, GUIPlacement> map = new HashMap<>(0);
+                    map.putAll(Map.of(
+                            GUIPlaceOption.SHOULD_PLACE_EXIT, GUIPlacement.of(false),
+                            GUIPlaceOption.SHOULD_PLACE_BACK, GUIPlacement.of(true),
+                            GUIPlaceOption.SHOULD_PLACE_BACK_TO_DIFFERENT_MENU, GUIPlacement.of(true),
+                            GUIPlaceOption.SHOULD_PLACE_SEARCH, GUIPlacement.of(null, true, s -> SearchUtils.searchFromProvidedItems(s, itemStacks))
+                    ));
+                    new ListGUI(Component.text("Recipes"), 54, map, itemStacks).setParentGUI(this).open(Bukkit.getPlayer(customPlayer.getUuid()));
                 }
             });
             return guiItem;
@@ -141,7 +141,7 @@ public class RecipesGUI extends GUI {
         guiItem.getItem().editMeta(itemMeta -> {
             itemMeta.lore(LoreUtils.createDescriptionLoreLine("Click to view recipes you've unlocked"));
         });
-        guiItem.setOnClick(() -> {
+        guiItem.addOnClick(() -> {
             Set<NamespacedKey> stringHashSetPair = SpecializationConfig.getUnlockedRecipesConfig().get(skillType + "_" + SkillLevel.getSkillLevelFromInt(requiredLevel), new TypeToken<>() {
             });
             ArrayList<ItemStack> itemStacks = new ArrayList<>(0);
@@ -149,7 +149,7 @@ public class RecipesGUI extends GUI {
                 for (NamespacedKey namespacedKey : stringHashSetPair) {
                     itemStacks.add(ItemStack.of(Registry.MATERIAL.get(namespacedKey)));
                 }
-                new ListGUI(Component.text("Recipes"), itemStacks, Map.of(GUIPlaceOption.SHOULD_PLACE_EXIT, false, GUIPlaceOption.SHOULD_PLACE_BACK, true, GUIPlaceOption.SHOULD_PLACE_SEARCH, false)).setParentGUI(this).open(Bukkit.getPlayer(customPlayer.getUuid()));
+                new ListGUI(Component.text("Recipes"), 54, itemStacks, Map.of(GUIPlaceOption.SHOULD_PLACE_EXIT, false, GUIPlaceOption.SHOULD_PLACE_BACK, true, GUIPlaceOption.SHOULD_PLACE_SEARCH, false)).setParentGUI(this).open(Bukkit.getPlayer(customPlayer.getUuid()));
             }
         });
         return guiItem;
