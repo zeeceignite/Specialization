@@ -93,9 +93,14 @@ public class SpecializationConfig {
     private static ConfigFile bedOwnershipConfig;
     @Getter
     private static ConfigFile serverConfig;
+    @Getter
+    private static ConfigFile instinctConfig;
+    @Getter
+    private static ConfigFile locatorBarConfig;
 
     private static List<EntityType> BREEDABLE =  List.of(EntityType.AXOLOTL, EntityType.CAMEL, EntityType.CAT, EntityType.CHICKEN, EntityType.COD, EntityType.COW, EntityType.DONKEY, EntityType.FOX, EntityType.FROG, EntityType.GOAT, EntityType.HOGLIN, EntityType.HORSE, EntityType.LLAMA, EntityType.MOOSHROOM, EntityType.OCELOT, EntityType.PANDA, EntityType.PARROT, EntityType.PIG, EntityType.RABBIT, EntityType.SHEEP, EntityType.STRIDER, EntityType.TADPOLE, EntityType.TURTLE, EntityType.WOLF);
     public static final List<EntityType> TAMEABLE = List.of(EntityType.WOLF, EntityType.OCELOT, EntityType.CAT, EntityType.PARROT, EntityType.HORSE, EntityType.DONKEY, EntityType.MULE, EntityType.LLAMA, EntityType.TRADER_LLAMA);
+
 
     public static void initialize() {
         playerConfig = new ConfigFile(Specialization.getInstance(), "playerConfig", null, fields -> {
@@ -104,6 +109,14 @@ public class SpecializationConfig {
             fields.add(new Pair<>("LINEAR_DECAY_RATE", 0.02));
             fields.add(new Pair<>("CROSS_SKILL_PENALTY", 0.25));
 
+        });
+
+        locatorBarConfig = new ConfigFile(Specialization.getInstance(), "locatorBarConfig", null, fields -> {
+            fields.add(new Pair<>("LOCATOR_BAR_ENABLED", true));
+            fields.add(new Pair<>("DEFAULT_RECEIVE_RANGE", 0.0));
+            fields.add(new Pair<>("DEFAULT_TRANSMIT_RANGE", 64.0));
+            fields.add(new Pair<>("TEMPORARY_VISIBILITY_RANGE", 128.0));
+            fields.add(new Pair<>("OBSERVER_RECEIVE_RANGE", 128.0));
         });
 
         reinforcementConfig = new ConfigFile(Specialization.getInstance(), "reinforcementConfig", null, fields -> {
@@ -147,10 +160,10 @@ public class SpecializationConfig {
         });
 
         combatConfig = new ConfigFile(Specialization.getInstance(), "combatConfig", null, fields -> {
-            fields.add(new Pair<>("CROSSBOW_BASE_VELOCITY", 1.6));
-            fields.add(new Pair<>("CROSSBOW_BASE_PIERCING_VELOCITY", 1.3));
-            fields.add(new Pair<>("CROSSBOW_BASE_MULTISHOT_VELOCITY", 2.5));
-            fields.add(new Pair<>("CROSSBOW_BASE_QUICKCHARGE_VELOCITY", 1.3));
+            fields.add(new Pair<>("CROSSBOW_BASE_VELOCITY", 1.2));
+            fields.add(new Pair<>("CROSSBOW_BASE_PIERCING_VELOCITY", 1.1));
+            fields.add(new Pair<>("CROSSBOW_BASE_MULTISHOT_VELOCITY", 1.3));
+            fields.add(new Pair<>("CROSSBOW_BASE_QUICKCHARGE_VELOCITY", 1.15));
         });
 
         serverConfig = new ConfigFile(Specialization.getInstance(), "serverConfig", null, fields -> {
@@ -364,6 +377,10 @@ public class SpecializationConfig {
             fields.add(new Pair<>("BED_OWNERSHIP_MESSAGE", "§cThis bed is already claimed by another player!"));
             fields.add(new Pair<>("BED_CLAIM_MESSAGE", "§aYou have claimed this bed as your spawn point!"));
             fields.add(new Pair<>("BED_UNCLAIM_MESSAGE", "§7Your previous bed has been unclaimed."));
+            fields.add(new Pair<>("BED_RESPAWN_HUNGER_REDUCTION_ENABLED", true));
+            fields.add(new Pair<>("BED_RESPAWN_HUNGER_DIVISOR", 3));
+            fields.add(new Pair<>("BED_RESPAWN_MINIMUM_HUNGER", 1));
+            fields.add(new Pair<>("BED_RESPAWN_SHOW_MESSAGE", true));
         });
 
         skillsConfig = new ConfigFile(Specialization.getInstance(), "skillsConfig", null, fields -> {
@@ -414,6 +431,14 @@ public class SpecializationConfig {
             fields.add(new Pair<>("DEFAULT_FORMAT", "%s > %s"));
             fields.add(new Pair<>("ANNOUNCEMENT_FORMAT", "<aqua>[Announcement]<gray> %s"));
             fields.add(new Pair<>("ANNOUNCEMENT_PREFIX", "#"));
+        });
+
+        instinctConfig = new ConfigFile(Specialization.getInstance(), "instinctConfig", null, fields -> {
+            fields.add(new Pair<>("INSTINCT_ENABLED", true));
+            fields.add(new Pair<>("INSTINCT_DETECTION_RADIUS_LEVEL_1", 8.0));
+            fields.add(new Pair<>("INSTINCT_DETECTION_RADIUS_LEVEL_2", 12.0));
+            fields.add(new Pair<>("INSTINCT_DETECTION_RADIUS_LEVEL_3", 16.0));
+            fields.add(new Pair<>("INSTINCT_GLOW_DURATION_TICKS", 300));
         });
     }//change
 

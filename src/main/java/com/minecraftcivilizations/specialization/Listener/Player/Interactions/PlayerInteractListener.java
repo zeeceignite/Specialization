@@ -147,9 +147,6 @@ public class PlayerInteractListener implements Listener {
 
             e.getItem().setItemMeta(meta);
             e.getPlayer().setLevel(e.getPlayer().getLevel() - xpLevelAmount);
-            List<ItemStack> items = Arrays.stream(e.getPlayer().getInventory().getContents()).filter(Objects::nonNull).toList();
-            int index = new Random().nextInt(items.size());
-            items.get(index).setAmount(items.get(index).getAmount() - 1);
             e.getPlayer().getInventory().getItemInOffHand().setAmount(e.getPlayer().getInventory().getItemInOffHand().getAmount() - 1);
         }
     }

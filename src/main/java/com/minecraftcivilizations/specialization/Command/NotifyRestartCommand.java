@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.Command;
 
+import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.commands.annotation.Default;
@@ -8,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 @CommandAlias("notifyrestart")
 @CommandPermission("civlabs.notifyrestart")
-public class NotifyRestartCommand {
+public class NotifyRestartCommand extends BaseCommand {
 
     @Default
     @CommandPermission("civlabs.notifyrestart")

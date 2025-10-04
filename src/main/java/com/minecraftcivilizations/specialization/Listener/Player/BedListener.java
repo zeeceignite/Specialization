@@ -4,10 +4,7 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Bed;
@@ -106,8 +103,31 @@ public class BedListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerRespawn(PlayerRespawnEvent event) {
-        // PDC handles respawn automatically through Minecraft's bed system
-        // No additional logic needed here
+        Player player = event.getPlayer();
+        
+        // Check if player is respawning from a bed (not world spawn)
+        if (event.isBedSpawn()) {
+            if (!SpecializationConfig.getBedOwnershipConfig().get("BED_RESPAWN_HUNGER_REDUCTION_ENABLED", Boolean.class)) {
+                return;
+            }
+            int currentFoodLevel = player.getFoodLevel();
+            
+            // Get configurable divisor (default 3 means 1/3 of original hunger)
+            int hungerDivisor = SpecializationConfig.getBedOwnershipConfig().get("BED_RESPAWN_HUNGER_DIVISOR", Integer.class);
+            int newFoodLevel = currentFoodLevel / hungerDivisor;
+            int minimumHunger = SpecializationConfig.getBedOwnershipConfig().get("BED_RESPAWN_MINIMUM_HUNGER", Integer.class);
+            newFoodLevel = Math.max(minimumHunger, newFoodLevel);
+            int finalNewFoodLevel = newFoodLevel;
+            Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
+                player.setFoodLevel(finalNewFoodLevel);
+
+                boolean showMessage = SpecializationConfig.getBedOwnershipConfig().get("BED_RESPAWN_SHOW_MESSAGE", Boolean.class);
+                if (showMessage) {
+                    String message = SpecializationConfig.getBedOwnershipConfig().get("BED_RESPAWN_HUNGER_MESSAGE", String.class);
+                    player.sendMessage(message);
+                }
+            }, 1L); // 1 tick delay
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -137,13 +157,19 @@ public class BedListener implements Listener {
             bedPDC.remove(ownerKey);
 
             try {
-                UUID ownerUUID = UUID.fromString(ownerUUIDString);
-                Player owner = Bukkit.getPlayer(ownerUUID);
-                if (owner != null) {
-                    owner.sendMessage("§cYour bed has been destroyed!");
-                }
+                Bukkit.getAsyncScheduler().runNow(Specialization.getInstance(), (task) -> {
+                    UUID ownerUUID = UUID.fromString(ownerUUIDString);
+                    OfflinePlayer owner = Bukkit.getOfflinePlayer(ownerUUID);
+                    if (owner != null) {
+                        if(owner.isOnline()) {
+                            owner.getPlayer().sendMessage("§cYour bed has been destroyed, Spawn Point set to World Spawn!");
+                            owner.getPlayer().setBedSpawnLocation(null);
+                            owner.getPlayer().setRespawnLocation(null);
+                        }
+                    }
 
-                Bukkit.getLogger().info("Bed at " + block.getLocation() + " was broken, cleared PDC ownership for player " + ownerUUID);
+                    Bukkit.getLogger().info("Bed at " + block.getLocation() + " was broken, cleared PDC ownership for player " + ownerUUID);
+                });
             } catch (IllegalArgumentException e) {
                 Bukkit.getLogger().warning("Invalid UUID found in bed PDC: " + ownerUUIDString);
             }

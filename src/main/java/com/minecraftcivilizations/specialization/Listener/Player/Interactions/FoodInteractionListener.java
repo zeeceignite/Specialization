@@ -18,6 +18,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -38,6 +39,13 @@ public class FoodInteractionListener implements Listener {
             if (item.getType().isEdible() && player.isSneaking()) {
                 if (customPlayer.getSkillLevel(SkillType.HEALER) > SkillLevel.APPRENTICE.getLevel()) {
 
+                    // Prevent blessing of golden apples and enchanted golden apples
+                    if (item.getType() == Material.GOLDEN_APPLE || item.getType() == Material.ENCHANTED_GOLDEN_APPLE) {
+                        player.sendMessage(ChatColor.RED + "Golden apples cannot be blessed!");
+                        event.setCancelled(true);
+                        return;
+                    }
+
                     if (player.getFoodLevel() < 10) {
                         player.sendMessage(ChatColor.RED + "You need more hunger to bless food");
                         event.setCancelled(true);
@@ -46,19 +54,35 @@ public class FoodInteractionListener implements Listener {
 
                     int healerLevel = customPlayer.getSkillLevel(SkillType.HEALER);
                     if (item.getAmount() >= 1) {
+                        ItemMeta meta = item.getItemMeta();
+                        if (meta != null && meta.hasLore()) {
+                            for (String line : meta.getLore()) {
+                                if (ChatColor.stripColor(line).toLowerCase().contains("blessed")) {
+                                    player.sendMessage(ChatColor.RED + "This food is already blessed!");
+                                    event.setCancelled(true);
+                                    return;
+                                }
+                            }
+                        }
+
+                        int blessXp = SpecializationConfig.getHealthConfig().get("BLESSED_FOOD_HEALER_XP", Integer.class);
+                        int hungerCost = SpecializationConfig.getHealthConfig().get("BLESSED_FOOD_HUNGER_COST", Integer.class);
+
                         ItemStack singleItem = item.clone();
                         singleItem.setAmount(1);
                         blessFood(singleItem, healerLevel);
                         item.setAmount(item.getAmount() - 1);
-                        player.setFoodLevel(player.getFoodLevel()-10);
+                        player.setFoodLevel(player.getFoodLevel() - hungerCost);
                         if (player.getInventory().firstEmpty() != -1) {
                             player.getInventory().addItem(singleItem);
                         } else {
                             player.getWorld().dropItemNaturally(player.getLocation(), singleItem);
                             player.sendMessage(ChatColor.YELLOW + "Your inventory is full! The blessed food was dropped.");
                         }
+                        customPlayer.addSkillXp(SkillType.HEALER, blessXp);
                         player.sendMessage(ChatColor.GOLD + "You have blessed one " + getItemName(singleItem));
                     }
+
                     event.setCancelled(true);
                 }
             }

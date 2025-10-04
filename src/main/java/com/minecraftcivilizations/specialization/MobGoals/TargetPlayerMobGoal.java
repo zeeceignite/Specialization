@@ -4,14 +4,16 @@ import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.destroystokyo.paper.entity.ai.GoalType;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Player.CustomPlayer;
+import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.util.CoreUtil;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Piglin;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Comparator;
 import java.util.EnumSet;
 
 public class TargetPlayerMobGoal implements Goal<@NotNull Monster> {
@@ -31,7 +33,22 @@ public class TargetPlayerMobGoal implements Goal<@NotNull Monster> {
     public void start() {
         int targetRange = SpecializationConfig.getMobConfig().get("MOB_RULE_TARGET_RANGE", Integer.class);
         monster.getLocation().getNearbyPlayers(targetRange).stream()
-                .min(Comparator.comparingDouble(p -> monster.getLocation().distance(p.getLocation())))
+                .min((p1, p2) -> {
+                    CustomPlayer player1 = CoreUtil.getPlayer(p1);
+                    CustomPlayer player2 = CoreUtil.getPlayer(p2);
+                    // First, check the priority
+                    if (player1.getSkillLevel(SkillType.GUARDSMAN) > player2.getSkillLevel(SkillType.GUARDSMAN)) {
+                        return -1; // p1 has priority, so it comes first
+                    }
+                    if (player1.getSkillLevel(SkillType.GUARDSMAN) < player2.getSkillLevel(SkillType.GUARDSMAN)) {
+                        return 1;  // p2 has priority, so it comes first
+                    }
+                    // If priorities are the same, compare by distance
+                    if(monster.getLocation().getWorld().equals(p1.getLocation().getWorld()) && monster.getLocation().getWorld().equals(p2.getLocation().getWorld())){
+                        return Double.compare(p1.getLocation().distanceSquared(monster.getLocation()), p2.getLocation().distanceSquared(monster.getLocation()));
+                    }
+                    return 0;
+                })
                 .ifPresent(player -> monster.setTarget(player));
     }
 
