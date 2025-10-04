@@ -12,6 +12,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+import com.minecraftcivilizations.specialization.Player.CustomPlayer;
+import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.util.CoreUtil;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 
 import java.util.*;
 
@@ -39,20 +43,38 @@ public class ReinforcementManager {
         }
     }
 
-    public static boolean addReinforcement(Block block, boolean isHeavy) {
+    public static boolean addReinforcement(Player player, Block block, boolean isHeavy) {
         Chunk chunk = block.getChunk();
-
         if (isHeavy && isHeavilyReinforced(block)) return false;
         if (!isHeavy && isLightlyReinforced(block)) return false;
         if (!isHeavy && isHeavilyReinforced(block)) return false;
+
         Set<Reinforcement> reinforcedBlocks = getReinforcedBlocks(chunk);
-        if (reinforcedBlocks == null) {
-            reinforcedBlocks = new HashSet<>();
-        }
-        reinforcedBlocks.add(new Reinforcement(block.getLocation().toVector(), isHeavy));
+        if (reinforcedBlocks == null) reinforcedBlocks = new HashSet<>();
+
+        boolean added = reinforcedBlocks.add(new Reinforcement(block.getLocation().toVector(), isHeavy));
+        if (!added) return false;
+
         chunk.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, new Gson().toJson(reinforcedBlocks));
+
+        Player target = player;
+        if (target == null) {
+            target = block.getWorld().getNearbyPlayers(block.getLocation(), 4.0).stream().findFirst().orElse(null);
+        }
+        if (target != null) {
+            double amount = isHeavy ? 15.0 : 5.0;
+            CustomPlayer cp = CoreUtil.getPlayer(target.getUniqueId());
+            if (cp != null) {
+                cp.addSkillXp(SkillType.BUILDER, amount);
+            }
+        }
         return true;
     }
+
+    public static boolean addReinforcement(Block block, boolean isHeavy) {
+        return addReinforcement(null, block, isHeavy);
+    }
+
 
     public static void removeReinforcement(Block block) {
         Chunk chunk = block.getChunk();
