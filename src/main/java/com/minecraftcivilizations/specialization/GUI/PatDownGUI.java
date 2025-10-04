@@ -1,7 +1,7 @@
 package com.minecraftcivilizations.specialization.GUI;
 
-import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUI;
-import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem;
+import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUI.GUI;
+import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem.GUIItem;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -36,53 +36,53 @@ public class PatDownGUI extends GUI {
         for (int i = 0; i < 9; i++) {
             ItemStack item = targetInv.getItem(i);
             if (item != null) {
-                this.getItems().put(i, new GUIItem(item.clone(), null));
+                this.getItems().put(i, new GUIItem(item.clone()));
             }
         }
 
         for (int i = 9; i < 36; i++) {
             ItemStack item = targetInv.getItem(i);
             if (item != null) {
-                this.getItems().put(i, new GUIItem(item.clone(), null));
+                this.getItems().put(i, new GUIItem(item.clone()));
             }
         }
 
 
         ItemStack helmet = targetInv.getHelmet();
         if (helmet != null) {
-            this.getItems().put(36, new GUIItem(helmet.clone(), null));
+            this.getItems().put(36, new GUIItem(helmet.clone()));
         } else {
-            this.getItems().put(36, new GUIItem(createPlaceholder("Helmet Slot"), null));
+            this.getItems().put(36, new GUIItem(createPlaceholder("Helmet Slot")));
         }
 
         ItemStack chestplate = targetInv.getChestplate();
         if (chestplate != null) {
-            this.getItems().put(37, new GUIItem(chestplate.clone(), null));
+            this.getItems().put(37, new GUIItem(chestplate.clone()));
         } else {
-            this.getItems().put(37, new GUIItem(createPlaceholder("Chestplate Slot"), null));
+            this.getItems().put(37, new GUIItem(createPlaceholder("Chestplate Slot")));
         }
 
         ItemStack leggings = targetInv.getLeggings();
         if (leggings != null) {
-            this.getItems().put(38, new GUIItem(leggings.clone(), null));
+            this.getItems().put(38, new GUIItem(leggings.clone()));
         } else {
-            this.getItems().put(38, new GUIItem(createPlaceholder("Leggings Slot"), null));
+            this.getItems().put(38, new GUIItem(createPlaceholder("Leggings Slot")));
         }
 
         ItemStack boots = targetInv.getBoots();
         if (boots != null) {
-            this.getItems().put(39, new GUIItem(boots.clone(), null));
+            this.getItems().put(39, new GUIItem(boots.clone()));
         } else {
-            this.getItems().put(39, new GUIItem(createPlaceholder("Boots Slot"), null));
+            this.getItems().put(39, new GUIItem(createPlaceholder("Boots Slot")));
         }
 
         // Offhand
         ItemStack offhand = targetInv.getItemInOffHand();
-        this.getItems().put(40, new GUIItem(offhand.clone(), null));
+        this.getItems().put(40, new GUIItem(offhand.clone()));
 
         ItemStack barrier = createPlaceholder("Empty");
         for (int i = 41; i < 54; i++) {
-            this.getItems().put(i, new GUIItem(barrier, null));
+            this.getItems().put(i, new GUIItem(barrier));
         }
 
         // Send messages

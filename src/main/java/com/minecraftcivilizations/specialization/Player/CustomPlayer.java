@@ -40,9 +40,6 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     private double height = 0;
     @Getter
     @Setter
-    private PlayerOptions playerOptions = new PlayerOptions();
-    @Getter
-    @Setter
     private AnalyticPlayerData analyticPlayerData = new AnalyticPlayerData();
     @Getter
     private boolean isDowned = false;
@@ -97,7 +94,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         player.sendActionBar(Component.text((xp <= 0 ? "" : "+") + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));
         int currentLevel = this.getSkillLevel(skillType);
 
-        if (this.playerOptions.isSoundEnabled()) {
+        if (this.getPlayerOptions().isSoundEnabled()) {
             player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.MASTER, 100, 1);
         }
 

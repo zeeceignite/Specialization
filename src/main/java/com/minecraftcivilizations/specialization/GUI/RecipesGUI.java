@@ -10,6 +10,7 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUI.ListGUI;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem.GUIItem;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIPlaceOption;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIPlacement;
+import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Util.ItemUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Util.LoreUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Util.SearchUtils;
@@ -130,7 +131,15 @@ public class RecipesGUI extends GUI {
                             GUIPlaceOption.SHOULD_PLACE_EXIT, GUIPlacement.of(false),
                             GUIPlaceOption.SHOULD_PLACE_BACK, GUIPlacement.of(true),
                             GUIPlaceOption.SHOULD_PLACE_BACK_TO_DIFFERENT_MENU, GUIPlacement.of(true),
-                            GUIPlaceOption.SHOULD_PLACE_SEARCH, GUIPlacement.of(null, true, s -> SearchUtils.searchFromProvidedItems(s, itemStacks))
+                            GUIPlaceOption.SHOULD_PLACE_SEARCH, GUIPlacement.of(null, true, s -> {
+                                ListGUI openGUI = new ListGUI(Component.text("Search Results"), 54, SearchUtils.searchFromProvidedItems(s, itemStacks));
+                                minecraftcivilizations.com.minecraftCivilizationsCore.Player.CustomPlayer customPlayer = MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(getInventory().getViewers().getFirst().getUniqueId());
+                                openGUI.setParentGUI(MinecraftCivilizationsCore.getInstance().getGuiManager().findGUIById(customPlayer.getCurrentGUI()))
+                                        .addOption(GUIPlaceOption.SHOULD_PLACE_BACK, true)
+                                        .addOption(GUIPlaceOption.SHOULD_PLACE_SEARCH, false);
+                                openGUI.open((Player) getInventory().getViewers().getFirst());
+                                return null;
+                            })
                     ));
                     new ListGUI(Component.text("Recipes"), 54, map, itemStacks).setParentGUI(this).open(Bukkit.getPlayer(customPlayer.getUuid()));
                 }
