@@ -17,6 +17,9 @@ public enum SkillLevel {
     private final int level;
 
     public static SkillLevel getSkillLevelFromInt(int skillLevel) {
+        if (skillLevel >= SkillLevel.values().length) {
+            return getSkillLevelFromInt(SkillLevel.values().length - 1);
+        }
         for (SkillLevel level : SkillLevel.values()) {
             if (level.level == skillLevel) {
                 return level;

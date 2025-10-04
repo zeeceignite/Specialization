@@ -11,6 +11,7 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizati
 import minecraftcivilizations.com.minecraftCivilizationsCore.Player.CustomPlayerManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -20,6 +21,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Objects;
 
 import static com.minecraftcivilizations.specialization.Skill.SkillType.getDisplayName;
@@ -152,7 +154,6 @@ public class ClassGUI extends GUI {
             int currentSkillLevel = customPlayer.getSkillLevel(skill.getSkillType());
 
             if (currentSkillLevel < SkillLevel.values().length) {
-
                 double currentXp = Math.round(skill.getXp() * 100) / 100D;
                 double xpToNextLevel = Math.round((Skill.getXPNeededForLevel(currentSkillLevel + 1) - skill.getXp()) * 100) / 100D ;
                 double percentOfTotalForNextLevel = Math.round(
@@ -193,6 +194,35 @@ public class ClassGUI extends GUI {
                         }
                         add(Component.empty());
                         add(Component.text("Pretty awesome if you ask me!").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
+                    }
+                });
+                itemStack.setItemMeta(itemMeta);
+                this.getItems().put(i++, new GUIItem(itemStack, () -> {
+                    new RecipesGUI(customPlayer, skill.getSkillType()).open(Bukkit.getPlayer(customPlayer.getUuid()));
+                }));
+            } else if (currentSkillLevel == SkillLevel.values().length) {
+                double currentXp = Math.round(skill.getXp() * 100) / 100D;
+                ItemStack itemStack = ItemStack.of(skill.getSkillType().getSkillWorkstation());
+                ItemMeta itemMeta = itemStack.getItemMeta();
+                itemMeta.setEnchantmentGlintOverride(true);
+                itemMeta.addItemFlags(ItemFlag.values());
+                itemMeta.displayName(Component.text(getDisplayName(skill.getSkillType()))
+                        .decoration(TextDecoration.ITALIC, false)
+                        .color(NamedTextColor.WHITE));
+                itemMeta.lore(new ArrayList<>() {
+                    {
+                        add(Component.text("A").decorations(Map.of(TextDecoration.OBFUSCATED, TextDecoration.State.TRUE, TextDecoration.ITALIC, TextDecoration.State.FALSE, TextDecoration.BOLD, TextDecoration.State.TRUE))
+                                .color(NamedTextColor.WHITE)
+                                .append(Component.text(SkillLevel.getDisplayName(currentSkillLevel))
+                                .decorations(Map.of(TextDecoration.OBFUSCATED, TextDecoration.State.FALSE, TextDecoration.ITALIC, TextDecoration.State.FALSE, TextDecoration.BOLD, TextDecoration.State.TRUE))
+                                .color(NamedTextColor.WHITE))
+                                .append(Component.text("A").decorations(Map.of(TextDecoration.OBFUSCATED, TextDecoration.State.TRUE, TextDecoration.ITALIC, TextDecoration.State.FALSE, TextDecoration.BOLD, TextDecoration.State.TRUE))
+                                        .color(NamedTextColor.WHITE))
+
+                        );
+                        add(Component.text("Current xp: " + (int) Math.round(currentXp)).decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+                        add(Component.empty());
+                        add(Component.text("You did it!").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
                     }
                 });
                 itemStack.setItemMeta(itemMeta);
