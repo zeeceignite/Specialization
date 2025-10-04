@@ -74,6 +74,8 @@ public final class Specialization extends JavaPlugin {
     public static Logger logger;
     private static LocalNameGenerator localNameGenerator;
 
+//    TODO: FIX STACKING ISSUE
+
     @Override
     public void onEnable() {
 
@@ -129,7 +131,7 @@ public final class Specialization extends JavaPlugin {
                     TownManager.getInstance().scanAllPlayersForTowns();
                 }
             }
-        }.runTaskLater(this, 100L); // Run after 5 seconds to allow server to fully start
+        }.runTaskAsynchronously(this);
 
         World world = Bukkit.getWorlds().get(0);
         world.setGameRule(GameRule.SPAWN_RADIUS,350);
@@ -257,6 +259,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new RestoreHealthCommand());
         commandManager.registerCommand(new NotifyRestartCommand());
         commandManager.registerCommand(new RecipesCommand());
+        commandManager.registerCommand(new TestCommand());
         commandManager.registerCommand(new PurgeGoldenApplesCommand());
     }
 

@@ -5,16 +5,21 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
-import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUI;
-import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem;
+import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUI.GUI;
+import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem.GUIItem;
+import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem.GUIItemClickEvent;
+import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem.GUIItemClickOptions;
+import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem.GUIItemOptions;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Lore.Lore;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
-import minecraftcivilizations.com.minecraftCivilizationsCore.Player.CustomPlayerManager;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Util.LoreUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -37,7 +42,7 @@ public class ClassGUI extends GUI {
 
         if(customPlayer == null) return;
 
-        if (customPlayer.isAdvancedClassesGUIEnabled()) {
+        if (customPlayer.getPlayerOptions().isAdvancedClassesGUIEnabled()) {
             advancedClassGUI(customPlayer);
         } else {
             defaultClassGUI(customPlayer);
@@ -57,7 +62,12 @@ public class ClassGUI extends GUI {
         settingsItemMeta.addItemFlags(ItemFlag.values());
         settingsItemMeta.displayName(Component.text("Settings").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
         settings.setItemMeta(settingsItemMeta);
-        return new GUIItem(settings, () -> new SettingsGUI().setParentGUI(this).open(player));
+        return new GUIItem(settings)
+                .addOnClick(() -> new SettingsGUI().setParentGUI(this).open(player), ClickType.LEFT)
+                .addOnClick(GUIItemClickEvent.of(() -> new SettingsGUI().setParentGUI(this).open(player),
+                        new Lore(LoreUtils.createDescriptionLoreLine("Click to open the Settings GUI")),
+                        GUIItemClickOptions.of(true, true)), ClickType.SHIFT_LEFT)
+                .setOptions(GUIItemOptions.of(false));
     }
 
     private GUIItem makeRecipesItem(Player player){
@@ -66,7 +76,8 @@ public class ClassGUI extends GUI {
         recipesItemMeta.addItemFlags(ItemFlag.values());
         recipesItemMeta.displayName(Component.text("Recipes").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
         recipes.setItemMeta(recipesItemMeta);
-        return new GUIItem(recipes, () -> new RecipesGUI((CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId()), null).open(player));
+        return new GUIItem(recipes)
+                .addOnClick(() -> new RecipesGUI((CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId()), null).open(player));
     }
 
     private GUIItem makeUserItem(Component name){
@@ -75,7 +86,7 @@ public class ClassGUI extends GUI {
         userItemMeta.addItemFlags(ItemFlag.values());
         userItemMeta.displayName(name.decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
         user.setItemMeta(userItemMeta);
-        return new GUIItem(user, null);
+        return new GUIItem(user);
     }
 
     private GUIItem makeGlassDistributionPaneAdvanced(String name, Material material, double percent) {
@@ -91,7 +102,7 @@ public class ClassGUI extends GUI {
             }
         });
         itemStack.setItemMeta(itemMeta);
-        return new GUIItem(itemStack, null);
+        return new GUIItem(itemStack);
     }
 
     private GUIItem makeGlassDistributionPaneSimple(String name, Material material, double percent) {
@@ -107,7 +118,7 @@ public class ClassGUI extends GUI {
             }
         });
         itemStack.setItemMeta(itemMeta);
-        return new GUIItem(itemStack, null);
+        return new GUIItem(itemStack);
     }
 
     private Material getPaneMaterial(int tier, int type){
@@ -137,15 +148,15 @@ public class ClassGUI extends GUI {
                 double diff = customPlayer.getGUIDistributionOfTotalSkills(skill.getSkillType()) - score;
 
                 if (diff >= 1) {
-                    this.getItems().put(temp-=9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.GREEN_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
+                    this.getItems().put(temp -= 9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.GREEN_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                 } else if (diff >= 0.75) {
-                    this.getItems().put(temp-=9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.LIME_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
+                    this.getItems().put(temp -= 9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.LIME_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                 } else if (diff >= 0.5) {
-                    this.getItems().put(temp-=9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.YELLOW_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
+                    this.getItems().put(temp -= 9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.YELLOW_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                 } else if (diff >= 0.25) {
-                    this.getItems().put(temp-=9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.ORANGE_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
+                    this.getItems().put(temp -= 9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.ORANGE_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                 } else {
-                    this.getItems().put(temp-=9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.RED_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
+                    this.getItems().put(temp -= 9, makeGlassDistributionPaneAdvanced(getDisplayName(skill.getSkillType()), Material.RED_STAINED_GLASS_PANE, customPlayer.getPercentOfTotal(skill.getSkillType())));
                 }
             }
 
@@ -154,7 +165,7 @@ public class ClassGUI extends GUI {
             if (currentSkillLevel < SkillLevel.values().length) {
 
                 double currentXp = Math.round(skill.getXp() * 100) / 100D;
-                double xpToNextLevel = Math.round((Skill.getXPNeededForLevel(currentSkillLevel + 1) - skill.getXp()) * 100) / 100D ;
+                double xpToNextLevel = Math.round((Skill.getXPNeededForLevel(currentSkillLevel + 1) - skill.getXp()) * 100) / 100D;
                 double percentOfTotalForNextLevel = Math.round(
                         SpecializationConfig.getSkillRequirementsConfig().get(
                                 skill.getSkillType() + "_" + SkillLevel.getSkillLevelFromInt(currentSkillLevel + 1) + "_REQUIREMENT", Double.TYPE) * 100) / 100D;
@@ -196,11 +207,10 @@ public class ClassGUI extends GUI {
                     }
                 });
                 itemStack.setItemMeta(itemMeta);
-                this.getItems().put(i++, new GUIItem(itemStack, () -> {
-                    new RecipesGUI(customPlayer, skill.getSkillType()).open(Bukkit.getPlayer(customPlayer.getUuid()));
-                }));
+                this.getItems().put(i++,
+                        new GUIItem(itemStack)
+                                .addOnClick(() -> new RecipesGUI(customPlayer, skill.getSkillType()).open(Bukkit.getPlayer(customPlayer.getUuid())), ClickType.UNKNOWN));
             }
-
         }
     }
 
@@ -249,9 +259,8 @@ public class ClassGUI extends GUI {
                 }
             });
             itemStack.setItemMeta(itemMeta);
-            this.getItems().put(i++, new GUIItem(itemStack, () -> {
-                new RecipesGUI(customPlayer, skill.getSkillType()).open(Bukkit.getPlayer(customPlayer.getUuid()));
-            }));
+            this.getItems().put(i++, new GUIItem(itemStack)
+                    .addOnClick(() -> new RecipesGUI(customPlayer, skill.getSkillType()).open(Bukkit.getPlayer(customPlayer.getUuid())), ClickType.UNKNOWN));
         }
     }
 }
