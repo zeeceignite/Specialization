@@ -16,6 +16,7 @@ import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Data.MongoConnection;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
 import com.minecraftcivilizations.specialization.Listener.BurnListener;
+import com.minecraftcivilizations.specialization.Listener.Blocks.ReinforcementProtectionListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.ExplodeListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.MobKillListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.MobListeners;
@@ -26,6 +27,8 @@ import com.minecraftcivilizations.specialization.Listener.Player.Blocks.PlaceBlo
 import com.minecraftcivilizations.specialization.Listener.Player.Combat.ArmorDamageReductionListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Combat.Berserk;
 import com.minecraftcivilizations.specialization.Listener.Player.Combat.CrossBowListener;
+import com.minecraftcivilizations.specialization.Listener.Player.Combat.Instinct;
+import com.minecraftcivilizations.specialization.Listener.Player.Combat.PatDown;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.FoodInteractionListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.PlayerInteractEntityListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.PlayerInteractListener;
@@ -42,6 +45,7 @@ import com.minecraftcivilizations.specialization.Recipe.Blueprints;
 import com.minecraftcivilizations.specialization.Recipe.Recipes;
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import com.minecraftcivilizations.specialization.Skill.Skill;
+import com.minecraftcivilizations.specialization.util.LocatorBarManager;
 import com.mojang.authlib.GameProfile;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Component.ComponentUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
@@ -100,6 +104,8 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new HungerSystemListener(this), this);
         getServer().getPluginManager().registerEvents(new LeashListener(), this);
         getServer().getPluginManager().registerEvents(new BedListener(), this);
+        getServer().getPluginManager().registerEvents(new LocatorBarManager(this), this);
+        getServer().getPluginManager().registerEvents(new ReinforcementProtectionListener(), this);
 
         getServer().getPluginManager().registerEvents(new StonecutterListener(), this);
         getServer().getPluginManager().registerEvents(new CraftingListener(this), this);
@@ -112,6 +118,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new MobListeners(), this);
         getServer().getPluginManager().registerEvents(new Berserk(), this);
         getServer().getPluginManager().registerEvents(new ArmorDamageReductionListener(), this);
+        getServer().getPluginManager().registerEvents(new PatDown(), this);
 
 
         // Trigger initial town scan after server startup
@@ -130,7 +137,7 @@ public final class Specialization extends JavaPlugin {
         world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN,true);
         world.setGameRule(GameRule.NATURAL_REGENERATION,false);
         world.setGameRule(GameRule.SHOW_DEATH_MESSAGES,false);
-        world.setGameRule(GameRule.LOCATOR_BAR,false);
+        world.setGameRule(GameRule.LOCATOR_BAR,true);
         world.setGameRule(GameRule.WATER_SOURCE_CONVERSION, false);
         world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS,false);
 

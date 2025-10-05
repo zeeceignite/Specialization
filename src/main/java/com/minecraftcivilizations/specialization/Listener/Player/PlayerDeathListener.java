@@ -21,7 +21,6 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-
 import java.util.Objects;
 
 public class PlayerDeathListener implements Listener {
@@ -153,7 +152,8 @@ public class PlayerDeathListener implements Listener {
         for (PotionEffectType potionEffectType : Registry.EFFECT) {
             try {
                 String effectKey = potionEffectType.getKey().getKey();
-                Pair<Double, Double> effectData = SpecializationConfig.getDownedConfig().get(effectKey, new TypeToken<Pair<Double, Double>>(){});
+                Pair<Double, Double> effectData = SpecializationConfig.getDownedConfig()
+                        .get(effectKey, new TypeToken<Pair<Double, Double>>() {});
 
                 if (effectData != null && effectData.getFirst() != null && effectData.getSecond() != null) {
                     int duration = effectData.getFirst().intValue();
@@ -167,5 +167,25 @@ public class PlayerDeathListener implements Listener {
                 System.err.println("Failed to apply downed effect " + potionEffectType.getKey() + ": " + e.getMessage());
             }
         }
+
+        int duration = 600;
+        int amplifier = 255;
+
+        Pair<Double, Double> weaknessData = SpecializationConfig.getDownedConfig()
+                .get("weakness", new TypeToken<Pair<Double, Double>>() {});
+        if (weaknessData != null) {
+            if (weaknessData.getFirst() != null && weaknessData.getFirst() > 0)
+                duration = weaknessData.getFirst().intValue();
+            if (weaknessData.getSecond() != null)
+                amplifier = weaknessData.getSecond().intValue();
+        }
+
+        player.addPotionEffect(new PotionEffect(
+                        PotionEffectType.WEAKNESS,
+                        duration > 0 ? duration : 600,
+                        amplifier,
+                        false,
+                        false
+        ));
     }
 }
