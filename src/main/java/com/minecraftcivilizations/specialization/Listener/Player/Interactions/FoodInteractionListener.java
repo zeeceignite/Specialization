@@ -136,47 +136,89 @@ public class FoodInteractionListener implements Listener {
     }
 
     private void blessFood(ItemStack item, int healerLevel) {
-        CustomItem customItem = new CustomItem(item.getType(), Component.text("Blessed " + getItemName(item)).color(NamedTextColor.GOLD));
-        customItem.addLore(Specialization.getInstance(), List.of(Component.empty(), Component.text("Blessed Food").color(NamedTextColor.YELLOW), Component.text("Healer Level: " + healerLevel).color(NamedTextColor.GRAY), Component.text("Grants regeneration when consumed").color(NamedTextColor.GRAY)));
+        String pretty = getItemName(item);
+        CustomItem customItem = new CustomItem(item.getType(),
+                Component.text("Blessed " + pretty).color(NamedTextColor.GOLD));
+
+        String effectSummary;
+        if (healerLevel >= SkillLevel.GRANDMASTER.getLevel()) {
+            effectSummary = "Regeneration III 60s, Absorption II 60s";
+        } else if (healerLevel >= SkillLevel.MASTER.getLevel()) {
+            effectSummary = "Regeneration II 20s, Absorption I 40s";
+        } else if (healerLevel >= SkillLevel.EXPERT.getLevel()) {
+            effectSummary = "Regeneration II 20s";
+        } else { // Journeyman
+            effectSummary = "Regeneration I 30s";
+        }
+
+        customItem.addLore(Specialization.getInstance(), List.of(
+                Component.empty(),
+                Component.text("Blessed Food").color(NamedTextColor.YELLOW),
+                Component.text("Healer Level: " + healerLevel).color(NamedTextColor.GRAY),
+                Component.text(effectSummary).color(NamedTextColor.GRAY)
+        ));
         item.setItemMeta(customItem.getItem().getItemMeta());
     }
 
 
 
-    private void applyBlessedFoodEffects(Player player, int healerLevel, Material itemType) {
-        int duration = 40 + getItemRegen(itemType) * 20;
-        int amplifier = 0;
 
-        if (healerLevel >= SkillLevel.JOURNEYMAN.getLevel()) duration = 400;
-        if (healerLevel >= SkillLevel.EXPERT.getLevel()) {
-            duration = 140 + getItemRegen(itemType) * 25;
-            amplifier = 0;
-        }
-        if (healerLevel >= SkillLevel.MASTER.getLevel()) {
-            duration = 340 + getItemRegen(itemType) * 30;
-            amplifier = 1;
-            player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 800, 0));
-        }
+    private void applyBlessedFoodEffects(Player player, int healerLevel, Material itemType) {
+        // Fixed, spec-accurate values (ticks); remove food dependence at L2+
+        int regenDurationTicks = 0;
+        int regenAmplifier = 0; // amp 0 = Regen I, 1 = Regen II, 2 = Regen III
+
+        // Optional extras
+        Integer absorptionDurationTicks = null;
+        Integer absorptionAmplifier = null;
+
         if (healerLevel >= SkillLevel.GRANDMASTER.getLevel()) {
-            duration = 760 + getItemRegen(itemType) * 50;
-            amplifier = 1;
-            player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 1000, 1));
+            // L5: 60s Regen III + 60s Abs II
+            regenDurationTicks = 60 * 20;
+            regenAmplifier = 2;
+            absorptionDurationTicks = 60 * 20;
+            absorptionAmplifier = 1;
+        } else if (healerLevel >= SkillLevel.MASTER.getLevel()) {
+            // L4: 20s Regen II + 40s Abs I
+            regenDurationTicks = 20 * 20;
+            regenAmplifier = 1;
+            absorptionDurationTicks = 40 * 20;
+            absorptionAmplifier = 0;
+        } else if (healerLevel >= SkillLevel.EXPERT.getLevel()) {
+            // L3: 20s Regen II
+            regenDurationTicks = 20 * 20;
+            regenAmplifier = 1;
+        } else if (healerLevel >= SkillLevel.JOURNEYMAN.getLevel()) {
+            // L2: 30s Regen I
+            regenDurationTicks = 30 * 20;
+            regenAmplifier = 0;
+        } else {
+            // Below Journeyman shouldn’t be able to bless; safe no-op
+            return;
         }
-        player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, duration, amplifier));
-        
-        // Restore max health if enabled and player's max health is below normal
+
+        // Apply effects
+        if (regenDurationTicks > 0) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, regenDurationTicks, regenAmplifier));
+        }
+        if (absorptionDurationTicks != null && absorptionAmplifier != null) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, absorptionDurationTicks, absorptionAmplifier));
+        }
+
+        // Keep your existing “restore max health if below normal” behavior
         if (SpecializationConfig.getHealthConfig().get("HEALTH_ENABLED", Boolean.class)) {
             double currentMaxHealth = Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).getValue();
             double normalMaxHealth = SpecializationConfig.getHealthConfig().get("MAX_HEALTH", Double.class);
             double healthRestoreAmount = SpecializationConfig.getHealthConfig().get("BLESSED_FOOD_HEALTH_RESTORE_AMOUNT", Double.class);
-            
+
             if (currentMaxHealth < normalMaxHealth) {
                 double newMaxHealth = Math.min(normalMaxHealth, currentMaxHealth + healthRestoreAmount);
                 Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(newMaxHealth);
-                player.sendMessage(ChatColor.GREEN + "You feel your vitality returning! Max health restored to " + (int)newMaxHealth);
+                player.sendMessage(ChatColor.GREEN + "You feel your vitality returning! Max health restored to " + (int) newMaxHealth);
             }
         }
     }
+
 
     private int getBlessedFoodLevel(ItemStack item) {
         if (item == null || item.getItemMeta() == null) return 0;
