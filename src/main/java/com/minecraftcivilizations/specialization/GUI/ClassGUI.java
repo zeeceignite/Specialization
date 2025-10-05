@@ -25,6 +25,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Objects;
 
 import static com.minecraftcivilizations.specialization.Skill.SkillType.getDisplayName;
@@ -162,7 +163,7 @@ public class ClassGUI extends GUI {
 
             int currentSkillLevel = customPlayer.getSkillLevel(skill.getSkillType());
 
-            if (currentSkillLevel < SkillLevel.values().length) {
+            if (currentSkillLevel < SkillLevel.values().length - 1) {
 
                 double currentXp = Math.round(skill.getXp() * 100) / 100D;
                 double xpToNextLevel = Math.round((Skill.getXPNeededForLevel(currentSkillLevel + 1) - skill.getXp()) * 100) / 100D;
@@ -210,6 +211,36 @@ public class ClassGUI extends GUI {
                 this.getItems().put(i++,
                         new GUIItem(itemStack)
                                 .addOnClick(() -> new RecipesGUI(customPlayer, skill.getSkillType()).open(Bukkit.getPlayer(customPlayer.getUuid())), ClickType.UNKNOWN));
+            } else if (currentSkillLevel == SkillLevel.values().length - 1) {
+                double currentXp = Math.round(skill.getXp() * 100) / 100D;
+                ItemStack itemStack = ItemStack.of(skill.getSkillType().getSkillWorkstation());
+                ItemMeta itemMeta = itemStack.getItemMeta();
+                itemMeta.setEnchantmentGlintOverride(true);
+                itemMeta.addItemFlags(ItemFlag.values());
+                itemMeta.displayName(Component.text(getDisplayName(skill.getSkillType()))
+                        .decoration(TextDecoration.ITALIC, false)
+                        .color(NamedTextColor.WHITE));
+                itemMeta.lore(new ArrayList<>() {
+                    {
+                        add(Component.text("A").decorations(Map.of(TextDecoration.OBFUSCATED, TextDecoration.State.TRUE, TextDecoration.ITALIC, TextDecoration.State.FALSE, TextDecoration.BOLD, TextDecoration.State.TRUE))
+                                .color(NamedTextColor.WHITE)
+                                .append(Component.text(SkillLevel.getDisplayName(currentSkillLevel))
+                                        .decorations(Map.of(TextDecoration.OBFUSCATED, TextDecoration.State.FALSE, TextDecoration.ITALIC, TextDecoration.State.FALSE, TextDecoration.BOLD, TextDecoration.State.TRUE))
+                                        .color(NamedTextColor.WHITE))
+                                .append(Component.text("A").decorations(Map.of(TextDecoration.OBFUSCATED, TextDecoration.State.TRUE, TextDecoration.ITALIC, TextDecoration.State.FALSE, TextDecoration.BOLD, TextDecoration.State.TRUE))
+                                        .color(NamedTextColor.WHITE))
+
+                        );
+                        add(Component.text("Current xp: " + (int) Math.round(currentXp)).decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE));
+                        add(Component.empty());
+                        add(Component.text("You did it!").decoration(TextDecoration.ITALIC, false).color(NamedTextColor.GRAY));
+                    }
+                });
+                itemStack.setItemMeta(itemMeta);
+                this.getItems().put(i++, new GUIItem(itemStack)
+                        .addOnClick(() -> {
+                            new RecipesGUI(customPlayer, skill.getSkillType()).open(Bukkit.getPlayer(customPlayer.getUuid()));
+                        }));
             }
         }
     }

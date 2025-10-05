@@ -60,6 +60,8 @@ public class SpecializationConfig {
     @Getter
     private static ConfigFile canUseBlockConfig;
     @Getter
+    private static ConfigFile perkConfig;
+    @Getter
     private static ConfigFile xpGainFromRepairingConfig;
     @Getter
     private static ConfigFile combatConfig;
@@ -108,7 +110,17 @@ public class SpecializationConfig {
             fields.add(new Pair<>("MULTI_CLASS_PENALTY", 0.15));
             fields.add(new Pair<>("LINEAR_DECAY_RATE", 0.02));
             fields.add(new Pair<>("CROSS_SKILL_PENALTY", 0.25));
+        });
 
+        perkConfig = new ConfigFile(Specialization.getInstance(), "perkConfig", null, fields -> {
+            for (SkillType skillType : SkillType.values()) {
+                for (SkillLevel skillLevel : SkillLevel.values()) {
+                    for (int i = 0; i < 4; i++) {
+                        fields.add(new Pair<>(skillType + "_" + skillLevel + "_DISPLAY_NAME_" + i, "No Name"));
+                        fields.add(new Pair<>(skillType + "_" + skillLevel + "_DESCRIPTION_" + i, "No Description"));
+                    }
+                }
+            }
         });
 
         locatorBarConfig = new ConfigFile(Specialization.getInstance(), "locatorBarConfig", null, fields -> {

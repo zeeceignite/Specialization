@@ -35,6 +35,9 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     private SkillType preferredSkill = SkillType.values()[ThreadLocalRandom.current().nextInt(SkillType.values().length)];
     @Getter
     List<Skill> skills = new ArrayList<>(0);
+    @Getter
+    @Setter
+    private SkillTree skillTree = new SkillTree();
     @Setter
     @Getter
     private double height = 0;
@@ -147,7 +150,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         int level;
         // So, so sorry if you have to read this, it was fixed about 10 times and I forgot to call it, so now it looks like this :sad:
         level = 0;
-        while (level < SkillLevel.values().length && !isMissingXpForLevel(skillType, level+1) && !isMissingPercentForLevel(skillType, level+1)) {
+        while (level < SkillLevel.values().length-1 && !isMissingXpForLevel(skillType, level+1) && !isMissingPercentForLevel(skillType, level+1)) {
             level++;
         }
         return level;
