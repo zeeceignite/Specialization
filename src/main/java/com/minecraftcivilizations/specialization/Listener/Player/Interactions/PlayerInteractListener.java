@@ -133,14 +133,10 @@ public class PlayerInteractListener implements Listener {
         ItemMeta meta = e.getItem().getItemMeta();
         if (meta == null) return;
 
-        // prevent re-blessing
-        if (meta.hasLore()) {
-            for (Component c : meta.lore()) {
-                if (((net.kyori.adventure.text.TextComponent) c).content().toLowerCase().contains("blessed")) {
-                    e.getPlayer().sendMessage(ChatColor.RED + "This item has already been blessed.");
-                    return;
-                }
-            }
+        // ✅ Prevent blessing if item already has any enchantments
+        if (!e.getItem().getEnchantments().isEmpty()) {
+            e.getPlayer().sendMessage(ChatColor.RED + "This item has already been blessed.");
+            return;
         }
 
         List<NamespacedKey> bannedBlessEnchants =
@@ -183,6 +179,7 @@ public class PlayerInteractListener implements Listener {
 
         e.getPlayer().sendMessage(ChatColor.GOLD + "✨ Your " + typeName.replace("_", " ") + " has been blessed with " + enchantDisplay + " " + finalLevel + "!");
     }
+
 
     @EventHandler
     public void onHarvestSweetBerries(PlayerInteractEvent e) {
