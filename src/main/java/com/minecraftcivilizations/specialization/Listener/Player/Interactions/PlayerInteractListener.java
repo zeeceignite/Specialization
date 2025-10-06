@@ -13,6 +13,7 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
@@ -30,10 +31,13 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.view.AnvilView;
+import org.bukkit.ChatColor;
+import java.util.regex.Pattern;
 
 import java.util.*;
 
@@ -52,7 +56,7 @@ public class PlayerInteractListener implements Listener {
             // Check all skill levels from NOVICE up to the player's current level
             SkillType skillType = skill.getSkillType();
             int playerSkillLevel = player.getSkillLevel(skillType);
-            
+
             for (SkillLevel skillLevel : SkillLevel.values()) {
                 if (skillLevel.getLevel() <= playerSkillLevel) {
                     String configKey = skillType + "_" + skillLevel;
@@ -109,46 +113,126 @@ public class PlayerInteractListener implements Listener {
     }
 
     @EventHandler
-    public void onLibrarianEnchantItem(PlayerInteractEvent e){
-        if(!e.getAction().isRightClick() || !e.getPlayer().isSneaking() || e.getItem() == null || e.getHand().equals(EquipmentSlot.OFF_HAND)) return;
-        if(!e.getPlayer().getInventory().getItemInOffHand().getType().equals(Material.BOOK)) return;
-        CustomPlayer player = CoreUtil.getPlayer(e.getPlayer());
+    public void onLibrarianEnchantItem(PlayerInteractEvent e) {
+        if (!e.getAction().isRightClick() || !e.getPlayer().isSneaking() || e.getItem() == null || e.getHand().equals(EquipmentSlot.OFF_HAND))
+            return;
+        if (!e.getPlayer().getInventory().getItemInOffHand().getType().equals(Material.BOOK))
+            return;
 
+        CustomPlayer player = CoreUtil.getPlayer(e.getPlayer());
         int xpBase = SpecializationConfig.getLibrarianConfig().get("BLESS_ITEM_XP_LEVEL_REQUIREMENT", Integer.class);
         int skillMin = SpecializationConfig.getLibrarianConfig().get("BLESS_ITEM_LIBRARIAN_LEVEL", Integer.class);
         int xpLevelAmount = xpBase * (player.getSkillLevel(SkillType.LIBRARIAN) - skillMin + 1);
-        if(xpLevelAmount > e.getPlayer().getLevel()) return;
-
+        if (xpLevelAmount > e.getPlayer().getLevel()) return;
 
         String regex = SpecializationConfig.getLibrarianConfig().get("ENCHANTABLE_TOOL_REGEX", String.class);
-        if(e.getItem().getType().name().toLowerCase().matches(regex) && player.getSkillLevel(SkillType.LIBRARIAN) >= skillMin) {
+        String typeName = e.getItem().getType().name().toLowerCase();
+        if (!Pattern.compile(regex).matcher(typeName).find()) return;
+        if (player.getSkillLevel(SkillType.LIBRARIAN) < skillMin) return;
 
-            List<NamespacedKey> bannedBlessEnchants = SpecializationConfig.getLibrarianConfig().get("BANNED_BLESS_ENCHANTS", new TypeToken<>(){});
+        ItemMeta meta = e.getItem().getItemMeta();
+        if (meta == null) return;
 
-            ArrayList<Enchantment> validEnchants = new ArrayList<>(RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT)
-                    .stream().filter(enchant -> {
-                        boolean conflict = e.getItem().getEnchantments().keySet().stream().anyMatch(enchant::conflictsWith);
-                        return enchant.canEnchantItem(e.getItem()) && !conflict && !bannedBlessEnchants.contains(enchant.getKey());
-                    }).toList());
-
-            if(validEnchants.isEmpty()) return;
-
-            Collections.shuffle(validEnchants);
-            ItemMeta meta = e.getItem().getItemMeta();
-            Enchantment enchant = validEnchants.getFirst();
-            e.getPlayer().sendMessage("Enchantment added:" + enchant.getKey());
-
-            int level = new Random().nextInt(1 + player.getSkillLevel(SkillType.LIBRARIAN) - skillMin);
-            meta.addEnchant(enchant, Math.min(enchant.getMaxLevel(), level), false);
-
-            ArrayList<Component> lore = meta.hasLore() ? new ArrayList<>(Objects.requireNonNull(meta.lore())) :  new ArrayList<>();
-            lore.add(MiniMessage.miniMessage().deserialize("<blue>This item was blessed with ").append(enchant.displayName(1), Component.text(" by "), player.getName()));
-            meta.lore(lore);
-
-            e.getItem().setItemMeta(meta);
-            e.getPlayer().setLevel(e.getPlayer().getLevel() - xpLevelAmount);
-            e.getPlayer().getInventory().getItemInOffHand().setAmount(e.getPlayer().getInventory().getItemInOffHand().getAmount() - 1);
+        // prevent re-blessing
+        if (meta.hasLore()) {
+            for (Component c : meta.lore()) {
+                if (((net.kyori.adventure.text.TextComponent) c).content().toLowerCase().contains("blessed")) {
+                    e.getPlayer().sendMessage(ChatColor.RED + "This item has already been blessed.");
+                    return;
+                }
+            }
         }
+
+        List<NamespacedKey> bannedBlessEnchants =
+                SpecializationConfig.getLibrarianConfig().get("BANNED_BLESS_ENCHANTS", new TypeToken<>() {});
+
+        List<Enchantment> validEnchants = RegistryAccess.registryAccess()
+                .getRegistry(RegistryKey.ENCHANTMENT)
+                .stream()
+                .filter(enchant -> {
+                    if (bannedBlessEnchants.contains(enchant.getKey())) return false;
+                    if (!enchant.canEnchantItem(e.getItem())) return false;
+                    for (Enchantment existing : e.getItem().getEnchantments().keySet()) {
+                        if (enchant.conflictsWith(existing)) return false;
+                    }
+                    return true;
+                })
+                .toList();
+
+        if (validEnchants.isEmpty()) {
+            e.getPlayer().sendMessage(ChatColor.RED + "This item cannot be blessed further.");
+            return;
+        }
+
+        Enchantment enchant = validEnchants.get(new Random().nextInt(validEnchants.size()));
+        int level = new Random().nextInt(1 + player.getSkillLevel(SkillType.LIBRARIAN) - skillMin);
+        if (level <= 0) level = 1;
+        int finalLevel = Math.min(enchant.getMaxLevel(), level);
+
+        meta.addEnchant(enchant, finalLevel, false);
+
+        List<Component> lore = meta.hasLore() ? new ArrayList<>(Objects.requireNonNull(meta.lore())) : new ArrayList<>();
+        String enchantDisplay = enchant.getKey().getKey().replace("_", " ");
+        lore.add(Component.text(ChatColor.GOLD + "Blessed with " + enchantDisplay + " " + finalLevel + " by " + e.getPlayer().getName()));
+        meta.lore(lore);
+        e.getItem().setItemMeta(meta);
+
+        e.getPlayer().setLevel(e.getPlayer().getLevel() - xpLevelAmount);
+        e.getPlayer().getInventory().getItemInOffHand()
+                .setAmount(e.getPlayer().getInventory().getItemInOffHand().getAmount() - 1);
+
+        e.getPlayer().sendMessage(ChatColor.GOLD + "✨ Your " + typeName.replace("_", " ") + " has been blessed with " + enchantDisplay + " " + finalLevel + "!");
+    }
+
+    @EventHandler
+    public void onHarvestSweetBerries(PlayerInteractEvent e) {
+        // main-hand right click on a fully-grown sweet-berry bush
+        if (!e.getAction().isRightClick() || e.getHand() == EquipmentSlot.OFF_HAND) return;
+        Block clicked = e.getClickedBlock();
+        if (clicked == null || clicked.getType() != Material.SWEET_BERRY_BUSH) return;
+
+        org.bukkit.block.data.BlockData data = clicked.getBlockData();
+        if (data instanceof Ageable age && age.getAge() == age.getMaximumAge()) {
+            CustomPlayer cp = CoreUtil.getPlayer(e.getPlayer());
+            if (cp != null) {
+                // tweak value if you like; 1 is a safe default
+                cp.addSkillXp(SkillType.FARMER, 3);
+            }
+        }
+    }
+    @EventHandler
+    public void onHarvestGlowBerries(PlayerInteractEvent e) {
+        if (!e.getAction().isRightClick() || e.getHand() == EquipmentSlot.OFF_HAND) return;
+        Block clicked = e.getClickedBlock();
+        if (clicked == null) return;
+
+        Material type = clicked.getType();
+        if (type != Material.CAVE_VINES && type != Material.CAVE_VINES_PLANT) return;
+
+        String data = clicked.getBlockData().getAsString();
+        if (!data.contains("berries=true")) return; // only when berries are actually present
+
+        CustomPlayer cp = CoreUtil.getPlayer(e.getPlayer());
+        if (cp != null) {
+            cp.addSkillXp(SkillType.FARMER, 1); // adjust XP if you like
+        }
+    }
+
+    @EventHandler
+    public void onMilk(PlayerItemConsumeEvent e) {
+        if (e.getItem().getType() != Material.MILK_BUCKET) return;
+
+        // milk clears potion effects; re-apply class passives next tick
+        Bukkit.getScheduler().runTaskLater(
+                com.minecraftcivilizations.specialization.Specialization.getInstance(),
+                () -> {
+                    CustomPlayer cp = CoreUtil.getPlayer(e.getPlayer());
+                    if (cp != null) {
+                        cp.applyEffects(); // your existing method that reapplies class bonus effects
+                    }
+                },
+                1L
+        );
     }
 
     @EventHandler
