@@ -6,6 +6,7 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemLore;
@@ -19,6 +20,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -30,12 +32,14 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.AnvilInventory;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.view.AnvilView;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class PlayerInteractListener implements Listener {
 
@@ -153,30 +157,42 @@ public class PlayerInteractListener implements Listener {
 
     @EventHandler
     public void onAnvilFinish(InventoryClickEvent e) {
-        if(e.getView() instanceof AnvilView view){
-            String renameText = view.getRenameText();
-            if(renameText != null && renameText.matches("^\\[lore [0-9]].*")){
-                CustomPlayer player = CoreUtil.getPlayer(e.getWhoClicked());
-                int level = SpecializationConfig.getLibrarianConfig().get("ITEM_LORE_LIBRARIAN_LEVEL", Integer.class);
-                if(player.getSkillLevel(SkillType.LIBRARIAN) < level) return;
+        if (!(e.getView() instanceof AnvilView view)) return;
+        CustomPlayer customPlayer = CoreUtil.getPlayer(e.getWhoClicked());
+        Player player = (Player) e.getWhoClicked();
+        String renameText = view.getRenameText();
+        if (renameText != null && renameText.matches("^\\[lore [0-9]].*")) {
+            int level = SpecializationConfig.getLibrarianConfig().get("ITEM_LORE_LIBRARIAN_LEVEL", Integer.class);
+            if (customPlayer.getSkillLevel(SkillType.LIBRARIAN) < level) return;
 
-                int number = Integer.parseInt(String.valueOf(renameText.charAt(6)));
-                ItemStack result = view.getTopInventory().getResult();
-                if(result == null) return;
-                ItemStack oldItem = view.getTopInventory().getFirstItem();
-                if (oldItem.hasData(DataComponentTypes.CUSTOM_NAME))
-                    result.setData(DataComponentTypes.CUSTOM_NAME, view.getTopInventory().getFirstItem().getData(DataComponentTypes.CUSTOM_NAME));
-                else {
-                    result.unsetData(DataComponentTypes.CUSTOM_NAME);
-                }
-                ArrayList<Component> lines = new ArrayList<>(result.getData(DataComponentTypes.LORE).lines());
-                if(lines.size() < number) {
-                    for (int i = 0; i < number - lines.size() + 1; i++) lines.add(Component.empty());
-                }
-                lines.set(number - 1, Component.text(renameText.substring(8).trim()));
-
-                result.setData(DataComponentTypes.LORE, ItemLore.lore(lines));
+            int number = Integer.parseInt(String.valueOf(renameText.charAt(6)));
+            ItemStack result = view.getTopInventory().getResult();
+            if (result == null) return;
+            ItemStack oldItem = view.getTopInventory().getFirstItem();
+            if (oldItem.hasData(DataComponentTypes.CUSTOM_NAME))
+                result.setData(DataComponentTypes.CUSTOM_NAME, view.getTopInventory().getFirstItem().getData(DataComponentTypes.CUSTOM_NAME));
+            else {
+                result.unsetData(DataComponentTypes.CUSTOM_NAME);
             }
+            ArrayList<Component> lines = new ArrayList<>(result.getData(DataComponentTypes.LORE).lines());
+            if (lines.size() < number) {
+                for (int i = 0; i < number - lines.size() + 1; i++) lines.add(Component.empty());
+            }
+            lines.set(number - 1, Component.text(renameText.substring(8).trim()));
+
+            result.setData(DataComponentTypes.LORE, ItemLore.lore(lines));
+        }
+        int chanceToCost0 = 0;
+        if (customPlayer.getSkillTree().getBranches().get(SkillType.BLACKSMITH).getPerks().get(SkillLevel.APPRENTICE).get(1).isUnlocked()) {
+            chanceToCost0 += 10;
+        }
+        double chance = ThreadLocalRandom.current().nextDouble(100);
+
+        if (chance < chanceToCost0) {
+            Specialization.logger.info("Cost set to 0");
+            player.sendMessage("Cost set to 0");
+            player.setLevel(player.getLevel());
+            view.setRepairCost(0);
         }
     }
 

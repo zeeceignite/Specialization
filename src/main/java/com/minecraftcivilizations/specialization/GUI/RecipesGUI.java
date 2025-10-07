@@ -11,6 +11,7 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem.GUIItem
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIPlaceOption;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIPlacement;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Util.ItemUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Util.LoreUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Util.SearchUtils;
@@ -33,14 +34,19 @@ public class RecipesGUI extends GUI {
         super(Component.text(skillType != null ? "Unlocked Recipes in " + SkillType.getDisplayName(skillType) : "Choose Recipe SkillTree To View").color(NamedTextColor.BLACK), 54, new HashMap<>() {
             {
                 put(45, ItemUtils.makeItemGUIItem(ItemStack.of(Material.ARROW), "Back to Class Menu")
-                        .addOnClick(() -> new ClassGUI().open(Bukkit.getPlayer(customPlayer.getUuid())),  ClickType.UNKNOWN));
+                        .addOnClick(() -> new ClassGUI().open(Bukkit.getPlayer(customPlayer.getUuid())), ClickType.UNKNOWN));
             }
         }, new HashMap<>() {
             {
                 put(GUIPlaceOption.SHOULD_PLACE_EXIT, GUIPlacement.of(true));
-                put(GUIPlaceOption.SHOULD_PLACE_BACK, GUIPlacement.of(true));
             }
         });
+        placementOverride.put(GUIPlaceOption.SHOULD_PLACE_BACK, Pair.of(GUIPlacement.of(
+                                placementOptions.containsKey(GUIPlaceOption.SHOULD_PLACE_BACK_TO_DIFFERENT_MENU) ? placementOptions.get(GUIPlaceOption.SHOULD_PLACE_BACK).slot() : getSize() - 9,
+                                true),
+                        new GUIItem(Material.ARROW, "Back").addOnClick(() -> GUI.findFirstDifferentParent(this))
+                )
+        );
         this.skillType = skillType;
         this.customPlayer = customPlayer;
     }

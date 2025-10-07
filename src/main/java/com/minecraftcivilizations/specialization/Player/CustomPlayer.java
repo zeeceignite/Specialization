@@ -3,6 +3,7 @@ package com.minecraftcivilizations.specialization.Player;
 import com.google.common.collect.Queues;
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Player.Perk.Perk;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -110,9 +111,17 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
             if (previousLevel < currentLevel) {
                 player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 100, 1);
                 player.sendMessage(LoreUtils.createLoreLine("You have leveled up " + SkillType.getDisplayName(skillType) + ", you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
+                this.getSkillTree().getBranches().get(skillType).addPoints(currentLevel - previousLevel - 1);
             } else {
-                player.playSound(player, Sound.ITEM_BOTTLE_FILL_DRAGONBREATH, 100F, 1.5F);
                 player.sendMessage(LoreUtils.createLoreLine("Your " + SkillType.getDisplayName(skillType) + "ing ability has deteriorated, you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
+                this.getSkillTree().getBranches().get(skillType).removePoints(previousLevel - currentLevel - 1);
+                player.playSound(player, Sound.ITEM_BOTTLE_FILL_DRAGONBREATH, 100F, 1.5F);
+                for (int i = currentLevel + 1; i < SkillLevel.values().length; i++) {
+                    this.getSkillTree().getBranches().get(skillType).getPerks().get(SkillLevel.getSkillLevelFromInt(i)).get(0).setUnlocked(false);
+                    this.getSkillTree().getBranches().get(skillType).getPerks().get(SkillLevel.getSkillLevelFromInt(i)).get(1).setUnlocked(false);
+                    this.getSkillTree().getBranches().get(skillType).getPerks().get(SkillLevel.getSkillLevelFromInt(i)).get(2).setUnlocked(false);
+                    this.getSkillTree().getBranches().get(skillType).getPerks().get(SkillLevel.getSkillLevelFromInt(i)).get(3).setUnlocked(false);
+                }
             }
             while (currentLevel > 0) {
                 Set<NamespacedKey> recipes =

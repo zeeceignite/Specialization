@@ -14,11 +14,14 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem.GUIItem
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIPlaceOption;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIPlacement;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Lore.Lore;
+import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Util.ItemUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Util.LoreUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
@@ -39,7 +42,7 @@ public class SkillTreeGUI extends GUI {
                 GUIPlaceOption.SHOULD_PLACE_NEXT, GUIPlacement.of(53, true),
                 GUIPlaceOption.SHOULD_PLACE_BACK, GUIPlacement.of(8, true),
                 GUIPlaceOption.SHOULD_PLACE_SEARCH, GUIPlacement.of(false),
-                GUIPlaceOption.SHOULD_PLACE_BACK_TO_DIFFERENT_MENU, GUIPlacement.of(true)));
+                GUIPlaceOption.SHOULD_PLACE_BACK_TO_DIFFERENT_MENU, GUIPlacement.of(54, true)));
         this.skillType = skillType;
         placeItems(player);
         Optional<Integer> largestKeyOptional = visibleItems.keySet().stream()
@@ -83,7 +86,7 @@ public class SkillTreeGUI extends GUI {
         visibleItems.put(3, new GUIItem(Material.BEDROCK, "Level \"7\""));
         visibleItems.put(10, createRailItem(CoreUtil.getPlayer(player).getSkillLevelEnum(skillType), SkillLevel.getSkillLevelFromInt(5)));
 
-        for (int i = 1; i <= 5; i++) {
+        for (int i = 1; i < 5; i++) {
             int j = (int) Math.round(Skill.mapValue(i, 1, 5, 5, 1));
             visibleItems.put(14 * i + 1, createSkillItem(player, 0, SkillLevel.getSkillLevelFromInt(j - 1)));
             visibleItems.put(14 * i + 2, createSkillItem(player, 1, SkillLevel.getSkillLevelFromInt(j - 1)));
@@ -245,7 +248,13 @@ public class SkillTreeGUI extends GUI {
     public GUIItem createSkillItem(Player player, int perkIndex, SkillLevel level) {
         CustomPlayer customPlayer = CoreUtil.getPlayer(player);
         SkillLevel skillLevel = customPlayer.getSkillLevelEnum(skillType);
-        Specialization.logger.info(skillLevel.getLevel() + ", " + level.getLevel());
+        if (SpecializationConfig.getPerkConfig().get(skillType + "_" + level + "_" + "DISPLAY_NAME_" + perkIndex, String.class) == null) {
+            if (this.getOptions().isShouldSetBackground()) {
+                return ItemUtils.makeGUIItemOfType(customPlayer.getPlayerOptions().getDefaultBackgroundMaterial(), "");
+            } else {
+                return new GUIItem(Material.AIR, "");
+            }
+        }
         if (skillLevel.getLevel() < level.getLevel()) {
             return createUnavailableItem(level, perkIndex);
         }

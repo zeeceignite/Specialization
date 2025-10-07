@@ -74,8 +74,6 @@ public final class Specialization extends JavaPlugin {
     public static Logger logger;
     private static LocalNameGenerator localNameGenerator;
 
-//    TODO: FIX STACKING ISSUE
-
     @Override
     public void onEnable() {
 

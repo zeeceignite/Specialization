@@ -10,6 +10,8 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem.GUIItem
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem.GUIItemClickEvent;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem.GUIItemClickOptions;
 import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIItem.GUIItemOptions;
+import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIPlaceOption;
+import minecraftcivilizations.com.minecraftCivilizationsCore.GUI.GUIPlacement;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Lore.Lore;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Util.LoreUtils;
@@ -34,6 +36,7 @@ public class ClassGUI extends GUI {
 
     public ClassGUI() {
         super(Component.text("Your Specialization Stats"), 54);
+        placementOptions.put(GUIPlaceOption.SHOULD_PLACE_EXIT, GUIPlacement.of(true));
     }
 
     @Override
