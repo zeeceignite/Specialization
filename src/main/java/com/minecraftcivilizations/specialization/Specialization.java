@@ -89,6 +89,7 @@ public final class Specialization extends JavaPlugin {
 
         setupCommands();
 
+
         getServer().getPluginManager().registerEvents(new PlayerMineListener(), this);
         getServer().getPluginManager().registerEvents(new BreakBlockListener(), this);
         getServer().getPluginManager().registerEvents(new PlaceBlockListener(), this);
@@ -132,15 +133,14 @@ public final class Specialization extends JavaPlugin {
         }.runTaskLater(this, 100L); // Run after 5 seconds to allow server to fully start
 
         World world = Bukkit.getWorlds().get(0);
-        world.setGameRule(GameRule.SPAWN_RADIUS,350);
-        world.setGameRule(GameRule.REDUCED_DEBUG_INFO,true);
-        world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN,true);
-        world.setGameRule(GameRule.NATURAL_REGENERATION,false);
-        world.setGameRule(GameRule.SHOW_DEATH_MESSAGES,false);
-        world.setGameRule(GameRule.LOCATOR_BAR,true);
+        world.setGameRule(GameRule.SPAWN_RADIUS, 350);
+        world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true);
+        world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
+        world.setGameRule(GameRule.NATURAL_REGENERATION, false);
+        world.setGameRule(GameRule.SHOW_DEATH_MESSAGES, false);
+        world.setGameRule(GameRule.LOCATOR_BAR, true);
         world.setGameRule(GameRule.WATER_SOURCE_CONVERSION, false);
-        world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS,false);
-
+        world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
 
 
         Recipes.init();
@@ -148,11 +148,6 @@ public final class Specialization extends JavaPlugin {
 
         Bukkit.updateRecipes();
 
-        try {
-            localNameGenerator = new LocalNameGenerator();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
 
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setCustomPlayerClass(CustomPlayer.class);
 
@@ -188,10 +183,10 @@ public final class Specialization extends JavaPlugin {
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(playerJoinEvent.getUniqueId());
             applyCustomName(playerJoinEvent.getPlayer(), customPlayer.getName());
             customPlayer.applyEffects();
-            
+
             // Assign player to team based on their highest skill
             TeamManager.setTeam(playerJoinEvent.getPlayer());
-            
+
             // Restore downed state if they were downed when they logged out
             if (customPlayer.isWasDownedOnLogout()) {
                 // Use Bukkit.getScheduler() to delay this until after the player has fully joined
@@ -222,7 +217,7 @@ public final class Specialization extends JavaPlugin {
                     customPlayer.setWasDownedOnLogout(false);
                 }
             }
-            
+
             MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().removeCustomPlayer(playerQuitEvent.getPlayer().getUniqueId());
         });
 
@@ -235,6 +230,7 @@ public final class Specialization extends JavaPlugin {
 
         AnalyticsData.autoPoll();
     }
+
     @Override
     public void onDisable() {
         // Plugin shutdown logic
@@ -246,7 +242,15 @@ public final class Specialization extends JavaPlugin {
         return getPlugin(Specialization.class);
     }
 
-    private void setupCommands(){
+    private void setupCommands() {
+
+        try {
+            localNameGenerator = new LocalNameGenerator();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
         PaperCommandManager commandManager = new PaperCommandManager(this);
         commandManager.registerCommand(new ClassCommand());
         commandManager.registerCommand(new SetXpCommand());
@@ -258,25 +262,47 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new NotifyRestartCommand());
         commandManager.registerCommand(new RecipesCommand());
         commandManager.registerCommand(new PurgeGoldenApplesCommand());
+        commandManager.registerCommand(new RerollNameCommand(localNameGenerator));
     }
 
-    public void applyCustomName(Player player, Component name){
+
+    public void applyCustomName(Player player, Component name) {
+        CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore
+                .getInstance()
+                .getCustomPlayerManager()
+                .getCustomPlayer(player.getUniqueId());
+
+        // Update the CustomPlayer's stored name
+        customPlayer.setName(name);
+
+        // Send the packet to all online players to update the display name
         PacketContainer packet = createChangeNamePacket(player.getUniqueId(), name);
-        CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-        for (Player p : Bukkit.getServer().getOnlinePlayers()) {
-            ProtocolLibrary.getProtocolManager().sendServerPacket(p, packet); // show everyone your name
-            ProtocolLibrary.getProtocolManager().sendServerPacket(player, createChangeNamePacket(p.getUniqueId(), customPlayer.getName())); // everyone tells you their name
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            ProtocolLibrary.getProtocolManager().sendServerPacket(p, packet);
+            // Also send each other player's custom name to the target player
+            CustomPlayer otherPlayer = (CustomPlayer) MinecraftCivilizationsCore
+                    .getInstance()
+                    .getCustomPlayerManager()
+                    .getCustomPlayer(p.getUniqueId());
+            if (otherPlayer != null) {
+                ProtocolLibrary.getProtocolManager().sendServerPacket(player,
+                        createChangeNamePacket(p.getUniqueId(), otherPlayer.getName()));
+            }
         }
+
+        // Update the internal GameProfile to ensure name persists correctly
         try {
             ServerPlayer profile = ((CraftPlayer) player).getHandle();
             GameProfile gameProfile = profile.getGameProfile();
-            Field ff = gameProfile.getClass().getDeclaredField("name");
-            ff.setAccessible(true);
-            ff.set(gameProfile, ComponentUtils.serializeComponentAsString(customPlayer.getName()));
+            Field nameField = gameProfile.getClass().getDeclaredField("name");
+            nameField.setAccessible(true);
+            nameField.set(gameProfile, ComponentUtils.serializeComponentAsString(name));
         } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
         }
-        Bukkit.getScheduler().runTask(Specialization.getInstance(), ()-> {
+
+        // Force client to refresh player to avoid caching issues
+        Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> {
             for (Player all : Bukkit.getOnlinePlayers()) {
                 all.hidePlayer(Specialization.getInstance(), player);
                 all.showPlayer(Specialization.getInstance(), player);
@@ -287,11 +313,18 @@ public final class Specialization extends JavaPlugin {
     private PacketContainer createChangeNamePacket(UUID uuid, Component name) {
         PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.PLAYER_INFO);
 
-        packet.getPlayerInfoActions().write(0, Collections.singleton(EnumWrappers.PlayerInfoAction.UPDATE_DISPLAY_NAME));
+        // Update the display name only
+        packet.getPlayerInfoActions().write(0,
+                Collections.singleton(EnumWrappers.PlayerInfoAction.UPDATE_DISPLAY_NAME));
 
         WrappedGameProfile profile = new WrappedGameProfile(uuid, ComponentUtils.serializeComponentAsString(name));
-        WrappedChatComponent nameComponent = WrappedChatComponent.fromJson(JSONComponentSerializer.json().serialize(Component.text("DUMBASS")));
-        List<PlayerInfoData> playerInfoData = List.of(new PlayerInfoData(profile, 0, EnumWrappers.NativeGameMode.SURVIVAL, nameComponent));
+        WrappedChatComponent nameComponent = WrappedChatComponent.fromJson(
+                JSONComponentSerializer.json().serialize(name)
+        );
+
+        List<PlayerInfoData> playerInfoData = List.of(
+                new PlayerInfoData(profile, 0, EnumWrappers.NativeGameMode.SURVIVAL, nameComponent)
+        );
         packet.getPlayerInfoDataLists().write(1, playerInfoData);
 
         return packet;

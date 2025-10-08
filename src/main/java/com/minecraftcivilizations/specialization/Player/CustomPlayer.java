@@ -94,8 +94,15 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     }
 
 
-
     public void addSkillXp(SkillType skillType, double xp) {
+        addSkillXp(skillType, xp, null);
+    }
+
+
+    /**
+     * addSkillxp, but with extra location for sound.
+     */
+    public void addSkillXp(SkillType skillType, double xp, Location soundLocation) {
         if (skillType == null || xp == 0) return;
         int previousLevel = this.getSkillLevel(skillType);
         getSkill(skillType).xp(xp);
@@ -104,7 +111,12 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         int currentLevel = this.getSkillLevel(skillType);
 
         if (this.isSoundEnabled) {
-            player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.MASTER, 100, 1);
+            float pitch = 0.8f + (float) (Math.random() * 0.4f); // random between 0.8–1.2
+            if(soundLocation != null){
+                player.playSound(soundLocation.add(0.5, 0.5, 0.5), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.UI, 0.02f, pitch);
+            } else {
+                player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.UI, 0.05f, pitch);
+            }
         }
 
         // Update team assignment based on highest skill
