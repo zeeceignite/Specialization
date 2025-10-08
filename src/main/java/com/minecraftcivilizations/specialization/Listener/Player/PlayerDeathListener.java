@@ -14,16 +14,23 @@ import org.bukkit.Location;
 import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+
 import java.util.Objects;
 
 public class PlayerDeathListener implements Listener {
+
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
         CustomPlayer customPlayer = CoreUtil.getPlayer(event.getPlayer().getUniqueId());
@@ -33,28 +40,24 @@ public class PlayerDeathListener implements Listener {
                 removeDownedArmorStand(event.getPlayer());
                 playerActuallyDied(event.getPlayer());
             }
-
             return;
         }
 
-        // Only trigger downed state if killed by another player
         Player killer = event.getPlayer().getKiller();
         if (killer == null) {
-            // Player was not killed by another player (e.g., mobs, environment, etc.)
-            // Let them die normally
             playerActuallyDied(event.getPlayer());
             return;
         }
 
-        // Player was killed by another player - trigger downed state
+        // Player was killed by another player — trigger downed state
         customPlayer.setDowned(true);
         event.getPlayer().setHealth(10);
-
         applyDownedEffects(event.getPlayer());
         event.setCancelled(true);
 
         Location playerLoc = event.getPlayer().getLocation();
-        Location armorStandLoc = playerLoc.clone().subtract(0, SpecializationConfig.getDownedConfig().get("OFFSET_TO_GROUND", Double.class), 0);
+        Location armorStandLoc = playerLoc.clone().subtract(0, SpecializationConfig.getDownedConfig()
+                .get("OFFSET_TO_GROUND", Double.class), 0);
 
         ArmorStand armorStand = event.getPlayer().getWorld().spawn(armorStandLoc, ArmorStand.class);
         armorStand.setVisible(false);
@@ -64,7 +67,6 @@ public class PlayerDeathListener implements Listener {
         armorStand.setCustomNameVisible(false);
         armorStand.setSilent(true);
         armorStand.setCustomName("downed_" + event.getPlayer().getUniqueId());
-
         armorStand.addPassenger(event.getPlayer());
     }
 
@@ -79,30 +81,24 @@ public class PlayerDeathListener implements Listener {
     }
 
     public static void restoreDownedState(Player player, CustomPlayer customPlayer) {
-        // Set the downed flag directly without starting the death timer
-        // We need to set this manually to avoid triggering the death timer in setDowned()
         try {
             java.lang.reflect.Field downedField = CustomPlayer.class.getDeclaredField("isDowned");
             downedField.setAccessible(true);
             downedField.set(customPlayer, true);
         } catch (Exception e) {
-            // Fallback: use setDowned but immediately cancel any timer
             customPlayer.setDowned(true);
         }
-        
+
         customPlayer.setLastDowned(System.currentTimeMillis());
-        
-        // Set player health to downed health
         player.setHealth(10);
-        
-        // Apply downed effects
+
         PlayerDeathListener listener = new PlayerDeathListener();
         listener.applyDownedEffects(player);
-        
-        // Create and attach armor stand
+
         Location playerLoc = player.getLocation();
-        Location armorStandLoc = playerLoc.clone().subtract(0, SpecializationConfig.getDownedConfig().get("OFFSET_TO_GROUND", Double.class), 0);
-        
+        Location armorStandLoc = playerLoc.clone().subtract(0,
+                SpecializationConfig.getDownedConfig().get("OFFSET_TO_GROUND", Double.class), 0);
+
         ArmorStand armorStand = player.getWorld().spawn(armorStandLoc, ArmorStand.class);
         armorStand.setVisible(false);
         armorStand.setInvulnerable(true);
@@ -111,58 +107,54 @@ public class PlayerDeathListener implements Listener {
         armorStand.setCustomNameVisible(false);
         armorStand.setSilent(true);
         armorStand.setCustomName("downed_" + player.getUniqueId());
-        
         armorStand.addPassenger(player);
-        
-        // Note: We intentionally do NOT start the death timer here to prevent infinite loops
-        // The player will remain downed until healed or manually killed
     }
 
-    public void playerActuallyDied(Player player){
+    public void playerActuallyDied(Player player) {
         CustomPlayer customPlayer = CoreUtil.getPlayer(player);
-        // Use new non-cumulative death tracking
         customPlayer.getAnalyticPlayerData().incrementDeathsThisPeriod();
-        
-        // Reduce max health
+
         double deathReducedMaxHealth = SpecializationConfig.getHealthConfig().get("DEATH_REDUCED_MAX_HEALTH", Double.class);
         if (SpecializationConfig.getHealthConfig().get("HEALTH_ENABLED", Boolean.class) && deathReducedMaxHealth > 0) {
-            if(customPlayer.getSkillLevel(SkillType.BUILDER) >= 1 || customPlayer.getSkillLevel(SkillType.HEALER) >= 1 ||
-            customPlayer.getSkillLevel(SkillType.BLACKSMITH) >= 1 || customPlayer.getSkillLevel(SkillType.GUARDSMAN) >= 1 ||
-                    customPlayer.getSkillLevel(SkillType.MINER) >= 1 || customPlayer.getSkillLevel(SkillType.LIBRARIAN) >= 1 ||
-                    customPlayer.getSkillLevel(SkillType.FARMER) >= 1){
-                Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(deathReducedMaxHealth);
+            if (customPlayer.getSkillLevel(SkillType.BUILDER) >= 1
+                    || customPlayer.getSkillLevel(SkillType.HEALER) >= 1
+                    || customPlayer.getSkillLevel(SkillType.BLACKSMITH) >= 1
+                    || customPlayer.getSkillLevel(SkillType.GUARDSMAN) >= 1
+                    || customPlayer.getSkillLevel(SkillType.MINER) >= 1
+                    || customPlayer.getSkillLevel(SkillType.LIBRARIAN) >= 1
+                    || customPlayer.getSkillLevel(SkillType.FARMER) >= 1) {
+                Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH))
+                        .setBaseValue(deathReducedMaxHealth);
             }
         }
 
-        if(player.getLastDamageCause() == null) return;
+        if (player.getLastDamageCause() == null) return;
 
         EntityDamageEvent.DamageCause cause = player.getLastDamageCause().getCause();
         AnalyticsData.deaths.putIfAbsent(cause, 0);
         AnalyticsData.deaths.put(cause, AnalyticsData.deaths.get(cause) + 1);
-        customPlayer.getSkills().forEach(skill -> {
-            customPlayer.addSkillXp(skill.getSkillType(), -skill.getXp());
-        });
 
-        Bukkit.getScheduler().runTaskLater(Specialization.getInstance(),() -> {
-            if(!player.isOp()) {
-                player.kick(Component.text("You died."));
-            }
-        }, 30);
+        customPlayer.getSkills().forEach(skill ->
+                customPlayer.addSkillXp(skill.getSkillType(), -skill.getXp()));
+
+        Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () ->
+                player.kick(Component.text("You died.")), 30);
     }
 
     public void applyDownedEffects(Player player) {
-        for (PotionEffectType potionEffectType : Registry.EFFECT) {
+        // Apply all configured effects EXCEPT Weakness (we’ll add it manually)
+        for (PotionEffectType potionEffectType : Registry.MOB_EFFECT) {
+            if (potionEffectType == PotionEffectType.WEAKNESS) continue;
+
             try {
                 String effectKey = potionEffectType.getKey().getKey();
                 Pair<Double, Double> effectData = SpecializationConfig.getDownedConfig()
                         .get(effectKey, new TypeToken<Pair<Double, Double>>() {});
-
                 if (effectData != null && effectData.getFirst() != null && effectData.getSecond() != null) {
                     int duration = effectData.getFirst().intValue();
                     int amplifier = effectData.getSecond().intValue();
-
                     if (duration > 0) {
-                        player.addPotionEffect(new PotionEffect(potionEffectType, duration, amplifier, false, false));
+                        player.addPotionEffect(new PotionEffect(potionEffectType, duration, amplifier, false, false), true);
                     }
                 }
             } catch (Exception e) {
@@ -170,9 +162,9 @@ public class PlayerDeathListener implements Listener {
             }
         }
 
+
         int duration = 600;
         int amplifier = 255;
-
         Pair<Double, Double> weaknessData = SpecializationConfig.getDownedConfig()
                 .get("weakness", new TypeToken<Pair<Double, Double>>() {});
         if (weaknessData != null) {
@@ -182,12 +174,41 @@ public class PlayerDeathListener implements Listener {
                 amplifier = weaknessData.getSecond().intValue();
         }
 
-        player.addPotionEffect(new PotionEffect(
-                        PotionEffectType.WEAKNESS,
-                        duration > 0 ? duration : 600,
-                        amplifier,
-                        false,
-                        false
-        ));
+        player.removePotionEffect(PotionEffectType.WEAKNESS);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, Math.max(duration, 20), amplifier, false, false), true);
+    }
+
+
+    @EventHandler(ignoreCancelled = false, priority = EventPriority.LOWEST)
+    public void onDownedPlayerDealDamageLowest(EntityDamageByEntityEvent event) {
+        if (isDamageFromDownedPlayer(event)) {
+            event.setCancelled(true);
+            Player attacker = getAttackingPlayer(event);
+            if (attacker != null) attacker.sendMessage("§cYou are downed and cannot attack!");
+        }
+    }
+
+
+    @EventHandler(ignoreCancelled = false, priority = EventPriority.MONITOR)
+    public void onDownedPlayerDealDamageMonitor(EntityDamageByEntityEvent event) {
+        if (!event.isCancelled() && isDamageFromDownedPlayer(event)) {
+            event.setCancelled(true);
+            Player attacker = getAttackingPlayer(event);
+            if (attacker != null) attacker.sendMessage("§cYou are downed and cannot attack!");
+        }
+    }
+
+
+    private boolean isDamageFromDownedPlayer(EntityDamageByEntityEvent event) {
+        Player attacker = getAttackingPlayer(event);
+        if (attacker == null) return false;
+        CustomPlayer cp = com.minecraftcivilizations.specialization.util.CoreUtil.getPlayer(attacker);
+        return cp != null && cp.isDowned();
+    }
+
+    private Player getAttackingPlayer(EntityDamageByEntityEvent event) {
+        if (event.getDamager() instanceof Player p) return p;
+        if (event.getDamager() instanceof org.bukkit.entity.Projectile proj && proj.getShooter() instanceof Player p) return p;
+        return null;
     }
 }
