@@ -91,7 +91,6 @@ public class LocalNameGenerator {
                             try {
                                 String content = Files.readString(file.toPath());
                                 int namesInThisFile = 0;
-                                
                                 // Look for the name field with nested JSON: "name": "{...}"
                                 String namePattern = "\"name\":\\s*\"\\{";
                                 java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(namePattern);
@@ -244,27 +243,29 @@ public class LocalNameGenerator {
     /** @return a randomly-picked "FirstName LastName" */
     public String nextName() throws NoSuchElementException {
         Specialization.logger.info("[LocalNameGenerator] Generating new name...");
-        
+
         if (usedNames.size() >= firstNames.size() * lastNames.size()) {
             Specialization.logger.severe("[LocalNameGenerator] All possible name combinations have been used!");
             throw new NoSuchElementException("All possible name combinations have been used");
         }
-        
+
         int attempts = 0;
         int maxAttempts = firstNames.size() * lastNames.size() * 2; // Safety limit
-        
+
         while (attempts < maxAttempts) {
             String first = firstNames.get(random.nextInt(firstNames.size()));
             String last = lastNames.get(random.nextInt(lastNames.size()));
             String name = first + "_" + last;
-            
-            if (usedNames.add(name)) {
+
+            if (name.length() <= 16 && usedNames.add(name)) {
                 return name;
             }
+
             attempts++;
         }
-        
-        Specialization.logger.severe("[LocalNameGenerator] FAILED: Could not generate a unique name after " + maxAttempts + " attempts");
-        throw new NoSuchElementException("Could not generate a unique name after " + maxAttempts + " attempts");
+
+        Specialization.logger.severe("[LocalNameGenerator] FAILED: Could not generate a unique valid name after " + maxAttempts + " attempts");
+        throw new NoSuchElementException("Could not generate a unique valid name after " + maxAttempts + " attempts");
     }
+
 }
