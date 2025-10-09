@@ -120,7 +120,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         }
 
         // Update team assignment based on highest skill
-        TeamManager.setTeam(Bukkit.getPlayer(getUuid()));
+//        TeamManager.setTeam(Bukkit.getPlayer(getUuid()));
 
 
         if (previousLevel != currentLevel) {

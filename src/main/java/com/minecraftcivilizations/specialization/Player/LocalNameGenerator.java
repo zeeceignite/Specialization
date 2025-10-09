@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class LocalNameGenerator {
 
@@ -38,43 +39,192 @@ public class LocalNameGenerator {
         }
 
 
+        for (String line : Files.readAllLines(lnFile.toPath())) {
+            if (line.isEmpty() || line.startsWith("#")) continue;
 
-        for (String last_name_full_line : Files.readAllLines(lnFile.toPath())) {
-            List<String> matches = getGroupPattern(last_name_full_line);
-
+            List<String> matches = getGroupPattern(line);
             if (matches.isEmpty()) {
-                lastNames.add(last_name_full_line);
+                // Default (ungrouped) last name
+                lastNames.add(line.trim());
             } else {
+                // Grouped entries
                 for (String key : matches) {
-                    List<String> group_list;
-                    if (grouping.containsKey(key)) {
-                        group_list = grouping.get(key);
-                    } else {
-                        group_list = new ArrayList<String>();
-                        grouping.put(key, group_list);
-                    }
+                    grouping.computeIfAbsent(key, k -> new ArrayList<>());
 
-                    // Remove all [brackets] and trim whitespace
-                    String cleaned_value = last_name_full_line
-                            .replaceAll("\\s*\\[[^\\]]+\\]\\s*", "").trim();
-
-                    group_list.add(cleaned_value);
+                    // Remove [tags] and trim
+                    String cleaned = line.replaceAll("\\s*\\[[^\\]]+\\]\\s*", "").trim();
+                    grouping.get(key).add(cleaned);
                 }
             }
         }
 
+// Debug output
         Specialization.logger.info("[Groups]:");
-        for (String key : grouping.keySet()) {
-            Specialization.logger.info(key + ": " + grouping.get(key));
+        for (Map.Entry<String, List<String>> entry : grouping.entrySet()) {
+            Specialization.logger.info(entry.getKey() + ": " + entry.getValue());
         }
-
         Specialization.logger.info("[LocalNameGenerator] Loaded " + firstNames.size() + " first names and " + lastNames.size() + " last names");
 
         // Load existing names from world playerdata to prevent duplicates
         loadExistingNamesFromWorld();
-
+        generateAllNameCombinations();
         Specialization.logger.info("[LocalNameGenerator] Initialization complete. " + usedNames.size() + " existing names loaded.");
     }
+    private void generateAllNameCombinations() {
+        File outputFile = new File(Specialization.getInstance().getDataFolder(), "GeneratedNames.txt");
+        if (outputFile.exists()) {
+            Specialization.logger.info("[LocalNameGenerator] GeneratedNames.txt already exists, skipping generation.");
+            return;
+        }
+
+        try {
+            List<String> allNames = new ArrayList<>();
+            int totalCount = 0;
+
+            // --- Parse first names ---
+            List<NameLine> firstLines = new ArrayList<>();
+            for (String line : firstNames) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#")) continue;
+
+                String group = extractGroupTag(line);
+                String clean = line.replaceAll("\\s*\\[[^\\]]+\\]\\s*", "").trim();
+                List<String> variants = expandBraces(clean);
+
+                firstLines.add(new NameLine(variants, group));
+                System.out.println("[DEBUG FIRST] line=" + line + " | group=" + group + " | variants=" + variants);
+            }
+
+            // --- Parse last names (defaults + grouped) ---
+            List<NameLine> lastLines = new ArrayList<>();
+
+            // Default ungrouped last names
+            for (String line : lastNames) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#")) continue;
+                List<String> variants = expandBraces(line);
+                lastLines.add(new NameLine(variants, null));
+            }
+
+            // Grouped last names from grouping map
+            for (Map.Entry<String, List<String>> entry : grouping.entrySet()) {
+                String group = entry.getKey();
+                for (String val : entry.getValue()) {
+                    val = val.trim();
+                    if (val.isEmpty()) continue;
+                    List<String> variants = expandBraces(val);
+                    lastLines.add(new NameLine(variants, group));
+                    System.out.println("[DEBUG GROUPED LAST] " + group + " -> " + variants);
+                }
+            }
+
+            // --- Separate for convenience ---
+            List<String> defaultFirsts = firstLines.stream()
+                    .filter(l -> l.group == null)
+                    .flatMap(l -> l.variants.stream())
+                    .toList();
+
+            List<String> defaultLasts = lastLines.stream()
+                    .filter(l -> l.group == null)
+                    .flatMap(l -> l.variants.stream())
+                    .toList();
+
+            // --- Default-first + default-last ---
+            for (String f : defaultFirsts) {
+                for (String l : defaultLasts) {
+                    String name = f + "_" + l;
+                    if (name.length() <= 16) {
+                        allNames.add(name);
+                        totalCount++;
+                    }
+                }
+            }
+
+            // --- Grouped names ---
+            Map<String, List<NameLine>> lastLinesByGroup = new HashMap<>();
+            for (NameLine l : lastLines) {
+                if (l.group != null)
+                    lastLinesByGroup.computeIfAbsent(l.group, k -> new ArrayList<>()).add(l);
+            }
+
+            for (NameLine firstLine : firstLines) {
+                if (firstLine.group == null) continue;
+
+                List<NameLine> matchingLasts = lastLinesByGroup.getOrDefault(firstLine.group, List.of());
+                for (String f : firstLine.variants) {
+                    for (NameLine lastLine : matchingLasts) {
+                        for (String l : lastLine.variants) {
+                            String name = f + "_" + l;
+                            if (name.length() <= 16) {
+                                allNames.add(name);
+                                totalCount++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // --- Write output ---
+            Path path = outputFile.toPath();
+            Files.createDirectories(outputFile.getParentFile().toPath());
+            allNames.add("Total names: " + totalCount);
+            Files.write(path, allNames);
+
+            Specialization.logger.info("[LocalNameGenerator] Generated " + totalCount + " possible name combinations in " + outputFile.getName());
+        } catch (IOException e) {
+            Specialization.logger.severe("[LocalNameGenerator] Failed to generate all name combinations: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+
+    // Helper class for first/last lines
+    private static class NameLine {
+        List<String> variants;
+        String group;
+
+        public NameLine(List<String> variants, String group) {
+            this.variants = variants;
+            this.group = group;
+        }
+    }
+
+
+    /**
+     * Extract the group tag inside [ ] for a line, or null if none.
+     */
+    private String extractGroupTag(String line) {
+        int start = line.indexOf('[');
+        int end = line.indexOf(']');
+        if (start == -1 || end == -1 || end <= start) return null;
+        return line.substring(start + 1, end).trim();
+    }
+
+    /**
+     * Expands a string with {option1|option2|option3} into all options.
+     * Example: "{Velvety|Plush|Warm}" => ["Velvety","Plush","Warm"]
+     */
+    private List<String> expandBraces(String input) {
+        List<String> results = new ArrayList<>();
+        Matcher matcher = Pattern.compile("\\{([^}]+)\\}").matcher(input);
+
+        if (!matcher.find()) {
+            results.add(input);
+            return results; // no braces
+        }
+
+        String before = input.substring(0, matcher.start());
+        String after = input.substring(matcher.end());
+        String[] options = matcher.group(1).split("\\|");
+
+        for (String option : options) {
+            results.addAll(expandBraces(before + option + after)); // recursive for nested braces
+        }
+
+        return results;
+    }
+
+
 
     private List<String> getGroupPattern(String string) {
         Matcher matcher = pattern.matcher(string);
@@ -301,7 +451,7 @@ public class LocalNameGenerator {
         }
 
         int attempts = 0;
-        int maxAttempts = firstNames.size() * lastNames.size() * 2; // Safety limit
+        int maxAttempts = firstNames.size() * lastNames.size() * 8; // Safety limit
 
         while (attempts < maxAttempts) {
 
@@ -332,34 +482,45 @@ public class LocalNameGenerator {
         NameRoll new_roll = new NameRoll();
         String group = null;
         String line;
+
         if (roll_context == null) {
             //this only happen for first names
             line = list.get(random.nextInt(list.size()));
             List<String> matches = getGroupPattern(line);
+
             if (!matches.isEmpty()) {
                 new_roll.groups = matches;
             }
         } else {
             //this only happens when working on a last name
             group = roll_context.getRandomGroup(); //this gets the groupings set by the first name
-            if (group != null) {
-                //a group is assigned, let's use it as a filter
+            if (group != null && grouping.containsKey(group) && !grouping.get(group).isEmpty()) {
                 List<String> options_for_name = grouping.get(group);
-                line = options_for_name.get(random.nextInt(options_for_name.size())); // pick a random last name from the selected group pool
+                line = options_for_name.get(random.nextInt(options_for_name.size()));
             } else {
                 line = list.get(random.nextInt(list.size()));
-                //no group assigned, so pick any standard choice
             }
         }
 
         line = line.trim();
-        //Get the contents within brackets.
-        if (line.startsWith ("{")) {
-           line = line.replace("{", "").replace("}", "");
-            String[] line_split = line.split("\\|");
-            int roll_int = new Random().nextInt(line_split.length);
-            line = line_split[roll_int];
+        if (line.isEmpty()) {
+            return generateNameRoll(list, roll_context); // retry if empty
         }
+        //Get the contents within brackets.
+        if (line.startsWith("{")) {
+            line = line.replace("{", "").replace("}", "");
+            String[] line_split = line.split("\\|");
+
+            // Remove empty options
+            List<String> nonEmptyOptions = new ArrayList<>();
+            for (String opt : line_split) {
+                if (!opt.trim().isEmpty()) nonEmptyOptions.add(opt.trim());
+            }
+
+            int roll_int = new Random().nextInt(nonEmptyOptions.size());
+            line = nonEmptyOptions.get(roll_int);
+        }
+
         new_roll.name = line;
         return new_roll;
     }
@@ -371,9 +532,7 @@ public class LocalNameGenerator {
         List<String> groups;
 
         public String getRandomGroup() {
-            if(groups==null){
-                return null;
-            }
+            if (groups == null || groups.isEmpty()) return null;
             return groups.get(new Random().nextInt(groups.size()));
         }
     }
