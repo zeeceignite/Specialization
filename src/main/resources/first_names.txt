@@ -1,3 +1,32 @@
+#Each line has equal chance to be rolled.
+#If a line is rolled and has a group it will always pick that group from the lastname list.
+#This also means any name inside a group becomes rarer due to double the randomness.
+
+#groups -
+{Velvety|Plush|Warm} [Soft]
+{Gentle|Merry|Spry} [Soft]
+{Dusky|Enteral|Bloomed} [Dark]
+{Murky|Oblique|Shaded} [Dark]
+{Luminous|Shiny|Glint} [Light]
+{Flareless|Glim|Dazzle} [Light]
+{Scorching|Sizzling|Flaring} [Fire]
+{Ashen|Sputter|Kindled} [Fire]
+{Gliding|Swaying|Rolling} [Motion]
+{Rippled|Tremor|Whirling} [Motion]
+{Humming|Tonal|Muted} [Sound]
+{Clanging|Bellow|Resonant} [Sound]
+{Transient|Fleeting|Swift} [Time]
+{Dimming|Waning|Brief} [Time]
+{Gossamer|Airy|Feathery} [Air]
+{Wisping|Drifting|Vapor} [Air]
+{Chilled|Icy|Brumal} [Cold]
+{Shivering|Crystal|Brisk} [Cold]
+{Spacious|Bounded|Lofty} [Space]
+{Expanding|Vaulted|Open} [Space]
+{Glinting|Twink|Shimmer} [Visual]
+{Fading|Dimmed|Shadowed} [Visual]
+
+#defualts -
 Ancient
 Mystic
 Infernal
@@ -13,6 +42,7 @@ Cozy
 Ruthless
 Wistful
 Radiant
+Soft
 Dreamy
 Hollow
 Enchanted
@@ -28,7 +58,6 @@ Lost
 Forgotten
 Phantom
 Ghostly
-Veiled
 Silent
 Fractured
 Gilded
@@ -43,7 +72,28 @@ Echoing
 Drifting
 Obsidian
 Primal
-Mending
+Faithful
+Unspoken
+Timeless
+Endless
+Unknown
+Random
+Molten
+Glowing
+Ethos
+Sunlit
+Moonlit
+Starlit
+Gilded
+Iron
+Frosted
+Shadowed
+Golden
+Murmuring
+Wandering
+Lovely
+Chaotic
+Lil
 Smelly
 Lazy
 Shot

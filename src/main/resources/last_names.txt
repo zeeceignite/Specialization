@@ -1,11 +1,41 @@
+#A last name with a group tag can only be used if the first name that was rolled uses that group tag.
+#This acts as a way to filter and restrict certain combinations.
+
+#Groups look like this: [group] [group_example]
+#Each line has an equal chance of being rolled. However, names inside groups become rarer because of this.
+
+#groups -
+{Petal|Frond|Leaf} [Soft]
+{Thorn|Spike|Fang} [Soft]
+{Shadow|Night|Gloom} [Dark]
+{Radiance|Beam|Shine} [Dark]
+{Gleam|Glow|Twinkle} [Light]
+{Abyss|Void|Chasm} [Light]
+{Flamelet|Spark|Scorch|Flare|Cinder} [Fire]
+{Ash|Kindle|Sear} [Fire]
+{Wave|Drift|Roll} [Motion]
+{Whirl|Tremor|Surge} [Motion]
+{Chime|Toll|Ring} [Sound]
+{Clang|Boom|Peal} [Sound]
+{Moment|Flicker|Pulse} [Time]
+{Dusk|Sunset|Wane} [Time]
+{Breeze|Draft|Zephyr} [Air]
+{Mist|Fog|Wisp} [Air]
+{Frost|Icicle|Chill} [Cold]
+{Snow|Crystal|Glaze} [Cold]
+{Vault|Expanse|Reach} [Space]
+{Loft|Horizon|Open} [Space]
+{Gleam|Shimmer|Flash} [Visual]
+{Shadow|Dim} [Visual]
+
+
+#defualt -
 Echo
 Flame
 Spirit
 Ember
 Ender
 Warden
-Shard
-Rune
 Soul
 Rose
 Portal
@@ -29,9 +59,6 @@ Void
 Star
 Moon
 Sun
-Core
-Pulse
-Veil
 Tide
 Root
 Heart
@@ -41,10 +68,11 @@ Depth
 Light
 Grave
 Cinder
-Vein
 Crown
 Dust
 Memory
+Frog
+Creeper
 Dirt
 Diamond
 Ruler
