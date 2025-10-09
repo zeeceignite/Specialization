@@ -1,11 +1,19 @@
+#A last name with a group tag can only be used if the first name that was rolled uses that group tag.
+#This acts as a way to filter and restrict certain combinations.
+
+#Groups look like this: [group] [group_example]
+#Each line has an equal chance of being rolled. However, names inside groups become rarer because of this.
+
+{red|orange|yellow|green|teal|blue|indigo|purple|pink|white|black} [colors]
+{Willow} [nature] [grassy]
+{Nightmare|Edgelord} [dark]
+Cavern [nature] [dark]
 Echo
 Flame
 Spirit
 Ember
 Ender
 Warden
-Shard
-Rune
 Soul
 Rose
 Portal
@@ -29,9 +37,6 @@ Void
 Star
 Moon
 Sun
-Core
-Pulse
-Veil
 Tide
 Root
 Heart
@@ -41,10 +46,11 @@ Depth
 Light
 Grave
 Cinder
-Vein
 Crown
 Dust
 Memory
+Frog
+Creeper
 Dirt
 Diamond
 Ruler

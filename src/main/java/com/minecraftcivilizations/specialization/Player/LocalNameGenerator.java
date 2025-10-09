@@ -1,23 +1,25 @@
 package com.minecraftcivilizations.specialization.Player;
 
 import com.minecraftcivilizations.specialization.Specialization;
+import lombok.Getter;
 import org.bukkit.Bukkit;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Random;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class LocalNameGenerator {
 
-    private final List<String> firstNames;
-    private final List<String> lastNames;
+    private List<String> firstNames;
+    private List<String> lastNames;
     private final Set<String> usedNames = new java.util.HashSet<>();
+
+    private Map<String, List<String>> grouping = new HashMap<String, List<String>>();
+    private final Pattern pattern = Pattern.compile("\\[([^\\]]+)\\]");
     private final Random random = new Random();
     private static File fnFile;
     private static File lnFile;
@@ -28,16 +30,61 @@ public class LocalNameGenerator {
     public LocalNameGenerator() throws IOException {
         fnFile = new File(Specialization.getInstance().getDataFolder(), "first_names.txt");
         lnFile = new File(Specialization.getInstance().getDataFolder(), "last_names.txt");
-        
-        this.firstNames = Files.readAllLines(fnFile.toPath());
-        this.lastNames = Files.readAllLines(lnFile.toPath());
-        
+        firstNames = new ArrayList<>();
+        lastNames = new ArrayList<>();
+        for (String string : Files.readAllLines(fnFile.toPath())) {
+            if (string.isEmpty() || string.startsWith("#")) continue;
+            this.firstNames.add(string);
+        }
+
+
+
+        for (String last_name_full_line : Files.readAllLines(lnFile.toPath())) {
+            List<String> matches = getGroupPattern(last_name_full_line);
+
+            if (matches.isEmpty()) {
+                lastNames.add(last_name_full_line);
+            } else {
+                for (String key : matches) {
+                    List<String> group_list;
+                    if (grouping.containsKey(key)) {
+                        group_list = grouping.get(key);
+                    } else {
+                        group_list = new ArrayList<String>();
+                        grouping.put(key, group_list);
+                    }
+
+                    // Remove all [brackets] and trim whitespace
+                    String cleaned_value = last_name_full_line
+                            .replaceAll("\\s*\\[[^\\]]+\\]\\s*", "").trim();
+
+                    group_list.add(cleaned_value);
+                }
+            }
+        }
+
+        Specialization.logger.info("[Groups]:");
+        for (String key : grouping.keySet()) {
+            Specialization.logger.info(key + ": " + grouping.get(key));
+        }
+
         Specialization.logger.info("[LocalNameGenerator] Loaded " + firstNames.size() + " first names and " + lastNames.size() + " last names");
-        
+
         // Load existing names from world playerdata to prevent duplicates
         loadExistingNamesFromWorld();
-        
+
         Specialization.logger.info("[LocalNameGenerator] Initialization complete. " + usedNames.size() + " existing names loaded.");
+    }
+
+    private List<String> getGroupPattern(String string) {
+        Matcher matcher = pattern.matcher(string);
+        List<String> matches = new ArrayList<>();
+
+        while (matcher.find()) {
+            matches.add(matcher.group(1)); // capture content inside []
+        }
+
+        return matches;
     }
 
     /**
@@ -47,9 +94,9 @@ public class LocalNameGenerator {
         try {
             // Get the world's playerdata directory
             File worldContainer = Bukkit.getWorldContainer();
-            
+
             File[] worldDirs = worldContainer.listFiles(File::isDirectory);
-            
+
             if (worldDirs != null) {
                 for (File worldDir : worldDirs) {
                     File playerdataDir = new File(worldDir, "playerdata");
@@ -64,7 +111,7 @@ public class LocalNameGenerator {
             e.printStackTrace();
         }
     }
-    
+
     /**
      * Loads names from MinecraftCivilizationsCore directory by checking all UUID files
      */
@@ -72,43 +119,42 @@ public class LocalNameGenerator {
         try {
             // Look for MinecraftCivilizationsCore plugin directory
             File pluginDataDir = new File(Bukkit.getWorldContainer(), "plugins/MinecraftCivilizationsCore");
-            
+
             if (pluginDataDir.exists() && pluginDataDir.isDirectory()) {
                 Specialization.logger.info("[LocalNameGenerator] Scanning MinecraftCivilizationsCore directory: " + pluginDataDir.getAbsolutePath());
-                
+
                 // Get all files in the directory except db.properties
-                File[] allFiles = pluginDataDir.listFiles((dir, name) -> 
-                    !name.equals("db.properties") && !name.startsWith("."));
-                
+                File[] allFiles = pluginDataDir.listFiles((dir, name) ->
+                        !name.equals("db.properties") && !name.startsWith("."));
+
                 if (allFiles != null) {
                     Specialization.logger.info("[LocalNameGenerator] Found " + allFiles.length + " files to scan");
-                    
+
                     int filesProcessed = 0;
                     int namesFound = 0;
-                    
+
                     for (File file : allFiles) {
                         if (file.isFile()) {
                             try {
                                 String content = Files.readString(file.toPath());
                                 int namesInThisFile = 0;
-                                
                                 // Look for the name field with nested JSON: "name": "{...}"
                                 String namePattern = "\"name\":\\s*\"\\{";
                                 java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(namePattern);
                                 java.util.regex.Matcher matcher = pattern.matcher(content);
-                                
+
                                 while (matcher.find()) {
                                     int nameStart = matcher.end() - 1; // Start at the opening brace
-                                    
+
                                     // Find the matching closing brace and quote
                                     int braceCount = 0;
                                     int pos = nameStart;
                                     boolean inString = false;
                                     boolean escaped = false;
-                                    
+
                                     while (pos < content.length()) {
                                         char c = content.charAt(pos);
-                                        
+
                                         if (escaped) {
                                             escaped = false;
                                         } else if (c == '\\') {
@@ -129,14 +175,14 @@ public class LocalNameGenerator {
                                         }
                                         pos++;
                                     }
-                                    
+
                                     if (braceCount == 0 && pos < content.length()) {
                                         // Extract the JSON string
                                         String jsonString = content.substring(nameStart, pos);
-                                        
+
                                         // Parse the nested JSON to extract the "text" field
                                         String extractedName = extractTextFromNestedJson(jsonString);
-                                        
+
                                         if (extractedName != null && !extractedName.isEmpty()) {
                                             // Convert to internal format
                                             String internalName = extractInternalName(extractedName);
@@ -151,20 +197,20 @@ public class LocalNameGenerator {
                                         }
                                     }
                                 }
-                                
+
                                 filesProcessed++;
                                 if (namesInThisFile == 0) {
                                     Specialization.logger.fine("[LocalNameGenerator] No names found in file: " + file.getName());
                                 }
-                                
+
                             } catch (Exception e) {
                                 Specialization.logger.warning("[LocalNameGenerator] Failed to read file " + file.getName() + ": " + e.getMessage());
                             }
                         }
                     }
-                    
+
                     Specialization.logger.info("[LocalNameGenerator] Scan complete - Processed " + filesProcessed + " files, found " + namesFound + " unique names");
-                    
+
                 } else {
                     Specialization.logger.warning("[LocalNameGenerator] No files found in MinecraftCivilizationsCore directory");
                 }
@@ -176,9 +222,10 @@ public class LocalNameGenerator {
             e.printStackTrace();
         }
     }
-    
+
     /**
      * Extracts the "text" field value from a nested JSON string
+     *
      * @param jsonString The JSON string like {"italic":false,"color":"white","text":"Participant_973"}
      * @return The text value or null if extraction fails
      */
@@ -216,6 +263,7 @@ public class LocalNameGenerator {
 
     /**
      * Extracts the internal name format (FirstName_LastName) from a display name
+     *
      * @param displayName The display name that might contain formatting
      * @return The internal name format or null if extraction fails
      */
@@ -224,47 +272,110 @@ public class LocalNameGenerator {
             Specialization.logger.warning("[LocalNameGenerator] Display name is null or empty");
             return null;
         }
-        
+
         // Remove any JSON formatting or color codes
         String cleanName = displayName.replaceAll("\\{[^}]*\\}", "").trim();
-        
+
         // If it already contains underscore, it might be in internal format
         if (cleanName.contains("_")) {
             return cleanName;
         }
-        
+
         // If it contains space, convert to underscore format
         if (cleanName.contains(" ")) {
             return cleanName.replace(" ", "_");
         }
-        
+
         return cleanName;
     }
 
-    /** @return a randomly-picked "FirstName LastName" */
+    /**
+     * @return a randomly-picked "FirstName LastName"
+     */
     public String nextName() throws NoSuchElementException {
         Specialization.logger.info("[LocalNameGenerator] Generating new name...");
-        
+
         if (usedNames.size() >= firstNames.size() * lastNames.size()) {
             Specialization.logger.severe("[LocalNameGenerator] All possible name combinations have been used!");
             throw new NoSuchElementException("All possible name combinations have been used");
         }
-        
+
         int attempts = 0;
         int maxAttempts = firstNames.size() * lastNames.size() * 2; // Safety limit
-        
+
         while (attempts < maxAttempts) {
-            String first = firstNames.get(random.nextInt(firstNames.size()));
-            String last = lastNames.get(random.nextInt(lastNames.size()));
-            String name = first + "_" + last;
-            
-            if (usedNames.add(name)) {
+
+            NameRoll first = generateNameRoll(firstNames, null); //initialize with a first name roll
+            NameRoll last = generateNameRoll(lastNames, first); //generates the last name with the first name as context
+            String name = first.getName() + "_" + last.getName();
+
+            if (name.length() <= 16 && usedNames.add(name)) {
                 return name;
             }
+
             attempts++;
         }
-        
-        Specialization.logger.severe("[LocalNameGenerator] FAILED: Could not generate a unique name after " + maxAttempts + " attempts");
-        throw new NoSuchElementException("Could not generate a unique name after " + maxAttempts + " attempts");
+
+        Specialization.logger.severe("[LocalNameGenerator] FAILED: Could not generate a unique valid name after " + maxAttempts + " attempts");
+        throw new NoSuchElementException("Could not generate a unique valid name after " + maxAttempts + " attempts");
     }
+
+
+    /**
+     * A helper method that captures the nested name candidates within brackets
+     * for example: {car|bicycle|truck} will have a 33% chance of drawing any of those
+     * <p>
+     * tags: [nature] [abyss] adding this anywhere to a name entry will assign it to that group.
+     * If a last name has this tag, then it is compatible. Not adding a tag will be compatible with anything.
+     */
+    private NameRoll generateNameRoll(List<String> list, NameRoll roll_context) {
+        NameRoll new_roll = new NameRoll();
+        String group = null;
+        String line;
+        if (roll_context == null) {
+            //this only happen for first names
+            line = list.get(random.nextInt(list.size()));
+            List<String> matches = getGroupPattern(line);
+            if (!matches.isEmpty()) {
+                new_roll.groups = matches;
+            }
+        } else {
+            //this only happens when working on a last name
+            group = roll_context.getRandomGroup(); //this gets the groupings set by the first name
+            if (group != null) {
+                //a group is assigned, let's use it as a filter
+                List<String> options_for_name = grouping.get(group);
+                line = options_for_name.get(random.nextInt(options_for_name.size())); // pick a random last name from the selected group pool
+            } else {
+                line = list.get(random.nextInt(list.size()));
+                //no group assigned, so pick any standard choice
+            }
+        }
+
+        line = line.trim();
+        //Get the contents within brackets.
+        if (line.startsWith ("{")) {
+           line = line.replace("{", "").replace("}", "");
+            String[] line_split = line.split("\\|");
+            int roll_int = new Random().nextInt(line_split.length);
+            line = line_split[roll_int];
+        }
+        new_roll.name = line;
+        return new_roll;
+    }
+
+    protected static class NameRoll {
+        @Getter
+        String name;
+        @Getter
+        List<String> groups;
+
+        public String getRandomGroup() {
+            if(groups==null){
+                return null;
+            }
+            return groups.get(new Random().nextInt(groups.size()));
+        }
+    }
+
 }
