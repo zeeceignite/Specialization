@@ -3,28 +3,126 @@
 #This also means any name inside a group becomes rarer due to double the randomness.
 
 #groups -
-{Velvety|Plush|Warm} [Soft]
-{Gentle|Merry|Spry} [Soft]
-{Dusky|Enteral|Bloomed} [Dark]
-{Murky|Oblique|Shaded} [Dark]
-{Luminous|Shiny|Glint} [Light]
-{Flareless|Glim|Dazzle} [Light]
-{Scorching|Sizzling|Flaring} [Fire]
-{Ashen|Sputter|Kindled} [Fire]
-{Gliding|Swaying|Rolling} [Motion]
-{Rippled|Tremor|Whirling} [Motion]
-{Humming|Tonal|Muted} [Sound]
-{Clanging|Bellow|Resonant} [Sound]
-{Transient|Fleeting|Swift} [Time]
+# Soft
+{Flowering|Warming|Soft} [Soft]
+{Velour|Feathered|Cottony} [Soft]
+{Cozy|Blossomed} [Soft]
+{Downy|Fuzzy|Plush} [Soft]
+{Satin|Silken|Smooth} [Soft]
+{Billowy|Padded|Cushioned} [Soft]
+{Lambent|Murmuring|Gossamer} [Soft]
+{Padded|Fluffy|Supple} [Soft]
+{Velour|Feathered|Cottony} [Soft]
+{Petled|Cozy|Blossomed} [Soft]
+{Downy|Fuzzy|Plush} [Soft]
+{Satin|Silken|Smooth} [Soft]
+{Billowy|Padded|Cushioned} [Soft]
+{Lambent|Murmuring|Gossamer} [Soft]
+{Fluffy|Supple|Tender} [Soft]
+{Blushing|Gentle|Delicate} [Soft]
+{Velvetine|Rosy|Lustrous} [Soft]
+{Honeyed|Lulling|Pale} [Soft]
+{Glossy|Misty|Meek} [Soft]
+{Caressing|Dusky|Sweetened} [Soft]
+{Silvery|Warmed|Floral} [Soft]
+{Coy|Graceful|Scented} [Soft]
+{Dainty|Willowy|Softened} [Soft]
+{Sugared|Pearled|Murmured} [Soft]
+{Seraphic|Glistened|Kindly} [Soft]
+{Faint|Mellow|Dreamlike} [Soft]
+{Pastel|Hushed|Tranquil} [Soft]
+{Fond|Tendered|Velvety} [Soft]
+{Gentled|Seraphine|Featherlight} [Soft]
+{Whispered|Blooming|Dearest} [Soft]
+
+# Dark
+{Obsidian|Moonlit|Coal} [Dark]
+{Radiance|Glare|Luminescence} [Dark]
+{Nightfall|Shadowed|Gloom} [Dark]
+{Onyx|Twilight|Ebon} [Dark]
+{Pitch|Dusk|Murky} [Dark]
+{Gloaming|Umbral|Tenebrous} [Dark]
+{Shaded|Opaque|Veiled} [Dark]
+
+# Light
+{Radiant|Sunlit|Gleaming} [Light]
+{Void|Aether|Skyfall} [Light]
+{Glinting|Flaring|Twinkling} [Light]
+{Lucent|Luminous|Sparkling} [Light]
+{Incandescent|Shining|Beaming} [Light]
+{Glowing|Flare|Brilliance} [Light]
+{Celestial|Auroral|Dazzling} [Light]
+
+# Fire
+{Blistering|Infernal|Fiery} [Fire]
+{Flare|Cinder|Ember} [Fire]
+{Smouldering|Kindled|Scorching} [Fire]
+{Torching|Searing|Burning} [Fire]
+{Flaming|Incendiary|Wildfire} [Fire]
+{Sparks|Kindling|Flaring} [Fire]
+{Combusting|Radiant|Pyric} [Fire]
+
+# Cold
+{Frozen|Crystalline|Icy} [Cold]
+{Frost|Icicle|Glaze} [Cold]
+{Shivering|Brumal|Chilled} [Cold]
+{Glacial|Frigid|Bleak} [Cold]
+{Hardened|Snowbound|Crystalline} [Cold]
+{Permafrost|Shivering|Gelid} [Cold]
+{Frosted|Iced|Biting} [Cold]
+
+# Motion
+{Sinuous|Twisting|Meandering} [Motion]
+{Wave|Roll|Current} [Motion]
+{Spiraling|Drifting|Undulating} [Motion]
+{Flowing|Surging|Rippling} [Motion]
+{Tumbling|Skimming|Gliding} [Motion]
+{Oscillating|Shifting|Fluttering} [Motion]
+{Rolling|Swaying|Turning} [Motion]
+{Vibration|Sonorous|Harmonic} [Motion]
+
+# Sound
+{Whispering|Murmuring|Melodic} [Sound]
+{Echo|Faint|Ethereal|Noisy} [Sound]
+
+# Time
+{Moment|Pulse|Flicker} [Time]
+{Fleeting|Ephemeral|Momentary} [Time]
 {Dimming|Waning|Brief} [Time]
-{Gossamer|Airy|Feathery} [Air]
-{Wisping|Drifting|Vapor} [Air]
-{Chilled|Icy|Brumal} [Cold]
-{Shivering|Crystal|Brisk} [Cold]
-{Spacious|Bounded|Lofty} [Space]
-{Expanding|Vaulted|Open} [Space]
-{Glinting|Twink|Shimmer} [Visual]
+{Eon|Perpetual|Endless} [Time]
+{Passing|Transient|Fading} [Time]
+{Cycle|Rotation|Span} [Time]
+{Epoch|Chronos|Continuum} [Time]
+
+# Air
+{Gusting|Whirling|Swirling} [Air]
+{Breeze|Zephyr|Draft} [Air]
+{Wisping|Drifting|Vaporous} [Air]
+{Aerial|Floating|Billowing} [Air]
+{Fluttering|Spinning|Flowing} [Air]
+{Sighing|Rushing|Ethereal} [Air]
+{Cyclonic|Twisting|Sweeping} [Air]
+
+# Space
+{Boundless|Infinite|Limitless} [Space]
+{Lofty|Spacious|Open} [Space]
+{Vast|Endless|Expansive} [Space]
+{Celestial|Ethereal|Astral} [Space]
+{Orbiting|Unbounded} [Space]
+{Ecliptic|Far-reaching|Unfathomed} [Space]
+
+# Visual
+{Shimmering|Glinting|Twinkling} [Visual]
+{Dappled|Speckled|Variegated} [Visual]
 {Fading|Dimmed|Shadowed} [Visual]
+{Radiant|Flash|Gleaming} [Visual]
+{Glowing|Illuminated|Brightened} [Visual]
+{Flickering|Glinting|Glistening} [Visual]
+{Veiled|Hazy|Obscured} [Visual]
+
+
+
+
 
 #defualts -
 Ancient
@@ -91,9 +189,18 @@ Shadowed
 Golden
 Murmuring
 Wandering
+Driftless
+Tiny
+Fluffer
+Withered
+Drowned
 Lovely
 Chaotic
 Lil
 Smelly
 Lazy
+Wonky
+Whispered
+Witherborn
+
 Shot
