@@ -3,7 +3,6 @@ package com.minecraftcivilizations.specialization.Listener.Player;
 import com.minecraftcivilizations.specialization.Specialization;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Bed;
@@ -119,9 +118,8 @@ public class BedListener implements Listener {
         Bukkit.getLogger().info("[BedDebug] Player " + player.getName() + " respawning. Stored bed ID: " + bedId + " at: " + x + "," + y + "," + z);
 
         if (x == null || y == null || z == null || bedId == null) {
-            Location worldSpawn = getOverworld().getSpawnLocation().clone().add(0.5, 1, 0.5);
-            event.setRespawnLocation(worldSpawn);
-            Bukkit.getLogger().info("[BedDebug] No saved bed, respawning at world spawn: " + worldSpawn);
+            player.setRespawnLocation(null);
+            Bukkit.getLogger().info("[BedDebug] No saved bed, respawning at world spawn. ");
             return;
         }
 
@@ -137,9 +135,8 @@ public class BedListener implements Listener {
             event.setRespawnLocation(Objects.requireNonNull(getSafeSpawnAbove(bedBlock.getLocation())));
             Bukkit.getLogger().info("[BedDebug] Player " + player.getName() + " respawning at their bed.");
         } else {
-            Location worldSpawn = getOverworld().getSpawnLocation().clone().add(0.5, 1, 0.5);
-            event.setRespawnLocation(worldSpawn);
-            Bukkit.getLogger().info("[BedDebug] Bed missing or mismatched, respawning at world spawn: " + worldSpawn);
+            player.setRespawnLocation(null);
+            Bukkit.getLogger().info("[BedDebug] Bed missing or mismatched, respawning at world spawn.");
         }
     }
 
