@@ -40,7 +40,7 @@ import com.minecraftcivilizations.specialization.Listener.Player.Inventories.Sto
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Player.LocalNameGenerator;
 import com.minecraftcivilizations.specialization.Player.PreJoinEventListener;
-import com.minecraftcivilizations.specialization.Player.TeamManager;
+//import com.minecraftcivilizations.specialization.Player.TeamManager;
 import com.minecraftcivilizations.specialization.Recipe.Blueprints;
 import com.minecraftcivilizations.specialization.Recipe.Recipes;
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
@@ -85,7 +85,7 @@ public final class Specialization extends JavaPlugin {
 
         MongoConnection.startDBConnection();
 
-        TeamManager.initializeTeams();
+//        TeamManager.initializeTeams();
 
         setupCommands();
 
@@ -185,7 +185,8 @@ public final class Specialization extends JavaPlugin {
             customPlayer.applyEffects();
 
             // Assign player to team based on their highest skill
-            TeamManager.setTeam(playerJoinEvent.getPlayer());
+
+//            TeamManager.setTeam(playerJoinEvent.getPlayer());
 
             // Restore downed state if they were downed when they logged out
             if (customPlayer.isWasDownedOnLogout()) {
