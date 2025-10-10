@@ -18,6 +18,7 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.Objects;
+import java.util.Random;
 import java.util.UUID;
 
 public class BedListener implements Listener {
@@ -115,28 +116,20 @@ public class BedListener implements Listener {
         Integer z = player.getPersistentDataContainer().get(PLAYER_BED_Z, PersistentDataType.INTEGER);
         String bedId = player.getPersistentDataContainer().get(PLAYER_BED_ID, PersistentDataType.STRING);
 
-        Bukkit.getLogger().info("[BedDebug] Player " + player.getName() + " respawning. Stored bed ID: " + bedId + " at: " + x + "," + y + "," + z);
+        Integer radiusValue = player.getWorld().getGameRuleValue(GameRule.SPAWN_RADIUS);
+        int radius = (radiusValue != null) ? radiusValue : 5;
 
         if (x == null || y == null || z == null || bedId == null) {
-            player.setRespawnLocation(null);
-            Bukkit.getLogger().info("[BedDebug] No saved bed, respawning at world spawn. ");
-            return;
-        }
-
-        // Force load chunk
-        player.getRespawnLocation(true);
-
-        Block bedBlock = player.getWorld().getBlockAt(x, y, z);
-        String blockId = getBedId(bedBlock);
-
-        Bukkit.getLogger().info("[BedDebug] Respawn block: " + bedBlock.getType() + " | Bed ID at block: " + blockId);
-
-        if (isBed(bedBlock.getType()) && bedId.equals(blockId)) {
-            event.setRespawnLocation(Objects.requireNonNull(getSafeSpawnAbove(bedBlock.getLocation())));
-            Bukkit.getLogger().info("[BedDebug] Player " + player.getName() + " respawning at their bed.");
+            event.setRespawnLocation(getVanillaOverworldSpawn(radius));
         } else {
-            player.setRespawnLocation(null);
-            Bukkit.getLogger().info("[BedDebug] Bed missing or mismatched, respawning at world spawn.");
+            Block bedBlock = player.getWorld().getBlockAt(x, y, z);
+            String blockId = getBedId(bedBlock);
+            player.getRespawnLocation(true);
+            if (isBed(bedBlock.getType()) && bedId.equals(blockId)) {
+                event.setRespawnLocation(Objects.requireNonNull(getSafeSpawnAbove(bedBlock.getLocation())));
+            } else {
+                event.setRespawnLocation(getVanillaOverworldSpawn(radius));
+            }
         }
     }
 
@@ -174,11 +167,70 @@ public class BedListener implements Listener {
     }
 
     private static void clearPlayerBed(Player player) {
+        // Try to locate their last known bed from stored coordinates
+        Integer x = player.getPersistentDataContainer().get(PLAYER_BED_X, PersistentDataType.INTEGER);
+        Integer y = player.getPersistentDataContainer().get(PLAYER_BED_Y, PersistentDataType.INTEGER);
+        Integer z = player.getPersistentDataContainer().get(PLAYER_BED_Z, PersistentDataType.INTEGER);
+        World world = getOverworld(); // or player.getWorld(), depending on your design
+
+        Block bedBlock = null;
+        if (x != null && y != null && z != null && world != null) {
+            bedBlock = world.getBlockAt(x, y, z);
+        }
+
+        // clear player data first (after storing coords)
         player.getPersistentDataContainer().remove(PLAYER_BED_ID);
         player.getPersistentDataContainer().remove(PLAYER_BED_X);
         player.getPersistentDataContainer().remove(PLAYER_BED_Y);
         player.getPersistentDataContainer().remove(PLAYER_BED_Z);
+
+        // unclaim that bed if found
+            Location respawnLoc = player.getRespawnLocation(true);
+        if (bedBlock != null && isBed(bedBlock.getType())) {
+            Block head = getBedHeadBlock(bedBlock);
+            if (head != null && head.getState() instanceof TileState state) {
+                state.getPersistentDataContainer().remove(BED_OWNER_KEY);
+                state.update(true);
+            }
+        }
     }
+
+    private static Location getVanillaOverworldSpawn(int radius) {
+        World overworld = getOverworld();
+        Location baseSpawn = overworld.getSpawnLocation();
+        Random r = new Random();
+        Location spawn = null;
+
+        for (int attempt = 0; attempt < 10; attempt++) {
+            int dx = r.nextInt(radius * 2 + 1) - radius;
+            int dz = r.nextInt(radius * 2 + 1) - radius;
+            Location candidate = baseSpawn.clone().add(dx, 0, dz);
+
+            int yCandidate = overworld.getHighestBlockYAt(candidate);
+            candidate.setY(yCandidate + 1);
+
+            Block below = candidate.clone().add(0, -1, 0).getBlock();
+            Block feet = candidate.getBlock();
+            Block head = candidate.clone().add(0, 1, 0).getBlock();
+
+            boolean safe = below.getType().isSolid()
+                    && feet.getType().isAir() && feet.getType() != Material.WATER && feet.getType() != Material.LAVA
+                    && head.getType().isAir() && head.getType() != Material.WATER && head.getType() != Material.LAVA;
+
+            if (safe) {
+                spawn = candidate;
+                break;
+            }
+        }
+
+        // fallback to exact spawn if nothing safe found
+        if (spawn == null) spawn = baseSpawn.clone().add(0.5, 1, 0.5);
+
+        return spawn;
+    }
+
+
+
 
     private Location getSafeSpawnAbove(Location bedLoc) {
         World world = bedLoc.getWorld();
