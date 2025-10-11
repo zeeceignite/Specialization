@@ -17,12 +17,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerBedEnterEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.util.EulerAngle;
-import org.bukkit.util.Vector;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -37,21 +37,6 @@ public class BedListener implements Listener {
     private static final NamespacedKey PLAYER_BED_Y = new NamespacedKey(Specialization.getInstance(), "bed_y");
     private static final NamespacedKey PLAYER_BED_Z = new NamespacedKey(Specialization.getInstance(), "bed_z");
 
-    // --- BED ENTER ---
-    @EventHandler
-    public void onPlayerBedEnter(PlayerBedEnterEvent event) {
-        Player player = event.getPlayer();
-        Block bedBlock = event.getBed();
-        String bedOwnerUUID = getBedId(bedBlock);
-        if (bedOwnerUUID == null) return;
-
-        if (!bedOwnerUUID.equals(player.getUniqueId().toString())) {
-            event.setCancelled(true);
-        }
-    }
-
-
-    // --- CLAIM BED ---
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerInteractWithBed(PlayerBedEnterEvent event) {
         Player player = event.getPlayer();
@@ -62,10 +47,7 @@ public class BedListener implements Listener {
             case NOT_POSSIBLE_NOW:
             case NOT_SAFE:
                 break;
-            case TOO_FAR_AWAY:
-            case OBSTRUCTED:
-            case NOT_POSSIBLE_HERE:
-            case OTHER_PROBLEM:
+            default:
                 return;
         }
 
@@ -74,7 +56,14 @@ public class BedListener implements Listener {
 
         String bedOwnerUUID = getBedId(headBlock);
 
-        // --- UNCLAIM BED WHEN SHIFTING ---
+        // --- 1. DENY OTHER PLAYERS FIRST ---
+        if (bedOwnerUUID != null && !bedOwnerUUID.equals(player.getUniqueId().toString())) {
+            event.setCancelled(true);
+            player.sendMessage("§6This bed is already claimed by another player");
+            return;
+        }
+
+        // --- 2. UNCLAIM WHEN SHIFTING (ONLY OWNER) ---
         if (player.isSneaking() && Objects.equals(bedOwnerUUID, player.getUniqueId().toString())) {
             clearBedId(headBlock);
             clearPlayerBed(player);
@@ -86,29 +75,45 @@ public class BedListener implements Listener {
             return;
         }
 
-        // --- CHECK IF BED IS ALREADY CLAIMED ---
-        if (bedOwnerUUID != null) {
-            if (!bedOwnerUUID.equals(player.getUniqueId().toString())) {
-                player.sendMessage("§6This bed is already claimed by another player");
-                event.setCancelled(true);
-            }
-            return; // Already theirs
+        // --- 3. CLAIM IF UNOWNED ---
+        if (bedOwnerUUID == null) {
+            clearOldBed(player);
+
+            String uuidStr = player.getUniqueId().toString();
+            setBedId(headBlock, uuidStr);
+            player.getPersistentDataContainer().set(PLAYER_BED_ID, PersistentDataType.STRING, uuidStr);
+            player.getPersistentDataContainer().set(PLAYER_BED_X, PersistentDataType.INTEGER, headBlock.getX());
+            player.getPersistentDataContainer().set(PLAYER_BED_Y, PersistentDataType.INTEGER, headBlock.getY());
+            player.getPersistentDataContainer().set(PLAYER_BED_Z, PersistentDataType.INTEGER, headBlock.getZ());
+
+            EffectsUtil.playBlockBoundingBox(player, clickedBlock, Particle.HAPPY_VILLAGER, 0.25);
+            float pitch = (float) ThreadLocalRandom.current().nextDouble(0.9, 1.3);
+            clickedBlock.getWorld().playSound(clickedBlock.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 10f, pitch);
         }
-
-        // Clear old bed PDC if player had a previous bed
-        clearOldBed(player);
-
-        // Claim this bed
-        String uuidStr = player.getUniqueId().toString();
-        setBedId(headBlock, uuidStr);
-        player.getPersistentDataContainer().set(PLAYER_BED_ID, PersistentDataType.STRING, uuidStr);
-        player.getPersistentDataContainer().set(PLAYER_BED_X, PersistentDataType.INTEGER, headBlock.getX());
-        player.getPersistentDataContainer().set(PLAYER_BED_Y, PersistentDataType.INTEGER, headBlock.getY());
-        player.getPersistentDataContainer().set(PLAYER_BED_Z, PersistentDataType.INTEGER, headBlock.getZ());
-        EffectsUtil.playBlockBoundingBox(player, clickedBlock, Particle.HAPPY_VILLAGER, 0.25 );
-        float pitch = (float) ThreadLocalRandom.current().nextDouble(0.9, 1.3);
-        clickedBlock.getWorld().playSound(clickedBlock.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 10f, pitch);
     }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+
+        Block block = event.getClickedBlock();
+        if (block == null || !(block.getBlockData() instanceof Bed)) return;
+
+        Player player = event.getPlayer();
+
+        Block headBlock = getBedHeadBlock(block);
+        if (headBlock == null) return;
+
+        String bedOwnerUUID = getBedId(headBlock);
+
+        // --- CANCEL IF CLAIMED BY SOMEONE ELSE ---
+        if (bedOwnerUUID != null && !bedOwnerUUID.equals(player.getUniqueId().toString())) {
+            player.sendMessage("§7This bed is already claimed by another player");
+            event.setCancelled(true);
+            return;
+        }
+    }
+
 
     // --- BED BREAK ---
     @EventHandler(priority = EventPriority.MONITOR)
