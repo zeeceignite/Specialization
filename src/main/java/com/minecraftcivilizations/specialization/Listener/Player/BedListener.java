@@ -1,22 +1,33 @@
 package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.util.EffectsUtil;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.type.Bed;
+import org.bukkit.block.data.type.Skull;
+import org.bukkit.entity.BlockDisplay;
+import org.bukkit.entity.Display;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerBedEnterEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.util.EulerAngle;
+import org.bukkit.util.Vector;
+
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+
 
 public class BedListener implements Listener {
 
@@ -39,26 +50,23 @@ public class BedListener implements Listener {
         }
     }
 
+
     // --- CLAIM BED ---
     @EventHandler(priority = EventPriority.HIGH)
-    public void onPlayerInteractWithBed(PlayerInteractEvent event) {
+    public void onPlayerInteractWithBed(PlayerBedEnterEvent event) {
         Player player = event.getPlayer();
-        Block clickedBlock = event.getClickedBlock();
-        if (clickedBlock == null || !isBed(clickedBlock.getType()) || event.getAction() != Action.RIGHT_CLICK_BLOCK)
-            return;
+        Block clickedBlock = event.getBed();
 
-        World world = player.getWorld();
-        if (!world.isBedWorks()) return;  // Bed can explode here
-        if (!world.isNatural()) return;   // Cannot set spawn
-
-        // Vanilla distance check
-        Location bedLoc = clickedBlock.getLocation();
-        Location playerLoc = player.getLocation();
-        double dx = Math.abs(playerLoc.getX() - (bedLoc.getX() + 0.5));
-        double dy = Math.abs(playerLoc.getY() - bedLoc.getY());
-        double dz = Math.abs(playerLoc.getZ() - (bedLoc.getZ() + 0.5));
-        if (dx > 3.0 || dy > 2.0 || dz > 3.0) {
-            return;
+        switch (event.getBedEnterResult()) {
+            case OK:
+            case NOT_POSSIBLE_NOW:
+            case NOT_SAFE:
+                break;
+            case TOO_FAR_AWAY:
+            case OBSTRUCTED:
+            case NOT_POSSIBLE_HERE:
+            case OTHER_PROBLEM:
+                return;
         }
 
         Block headBlock = getBedHeadBlock(clickedBlock);
@@ -66,15 +74,25 @@ public class BedListener implements Listener {
 
         String bedOwnerUUID = getBedId(headBlock);
 
-        // If already claimed
+        // --- UNCLAIM BED WHEN SHIFTING ---
+        if (player.isSneaking() && Objects.equals(bedOwnerUUID, player.getUniqueId().toString())) {
+            clearBedId(headBlock);
+            clearPlayerBed(player);
+            player.setRespawnLocation(null, true);
+
+            float pitch = (float) ThreadLocalRandom.current().nextDouble(0.3, 0.6);
+            clickedBlock.getWorld().playSound(clickedBlock.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_PLACE, 10f, pitch);
+            player.sendMessage("§6You have unclaimed your bed");
+            return;
+        }
+
+        // --- CHECK IF BED IS ALREADY CLAIMED ---
         if (bedOwnerUUID != null) {
-            if (bedOwnerUUID.equals(player.getUniqueId().toString())) {
-                return;
-            } else {
-                player.sendMessage("§cThis bed is already claimed by another player");
+            if (!bedOwnerUUID.equals(player.getUniqueId().toString())) {
+                player.sendMessage("§6This bed is already claimed by another player");
                 event.setCancelled(true);
             }
-            return;
+            return; // Already theirs
         }
 
         // Clear old bed PDC if player had a previous bed
@@ -87,7 +105,9 @@ public class BedListener implements Listener {
         player.getPersistentDataContainer().set(PLAYER_BED_X, PersistentDataType.INTEGER, headBlock.getX());
         player.getPersistentDataContainer().set(PLAYER_BED_Y, PersistentDataType.INTEGER, headBlock.getY());
         player.getPersistentDataContainer().set(PLAYER_BED_Z, PersistentDataType.INTEGER, headBlock.getZ());
-        player.sendMessage("§aYou have claimed this bed");
+        EffectsUtil.playBlockBoundingBox(player, clickedBlock, Particle.HAPPY_VILLAGER, 0.25 );
+        float pitch = (float) ThreadLocalRandom.current().nextDouble(0.9, 1.3);
+        clickedBlock.getWorld().playSound(clickedBlock.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 10f, pitch);
     }
 
     // --- BED BREAK ---
@@ -141,7 +161,7 @@ public class BedListener implements Listener {
     }
 
 
-    // --- HELPERS ---
+
     private static boolean isBed(Material material) {
         return material.name().endsWith("_BED");
     }
