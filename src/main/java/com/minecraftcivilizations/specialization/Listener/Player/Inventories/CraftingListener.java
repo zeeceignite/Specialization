@@ -56,7 +56,13 @@ public class CraftingListener implements Listener {
         }
 
         ItemStack crafted = event.getCurrentItem();
-
+        if (event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+            ItemStack testItem = crafted.clone();
+            testItem.setAmount(craftedAmount * crafted.getAmount());
+            if (!canFitInInventory(player, testItem)) {
+                return;
+            }
+        }
 
         Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromCraftingConfig()
                 .get(crafted.getType(), new TypeToken<>() {});
@@ -77,6 +83,29 @@ public class CraftingListener implements Listener {
             }, 1L);
         }
 
+    }
+
+    /**
+     * Checks if the player's inventory has space for the given item stack
+     */
+    private boolean canFitInInventory(Player player, ItemStack item) {
+        int amountToAdd = item.getAmount();
+        int maxStackSize = item.getMaxStackSize();
+
+        for (ItemStack invItem : player.getInventory().getStorageContents()) {
+            if (amountToAdd <= 0) break;
+
+            if (invItem == null || invItem.getType().isAir()) {
+                // Empty slot can fit a full stack
+                amountToAdd -= maxStackSize;
+            } else if (invItem.isSimilar(item)) {
+                // Existing stack can fit more
+                int spaceLeft = maxStackSize - invItem.getAmount();
+                amountToAdd -= spaceLeft;
+            }
+        }
+
+        return amountToAdd <= 0;
     }
 
     /**

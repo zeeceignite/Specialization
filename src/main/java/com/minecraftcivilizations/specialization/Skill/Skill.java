@@ -16,7 +16,7 @@ public class Skill {
 
 
     public static double getXPNeededForLevel(int level) {
-        return Math.floor(25 * Math.pow(level, 2) + (5 * level) + (200*Math.pow(2.45, level)));
+        return Math.floor(2 * (25 * Math.pow(level, 2) + (5 * level) + (200*Math.pow(2.45, level))));
     }
 
     public static double mapValue(double x, double in_min, double in_max, double out_min, double out_max) {
