@@ -58,7 +58,6 @@ public class BedListener implements Listener {
         double dy = Math.abs(playerLoc.getY() - bedLoc.getY());
         double dz = Math.abs(playerLoc.getZ() - (bedLoc.getZ() + 0.5));
         if (dx > 3.0 || dy > 2.0 || dz > 3.0) {
-            event.setCancelled(true);
             return;
         }
 
@@ -70,9 +69,9 @@ public class BedListener implements Listener {
         // If already claimed
         if (bedOwnerUUID != null) {
             if (bedOwnerUUID.equals(player.getUniqueId().toString())) {
-                player.sendMessage("§6You already claimed this bed.");
+                return;
             } else {
-                player.sendMessage("§cThis bed is already claimed by another player.");
+                player.sendMessage("§cThis bed is already claimed by another player");
                 event.setCancelled(true);
             }
             return;
@@ -88,7 +87,7 @@ public class BedListener implements Listener {
         player.getPersistentDataContainer().set(PLAYER_BED_X, PersistentDataType.INTEGER, headBlock.getX());
         player.getPersistentDataContainer().set(PLAYER_BED_Y, PersistentDataType.INTEGER, headBlock.getY());
         player.getPersistentDataContainer().set(PLAYER_BED_Z, PersistentDataType.INTEGER, headBlock.getZ());
-        player.sendMessage("§aYou have claimed this bed.");
+        player.sendMessage("§aYou have claimed this bed");
     }
 
     // --- BED BREAK ---
@@ -110,7 +109,7 @@ public class BedListener implements Listener {
             if (owner != null) {
                 clearPlayerBed(owner);
                 owner.setRespawnLocation(null, true);
-                owner.sendMessage("§cYour bed was destroyed!");
+                owner.sendMessage("§cYour bed was destroyed");
             }
         }
     }
