@@ -38,8 +38,10 @@ public class ReinforcementProtectionListener implements Listener {
         Location fallingBlockLocation = fallingBlock.getLocation();
         if (temporaryReinforcementStorage.containsKey(fallingBlockLocation)) {
             boolean isHeavy = temporaryReinforcementStorage.get(fallingBlockLocation);
-            ReinforcementManager.addReinforcement(block, isHeavy);
-            temporaryReinforcementStorage.remove(fallingBlockLocation);
+            boolean success = ReinforcementManager.addReinforcementSilent(block, isHeavy);
+            if (success) {
+                temporaryReinforcementStorage.remove(fallingBlockLocation);
+            }
         }
     }
 
@@ -62,6 +64,7 @@ public class ReinforcementProtectionListener implements Listener {
             ReinforcementManager.removeReinforcement(block);
         }
     }
+    
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPistonExtend(BlockPistonExtendEvent event) {
         if (event.isCancelled()) {
@@ -86,11 +89,15 @@ public class ReinforcementProtectionListener implements Listener {
                     boolean isHeavy = entry.getValue();
                     Location newLocation = originalBlock.getLocation().add(direction);
                     Block newBlock = newLocation.getBlock();
-                    ReinforcementManager.addReinforcement(newBlock, isHeavy);
+                    if (!ReinforcementManager.addReinforcementSilent(newBlock, isHeavy)) {
+                        // Failed to add reinforcement to new location, restore to original
+                        ReinforcementManager.addReinforcementSilent(originalBlock, isHeavy);
+                    }
                 }
             }, 2L);
         }
     }
+    
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPistonRetract(BlockPistonRetractEvent event) {
         if (event.isCancelled()) {
@@ -115,7 +122,10 @@ public class ReinforcementProtectionListener implements Listener {
                     boolean isHeavy = entry.getValue();
                     Location newLocation = originalBlock.getLocation().add(direction);
                     Block newBlock = newLocation.getBlock();
-                    ReinforcementManager.addReinforcement(newBlock, isHeavy);
+                    if (!ReinforcementManager.addReinforcementSilent(newBlock, isHeavy)) {
+                        // Failed to add reinforcement to new location, restore to original
+                        ReinforcementManager.addReinforcementSilent(originalBlock, isHeavy);
+                    }
                 }
             }, 2L);
         }

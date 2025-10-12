@@ -26,47 +26,35 @@ public class ReinforcementManager {
     public static final Long cooldown = 100L;
 
     public static void checkForReinforcements(Player player) {
-        Set<Chunk> chunksNearPlayer = getChunksNearPlayer(player, 3);
-        for (Chunk chunk : chunksNearPlayer) {
-            Set<Reinforcement> reinforcedBlocks = getReinforcedBlocks(chunk);
-            if (reinforcedBlocks != null) {
-                for (Reinforcement vector : reinforcedBlocks) {
-                    if (lastTimeSpawnedParticle.containsKey(vector.location()) && System.currentTimeMillis() - lastTimeSpawnedParticle.get(vector.location()) > cooldown) {
-                        Block blockAt = player.getWorld().getBlockAt(vector.location().getBlockX(), vector.location().getBlockY(), vector.location().getBlockZ());
-                        player.spawnParticle(Particle.CRIT, blockAt.getLocation().toBlockLocation().add(.5, 0.5, .5), 200, .25, .25, .25, 0);
-                        lastTimeSpawnedParticle.put(vector.location(), System.currentTimeMillis());
-                    } else if (!lastTimeSpawnedParticle.containsKey(vector.location())) {
-                        lastTimeSpawnedParticle.put(vector.location(), System.currentTimeMillis());
-                    }
+        for (Chunk chunk : getChunksNearPlayer(player, 3)) {
+            Set<Reinforcement> blocks = getReinforcedBlocks(chunk);
+            if (blocks == null) continue;
+            for (Reinforcement r : blocks) {
+                long now = System.currentTimeMillis();
+                Long last = lastTimeSpawnedParticle.get(r.location());
+                if (last == null || now - last > cooldown) {
+                    Block b = player.getWorld().getBlockAt(r.location().getBlockX(), r.location().getBlockY(), r.location().getBlockZ());
+                    player.spawnParticle(Particle.CRIT, b.getLocation().toBlockLocation().add(.5, 0.5, .5), 200, .25, .25, .25, 0);
+                    lastTimeSpawnedParticle.put(r.location(), now);
                 }
             }
         }
     }
 
     public static boolean addReinforcement(Player player, Block block, boolean isHeavy) {
+        if (isHeavy ? isHeavilyReinforced(block) : (isLightlyReinforced(block) || isHeavilyReinforced(block))) return false;
+        
         Chunk chunk = block.getChunk();
-        if (isHeavy && isHeavilyReinforced(block)) return false;
-        if (!isHeavy && isLightlyReinforced(block)) return false;
-        if (!isHeavy && isHeavilyReinforced(block)) return false;
-
-        Set<Reinforcement> reinforcedBlocks = getReinforcedBlocks(chunk);
-        if (reinforcedBlocks == null) reinforcedBlocks = new HashSet<>();
-
-        boolean added = reinforcedBlocks.add(new Reinforcement(block.getLocation().toVector(), isHeavy));
-        if (!added) return false;
-
-        chunk.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, new Gson().toJson(reinforcedBlocks));
-
-        Player target = player;
-        if (target == null) {
-            target = block.getWorld().getNearbyPlayers(block.getLocation(), 4.0).stream().findFirst().orElse(null);
-        }
+        Set<Reinforcement> blocks = getReinforcedBlocks(chunk);
+        if (blocks == null) blocks = new HashSet<>();
+        if (!blocks.add(new Reinforcement(block.getLocation().toVector(), isHeavy))) return false;
+        
+        chunk.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, new Gson().toJson(blocks));
+        
+        Player target = player != null ? player : block.getWorld().getNearbyPlayers(block.getLocation(), 4.0).stream().findFirst().orElse(null);
         if (target != null) {
-            double amount = isHeavy ? 15.0 : 5.0;
             CustomPlayer cp = CoreUtil.getPlayer(target.getUniqueId());
-            if (cp != null) {
-                cp.addSkillXp(SkillType.BUILDER, amount);
-            }
+            if (cp != null) cp.addSkillXp(SkillType.BUILDER, isHeavy ? 15.0 : 5.0);
         }
         return true;
     }
@@ -75,6 +63,15 @@ public class ReinforcementManager {
         return addReinforcement(null, block, isHeavy);
     }
 
+    public static boolean addReinforcementSilent(Block b, boolean h) {
+        if (h ? isHeavilyReinforced(b) : (isLightlyReinforced(b) || isHeavilyReinforced(b))) return false;
+        Chunk c = b.getChunk();
+        Set<Reinforcement> r = getReinforcedBlocks(c);
+        if (r == null) r = new HashSet<>();
+        if (!r.add(new Reinforcement(b.getLocation().toVector(), h))) return false;
+        c.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, new Gson().toJson(r));
+        return true;
+    }
 
     public static void removeReinforcement(Block block) {
         Chunk chunk = block.getChunk();
@@ -86,82 +83,55 @@ public class ReinforcementManager {
     }
 
     public static boolean isReinforced(Block block) {
-        Chunk chunk = block.getChunk();
-        Set<Reinforcement> reinforcedBlocks = getReinforcedBlocks(chunk);
-        if (reinforcedBlocks != null) {
-            for (Reinforcement vector : reinforcedBlocks) {
-                if (vector.location().getX() == block.getX() && vector.location().getY() == block.getY() && vector.location().getZ() == block.getZ()) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return getReinforcement(block) != null;
     }
 
     public static boolean isHeavilyReinforced(Block block) {
-        Chunk chunk = block.getChunk();
-        Set<Reinforcement> reinforcedBlocks = getReinforcedBlocks(chunk);
-        if (reinforcedBlocks != null) {
-            for (Reinforcement vector : reinforcedBlocks) {
-                if (vector.location().getX() == block.getX() && vector.location().getY() == block.getY() && vector.location().getZ() == block.getZ() && vector.isHeavy()) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        Reinforcement r = getReinforcement(block);
+        return r != null && r.isHeavy();
     }
 
     public static boolean isLightlyReinforced(Block block) {
-        Chunk chunk = block.getChunk();
-        Set<Reinforcement> reinforcedBlocks = getReinforcedBlocks(chunk);
-        if (reinforcedBlocks != null) {
-            for (Reinforcement vector : reinforcedBlocks) {
-                if (vector.location().getX() == block.getX() && vector.location().getY() == block.getY() && vector.location().getZ() == block.getZ() && !vector.isHeavy()) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        Reinforcement r = getReinforcement(block);
+        return r != null && !r.isHeavy();
     }
 
-    private static Set<Reinforcement> getReinforcedBlocks(Chunk chunk) {
-        if (chunk.getPersistentDataContainer().has(namespacedKey)) {
-            String s = chunk.getPersistentDataContainer().get(namespacedKey, PersistentDataType.STRING);
-            Set<Reinforcement> list = new Gson().fromJson(s, new TypeToken<Set<Reinforcement>>() {}.getType());
-            if (list == null) return null;
-            return list;
+    private static Reinforcement getReinforcement(Block block) {
+        Set<Reinforcement> blocks = getReinforcedBlocks(block.getChunk());
+        if (blocks == null) return null;
+        for (Reinforcement r : blocks) {
+            if (r.location().getX() == block.getX() && r.location().getY() == block.getY() && r.location().getZ() == block.getZ()) {
+                return r;
+            }
         }
         return null;
     }
 
+    private static Set<Reinforcement> getReinforcedBlocks(Chunk chunk) {
+        if (!chunk.getPersistentDataContainer().has(namespacedKey)) return null;
+        String s = chunk.getPersistentDataContainer().get(namespacedKey, PersistentDataType.STRING);
+        return new Gson().fromJson(s, new TypeToken<Set<Reinforcement>>() {}.getType());
+    }
+
     private static Set<Chunk> getChunksNearPlayer(Player player, int radius) {
-        Set<Chunk> nearbyChunks = new HashSet<>();
-
-        int centerX = player.getLocation().getChunk().getX();
-        int centerZ = player.getLocation().getChunk().getZ();
-
+        Set<Chunk> chunks = new HashSet<>();
+        Chunk center = player.getLocation().getChunk();
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
-                Chunk chunk = player.getWorld().getChunkAt(centerX + dx, centerZ + dz);
-                nearbyChunks.add(chunk);
+                chunks.add(player.getWorld().getChunkAt(center.getX() + dx, center.getZ() + dz));
             }
         }
-
-        return nearbyChunks;
+        return chunks;
     }
 
 
     public static void startReinforcement() {
         new BukkitRunnable() {
-
             @Override
             public void run() {
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    ReinforcementManager.checkForReinforcements(player);
-                }
+                Bukkit.getOnlinePlayers().forEach(ReinforcementManager::checkForReinforcements);
             }
         }.runTaskTimerAsynchronously(Specialization.getInstance(), 0, 20);
-
     }
 
 }
