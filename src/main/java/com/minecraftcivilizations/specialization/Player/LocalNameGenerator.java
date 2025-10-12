@@ -522,6 +522,7 @@ public class LocalNameGenerator {
         }
 
         new_roll.name = line;
+        line = line.replaceAll("\\s*\\[[^\\]]+\\]\\s*", "").trim();
         return new_roll;
     }
 
