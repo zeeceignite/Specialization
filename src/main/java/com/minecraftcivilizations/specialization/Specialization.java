@@ -78,11 +78,12 @@ public final class Specialization extends JavaPlugin {
     public void onEnable() {
 
         logger = getLogger();
-
+        //Gamerules
+        Bukkit.getWorlds().forEach(w -> w.setGameRule(GameRule.NATURAL_REGENERATION, false));
+        Bukkit.getWorlds().forEach(w -> w.setGameRule(GameRule.DO_TRADER_SPAWNING, false));
         saveResource("first_names.txt", false);
         saveResource("last_names.txt", false);
         SpecializationConfig.initialize();
-
         MongoConnection.startDBConnection();
 
 //        TeamManager.initializeTeams();
