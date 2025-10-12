@@ -78,6 +78,8 @@ public final class Specialization extends JavaPlugin {
     public void onEnable() {
 
         logger = getLogger();
+        //Gamerule naturalRegeneration false
+        Bukkit.getWorlds().forEach(w -> w.setGameRule(GameRule.NATURAL_REGENERATION, false));
 
         saveResource("first_names.txt", false);
         saveResource("last_names.txt", false);
