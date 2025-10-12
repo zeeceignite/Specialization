@@ -185,7 +185,7 @@ public class CraftingListener implements Listener {
         
         // The actual number of items crafted is maxCrafts * result.getAmount() per craft
         // But we want the number of crafting operations, so return maxCrafts
-        return maxCrafts;
+        return maxCrafts * event.getRecipe().getResult().getAmount(); // for recipes with multiple item outputs
     }
 
     /**
