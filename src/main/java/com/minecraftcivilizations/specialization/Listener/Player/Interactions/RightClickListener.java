@@ -9,6 +9,11 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.Bisected;
+import org.bukkit.block.data.type.Bed;
+import org.bukkit.block.data.type.Door;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -16,6 +21,8 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class RightClickListener implements Listener {
@@ -37,7 +44,14 @@ public class RightClickListener implements Listener {
         if (player.getInventory().getItemInMainHand().getType() == Material.COPPER_INGOT) {
             CustomPlayer customPlayer = CoreUtil.getPlayer(player.getUniqueId());
             if (customPlayer.getSkillLevel(SkillType.BUILDER) >= SpecializationConfig.getReinforcementConfig().get("LIGHT_REINFORCEMENT_LEVEL", Integer.class)) {
-                if (ReinforcementManager.addReinforcement(event.getClickedBlock(), false)) {
+                List<Block> blocks = getMultiBlocks(event.getClickedBlock());
+                boolean success = false;
+                for (Block block : blocks) {
+                    if (ReinforcementManager.addReinforcement(block, false)) {
+                        success = true;
+                    }
+                }
+                if (success) {
                     player.swingHand(EquipmentSlot.HAND);
                     player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
                     player.sendMessage(Component.text("Block now lightly reinforced!").color(NamedTextColor.WHITE).decorations(Set.of(TextDecoration.BOLD, TextDecoration.ITALIC), false));
@@ -47,7 +61,14 @@ public class RightClickListener implements Listener {
             CustomPlayer customPlayer = CoreUtil.getPlayer(player.getUniqueId());
 
             if (customPlayer.getSkillLevel(SkillType.BUILDER) >= SpecializationConfig.getReinforcementConfig().get("HEAVY_REINFORCEMENT_LEVEL", Integer.class)) {
-                if (ReinforcementManager.addReinforcement(event.getClickedBlock(), true)) {
+                List<Block> blocks = getMultiBlocks(event.getClickedBlock());
+                boolean success = false;
+                for (Block block : blocks) {
+                    if (ReinforcementManager.addReinforcement(block, true)) {
+                        success = true;
+                    }
+                }
+                if (success) {
                     player.swingHand(EquipmentSlot.HAND);
                     player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
                     player.sendMessage(Component.text("Block now heavily reinforced!").color(NamedTextColor.WHITE).decorations(Set.of(TextDecoration.BOLD, TextDecoration.ITALIC), false));
@@ -55,5 +76,18 @@ public class RightClickListener implements Listener {
             }
         }
 
+    }
+
+    private List<Block> getMultiBlocks(Block block) {
+        List<Block> blocks = new ArrayList<>();
+        blocks.add(block);
+        if (block.getBlockData() instanceof Door door) {
+            blocks.add(block.getRelative(door.getHalf() == Bisected.Half.TOP ? BlockFace.DOWN : BlockFace.UP));
+        } else if (block.getBlockData() instanceof Bed bed) {
+            blocks.add(block.getRelative(bed.getPart() == Bed.Part.HEAD ? bed.getFacing().getOppositeFace() : bed.getFacing()));
+        } else if (block.getBlockData() instanceof Bisected bisected) {
+            blocks.add(block.getRelative(bisected.getHalf() == Bisected.Half.TOP ? BlockFace.DOWN : BlockFace.UP));
+        }
+        return blocks;
     }
 }

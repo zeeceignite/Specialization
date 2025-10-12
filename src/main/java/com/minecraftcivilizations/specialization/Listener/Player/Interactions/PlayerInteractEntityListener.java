@@ -180,8 +180,8 @@ public class PlayerInteractEntityListener implements Listener {
     public void onPlayerBreed(EntityBreedEvent e){
         if(e.getBreeder() instanceof Player player) {
             CustomPlayer cPlayer = CoreUtil.getPlayer(player);
-            Integer level = SpecializationConfig.getFarmerConfig().get("FARMER_BREED_LEVEL_" + e.getEntity().getType(), Integer.class);
-            if(cPlayer.getSkillLevel(SkillType.FARMER) < level){
+            Integer level = SpecializationConfig.getFarmerConfig().get("FARMER_BREED_LEVEL_" + e.getMother().getType(), Integer.class);
+            if(level != null && cPlayer.getSkillLevel(SkillType.FARMER) < level){
                 e.setCancelled(true);
             }
         }
@@ -192,7 +192,7 @@ public class PlayerInteractEntityListener implements Listener {
         if(e.getOwner() instanceof Player player) {
             CustomPlayer cPlayer = CoreUtil.getPlayer(player);
             Pair<SkillType,Integer> level = SpecializationConfig.getTameableConfig().get("TAME_" + e.getEntity().getType(), new TypeToken<>(){});
-            if(cPlayer.getSkillLevel(level.firstValue()) < level.secondValue()){
+            if(level != null && cPlayer.getSkillLevel(level.firstValue()) < level.secondValue()){
                 e.setCancelled(true);
             }
         }

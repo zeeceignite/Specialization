@@ -183,16 +183,9 @@ public class CraftingListener implements Listener {
             return result.getAmount();
         }
         
-        // The actual number of items crafted is maxCrafts * result.getAmount() per craft
-        // But we want the number of crafting operations, so return maxCrafts
-        return maxCrafts * event.getRecipe().getResult().getAmount(); // for recipes with multiple item outputs
+        return maxCrafts * event.getRecipe().getResult().getAmount();
     }
 
-    /**
-     * Check crafting permissions when a recipe is prepared in the crafting matrix.
-     * This prevents unauthorized recipes from being shown to players and handles
-     * on-demand recipe discovery for allowed recipes.
-     */
     @EventHandler(ignoreCancelled = true)
     public void onPrepareItemCraft(PrepareItemCraftEvent event) {
         if (event.getInventory().getViewers().isEmpty()) return;
@@ -212,7 +205,6 @@ public class CraftingListener implements Listener {
         if (recipe == null) return;
 
         if (!(recipe instanceof Keyed)) {
-            LOGGER.warning("Recipe is not Keyed, cannot get NamespacedKey: " + recipe.getClass().getSimpleName());
             return;
         }
 
@@ -233,7 +225,7 @@ public class CraftingListener implements Listener {
     public static boolean shouldBlockRecipe(Player player, NamespacedKey recipeKey) {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance()
                 .getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-        if(customPlayer.getAdditionUnlockedRecipes() != null && customPlayer.getAdditionUnlockedRecipes().contains(recipeKey)) return true;
+        if(customPlayer.getAdditionUnlockedRecipes() != null && customPlayer.getAdditionUnlockedRecipes().contains(recipeKey)) return false;
 
         // Check if recipe is in any skill-specific unlocked recipes config
         for (SkillType skillType : SkillType.values()) {

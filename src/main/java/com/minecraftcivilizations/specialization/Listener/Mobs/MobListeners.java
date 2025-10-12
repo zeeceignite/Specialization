@@ -49,7 +49,7 @@ public class MobListeners implements Listener {
         }else{
             double nightMobDamageMultiplier = SpecializationConfig.getMobConfig().get("NIGHTTIME_MOB_DAMAGE_MULTIPLIER", Double.class);
             newDamage = event.getDamage() * nightMobDamageMultiplier;
-            if(CoreUtil.getPlayer(player).getSkillLevel(SkillType.GUARDSMAN) > 2){
+            if(CoreUtil.getPlayer(player).getSkillLevel(SkillType.GUARDSMAN) >= 1){
                 double guardsmanReductionAmount = SpecializationConfig.getMobConfig().get("NIGHT_GUARDSMAN_MOB_DAMAGE_PERCENT_REDUCTION", Double.class);
                 newDamage *= 1 - (guardsmanReductionAmount/100d);
             }
