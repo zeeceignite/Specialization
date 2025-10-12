@@ -24,6 +24,8 @@ public class LocalChat implements Listener {
         String originalMessage = MiniMessage.miniMessage().stripTags(event.getMessage().trim());
         if(tryHandleGlobalChat(sender, originalMessage)) return;
 
+        Bukkit.getLogger().info("Chat [" + sender.getName() + "] at " + sender.getLocation().getX() + " " + sender.getLocation().getY() + " " + sender.getLocation().getZ() + " " + sender.getWorld().getName() + " : \"" + originalMessage + "\"");
+
         String defaultFormat = SpecializationConfig.getChatConfig().get("DEFAULT_FORMAT", String.class);
         Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> {
             getNearbyPlayers(sender).forEach(player -> {
