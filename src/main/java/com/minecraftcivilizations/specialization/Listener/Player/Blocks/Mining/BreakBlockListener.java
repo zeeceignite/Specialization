@@ -14,8 +14,12 @@ import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Ageable;
+import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.type.Bed;
+import org.bukkit.block.data.type.Door;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -23,12 +27,15 @@ import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import static com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager.*;
+import static com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager.isHeavilyReinforced;
+import static com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager.isLightlyReinforced;
+import static com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager.isReinforced;
+import static com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager.removeReinforcement;
 
 public class BreakBlockListener implements Listener {
-
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
         AttributeInstance breakSpeedAttr = event.getPlayer().getAttribute(Attribute.BLOCK_BREAK_SPEED);
@@ -50,13 +57,15 @@ public class BreakBlockListener implements Listener {
                     event.getBlock().getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT, 1));
                     event.getPlayer().sendMessage("You have received 1 copper ingot for breaking lightly reinforced blocks!");
                 }
-                removeReinforcement(event.getBlock());
+                for (Block b : getMultiBlocks(event.getBlock())) {
+                    removeReinforcement(b);
+                }
             }
             if (pair != null && pair.firstValue() != null && pair.secondValue() != null) {
                 if (blockData instanceof Ageable age) {
                     if(age.getMaximumAge() == age.getAge()) {
                         player.addSkillXp(pair.firstValue(), pair.secondValue(), event.getBlock().getLocation());
-                    }// else player.addSkillXp(pair.firstValue(), 0); ???
+                    }
                 } else {
                     player.addSkillXp(pair.firstValue(), pair.secondValue(), event.getBlock().getLocation());
                 }
@@ -113,7 +122,9 @@ public class BreakBlockListener implements Listener {
                         }else block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT, 1));
                     },3);
                 }
-                removeReinforcement(block);
+                for (Block b : getMultiBlocks(block)) {
+                    removeReinforcement(b);
+                }
             }
         });
     }
@@ -140,6 +151,21 @@ public class BreakBlockListener implements Listener {
                 event.setDropItems(false);
             }
         }
+    }
+
+    private List<Block> getMultiBlocks(Block b) {
+        List<Block> l = new ArrayList<>();
+        l.add(b);
+        BlockData d = b.getBlockData();
+        switch (d) {
+            case Door door -> l.add(b.getRelative(door.getHalf() == Bisected.Half.TOP ? BlockFace.DOWN : BlockFace.UP));
+            case Bed bed ->
+                    l.add(b.getRelative(bed.getPart() == Bed.Part.HEAD ? bed.getFacing().getOppositeFace() : bed.getFacing()));
+            case Bisected bi -> l.add(b.getRelative(bi.getHalf() == Bisected.Half.TOP ? BlockFace.DOWN : BlockFace.UP));
+            default -> {
+            }
+        }
+        return l;
     }
 
 }
