@@ -78,9 +78,6 @@ public final class Specialization extends JavaPlugin {
     public void onEnable() {
 
         logger = getLogger();
-        //Gamerules
-        Bukkit.getWorlds().forEach(w -> w.setGameRule(GameRule.NATURAL_REGENERATION, false));
-        Bukkit.getWorlds().forEach(w -> w.setGameRule(GameRule.DO_TRADER_SPAWNING, false));
         saveResource("first_names.txt", false);
         saveResource("last_names.txt", false);
         SpecializationConfig.initialize();
@@ -133,6 +130,7 @@ public final class Specialization extends JavaPlugin {
             }
         }.runTaskLater(this, 100L); // Run after 5 seconds to allow server to fully start
 
+        //overworld game rules
         World world = Bukkit.getWorlds().get(0);
         world.setGameRule(GameRule.SPAWN_RADIUS, 350);
         world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true);
@@ -142,6 +140,9 @@ public final class Specialization extends JavaPlugin {
         world.setGameRule(GameRule.LOCATOR_BAR, true);
         world.setGameRule(GameRule.WATER_SOURCE_CONVERSION, false);
         world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
+        //global game rules
+        Bukkit.getWorlds().forEach(w -> w.setGameRule(GameRule.NATURAL_REGENERATION, false));
+        Bukkit.getWorlds().forEach(w -> w.setGameRule(GameRule.DO_TRADER_SPAWNING, false));
 
 
         Recipes.init();
@@ -264,6 +265,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new NotifyRestartCommand());
         commandManager.registerCommand(new RecipesCommand());
         commandManager.registerCommand(new PurgeGoldenApplesCommand());
+        commandManager.registerCommand(new RandomNameBulkTestCommand());
         commandManager.registerCommand(new RerollNameCommand(localNameGenerator));
     }
 

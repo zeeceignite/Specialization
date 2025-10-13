@@ -68,6 +68,8 @@ public class LocalNameGenerator {
         // Load existing names from world playerdata to prevent duplicates
         loadExistingNamesFromWorld();
         generateAllNameCombinations();
+        loadTotalFromGeneratedFile();
+
         Specialization.logger.info("[LocalNameGenerator] Initialization complete. " + usedNames.size() + " existing names loaded.");
     }
     private void generateAllNameCombinations() {
@@ -445,25 +447,34 @@ public class LocalNameGenerator {
     public String nextName() throws NoSuchElementException {
         Specialization.logger.info("[LocalNameGenerator] Generating new name...");
 
-        if (usedNames.size() >= firstNames.size() * lastNames.size()) {
-            Specialization.logger.severe("[LocalNameGenerator] All possible name combinations have been used!");
+        int totalUpper = (totalPossible > 0) ? totalPossible : Math.max(1, firstNames.size() * lastNames.size());
+
+        if (usedNames.size() >= totalUpper) {
+            Specialization.logger.severe("[LocalNameGenerator] All possible name combinations have been used (exact="
+                    + (totalPossible > 0 ? totalPossible : "unknown") + ", used=" + usedNames.size() + ")!");
             throw new NoSuchElementException("All possible name combinations have been used");
         }
 
         int attempts = 0;
-        int maxAttempts = firstNames.size() * lastNames.size() * 8; // Safety limit
+        int maxAttempts = Math.max(1000, totalUpper); // safety limit tuned to actual size
 
         while (attempts < maxAttempts) {
-
-            NameRoll first = generateNameRoll(firstNames, null); //initialize with a first name roll
-            NameRoll last = generateNameRoll(lastNames, first); //generates the last name with the first name as context
-            String name = first.getName() + "_" + last.getName();
-
-            if (name.length() <= 16 && usedNames.add(name)) {
-                return name;
-            }
-
             attempts++;
+            try {
+                NameRoll first = generateNameRoll(firstNames, null);
+                NameRoll last = generateNameRoll(lastNames, first);
+                String name = first.getName() + "_" + last.getName();
+
+                if (name.length() > 16) continue;
+
+                if (usedNames.add(name)) return name;
+                // duplicate -> continue
+            } catch (NoSuchElementException e) {
+                // No valid candidate for this roll (exhausted candidate pool) — count attempt and continue
+                Specialization.logger.fine("[LocalNameGenerator] generateNameRoll failed on attempt " + attempts + ": " + e.getMessage());
+            } catch (Exception e) {
+                Specialization.logger.warning("[LocalNameGenerator] Unexpected error generating name: " + e.getMessage());
+            }
         }
 
         Specialization.logger.severe("[LocalNameGenerator] FAILED: Could not generate a unique valid name after " + maxAttempts + " attempts");
@@ -471,60 +482,90 @@ public class LocalNameGenerator {
     }
 
 
+    private int totalPossible = -1;
+
+    private void loadTotalFromGeneratedFile() {
+        File outputFile = new File(Specialization.getInstance().getDataFolder(), "GeneratedNames.txt");
+        if (!outputFile.exists()) return;
+
+        try {
+            List<String> lines = Files.readAllLines(outputFile.toPath());
+            for (String line : lines) {
+                line = line.trim();
+                if (line.startsWith("Total names:")) {
+                    String num = line.replace("Total names:", "").trim();
+                    try {
+                        totalPossible = Integer.parseInt(num);
+                        Specialization.logger.info("[LocalNameGenerator] Total possible names loaded: " + totalPossible);
+                    } catch (NumberFormatException nfe) {
+                        Specialization.logger.warning("[LocalNameGenerator] Could not parse total from GeneratedNames.txt: '" + num + "'");
+                    }
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            Specialization.logger.warning("[LocalNameGenerator] Failed to read GeneratedNames.txt: " + e.getMessage());
+        }
+    }
+
+
+
+
     /**
      * A helper method that captures the nested name candidates within brackets
      * for example: {car|bicycle|truck} will have a 33% chance of drawing any of those
-     * <p>
      * tags: [nature] [abyss] adding this anywhere to a name entry will assign it to that group.
-     * If a last name has this tag, then it is compatible. Not adding a tag will be compatible with anything.
+     * If a last name has this tag, then it is compatible. Not adding a tag will be compatible with other non tag names.
      */
     private NameRoll generateNameRoll(List<String> list, NameRoll roll_context) {
         NameRoll new_roll = new NameRoll();
-        String group = null;
-        String line;
+        List<String> candidates;
 
+        // --- Decide candidate pool ---
         if (roll_context == null) {
-            //this only happen for first names
-            line = list.get(random.nextInt(list.size()));
-            List<String> matches = getGroupPattern(line);
-
-            if (!matches.isEmpty()) {
-                new_roll.groups = matches;
-            }
+            // First name: all options
+            candidates = new ArrayList<>(list);
         } else {
-            //this only happens when working on a last name
-            group = roll_context.getRandomGroup(); //this gets the groupings set by the first name
+            String group = roll_context.getRandomGroup();
             if (group != null && grouping.containsKey(group) && !grouping.get(group).isEmpty()) {
-                List<String> options_for_name = grouping.get(group);
-                line = options_for_name.get(random.nextInt(options_for_name.size()));
+                candidates = new ArrayList<>(grouping.get(group)); // grouped last names
             } else {
-                line = list.get(random.nextInt(list.size()));
+                // fallback: ungrouped last names only
+                candidates = list.stream()
+                        .filter(l -> getGroupPattern(l).isEmpty())
+                        .collect(Collectors.toList());
             }
         }
 
-        line = line.trim();
-        if (line.isEmpty()) {
-            return generateNameRoll(list, roll_context); // retry if empty
+        // Shuffle once — pseudo-random order ensures full coverage
+        Collections.shuffle(candidates, random);
+
+        for (String raw : candidates) {
+            String line = raw.trim();
+            if (line.isEmpty()) continue;
+
+            // Expand braces {A|B|C}
+            List<String> expanded = expandBraces(line);
+            if (expanded.isEmpty()) continue;
+
+            String variant = expanded.get(random.nextInt(expanded.size()));
+
+            // Remove [group] tags
+            variant = variant.replaceAll("\\s*\\[[^\\]]+\\]\\s*", "").trim();
+            if (variant.isEmpty()) continue;
+
+            new_roll.name = variant;
+            new_roll.groups = getGroupPattern(raw);
+            return new_roll;
         }
-        //Get the contents within brackets.
-        if (line.startsWith("{")) {
-            line = line.replace("{", "").replace("}", "");
-            String[] line_split = line.split("\\|");
 
-            // Remove empty options
-            List<String> nonEmptyOptions = new ArrayList<>();
-            for (String opt : line_split) {
-                if (!opt.trim().isEmpty()) nonEmptyOptions.add(opt.trim());
-            }
-
-            int roll_int = new Random().nextInt(nonEmptyOptions.size());
-            line = nonEmptyOptions.get(roll_int);
-        }
-
-        new_roll.name = line;
-        line = line.replaceAll("\\s*\\[[^\\]]+\\]\\s*", "").trim();
-        return new_roll;
+        // If we reach here, no valid name was found — throw, don’t loop forever
+        throw new NoSuchElementException("No valid names left after checking all candidates.");
     }
+
+
+
+
 
     protected static class NameRoll {
         @Getter
