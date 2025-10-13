@@ -125,7 +125,7 @@ public final class Specialization extends JavaPlugin {
             @Override
             public void run() {
                 if (TownManager.getInstance() != null) {
-                    TownManager.getInstance().scanAllPlayersForTowns();
+                    TownManager.scanAllPlayersForTownsAsync();
                 }
             }
         }.runTaskLater(this, 100L); // Run after 5 seconds to allow server to fully start

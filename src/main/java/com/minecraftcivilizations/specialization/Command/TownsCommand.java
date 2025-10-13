@@ -18,6 +18,7 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @CommandAlias("towns")
 public class TownsCommand extends BaseCommand {
@@ -81,11 +82,11 @@ public class TownsCommand extends BaseCommand {
         sender.sendRichMessage("<yellow>Starting town scan...");
         
         // Run the scan asynchronously to avoid blocking the main thread
-        Bukkit.getScheduler().runTaskAsynchronously(Bukkit.getPluginManager().getPlugin("Specialization"), () -> {
-            TownManager.scanAllPlayersForTowns();
-            
+        Bukkit.getScheduler().runTaskAsynchronously(Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("Specialization")), () -> {
+            TownManager.scanAllPlayersForTownsAsync();
+
             // Send results back on main thread
-            Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("Specialization"), () -> {
+            Bukkit.getScheduler().runTask(Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("Specialization")), () -> {
                 int townCount = TownManager.getTowns().size();
                 sender.sendRichMessage("<green>Town scan complete! Found " + townCount + " towns.");
                 
