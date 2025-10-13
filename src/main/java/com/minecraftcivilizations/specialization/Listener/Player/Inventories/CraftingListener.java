@@ -11,6 +11,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -128,6 +129,9 @@ public class CraftingListener implements Listener {
     private int getCraftedAmount(CraftItemEvent event) {
         ItemStack result = event.getCurrentItem();
         if (result == null) return 0;
+        if(event.getResult().equals(Event.Result.DENY)){
+            return 0;
+        }
 
         InventoryAction action = event.getAction();
 
