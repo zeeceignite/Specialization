@@ -2,10 +2,10 @@ package com.minecraftcivilizations.specialization.Distance;
 
 import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
-import org.bukkit.*;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
-import org.bukkit.craftbukkit.CraftChunk;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -16,10 +16,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Getter
 public class TownManager implements Listener {
+
     @Getter
     private static TownManager instance;
+
     private static final List<Town> towns = Collections.synchronizedList(new ArrayList<>());
     private static final Map<UUID, Location> playerSpawnLocations = new ConcurrentHashMap<>();
+
     private static final int TOWN_RADIUS = 150;
     private static final int MIN_BEDS = 5;
 
@@ -27,65 +30,43 @@ public class TownManager implements Listener {
         instance = this;
     }
 
+    /*** EVENT: STORE PLAYER RESPAWN LOCATIONS ***/
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent event) {
         Location spawnLocation = event.getRespawnLocation();
-        UUID playerId = event.getPlayer().getUniqueId();
-
-        playerSpawnLocations.put(playerId, spawnLocation);
+        if (spawnLocation != null) {
+            playerSpawnLocations.put(event.getPlayer().getUniqueId(), spawnLocation);
+        }
 
         // Async scan around respawn
         CompletableFuture.runAsync(() -> scanForTownsAroundLocationAsync(spawnLocation));
     }
 
-    /*** ASYNC STARTUP SCAN ***/
+    /*** ASYNC STARTUP SCAN: USE ALL OFFLINE PLAYER SPAWN LOCATIONS ***/
     public static void scanAllPlayersForTownsAsync() {
         Specialization.logger.info("Starting town scan...");
         long startTime = System.currentTimeMillis();
 
         CompletableFuture.runAsync(() -> {
-            List<Town> tempTowns = new ArrayList<>();
-            Set<Location> scannedLocations = new HashSet<>();
+            List<Location> allSpawnLocations = new ArrayList<>();
 
             for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
-                Location bedLoc = player.getRespawnLocation();
-                if (bedLoc == null) continue;
-
-                playerSpawnLocations.put(player.getUniqueId(), bedLoc);
-
-                boolean alreadyScanned = scannedLocations.stream()
-                        .anyMatch(loc -> loc.getWorld() == bedLoc.getWorld() &&
-                                loc.distanceSquared(bedLoc) <= TOWN_RADIUS * TOWN_RADIUS);
-                if (alreadyScanned) continue;
-
-                scannedLocations.add(bedLoc);
-
-                // Scan beds around bedLoc on main thread
-                List<Location> bedsInArea = new ArrayList<>();
-                CompletableFuture<Void> scanTask = new CompletableFuture<>();
-                Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> {
-                    bedsInArea.addAll(findBedsInRadius(bedLoc));
-                    scanTask.complete(null);
-                });
-                scanTask.join();
-
-                if (bedsInArea.size() >= MIN_BEDS) {
-                    Location center = calculateTownCenter(bedsInArea);
-                    tempTowns.add(new Town(center, bedsInArea));
+                Location spawnLoc = player.getRespawnLocation(); // treat this as "bed"
+                if (spawnLoc != null) {
+                    allSpawnLocations.add(spawnLoc);
+                    playerSpawnLocations.put(player.getUniqueId(), spawnLoc);
                 }
             }
 
-            // Merge towns that are too close
-            mergeCloseTowns(tempTowns);
+            List<Town> foundTowns = calculateTownsFromLocations(allSpawnLocations);
 
-            // Push to main thread
+            // Push results to main thread
             Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> {
                 towns.clear();
-                towns.addAll(tempTowns);
+                towns.addAll(foundTowns);
 
                 long duration = System.currentTimeMillis() - startTime;
-                double durationSeconds = duration / 1000.0;
-                Specialization.logger.info("Town scan complete! Found " + towns.size() + " towns in " + durationSeconds + "s");
+                Specialization.logger.info("Town scan complete! Found " + towns.size() + " towns in " + (duration / 1000.0) + "s");
 
                 for (int i = 0; i < towns.size(); i++) {
                     Town t = towns.get(i);
@@ -98,30 +79,32 @@ public class TownManager implements Listener {
 
     /*** ASYNC SCAN AROUND A SPECIFIC LOCATION ***/
     private static void scanForTownsAroundLocationAsync(Location centerLocation) {
-        CompletableFuture.runAsync(() -> {
-            List<Location> bedsInArea = new ArrayList<>();
-            CompletableFuture<Void> scanTask = new CompletableFuture<>();
-            Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> {
-                bedsInArea.addAll(findBedsInRadius(centerLocation));
-                scanTask.complete(null);
-            });
-            scanTask.join();
+        if (centerLocation == null) return;
 
-            if (bedsInArea.size() >= MIN_BEDS) {
+        CompletableFuture.runAsync(() -> {
+            List<Location> nearbySpawns = new ArrayList<>();
+            for (Location loc : playerSpawnLocations.values()) {
+                if (loc.getWorld().equals(centerLocation.getWorld()) &&
+                        loc.distanceSquared(centerLocation) <= TOWN_RADIUS * TOWN_RADIUS) {
+                    nearbySpawns.add(loc);
+                }
+            }
+
+            if (nearbySpawns.size() >= MIN_BEDS) {
                 synchronized (towns) {
                     boolean townExists = false;
                     for (Town existingTown : towns) {
                         if (existingTown.getCenterLocation().getWorld().equals(centerLocation.getWorld()) &&
                                 existingTown.getCenterLocation().distanceSquared(centerLocation) <= TOWN_RADIUS * TOWN_RADIUS) {
-                            if (bedsInArea.size() > existingTown.getBedCount()) {
-                                existingTown.updateBeds(bedsInArea);
+                            if (nearbySpawns.size() > existingTown.getBedCount()) {
+                                existingTown.updateBeds(nearbySpawns);
                             }
                             townExists = true;
                             break;
                         }
                     }
                     if (!townExists) {
-                        towns.add(new Town(Objects.requireNonNull(calculateTownCenter(bedsInArea)), bedsInArea));
+                        towns.add(new Town(calculateTownCenter(nearbySpawns), nearbySpawns));
                     }
                 }
             }
@@ -129,107 +112,50 @@ public class TownManager implements Listener {
     }
 
     /*** MERGE CLOSE TOWNS ***/
-    private static void mergeCloseTowns(List<Town> townList) {
-        for (int i = 0; i < townList.size(); i++) {
-            Town t1 = townList.get(i);
-            for (int j = i + 1; j < townList.size(); j++) {
-                Town t2 = townList.get(j);
-                if (t1.getCenterLocation().getWorld().equals(t2.getCenterLocation().getWorld()) &&
-                        t1.getCenterLocation().distanceSquared(t2.getCenterLocation()) <= TOWN_RADIUS * TOWN_RADIUS) {
-                    if (t1.getBedCount() >= t2.getBedCount()) {
-                        townList.remove(j);
-                    } else {
-                        townList.remove(i);
-                        i--;
-                    }
-                    break;
+    private static List<Town> calculateTownsFromLocations(List<Location> locations) {
+        List<Town> townList = new ArrayList<>();
+        Set<Location> unprocessed = new HashSet<>(locations);
+
+        while (!unprocessed.isEmpty()) {
+            Location current = unprocessed.iterator().next();
+            List<Location> cluster = new ArrayList<>();
+
+            Iterator<Location> iter = unprocessed.iterator();
+            while (iter.hasNext()) {
+                Location loc = iter.next();
+                if (loc.getWorld().equals(current.getWorld()) &&
+                        loc.distanceSquared(current) <= TOWN_RADIUS * TOWN_RADIUS) {
+                    cluster.add(loc);
+                    iter.remove();
                 }
             }
-        }
-    }
 
-    private static List<Location> findBedsInRadius(Location center) {
-        List<Location> beds = new ArrayList<>();
-        World world = center.getWorld();
-        if (world == null) return beds;
-
-        int centerX = center.getBlockX();
-        int centerY = center.getBlockY();
-        int centerZ = center.getBlockZ();
-
-        int minX = centerX - TOWN_RADIUS;
-        int maxX = centerX + TOWN_RADIUS;
-        int minZ = centerZ - TOWN_RADIUS;
-        int maxZ = centerZ + TOWN_RADIUS;
-
-        int minChunkX = minX >> 4;
-        int maxChunkX = maxX >> 4;
-        int minChunkZ = minZ >> 4;
-        int maxChunkZ = maxZ >> 4;
-
-        int operations = 0;
-
-        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
-                Chunk chunk = world.getChunkAt(chunkX, chunkZ);
-
-                // Iterate all tile entities in the chunk
-                for (BlockState state : ((org.bukkit.craftbukkit.CraftChunk) chunk).getTileEntities()) {
-                    operations++;
-
-                    // Check if this BlockState is a bed
-                    Material type = state.getType();
-                    if (type.name().endsWith("BED")) {
-                        Location bedLoc = state.getLocation();
-
-                        // Only include if within spherical radius
-                        if (center.distanceSquared(bedLoc) <= TOWN_RADIUS * TOWN_RADIUS) {
-                            beds.add(bedLoc);
-                        }
-                    }
-                }
+            if (cluster.size() >= MIN_BEDS) {
+                Location center = calculateTownCenter(cluster);
+                townList.add(new Town(center, cluster));
             }
         }
 
-        Specialization.logger.info("findBedsInRadius completed. Checked " + operations + " tile entities.");
-
-        return beds;
+        return townList;
     }
 
-
-
-    private static boolean isBed(Block block) {
-        Material material = block.getType();
-        if (!material.name().endsWith("BED")) return false;
-
-        try {
-            if (block.getBlockData() instanceof org.bukkit.block.data.type.Bed bed) {
-                return bed.getPart() == org.bukkit.block.data.type.Bed.Part.HEAD ||
-                        bed.getPart() == org.bukkit.block.data.type.Bed.Part.FOOT;
-            }
-        } catch (Exception e) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private static Location calculateTownCenter(List<Location> beds) {
-        if (beds.isEmpty()) return null;
+    /*** CALCULATE TOWN CENTER ***/
+    private static Location calculateTownCenter(List<Location> locations) {
+        if (locations.isEmpty()) return null;
 
         double totalX = 0, totalY = 0, totalZ = 0;
-        World world = beds.getFirst().getWorld();
+        World world = locations.get(0).getWorld();
 
-        for (Location bed : beds) {
-            totalX += bed.getX();
-            totalY += bed.getY();
-            totalZ += bed.getZ();
+        for (Location loc : locations) {
+            totalX += loc.getX();
+            totalY += loc.getY();
+            totalZ += loc.getZ();
         }
 
         return new Location(world,
-                totalX / beds.size(),
-                totalY / beds.size(),
-                totalZ / beds.size());
+                totalX / locations.size(),
+                totalY / locations.size(),
+                totalZ / locations.size());
     }
 
     public static List<Town> getTowns() {

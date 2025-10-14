@@ -120,15 +120,9 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PatDown(), this);
 
 
-        // Trigger initial town scan after server startup
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (TownManager.getInstance() != null) {
-                    TownManager.scanAllPlayersForTownsAsync();
-                }
-            }
-        }.runTaskLater(this, 100L); // Run after 5 seconds to allow server to fully start
+        //town data does not need to wait anymore
+        TownManager.scanAllPlayersForTownsAsync();
+
 
         //overworld game rules
         World world = Bukkit.getWorlds().get(0);
