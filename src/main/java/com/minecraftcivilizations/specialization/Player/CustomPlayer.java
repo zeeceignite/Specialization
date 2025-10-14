@@ -3,6 +3,7 @@ package com.minecraftcivilizations.specialization.Player;
 import com.google.common.collect.Queues;
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Listener.Player.XpGainMonitor;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -109,7 +110,6 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         Player player = Bukkit.getPlayer(getUuid());
         player.sendActionBar(Component.text((xp <= 0 ? "" : "+") + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));
         int currentLevel = this.getSkillLevel(skillType);
-
         if (this.isSoundEnabled) {
             float pitch = 0.8f + (float) (Math.random() * 0.4f); // random between 0.8–1.2
             if(soundLocation != null){
@@ -118,6 +118,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
                 player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.UI, 0.05f, pitch);
             }
         }
+        XpGainMonitor.handleXpGain(player, skillType, xp);
 
         // Update team assignment based on highest skill
 //        TeamManager.setTeam(Bukkit.getPlayer(getUuid()));
@@ -173,6 +174,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         }
         return level;
     }
+
 
     public SkillLevel getSkillLevelEnum(SkillType skillType) {
         return SkillLevel.getSkillLevelFromInt(getSkillLevel(skillType));

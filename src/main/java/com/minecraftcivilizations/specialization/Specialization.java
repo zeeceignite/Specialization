@@ -141,6 +141,7 @@ public final class Specialization extends JavaPlugin {
 
         Recipes.init();
         Blueprints.init();
+        XpGainMonitor.init();
 
         Bukkit.updateRecipes();
 

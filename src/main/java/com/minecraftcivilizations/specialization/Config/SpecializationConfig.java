@@ -20,6 +20,8 @@ import java.util.Set;
 @Getter
 public class SpecializationConfig {
     @Getter
+    private static ConfigFile xpMonitorConfig;
+    @Getter
     private static ConfigFile playerConfig;
     @Getter
     private static ConfigFile skillsConfig;
@@ -440,6 +442,38 @@ public class SpecializationConfig {
             fields.add(new Pair<>("INSTINCT_DETECTION_RADIUS_LEVEL_3", 16.0));
             fields.add(new Pair<>("INSTINCT_GLOW_DURATION_TICKS", 300));
         });
+
+        xpMonitorConfig = new ConfigFile(Specialization.getInstance(), "XpMonitorAlertThresholds", null, fields -> {
+            // FARMER
+            fields.add(new Pair<>("FARMER.threshold", 400.0));
+            fields.add(new Pair<>("FARMER.cooldown-seconds", 30));
+
+            // BUILDER
+            fields.add(new Pair<>("BUILDER.threshold", 500.0));
+            fields.add(new Pair<>("BUILDER.cooldown-seconds", 30));
+
+            // MINER
+            fields.add(new Pair<>("MINER.threshold", 600.0));
+            fields.add(new Pair<>("MINER.cooldown-seconds", 30));
+
+            // HEALER
+            fields.add(new Pair<>("HEALER.threshold", 500.0));
+            fields.add(new Pair<>("HEALER.cooldown-seconds", 30));
+
+            // LIBRARIAN
+            fields.add(new Pair<>("LIBRARIAN.threshold", 450.0));
+            fields.add(new Pair<>("LIBRARIAN.cooldown-seconds", 30));
+
+            // GUARDSMAN
+            fields.add(new Pair<>("GUARDSMAN.threshold", 550.0));
+            fields.add(new Pair<>("GUARDSMAN.cooldown-seconds", 30));
+
+            // BLACKSMITH
+            fields.add(new Pair<>("BLACKSMITH.threshold", 500.0));
+            fields.add(new Pair<>("BLACKSMITH.cooldown-seconds", 30));
+        });
+
+
     }//change
 
 }

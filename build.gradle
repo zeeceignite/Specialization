@@ -119,12 +119,12 @@ paperweight.reobfArtifactConfiguration = ReobfArtifactConfiguration.getMOJANG_PR
 
 // Use this to direct where your plugin jar builds to.
 
-//tasks.register('copyPluginJar', Copy) {
-//    dependsOn shadowJar
-//    from(shadowJar.archiveFile)
-//    into "A:\\Utilities\\Experimental Dev Test Server\\plugins"
-//}
-//
-//tasks.build {
-//    dependsOn tasks.copyPluginJar
-//}
+tasks.register('copyPluginJar', Copy) {
+    dependsOn shadowJar
+    from(shadowJar.archiveFile)
+    into "A:\\Utilities\\Experimental Dev Test Server\\plugins"
+}
+
+tasks.build {
+    dependsOn tasks.copyPluginJar
+}
