@@ -45,6 +45,7 @@ import com.minecraftcivilizations.specialization.Recipe.Blueprints;
 import com.minecraftcivilizations.specialization.Recipe.Recipes;
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import com.minecraftcivilizations.specialization.Skill.Skill;
+import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.util.LocatorBarManager;
 import com.mojang.authlib.GameProfile;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Component.ComponentUtils;
@@ -64,10 +65,12 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public final class Specialization extends JavaPlugin {
 
@@ -250,6 +253,15 @@ public final class Specialization extends JavaPlugin {
 
 
         PaperCommandManager commandManager = new PaperCommandManager(this);
+
+
+        // --- TAB COMPLETIONS ---
+        commandManager.getCommandCompletions().registerCompletion("classes", c ->
+                Arrays.stream(SkillType.values())
+                        .map(Enum::name)
+                        .collect(Collectors.toList())
+        );
+
         commandManager.registerCommand(new ClassCommand());
         commandManager.registerCommand(new SetXpCommand());
         commandManager.registerCommand(new SetLoreCommand());
@@ -262,6 +274,9 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new PurgeGoldenApplesCommand());
         commandManager.registerCommand(new RandomNameBulkTestCommand());
         commandManager.registerCommand(new RerollNameCommand(localNameGenerator));
+        commandManager.registerCommand(new XPLeaderboardCommand());
+
+
     }
 
 
@@ -308,6 +323,7 @@ public final class Specialization extends JavaPlugin {
             }
         });
     }
+
 
     private PacketContainer createChangeNamePacket(UUID uuid, Component name) {
         PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.PLAYER_INFO);

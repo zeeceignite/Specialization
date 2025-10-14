@@ -165,6 +165,16 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         });
     }
 
+    public SkillLevel getSkillLevelEnumByXpOnly(SkillType skillType) {
+        double xp = getSkill(skillType).getXp();
+        int level = 0;
+        while (level < SkillLevel.values().length && xp >= Skill.getXPNeededForLevel(level + 1)) {
+            level++;
+        }
+        return SkillLevel.getSkillLevelFromInt(level);
+    }
+
+
     public int getSkillLevel(SkillType skillType) {
         int level;
         // So, so sorry if you have to read this, it was fixed about 10 times and I forgot to call it, so now it looks like this :sad:
