@@ -23,10 +23,15 @@ public class XPLeaderboardCommand extends BaseCommand {
 
     // --- Default: overall XP leaderboard ---
     @Default
-    public void showOverallLeaderboard() {
+    public void showOverallLeaderboard(Player sender) {
+        if (!sender.hasPermission("civlabs.xpleaderboard")) {
+            sender.sendMessage(Component.text("You do not have permission.", NamedTextColor.RED));
+            return;
+        }
+
         List<CustomPlayer> customPlayers = getOnlineCustomPlayers();
         if (customPlayers.isEmpty()) {
-            sendMessageToOps("No players online to display XP leaderboard.", NamedTextColor.RED);
+            sender.sendMessage(Component.text("No players online to display XP leaderboard.", NamedTextColor.RED));
             return;
         }
 
@@ -47,18 +52,24 @@ public class XPLeaderboardCommand extends BaseCommand {
 
                     return totalXp + " XP - Top Skill: " + skillInfo;
                 }, null);
-        sendToOps(message);
+
+        sender.sendMessage(message); // Send only to the command sender
     }
 
     // --- Per-class leaderboard ---
     @Subcommand("class")
     @CommandCompletion("@classes")
-    public void showClassLeaderboard(@NotNull String className) {
+    public void showClassLeaderboard(Player sender, @NotNull String className) {
+        if (!sender.hasPermission("civlabs.xpleaderboard")) {
+            sender.sendMessage(Component.text("You do not have permission.", NamedTextColor.RED));
+            return;
+        }
+
         SkillType type;
         try {
             type = SkillType.valueOf(className.toUpperCase());
         } catch (IllegalArgumentException e) {
-            sendMessageToOps("Invalid class name: " + className, NamedTextColor.RED);
+            sender.sendMessage(Component.text("Invalid class name: " + className, NamedTextColor.RED));
             return;
         }
 
@@ -67,7 +78,7 @@ public class XPLeaderboardCommand extends BaseCommand {
                 .collect(Collectors.toList());
 
         if (customPlayers.isEmpty()) {
-            sendMessageToOps("No players online for class " + type.name(), NamedTextColor.RED);
+            sender.sendMessage(Component.text("No players online for class " + type.name(), NamedTextColor.RED));
             return;
         }
 
@@ -77,12 +88,18 @@ public class XPLeaderboardCommand extends BaseCommand {
                     String tier = cp.getSkillLevelEnum(type).name();
                     return xp + " XP (" + tier + ")";
                 }, type);
-        sendToOps(message);
+
+        sender.sendMessage(message);
     }
 
     // --- All-classes breakdown ---
     @Subcommand("allclasses")
-    public void showAllClassesLeaderboard() {
+    public void showAllClassesLeaderboard(Player sender) {
+        if (!sender.hasPermission("civlabs.xpleaderboard")) {
+            sender.sendMessage(Component.text("You do not have permission.", NamedTextColor.RED));
+            return;
+        }
+
         for (SkillType type : SkillType.values()) {
             List<CustomPlayer> classPlayers = getOnlineCustomPlayers().stream()
                     .sorted(Comparator.comparingDouble(cp -> -cp.getSkill(type).getXp()))
@@ -95,7 +112,7 @@ public class XPLeaderboardCommand extends BaseCommand {
                             String tier = cp.getSkillLevelEnum(type).name();
                             return xp + " XP (" + tier + ")";
                         }, type);
-                sendToOps(message);
+                sender.sendMessage(message);
             }
         }
     }
@@ -154,15 +171,5 @@ public class XPLeaderboardCommand extends BaseCommand {
         }
 
         return header.append(Component.join(JoinConfiguration.noSeparators(), lines));
-    }
-
-    private void sendToOps(Component message) {
-        for (Player op : Bukkit.getOnlinePlayers()) {
-            if (op.isOp()) op.sendMessage(message);
-        }
-    }
-
-    private void sendMessageToOps(String message, NamedTextColor color) {
-        sendToOps(Component.text(message, color));
     }
 }
