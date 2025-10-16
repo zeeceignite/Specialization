@@ -52,7 +52,7 @@ public class CraftingListener implements Listener {
 
         int foodLevel = player.getFoodLevel();
 
-        if(foodLevel < reduction){
+        if(foodLevel < reduction || foodLevel < 1){
             event.setCancelled(true);
             return;
         }
@@ -75,10 +75,6 @@ public class CraftingListener implements Listener {
             int finalReduction = Math.max(reduction, 1);
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (player.isOnline()) {
-                    if(foodLevel < finalReduction){
-                        event.setCancelled(true);
-                        return;
-                    }
                     player.setFoodLevel(player.getFoodLevel() - finalReduction);
                     customPlayer.addSkillXp(pair.firstValue(), xpToGive);
                     LOGGER.fine("Gave " + xpToGive + " XP to " + player.getName() +
