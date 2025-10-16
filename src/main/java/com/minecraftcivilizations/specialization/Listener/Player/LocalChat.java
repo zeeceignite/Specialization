@@ -4,6 +4,7 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Specialization;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
@@ -31,6 +32,8 @@ public class LocalChat implements Listener {
     private static final long animationTickSpeed = 1L;
     // Base height above head
     private static final float BASE_HEIGHT = 0.6f;
+    private static final float NAMEPLATE_HEIGHT_OFFSET = -0.4f; //positive is up negative is down. Spawn location of nameplate
+
 
     // Default vertical spacing between messages (for 1-line msgs)
     private static final float SINGLE_LINE_SPACING = 0.30f;
@@ -48,7 +51,7 @@ public class LocalChat implements Listener {
 
     // LERP / bobbing settings
     private static final float LERP_RATE = 0.26f;        // how quickly current Y approaches target Y
-    private static final float NEW_BUBBLE_OFFSET = -0.32f; // start a bit lower and rise in
+    private static final float NEW_BUBBLE_OFFSET = -0.22f; // start a bit lower and rise in
     private static final float BOB_AMPLITUDE = 0.02f;   // bob amplitude
     private static final double BOB_PERIOD_MS = 3000.0; // one bob period in ms
 
@@ -60,7 +63,8 @@ public class LocalChat implements Listener {
     private static final float POP_PITCH_VARIANCE = 0.2f;
 
     private final Map<UUID, List<TextDisplay>> activeBubbles = new HashMap<>();
-    private final Map<UUID, TextDisplay> activeNames = new HashMap<>();
+    private final Map<UUID, ArmorStand> activeNames = new HashMap<>();
+
     // track original (non-bobbing) target Y for each bubble so stacking adjustments are stable
     private final Map<TextDisplay, Float> targetY = new HashMap<>();
     // track current Y used by animation loop (keeps persisted state across ticks)
@@ -153,37 +157,45 @@ public class LocalChat implements Listener {
             targetY.put(td, newTarget);
         }
 
-        // --- Spawn new bubble slightly behind player ---
-        TextDisplay td = player.getWorld().spawn(
-                player.getLocation().clone().add(0, BASE_HEIGHT + NEW_BUBBLE_OFFSET, 0),
-                TextDisplay.class,
-                spawned -> {
-                    // Start with empty text but colored properly (apply color markup later in animateText)
-                    spawned.text(MiniMessage.miniMessage().deserialize(CHAT_BUBBLE_COLOR + ""));
+        // compute world spawn location that compensates for mount pivot (put it above the head)
+        org.bukkit.Location spawnLoc = player.getLocation().clone();
+        double headY = player.getEyeLocation().getY(); // absolute world y of eyes
+        double desiredWorldY = headY + BASE_HEIGHT + NEW_BUBBLE_OFFSET + -0.5; // desired world Y above head
+        spawnLoc.setY(desiredWorldY);
 
-                    // Settings
-                    spawned.setBillboard(Display.Billboard.CENTER);
-                    spawned.setShadowed(true);
-                    spawned.setSeeThrough(false);
-                    spawned.setViewRange(32f);
-                    spawned.setPersistent(false);
-                    spawned.setInterpolationDuration(0);
-                    spawned.setBrightness(new Display.Brightness(10, 10));
+        // spawn the text display at that world position (so it starts visually above the head)
+        TextDisplay td = player.getWorld().spawn(spawnLoc, TextDisplay.class, spawned -> {
+            // Start with empty text but colored properly (apply color markup later in animateText)
+            spawned.text(MiniMessage.miniMessage().deserialize(CHAT_BUBBLE_COLOR + ""));
 
-                    Vector3f translation = new Vector3f(0, 0, (float) 0.2); // start at 0 because Y offset applied via spawn
-                    Vector3f scale = new Vector3f(1, 1, 1);
-                    AxisAngle4f rotation = new AxisAngle4f(0, 0, 1, 0);
-                    spawned.setTransformation(new Transformation(translation, rotation, scale, rotation));
-                }
-        );
+            spawned.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
+            spawned.setDefaultBackground(false);
+            // Settings
+            spawned.setBillboard(Display.Billboard.CENTER);
+            spawned.setShadowed(true);
+            spawned.setSeeThrough(false);
+            spawned.setViewRange(32f);
+            spawned.setPersistent(false);
+            spawned.setInterpolationDuration(0); // no interpolation - place instantly
+            spawned.setBrightness(new Display.Brightness(10, 10));
 
-        currentY.put(td, BASE_HEIGHT + NEW_BUBBLE_OFFSET);
+
+            Vector3f translation = new Vector3f(0f, 0f, 0.2f);
+            Vector3f scale = new Vector3f(1f, 1f, 1f);
+            AxisAngle4f rotation = new AxisAngle4f(0, 0, 1, 0);
+            spawned.setTransformation(new Transformation(translation, rotation, scale, rotation));
+        });
+
+        // initialize animation state: currentY/targetY are still relative to the player's head baseline
+        currentY.put(td, (float) (BASE_HEIGHT + NEW_BUBBLE_OFFSET));
         targetY.put(td, BASE_HEIGHT);
         bubbleMessages.put(td, message);
         animateText(td, message);
 
+        // attach to player so it follows as a passenger
         player.addPassenger(td);
         bubbles.add(td);
+
 
         // play bubble pop sound to nearby players
         playPopSound(player, player.getLocation());
@@ -219,7 +231,6 @@ public class LocalChat implements Listener {
     }
 
     /** --- Fade + cleanup --- **/
-
     private void removeBubble(TextDisplay td, Player player, boolean forceImmediate) {
         bubbleMessages.remove(td); // stop tracking message
 
@@ -269,39 +280,48 @@ public class LocalChat implements Listener {
         if (!anyAlive) removeNameplate(player);
     }
 
-    /** --- Nameplate --- **/
     private void spawnNameplate(Player sender) {
-        if (sender.getGameMode() == GameMode.SPECTATOR || sender.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
+        if (sender.getGameMode() == GameMode.SPECTATOR || sender.hasPotionEffect(PotionEffectType.INVISIBILITY))
             return;
-        }
 
         UUID uuid = sender.getUniqueId();
-        TextDisplay nameplate = sender.getWorld().spawn(sender.getLocation(), TextDisplay.class, td -> {
-            td.text(MiniMessage.miniMessage().deserialize(sender.getName()));
-            td.setBillboard(Display.Billboard.CENTER);
-            td.setDefaultBackground(false);
-            td.setShadowed(false);
-            td.setSeeThrough(false);
-            td.setViewRange(32f);
-            td.setPersistent(false);
-            td.setInterpolationDuration(0);
-            td.setBrightness(new Display.Brightness(14, 14));
 
-            Vector3f translation = new Vector3f(0, 0.27f, (float) 0.3);
-            Vector3f scale = new Vector3f(1, 1, 1);
-            AxisAngle4f rotation = new AxisAngle4f(0, 0, 1, 0);
-            td.setTransformation(new Transformation(translation, rotation, scale, rotation));
+        // Compute world location above the player's head
+        Location eye = sender.getEyeLocation().clone();
+        double spawnY = eye.getY() + BASE_HEIGHT + NAMEPLATE_HEIGHT_OFFSET; // adjust offset as needed
+        eye.setY(spawnY);
+
+        // Spawn ArmorStand as a passenger
+        ArmorStand nameplate = sender.getWorld().spawn(eye, ArmorStand.class, as -> {
+            as.setCustomName(sender.getName());
+            as.setCustomNameVisible(true);
+            as.setGravity(false); // so it doesn't fall
+            as.setInvisible(true); // hide the model, only show name
+            as.setMarker(true); // false = keeps collision box, true = no hitbox
+            as.setPersistent(true); // prevents despawning
+            as.setSmall(true); // adjust if you want a smaller stand
+            as.setArms(false);
+            as.setBasePlate(false);
+            as.setInvulnerable(true);
         });
 
         activeNames.put(uuid, nameplate);
+
+        // Add as passenger AFTER spawning
         sender.addPassenger(nameplate);
-        // hide nameplate from sender so they don't see own username (redundant).
-        sender.hideEntity(Specialization.getInstance(), nameplate);
+
+        // Optionally hide for sender if needed (like you did with TextDisplay)
+//        sender.hideEntity(Specialization.getInstance(), nameplate);
     }
+
+
+
+
+
 
     private void removeNameplate(Player player) {
         UUID uuid = player.getUniqueId();
-        TextDisplay nameplate = activeNames.remove(uuid);
+        ArmorStand nameplate = activeNames.remove(uuid);
         if (nameplate != null && !nameplate.isDead()) nameplate.remove();
     }
 
