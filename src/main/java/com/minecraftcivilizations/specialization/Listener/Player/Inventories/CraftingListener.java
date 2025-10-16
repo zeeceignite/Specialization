@@ -9,6 +9,7 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizati
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
@@ -150,6 +151,8 @@ public class CraftingListener implements Listener {
                 return result.getAmount();
             case MOVE_TO_OTHER_INVENTORY:
                 return calculateBulkCraftAmount(event);
+            case DROP_ONE_CURSOR, DROP_ALL_SLOT, DROP_ALL_CURSOR, DROP_ONE_SLOT:
+                if(!event.getWhoClicked().getItemOnCursor().getType().equals(Material.AIR)) return 0;
             case PICKUP_ALL:
             default:
                 return result.getAmount();
