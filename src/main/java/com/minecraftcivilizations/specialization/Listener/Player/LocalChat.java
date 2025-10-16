@@ -311,7 +311,7 @@ public class LocalChat implements Listener {
         sender.addPassenger(nameplate);
 
         // Optionally hide for sender if needed (like you did with TextDisplay)
-//        sender.hideEntity(Specialization.getInstance(), nameplate);
+       sender.hideEntity(Specialization.getInstance(), nameplate);
     }
 
 
