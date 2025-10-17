@@ -137,8 +137,6 @@ public class CraftingListener implements Listener {
         switch (action) {
             case PICKUP_HALF:
                 return Math.max(1, result.getAmount() / 2);
-            case PICKUP_ONE:
-                return 1;
             case PICKUP_SOME:
                 ItemStack cursor = event.getCursor();
                 if (cursor.isSimilar(result)) {
@@ -151,7 +149,6 @@ public class CraftingListener implements Listener {
                 return calculateBulkCraftAmount(event);
             case DROP_ONE_CURSOR, DROP_ALL_SLOT, DROP_ALL_CURSOR, DROP_ONE_SLOT:
                 if(!event.getWhoClicked().getItemOnCursor().getType().equals(Material.AIR)) return 0;
-            case PICKUP_ALL:
             default:
                 return result.getAmount();
         }
