@@ -30,7 +30,7 @@ public class MobKillListener implements Listener {
             EntityType entity = e.getEntity().getType();
 
             Double xp = SpecializationConfig.getGuardsmanConfig().get(entity, Double.class);
-            killer.addSkillXp(SkillType.GUARDSMAN, xp, e.getEntity().getLocation());
+            killer.addSkillXp(SkillType.GUARDSMAN, xp, e.getEntity().getLocation(), false);
 
             addCustomDrops(e);
         }

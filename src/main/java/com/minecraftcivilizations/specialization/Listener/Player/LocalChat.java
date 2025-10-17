@@ -2,466 +2,360 @@ package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.mojang.datafixers.DataFixerBuilder;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Display;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.TextDisplay;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
+import org.bukkit.entity.*;
+import org.bukkit.event.*;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Transformation;
-import org.joml.AxisAngle4f;
-import org.joml.Vector3f;
+import org.joml.*;
 
+import java.lang.Math;
 import java.util.*;
+import java.util.logging.Logger;
 
-/**
- * LocalChat - chat bubble system with smooth movement, bobbing and pop sound.
- */
 public class LocalChat implements Listener {
-    //max characters in a bubble msg
-    private static final int maxChars = 155;
-    //typing animation grouping
-    private static final int charsPerTick = 3; // more chars = more performant at scale
-    private static final long animationTickSpeed = 1L;
-    // Base height above head
-    private static final float BASE_HEIGHT = 0.6f;
-    private static final float NAMEPLATE_HEIGHT_OFFSET = -0.4f; //positive is up negative is down. Spawn location of nameplate
 
-
-    // Default vertical spacing between messages (for 1-line msgs)
-    private static final float SINGLE_LINE_SPACING = 0.30f;
-
-    // Additional spacing per line when message is multi-line
-    private static final float MULTILINE_SPACING = 0.30f;
-
-    // Color wrap strings used with MiniMessage
-    private static final String QOUTE_COLOR = "<#b7a96f>"; // slightly darker yellow than chat bubble
-    private static final String CHAT_BUBBLE_COLOR = "<#f5f2c8>"; // main chat text
-
-    // thresholds
+    // ---- CONSTANTS ----
+    private static final int MAX_CHARS = 155;
     private static final int MAX_BUBBLES = 3;
-    private static final long LIFETIME_TICKS = 20L * 10;
-
-    // LERP / bobbing settings
-    private static final float LERP_RATE = 0.26f;        // how quickly current Y approaches target Y
-    private static final float NEW_BUBBLE_OFFSET = -0.22f; // start a bit lower and rise in
-    private static final float BOB_AMPLITUDE = 0.02f;   // bob amplitude
-    private static final double BOB_PERIOD_MS = 3000.0; // one bob period in ms
-
-    // pop sound radius
-    private static final double POP_SOUND_RADIUS = 10.0;
-    private static final boolean POP_SOUND_ENABLED = true;
-    private static final boolean POP_PLAY_FOR_SENDER = true;
+    private static final float BASE_HEIGHT = 0.6f;
+    private static final float NAMEPLATE_OFFSET = -0.4f;
+    private static final float SINGLE_LINE_SPACING = 0.3f;
+    private static final float MULTILINE_SPACING = 0.3f;
+    private static final float NEW_BUBBLE_OFFSET = -0.22f;
+    private static final float LERP_RATE = 0.26f;
+    private static final float BOB_AMPLITUDE = 0.02f;
+    private static final double BOB_PERIOD_MS = 3000.0;
+    private static final long LIFETIME_TICKS = 200L;
+    private static final int CHARS_PER_TICK = 3;
+    private static final int FADE_TICKS = 20;
+    private static final String CHAT_COLOR = "<#f5f2c8>";
+    private static final String QUOTE_COLOR = "<#b7a96f>";
+    private static final boolean POP_SOUND = true;
     private static final float POP_VOLUME = 0.6f;
     private static final float POP_PITCH_VARIANCE = 0.2f;
 
-    private final Map<UUID, List<TextDisplay>> activeBubbles = new HashMap<>();
-    private final Map<UUID, ArmorStand> activeNames = new HashMap<>();
+    // toggle typing animation on/off
+    private static final boolean ENABLE_TYPING_ANIMATION = true;
 
-    // track original (non-bobbing) target Y for each bubble so stacking adjustments are stable
-    private final Map<TextDisplay, Float> targetY = new HashMap<>();
-    // track current Y used by animation loop (keeps persisted state across ticks)
-    private final Map<TextDisplay, Float> currentY = new HashMap<>();
-    // store messages for char-based thresholds
-    private final Map<TextDisplay, String> bubbleMessages = new HashMap<>();
+    private static final int BOB_PERIOD_TICKS = Math.max(1, (int) (BOB_PERIOD_MS / 50.0));
+    private static final float[] BOB_TABLE = new float[BOB_PERIOD_TICKS];
+    static {
+        for (int i = 0; i < BOB_PERIOD_TICKS; i++) {
+            double phase = (i / (double) BOB_PERIOD_TICKS) * Math.PI * 2.0;
+            BOB_TABLE[i] = (float) (Math.sin(phase) * BOB_AMPLITUDE);
+        }
+    }
 
-    private boolean animatorRunning = false;
+    // ---- DATA CLASSES ----
+    private static class BubbleData {
+        final TextDisplay td;
+        final Component[] frames;
+        final int msgLength;
+        float currentY, targetY;
+        int life;
+        int frameIndex = 0;
+        float opacity = 1f;
+        Transformation transform;
+        // scale animation (squash & stretch)
+        Vector3f currentScale = new Vector3f(0.6f, 1.4f, 0.6f);
+        final Vector3f targetScale = new Vector3f(1f, 1f, 1f);
 
+        BubbleData(TextDisplay td, Component[] frames, int msgLength, float startY, float targetY) {
+            this.td = td;
+            this.frames = frames;
+            this.msgLength = msgLength;
+            this.currentY = startY;
+            this.targetY = targetY;
+            this.life = (int) LIFETIME_TICKS;
+            this.transform = td.getTransformation();
+        }
+    }
+
+    private static class PlayerSession {
+        final Player player;
+        final List<BubbleData> bubbles = new ArrayList<>();
+        ArmorStand nameplate;
+        PlayerSession(Player p){ this.player = p; }
+    }
+
+    private final Map<UUID, PlayerSession> sessions = new HashMap<>();
+    private boolean running = false;
+
+    // ---- EVENTS ----
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onPlayerChat(AsyncPlayerChatEvent event) {
-        Player sender = event.getPlayer();
-        String message = MiniMessage.miniMessage().stripTags(event.getMessage().trim());
+    public void onChat(AsyncPlayerChatEvent e) {
+        Player p = e.getPlayer();
+        String raw = MiniMessage.miniMessage().stripTags(e.getMessage().trim());
 
-        // Handle announcements first
-        if (tryHandleGlobalChat(sender, message)) {
-            event.setCancelled(true); // announcements shouldn't appear in normal chat
+        if (handleGlobalChat(p, raw)) {
+            e.setCancelled(true);
             return;
         }
 
-        // Always show the bubble
-        Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> showChatBubble(sender, message));
+        // Always spawn bubble (UI) for everyone — schedule to main thread
+        Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> spawnBubble(p, raw));
 
-        // Cancel vanilla chat only if the sender is spectator or invisible
-        if (sender.getGameMode() == GameMode.SPECTATOR || sender.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
-            event.setCancelled(true);
+        if (p.getGameMode() == GameMode.SPECTATOR || p.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
+            e.setCancelled(true);
             return;
         }
 
-        // Vanilla chat: send only to nearby players and the sender
-        event.setCancelled(true); // cancel default broadcast
-        String format = SpecializationConfig.getChatConfig().get("DEFAULT_FORMAT", String.class);
+        // For normal players: cancel default and do proximity broadcast
+        e.setCancelled(true);
+        String fmt = SpecializationConfig.getChatConfig().get("DEFAULT_FORMAT", String.class);
         Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> {
-            for (Player near : getNearbyPlayers(sender))
-                near.sendRichMessage(format.formatted(sender.getName(), message));
-            sender.sendRichMessage(format.formatted(sender.getName(), message));
+            for (Player near : getNearbyPlayers(p))
+                near.sendRichMessage(fmt.formatted(p.getName(), raw));
+            p.sendRichMessage(fmt.formatted(p.getName(), raw));
         });
     }
 
-    @EventHandler
-    public void onPlayerDeath(PlayerDeathEvent event) {
-        Player player = event.getEntity();
-        removeAllBubbles(player);
-    }
+    // ---- SPAWNING ----
+    private void spawnBubble(Player p, String msg) {
 
+        msg = truncate(msg);
+        int msgLen = msg.length();
 
-    private void showChatBubble(Player player, String message) {
-        message = truncateMessage(message);
-        int lineCount = getLineCount(message);
+        int lines = getLineCount(msg);
+        float bubbleHeight = lines > 1 ? lines * MULTILINE_SPACING : SINGLE_LINE_SPACING;
 
-        float bubbleHeight = lineCount > 1 ? lineCount * MULTILINE_SPACING : SINGLE_LINE_SPACING;
-
-        UUID uuid = player.getUniqueId();
-        List<TextDisplay> bubbles = activeBubbles.computeIfAbsent(uuid, k -> new ArrayList<>());
-
-        if (!activeNames.containsKey(uuid)) spawnNameplate(player);
-
-        // --- Calculate total characters including all bubbles ---
-        int totalChars = message.length();
-        for (TextDisplay td : bubbles) {
-            if (!td.isDead() && bubbleMessages.containsKey(td)) {
-                totalChars += bubbleMessages.get(td).length();
+        PlayerSession s = sessions.computeIfAbsent(p.getUniqueId(), k -> {
+            PlayerSession ps = new PlayerSession(p);
+            // Only spawn nameplate if player is visible and not spectator
+            if (p.getGameMode() != GameMode.SPECTATOR && !p.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
+                spawnNameplate(p, ps);
             }
-        }
-
-        // --- Immediate deletion thresholds ---
-        if (totalChars > 250) { // huge total, remove all except newest
-            for (TextDisplay td : new ArrayList<>(bubbles)) {
-                removeBubble(td, player, true);
-            }
-            bubbles.clear();
-        } else if (totalChars > maxChars) { // remove only oldest
-            if (!bubbles.isEmpty()) {
-                TextDisplay oldest = bubbles.removeFirst();
-                removeBubble(oldest, player, true);
-            }
-        }
-
-        // --- Enforce MAX_BUBBLES ---
-        while (bubbles.size() >= MAX_BUBBLES) {
-            TextDisplay oldest = bubbles.removeFirst();
-            removeBubble(oldest, player, true);
-        }
-
-        // --- Shift remaining bubbles upward by increasing their targetY by bubbleHeight ---
-        for (TextDisplay td : bubbles) {
-            if (td.isDead()) continue;
-            float prevTarget = targetY.getOrDefault(td, BASE_HEIGHT);
-            float newTarget = prevTarget + bubbleHeight;
-            targetY.put(td, newTarget);
-        }
-
-        // compute world spawn location that compensates for mount pivot (put it above the head)
-        org.bukkit.Location spawnLoc = player.getLocation().clone();
-        double headY = player.getEyeLocation().getY(); // absolute world y of eyes
-        double desiredWorldY = headY + BASE_HEIGHT + NEW_BUBBLE_OFFSET + -0.5; // desired world Y above head
-        spawnLoc.setY(desiredWorldY);
-
-        // spawn the text display at that world position (so it starts visually above the head)
-        TextDisplay td = player.getWorld().spawn(spawnLoc, TextDisplay.class, spawned -> {
-            // Start with empty text but colored properly (apply color markup later in animateText)
-            spawned.text(MiniMessage.miniMessage().deserialize(CHAT_BUBBLE_COLOR + ""));
-
-            spawned.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
-            spawned.setDefaultBackground(false);
-            // Settings
-            spawned.setBillboard(Display.Billboard.CENTER);
-            spawned.setShadowed(true);
-            spawned.setSeeThrough(false);
-            spawned.setViewRange(32f);
-            spawned.setPersistent(false);
-            spawned.setInterpolationDuration(0); // no interpolation - place instantly
-            spawned.setBrightness(new Display.Brightness(10, 10));
-
-
-            Vector3f translation = new Vector3f(0f, 0f, 0.2f);
-            Vector3f scale = new Vector3f(1f, 1f, 1f);
-            AxisAngle4f rotation = new AxisAngle4f(0, 0, 1, 0);
-            spawned.setTransformation(new Transformation(translation, rotation, scale, rotation));
+            return ps;
         });
 
-        // initialize animation state: currentY/targetY are still relative to the player's head baseline
-        currentY.put(td, (float) (BASE_HEIGHT + NEW_BUBBLE_OFFSET));
-        targetY.put(td, BASE_HEIGHT);
-        bubbleMessages.put(td, message);
-        animateText(td, message);
+        // compute total chars (use msgLength stored)
+        int totalChars = msgLen + s.bubbles.stream().mapToInt(b -> b.msgLength).sum();
 
-        // attach to player so it follows as a passenger
-        player.addPassenger(td);
-        bubbles.add(td);
+        // --- Context-based deletion thresholds ---
+        if (totalChars > 250) {
+            int toRemove = Math.min(2, s.bubbles.size());
+            for (int i = 0; i < toRemove; i++) {
+                BubbleData removed = s.bubbles.removeFirst();
+                removeBubble(removed);
+            }
+        } else if (totalChars > 150) {
+            if (!s.bubbles.isEmpty()) {
+                BubbleData removed = s.bubbles.removeFirst();
+                removeBubble(removed);
+            }
+        }
 
+        // shift remaining bubbles upward
+        s.bubbles.forEach(b -> b.targetY += bubbleHeight);
 
-        // play bubble pop sound to nearby players
-        playPopSound(player, player.getLocation());
+        // spawn text display at world position (bubbles follow as passenger so coordinates relative to mount are okay)
+        Location spawn = p.getEyeLocation().clone();
+        spawn.setY(spawn.getY() + BASE_HEIGHT + NEW_BUBBLE_OFFSET - 0.5);
 
-        // start animator if not running
-        startAnimatorIfNeeded();
+        TextDisplay td = p.getWorld().spawn(spawn, TextDisplay.class, t -> {
+            t.text(MiniMessage.miniMessage().deserialize(CHAT_COLOR));
+            t.setDefaultBackground(false);
+            t.setBackgroundColor(Color.fromARGB(1, 0, 0, 0));
+            t.setBillboard(Display.Billboard.CENTER);
+            t.setShadowed(true);
+            t.setSeeThrough(false);
+            t.setViewRange(32f);
+            t.setPersistent(false);
+            t.setInterpolationDuration(0);
+            // initial squash & stretch scale
+            t.setTransformation(new Transformation(
+                    new Vector3f(0f, 0f, 0.2f),
+                    new AxisAngle4f(),
+                    new Vector3f(0.6f, 1.4f, 0.6f),
+                    new AxisAngle4f()
+            ));
+        });
 
-        // --- Schedule fade-out normally ---
-        Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
-            List<TextDisplay> list = activeBubbles.get(uuid);
-            if (list != null) list.remove(td);
-            bubbleMessages.remove(td);
-            targetY.remove(td);
-            currentY.remove(td);
-            removeBubble(td, player, false);
-        }, LIFETIME_TICKS);
+        Component[] frames = prebuildFrames(msg);
+        BubbleData data = new BubbleData(td, frames, msgLen, BASE_HEIGHT + NEW_BUBBLE_OFFSET, BASE_HEIGHT);
+
+        // If typing animation disabled, set final frame immediately
+        if (!ENABLE_TYPING_ANIMATION && frames.length > 0) {
+            data.frameIndex = frames.length - 1;
+            td.text(frames[data.frameIndex]);
+        }
+
+        s.bubbles.add(data);
+        // attach to player as passenger so it follows them
+        p.addPassenger(td);
+        playPop(p);
+        startScheduler();
     }
 
-
-
-    private void playPopSound(Player sender, org.bukkit.Location location) {
-        if (!POP_SOUND_ENABLED) return;
-
-        double r2 = POP_SOUND_RADIUS * POP_SOUND_RADIUS;
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            if (!p.getWorld().equals(location.getWorld())) continue;
-            if (!POP_PLAY_FOR_SENDER && p.equals(sender)) continue; // skip sender if disabled
-            if (p.getLocation().distanceSquared(location) > r2) continue;
-
-            float pitch = 0.9f - (POP_PITCH_VARIANCE / 2f) + (float) (Math.random() * POP_PITCH_VARIANCE);
-            p.playSound(location, Sound.ENTITY_PUFFER_FISH_BLOW_UP, SoundCategory.UI, POP_VOLUME, pitch);
-        }
+    private void spawnNameplate(Player p, PlayerSession s) {
+        Location eye = p.getEyeLocation().clone();
+        eye.setY(eye.getY() + BASE_HEIGHT + NAMEPLATE_OFFSET);
+        ArmorStand as = p.getWorld().spawn(eye, ArmorStand.class, a -> {
+            a.setCustomName(p.getName());
+            a.setCustomNameVisible(true);
+            a.setInvisible(true);
+            a.setMarker(true);
+            a.setGravity(false);
+            a.setSmall(true);
+            a.setInvulnerable(true);
+            a.setPersistent(false);
+        });
+        s.nameplate = as;
+        p.addPassenger(as);
+        //hides from the owner
+         p.hideEntity(Specialization.getInstance(), as);
     }
 
-    /** --- Fade + cleanup --- **/
-    private void removeBubble(TextDisplay td, Player player, boolean forceImmediate) {
-        bubbleMessages.remove(td); // stop tracking message
+    // ---- MAIN LOOP ----
+    private void startScheduler() {
+        if (running) return;
+        running = true;
 
-        if (td.isDead()) {
-            checkRemoveNameplate(player);
-            return;
-        }
-
-        if (forceImmediate) {
-            // remove instantly
-            targetY.remove(td);
-            currentY.remove(td);
-            td.remove();
-            Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> checkRemoveNameplate(player), 1L);
-            return;
-        }
-
-        // fade out normally
         new BukkitRunnable() {
-            float opacity = 1f;
+            int bobIndex = 0;
+            @Override public void run() {
 
-            @Override
-            public void run() {
-                if (td.isDead()) {
-                    cancel();
-                    checkRemoveNameplate(player);
-                    return;
+                bobIndex = (bobIndex + 1) % BOB_PERIOD_TICKS;
+                float bob = BOB_TABLE[bobIndex];
+                boolean anyAlive = false;
+
+                for (Iterator<PlayerSession> it = sessions.values().iterator(); it.hasNext();) {
+                    PlayerSession s = it.next();
+
+                    // remove session if player logged out / offline
+                    if (s.player == null || !s.player.isOnline()) {
+                        // cleanup everything for this session
+                        s.bubbles.forEach(LocalChat.this::removeBubble);
+                        if (s.nameplate != null) s.nameplate.remove();
+                        it.remove();
+                        continue;
+                    }
+
+                    for (Iterator<BubbleData> bit = s.bubbles.iterator(); bit.hasNext();) {
+                        BubbleData b = bit.next();
+                        TextDisplay td = b.td;
+
+                        // typing animation: advance frames if enabled
+                        if (ENABLE_TYPING_ANIMATION && b.frameIndex < b.frames.length) {
+                            td.text(b.frames[b.frameIndex++]);
+                        }
+
+                        // position lerp
+                        b.currentY += (b.targetY - b.currentY) * LERP_RATE;
+
+                        // update transform translation (reuse transform object for rotations)
+                        Vector3f translation = b.transform.getTranslation();
+                        translation.y = b.currentY + bob;
+
+                        // scale lerp (squash & stretch easing)
+                        Vector3f scale = b.currentScale;
+                        scale.x += (b.targetScale.x - scale.x) * 0.2f;
+                        scale.y += (b.targetScale.y - scale.y) * 0.5f;
+                        scale.z += (b.targetScale.z - scale.z) * 0.2f;
+
+                        // build new transformation with updated scale and translation but keep rotations
+                        Transformation newT = new Transformation(
+                                translation,
+                                b.transform.getLeftRotation(),
+                                scale,
+                                b.transform.getRightRotation()
+                        );
+
+                        b.transform = newT;
+                        td.setTransformation(newT);
+
+                        // fade near end of life
+                        if (b.life-- < FADE_TICKS) {
+                            b.opacity -= 1f / FADE_TICKS;
+                            td.setTextOpacity((byte) (Math.max(0f, Math.min(1f, b.opacity)) * 255));
+                        }
+
+                        if (b.life <= 0) {
+                            removeBubble(b);
+                            bit.remove();
+                        } else {
+                            anyAlive = true;
+                        }
+                    }
+
+                    // if no bubbles left, clean up nameplate/session
+                    if (s.bubbles.isEmpty()) {
+                        if (s.nameplate != null) s.nameplate.remove();
+                        it.remove();
+                    }
                 }
-                opacity -= 0.1f;
-                td.setTextOpacity((byte) (opacity * 255));
-                if (opacity <= 0) {
-                    // ensure removed and cleanup maps
-                    targetY.remove(td);
-                    currentY.remove(td);
-                    td.remove();
-                    cancel();
-                    Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> checkRemoveNameplate(player), 1L);
-                }
+
+                if (!anyAlive) { running = false; cancel(); }
             }
         }.runTaskTimer(Specialization.getInstance(), 0L, 1L);
     }
 
-    private void checkRemoveNameplate(Player player) {
-        UUID uuid = player.getUniqueId();
-        List<TextDisplay> bubbles = activeBubbles.get(uuid);
-        boolean anyAlive = bubbles != null && bubbles.stream().anyMatch(td -> !td.isDead());
-        if (!anyAlive) removeNameplate(player);
+    // ---- HELPERS ----
+    private Component[] prebuildFrames(String msg) {
+        MiniMessage mm = MiniMessage.miniMessage();
+        int len = msg.length();
+        int steps = Math.max(1, (int) Math.ceil(len / (float) CHARS_PER_TICK));
+        Component[] frames = new Component[steps];
+        for (int i = 0; i < steps; i++) {
+            int end = Math.min(len, (i + 1) * CHARS_PER_TICK);
+            String sub = msg.substring(0, end);
+            frames[i] = mm.deserialize(QUOTE_COLOR + "“" + CHAT_COLOR + sub + QUOTE_COLOR + "”");
+        }
+        return frames;
     }
 
-    private void spawnNameplate(Player sender) {
-        if (sender.getGameMode() == GameMode.SPECTATOR || sender.hasPotionEffect(PotionEffectType.INVISIBILITY))
-            return;
-
-        UUID uuid = sender.getUniqueId();
-
-        // Compute world location above the player's head
-        Location eye = sender.getEyeLocation().clone();
-        double spawnY = eye.getY() + BASE_HEIGHT + NAMEPLATE_HEIGHT_OFFSET; // adjust offset as needed
-        eye.setY(spawnY);
-
-        // Spawn ArmorStand as a passenger
-        ArmorStand nameplate = sender.getWorld().spawn(eye, ArmorStand.class, as -> {
-            as.setCustomName(sender.getName());
-            as.setCustomNameVisible(true);
-            as.setGravity(false); // so it doesn't fall
-            as.setInvisible(true); // hide the model, only show name
-            as.setMarker(true); // false = keeps collision box, true = no hitbox
-            as.setPersistent(true); // prevents despawning
-            as.setSmall(true); // adjust if you want a smaller stand
-            as.setArms(false);
-            as.setBasePlate(false);
-            as.setInvulnerable(true);
-        });
-
-        activeNames.put(uuid, nameplate);
-
-        // Add as passenger AFTER spawning
-        sender.addPassenger(nameplate);
-
-        // Optionally hide for sender if needed (like you did with TextDisplay)
-       sender.hideEntity(Specialization.getInstance(), nameplate);
-    }
-
-
-
-
-
-
-    private void removeNameplate(Player player) {
-        UUID uuid = player.getUniqueId();
-        ArmorStand nameplate = activeNames.remove(uuid);
-        if (nameplate != null && !nameplate.isDead()) nameplate.remove();
-    }
-
-    /** --- Typing animation --- **/
-    private void animateText(TextDisplay td, String message) {
-        final char[] chars = message.toCharArray();
-        final StringBuilder builder = new StringBuilder();
-
-        new BukkitRunnable() {
-            int index = 0;
-            @Override
-            public void run() {
-                if (td.isDead() || index >= chars.length) {
-                    cancel();
-                    return;
-                }
-
-                // Append multiple chars per tick for speed
-                for (int i = 0; i < charsPerTick && index < chars.length; i++, index++) {
-                    builder.append(chars[index]);
-                }
-
-                String partial = QOUTE_COLOR + "“" + CHAT_BUBBLE_COLOR + builder + QOUTE_COLOR + "”";
-                td.text(MiniMessage.miniMessage().deserialize(partial));
-            }
-        }.runTaskTimer(Specialization.getInstance(), 0L, animationTickSpeed); // 1 tick interval
-    }
-
-
-    /** --- Animator task (lerp + bob) --- **/
-    private void startAnimatorIfNeeded() {
-        if (animatorRunning) return;
-        animatorRunning = true;
-
-        BukkitRunnable animatorTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                long now = System.currentTimeMillis();
-                double bobPhase = (now % (long) BOB_PERIOD_MS) / BOB_PERIOD_MS * Math.PI * 2.0;
-                float bobOffset = (float) (Math.sin(bobPhase) * BOB_AMPLITUDE);
-
-                // iterate through all active bubbles across players
-                for (Map.Entry<UUID, List<TextDisplay>> entry : activeBubbles.entrySet()) {
-                    List<TextDisplay> list = entry.getValue();
-                    if (list == null || list.isEmpty()) continue;
-
-                    // For each bubble, lerp currentY toward targetY and apply bob
-                    for (TextDisplay td : new ArrayList<>(list)) {
-                        if (td == null || td.isDead()) {
-                            // cleanup
-                            targetY.remove(td);
-                            currentY.remove(td);
-                            bubbleMessages.remove(td);
-                            continue;
-                        }
-
-                        float tgt = targetY.getOrDefault(td, BASE_HEIGHT);
-                        float cur = currentY.getOrDefault(td, tgt);
-                        // lerp towards target
-                        float next = cur + (tgt - cur) * LERP_RATE;
-                        currentY.put(td, next);
-
-                        // apply bob on top of next
-                        float displayY = next + bobOffset;
-
-                        // update transformation (only change translation Y)
-                        Transformation t = td.getTransformation();
-                        Vector3f translation = new Vector3f(t.getTranslation());
-                        translation.y = displayY;
-                        t.getTranslation().set(translation);
-                        td.setTransformation(t);
-                    }
-                }
-
-                // stop animator if nothing left to animate
-                boolean anyAlive = activeBubbles.values().stream().anyMatch(list ->
-                        list.stream().anyMatch(td -> td != null && !td.isDead()));
-                if (!anyAlive) {
-                    // cancel animator
-                    animatorRunning = false;
-                    this.cancel();
-                }
-            }
-        };
-        animatorTask.runTaskTimer(Specialization.getInstance(), 0L, 1L);
-    }
-
-    /** --- Helpers --- **/
-    private int getLineCount(String message) {
+    // simple approximation used before — keeps original behaviour
+    int getLineCount(String message) {
         int explicit = message.split("\n", -1).length;
-        int approx = (int) Math.ceil(message.length() / 35.0);
+        int approx = (int) Math.ceil(message.length() / 30.0);
         return Math.max(explicit, approx);
     }
 
-    private String truncateMessage(String message) {
-
-        if (message.length() <= maxChars) return message;
-        return message.substring(0, maxChars - 3) + "...";
+    private void removeBubble(BubbleData b){
+        if (b == null) return;
+        if (!b.td.isDead()) b.td.remove();
     }
 
-    private void removeAllBubbles(Player player) {
-        UUID uuid = player.getUniqueId();
-        List<TextDisplay> bubbles = activeBubbles.remove(uuid);
-        if (bubbles != null) {
-            for (TextDisplay td : bubbles) removeBubble(td, player, true);
-        }
-        removeNameplate(player);
+    private void removeAll(Player p){
+        PlayerSession s = sessions.remove(p.getUniqueId());
+        if(s == null) return;
+        s.bubbles.forEach(this::removeBubble);
+        if(s.nameplate != null) s.nameplate.remove();
     }
 
-    @EventHandler
-    public void onJoin(PlayerJoinEvent e) {
-        e.joinMessage(null);
+    private String truncate(String m){ return m.length() <= MAX_CHARS ? m : m.substring(0, MAX_CHARS - 3) + "..."; }
+
+    private void playPop(Player p){
+    float pitch = 0.8f - (POP_PITCH_VARIANCE / 2f) + (float) (Math.random() * POP_PITCH_VARIANCE);
+
+        if(!POP_SOUND) return;
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PUFFER_FISH_BLOW_UP, SoundCategory.UI, POP_VOLUME, pitch);
+
     }
 
-    @EventHandler
-    public void onLeave(PlayerQuitEvent e) {
-        e.quitMessage(null);
-        removeAllBubbles(e.getPlayer());
-    }
-
-    @EventHandler
-    public void onWorldChange(PlayerChangedWorldEvent e) {
-        removeAllBubbles(e.getPlayer());
-    }
-
-    private boolean tryHandleGlobalChat(Player player, String message) {
+    private boolean handleGlobalChat(Player p, String msg){
         String prefix = SpecializationConfig.getChatConfig().get("ANNOUNCEMENT_PREFIX", String.class);
-        if (!message.startsWith(prefix) || !player.isOp()) return false;
-
-        String actualMessage = message.substring(prefix.length()).trim();
-        String format = SpecializationConfig.getChatConfig().get("ANNOUNCEMENT_FORMAT", String.class);
-        Bukkit.getOnlinePlayers().forEach(p -> p.sendRichMessage(format.formatted(actualMessage)));
+        if(!msg.startsWith(prefix) || !p.isOp()) return false;
+        String actual = msg.substring(prefix.length()).trim();
+        String fmt = SpecializationConfig.getChatConfig().get("ANNOUNCEMENT_FORMAT", String.class);
+        Bukkit.getOnlinePlayers().forEach(pl -> pl.sendRichMessage(fmt.formatted(actual)));
         return true;
     }
 
-    private List<Player> getNearbyPlayers(Player player) {
-        double radius = SpecializationConfig.getChatConfig().get("CHAT_RADIUS", Double.class);
-        return player.getNearbyEntities(radius, radius, radius).stream()
-                .filter(e -> e instanceof Player)
-                .map(e -> (Player) e)
-                .toList();
+    private List<Player> getNearbyPlayers(Player p){
+        double r = SpecializationConfig.getChatConfig().get("CHAT_RADIUS", Double.class);
+        return p.getNearbyEntities(r,r,r).stream().filter(e -> e instanceof Player).map(e -> (Player)e).toList();
     }
+
+    @EventHandler public void onDeath(PlayerDeathEvent e) { removeAll(e.getEntity()); }
+    @EventHandler public void onQuit(PlayerQuitEvent e) { e.quitMessage(null); removeAll(e.getPlayer()); }
+    @EventHandler public void onJoin(PlayerJoinEvent e) { e.joinMessage(null); }
+    @EventHandler public void onWorldChange(PlayerChangedWorldEvent e) { removeAll(e.getPlayer()); }
 }

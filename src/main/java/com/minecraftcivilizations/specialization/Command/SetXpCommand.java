@@ -26,7 +26,7 @@ public class SetXpCommand extends BaseCommand {
         }
         
         double oldXp = customPlayer.getSkill(type).getXp();
-        customPlayer.addSkillXp(type, amount);
+        customPlayer.addSkillXp(type, amount, null, true);
         double newXp = customPlayer.getSkill(type).getXp();
         
         player.sendMessage("§aSet your " + type.name() + " XP from §e" + String.format("%.2f", oldXp) + "§a to §e" + String.format("%.2f", newXp) + "§a (+" + String.format("%.2f", amount) + ")");
@@ -80,7 +80,7 @@ public class SetXpCommand extends BaseCommand {
         double oldXp = customPlayer.getSkill(type).getXp();
         // Calculate the difference needed to reach the target amount
         double difference = amount - oldXp;
-        customPlayer.addSkillXp(type, difference);
+        customPlayer.addSkillXp(type, difference, null, true);
         
         // Send feedback to the command sender
         sender.sendMessage("§aSet " + target.getName() + "'s " + type.name() + " XP from §e" + String.format("%.2f", oldXp) + "§a to §e" + String.format("%.2f", amount));

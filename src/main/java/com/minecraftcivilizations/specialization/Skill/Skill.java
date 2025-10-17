@@ -16,7 +16,7 @@ public class Skill {
 
 
     public static double getXPNeededForLevel(int level) {
-        return Math.floor(1.8 * (25 * Math.pow(level, 2) + (5 * level) + (200*Math.pow(2.45, level))) - 300);
+        return Math.floor(1.8 * (25 * Math.pow(level, 2) + (5 * level) + (200 * Math.pow(2.45, level))) - 300);
     }
 
     public static double mapValue(double x, double in_min, double in_max, double out_min, double out_max) {
@@ -27,9 +27,12 @@ public class Skill {
         return out_min + (x - in_min) * (out_max - out_min) / (in_max - in_min);
     }
 
-    public void xp(double xp) {
-        this.xp += xp;
+    public void applyXp(double xp, boolean allowNegative) {
+        if (!allowNegative) {
+            this.xp += Math.max(xp, 0);
+        } else {
+            this.xp += xp;
+        }
         this.lastUpdate = System.currentTimeMillis();
     }
-
 }

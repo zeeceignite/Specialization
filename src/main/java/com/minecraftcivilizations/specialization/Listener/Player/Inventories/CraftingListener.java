@@ -5,6 +5,7 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.Specialization;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import org.bukkit.Bukkit;
@@ -46,7 +47,6 @@ public class CraftingListener implements Listener {
                 .getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
 
         int craftedAmount = getCraftedAmount(event);
-
         int reduction = (int) ((5-customPlayer.getSkillLevel(SkillType.BLACKSMITH))/1.5) *  (int) (craftedAmount/ ((Math.random()+1) * 3 ));
         reduction = Math.max(0, reduction - (int) (Math.random() * 3));
 
@@ -127,6 +127,7 @@ public class CraftingListener implements Listener {
      */
     private int getCraftedAmount(CraftItemEvent event) {
         ItemStack result = event.getCurrentItem();
+
         if (result == null) return 0;
         if(event.getResult().equals(Event.Result.DENY)){
             return 0;
