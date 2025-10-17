@@ -96,17 +96,24 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
 
     public void addSkillXp(SkillType skillType, double xp) {
-        addSkillXp(skillType, xp, null);
+
+        addSkillXp(skillType, xp, null, false);
+    }
+
+    public void addSkillXp(SkillType skillType, double xp, Location soundlocation) {
+
+        addSkillXp(skillType, xp, soundlocation, false);
     }
 
 
     /**
      * addSkillxp, but with extra location for sound.
      */
-    public void addSkillXp(SkillType skillType, double xp, Location soundLocation) {
+    public void addSkillXp(SkillType skillType, double xp, Location soundLocation, boolean allowNegative) {
         if (skillType == null || xp == 0) return;
         int previousLevel = this.getSkillLevel(skillType);
-        getSkill(skillType).xp(xp);
+        getSkill(skillType).applyXp(xp, allowNegative);
+
         Player player = Bukkit.getPlayer(getUuid());
         player.sendActionBar(Component.text((xp <= 0 ? "" : "+") + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));
         int currentLevel = this.getSkillLevel(skillType);
