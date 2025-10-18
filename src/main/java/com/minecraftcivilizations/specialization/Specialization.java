@@ -146,7 +146,7 @@ public final class Specialization extends JavaPlugin {
         Blueprints.init();
         XpGainMonitor.init();
 
-        Bukkit.updateRecipes();
+        //Bukkit.updateRecipes() clears custom recipes added via Bukkit.addRecipe() and it automatically syncs to client anyway when they join, so I removed it.
 
 
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setCustomPlayerClass(CustomPlayer.class);
