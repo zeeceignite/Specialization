@@ -77,9 +77,18 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().load(this.getUuid());
 
         if (customPlayer != null) {
+            this.skills = customPlayer.skills;
+            this.preferredSkill = customPlayer.preferredSkill;
+            this.height = customPlayer.height;
+            this.isAdvancedClassesGUIEnabled = customPlayer.isAdvancedClassesGUIEnabled;
+            this.isSoundEnabled = customPlayer.isSoundEnabled;
+            this.isNewRecipeGUIIteration = customPlayer.isNewRecipeGUIIteration;
+            this.analyticPlayerData = customPlayer.analyticPlayerData;
+            this.additionUnlockedRecipes.addAll(customPlayer.additionUnlockedRecipes);
             return;
         }
 
+        // New player - initialize with default skills
         for (SkillType skill : SkillType.values()) {
             Skill skill1 = new Skill(skill, 0, System.currentTimeMillis());
             skill1.setSkillType(skill);
