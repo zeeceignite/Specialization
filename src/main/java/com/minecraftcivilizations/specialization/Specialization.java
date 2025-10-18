@@ -156,6 +156,7 @@ public final class Specialization extends JavaPlugin {
                 CustomPlayer load = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().load(playerJoinEvent.getUniqueId());
                 Component localName;
                 if (load != null) {
+                    MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().addCustomPlayer(load);
                     localName = load.getName();
                 } else {
                     MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().addCustomPlayer(new CustomPlayer(playerJoinEvent.getUniqueId()));
@@ -223,7 +224,10 @@ public final class Specialization extends JavaPlugin {
         });
 
         for (Player player : Bukkit.getOnlinePlayers()) {
-            MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().load(player.getUniqueId());
+            CustomPlayer loadedPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().load(player.getUniqueId());
+            if (loadedPlayer != null) {
+                MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().addCustomPlayer(loadedPlayer);
+            }
         }
 
         DataManager.startSaver();
