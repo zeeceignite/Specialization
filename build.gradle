@@ -117,12 +117,13 @@ processResources {
 paperweight.reobfArtifactConfiguration = ReobfArtifactConfiguration.getMOJANG_PRODUCTION()
 
 
-// Use this to direct where your plugin jar builds to.
 
 tasks.register('copyPluginJar', Copy) {
     dependsOn shadowJar
     from(shadowJar.archiveFile)
-    into "A:\\Utilities\\Experimental Dev Test Server\\plugins"
+
+    def exportPath = project.findProperty("export.path") ?: "$buildDir/export"
+    into exportPath
 }
 
 tasks.build {

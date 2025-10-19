@@ -1,6 +1,7 @@
 package com.minecraftcivilizations.specialization.Skill;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Material;
 
 import static com.minecraftcivilizations.specialization.Skill.Skill.getXPNeededForLevel;
@@ -35,7 +36,7 @@ public enum SkillType {
     }
 
     public static String getDisplayName(SkillType skillType) {
-        return skillType.name().substring(0, 1).toUpperCase() + skillType.name().toLowerCase().substring(1, skillType.name().length());
+        return StringUtils.capitalize(skillType.name().toLowerCase());
     }
 
 

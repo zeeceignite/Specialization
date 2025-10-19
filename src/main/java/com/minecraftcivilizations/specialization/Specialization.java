@@ -88,6 +88,9 @@ public final class Specialization extends JavaPlugin {
 
 //        TeamManager.initializeTeams();
 
+        // TODO PDC-xp-hotfix
+        //  Skill.InitializeSkillKeys(this);
+
         setupCommands();
 
 
@@ -185,6 +188,11 @@ public final class Specialization extends JavaPlugin {
             applyCustomName(playerJoinEvent.getPlayer(), customPlayer.getName());
             customPlayer.applyEffects();
 
+
+
+            // TODO PDC-xp-hotfix for later if we need it
+            //  customPlayer.reloadSkillsXp(playerJoinEvent.getPlayer());
+
             // Assign player to team based on their highest skill
 
 //            TeamManager.setTeam(playerJoinEvent.getPlayer());
@@ -230,7 +238,7 @@ public final class Specialization extends JavaPlugin {
             }
         }
 
-        DataManager.startSaver();
+        DataManager.startSaver(this);
         ReinforcementManager.startReinforcement();
 
         AnalyticsData.autoPoll();
