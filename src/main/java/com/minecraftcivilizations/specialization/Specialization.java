@@ -57,6 +57,8 @@ import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.GameRule;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -188,7 +190,10 @@ public final class Specialization extends JavaPlugin {
             applyCustomName(playerJoinEvent.getPlayer(), customPlayer.getName());
             customPlayer.applyEffects();
 
-
+            // Migrate old bandages to new format
+            Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
+                migrateLegacyItems(playerJoinEvent.getPlayer());
+            }, 10L);
 
             // TODO PDC-xp-hotfix for later if we need it
             //  customPlayer.reloadSkillsXp(playerJoinEvent.getPlayer());
@@ -355,5 +360,35 @@ public final class Specialization extends JavaPlugin {
         packet.getPlayerInfoDataLists().write(1, playerInfoData);
 
         return packet;
+    }
+
+    private void migrateLegacyItems(Player player) {
+        int migratedCount = 0;
+        
+        for (org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
+            if (item != null && item.getType() == Material.PAPER) {
+                Component displayName = item.displayName();
+                String plainName = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(displayName);
+                if (plainName.contains("Bandage")) {
+                    NamespacedKey bandageKey = new NamespacedKey(Specialization.getInstance(), "bandage");
+                    minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItem newBandage = 
+                        minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItemRegistry.getItem(bandageKey);
+                    
+                    if (newBandage != null) {
+                        int amount = item.getAmount();
+                        org.bukkit.inventory.ItemStack newItem = newBandage.getItem();
+                        newItem.setAmount(amount);
+                        player.getInventory().remove(item);
+                        player.getInventory().addItem(newItem);
+                        migratedCount++;
+                    }
+                }
+            }
+        }
+        
+        if (migratedCount > 0) {
+            player.sendMessage(Component.text("Migrated " + migratedCount + " old bandage(s) to new format").color(NamedTextColor.YELLOW));
+            Bukkit.getLogger().info("[Migration] Migrated " + migratedCount + " bandages for player " + player.getName());
+        }
     }
 }
