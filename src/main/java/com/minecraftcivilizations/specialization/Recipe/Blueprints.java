@@ -25,24 +25,72 @@ import java.util.List;
 public class Blueprints {
 
     public static void init(){
+        registerBlueprintItems();
+        registerBlueprintRecipes();
+        startPeriodicBlueprintRefresh();
+    }
+
+    private static void registerBlueprintItems(){
+        Bukkit.getLogger().info("[Blueprints] Registering blueprint items...");
+        int count = 0;
+        
         for(ItemStack blueprintBase : getBluePrintBaseItems()){
-            CustomItem customItem = new CustomItem(blueprintBase.getType(), blueprintBase.displayName().append(Component.text(" Blueprint")));
-            customItem.addLore(Specialization.getInstance(), List.of(
-                    Component.empty(),
-                    Component.text("Right click to learn this recipe!").color(NamedTextColor.WHITE)
-            ));
+            try {
+                CustomItem customItem = new CustomItem(blueprintBase.getType(), blueprintBase.displayName().append(Component.text(" Blueprint")));
+                customItem.addLore(Specialization.getInstance(), List.of(
+                        Component.empty(),
+                        Component.text("Right click to learn this recipe!").color(NamedTextColor.WHITE)
+                ));
 
-            String blueprintName = PlainTextComponentSerializer.plainText().serialize(blueprintBase.displayName());
-            NamespacedKey blueprintKey = new NamespacedKey(Specialization.getInstance(), sanitizeNamespacedKey(blueprintName + "_blueprint"));
+                String blueprintName = PlainTextComponentSerializer.plainText().serialize(blueprintBase.displayName());
+                NamespacedKey blueprintKey = new NamespacedKey(Specialization.getInstance(), sanitizeNamespacedKey(blueprintName + "_blueprint"));
 
-            CustomItemAbilityRegistry.register(blueprintKey, makeBlueprintAbility(blueprintName, blueprintKey));
-            customItem.addAbility(blueprintKey);
-
-            CustomItemRegistry.register(blueprintKey, customItem);
-
-            Recipe recipe = makeBlueprintRecipe(blueprintBase.getType(), customItem.getItem(), blueprintKey);
-            Bukkit.addRecipe(recipe, true);
+                CustomItemAbilityRegistry.register(blueprintKey, makeBlueprintAbility(blueprintName, blueprintKey));
+                customItem.addAbility(blueprintKey);
+                CustomItemRegistry.register(blueprintKey, customItem);
+                count++;
+            } catch (Exception e) {
+                Bukkit.getLogger().warning("[Blueprints] Failed to register blueprint item - " + e.getMessage());
+            }
         }
+        
+        Bukkit.getLogger().info("[Blueprints] Registered " + count + " blueprint items");
+    }
+
+    public static void registerBlueprintRecipes(){
+        Bukkit.getLogger().info("[Blueprints] Registering blueprint recipes...");
+        int successCount = 0;
+        int failCount = 0;
+        
+        for(ItemStack blueprintBase : getBluePrintBaseItems()){
+            try {
+                String blueprintName = PlainTextComponentSerializer.plainText().serialize(blueprintBase.displayName());
+                NamespacedKey blueprintKey = new NamespacedKey(Specialization.getInstance(), sanitizeNamespacedKey(blueprintName + "_blueprint"));
+                
+                CustomItem customItem = CustomItemRegistry.getItem(blueprintKey);
+                if (customItem != null) {
+                    Recipe recipe = makeBlueprintRecipe(blueprintBase.getType(), customItem.getItem(), blueprintKey);
+                    Bukkit.addRecipe(recipe, true);
+                    Bukkit.getLogger().info("[Blueprints] ✓ Registered recipe: " + blueprintKey);
+                    successCount++;
+                } else {
+                    Bukkit.getLogger().warning("[Blueprints] ✗ Blueprint item not found in registry: " + blueprintKey);
+                    failCount++;
+                }
+            } catch (Exception e) {
+                Bukkit.getLogger().warning("[Blueprints] ✗ Failed to register blueprint recipe - " + e.getMessage());
+                failCount++;
+            }
+        }
+        
+        Bukkit.getLogger().info("[Blueprints] Registration complete: " + successCount + " successful, " + failCount + " failed");
+    }
+
+    private static void startPeriodicBlueprintRefresh() {
+        Bukkit.getScheduler().runTaskTimerAsynchronously(Specialization.getInstance(), () -> {
+            Bukkit.getLogger().info("[Blueprints] Periodic blueprint recipe refresh triggered");
+            Bukkit.getScheduler().runTask(Specialization.getInstance(), Blueprints::registerBlueprintRecipes);
+        }, 1200L, 1200L);
     }
 
     private static Recipe makeBlueprintRecipe(Material ingredient, ItemStack newItem, NamespacedKey key){
