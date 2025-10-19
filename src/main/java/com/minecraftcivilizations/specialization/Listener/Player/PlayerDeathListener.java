@@ -137,8 +137,8 @@ public class PlayerDeathListener implements Listener {
         customPlayer.getSkills().forEach(skill ->
                 customPlayer.addSkillXp(skill.getSkillType(), -skill.getXp(), null, true));
 
-        Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () ->
-                player.kick(Component.text("You died.")), 30);
+//        Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () ->
+//                player.kick(Component.text("You died.")), 30);
     }
 
     public void applyDownedEffects(Player player) {
