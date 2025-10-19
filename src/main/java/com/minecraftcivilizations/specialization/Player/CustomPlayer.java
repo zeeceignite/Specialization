@@ -7,6 +7,7 @@ import com.minecraftcivilizations.specialization.Listener.Player.XpGainMonitor;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.LoreUtils;
 import lombok.Data;
 import lombok.Getter;
@@ -15,12 +16,15 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizati
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -77,6 +81,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().load(this.getUuid());
 
         if (customPlayer != null) {
+            //Loads existing player
             this.skills = customPlayer.skills;
             this.preferredSkill = customPlayer.preferredSkill;
             this.height = customPlayer.height;
@@ -119,12 +124,26 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
      * addSkillxp, but with extra location for sound.
      */
     public void addSkillXp(SkillType skillType, double xp, Location soundLocation, boolean allowNegative) {
+        Player player = Bukkit.getPlayer(getUuid());
+
         if (skillType == null || xp == 0) return;
         int previousLevel = this.getSkillLevel(skillType);
-        getSkill(skillType).applyXp(xp, allowNegative);
+        Skill skill = getSkill(skillType);
+        skill.applyXp(player, xp, allowNegative);
 
-        Player player = Bukkit.getPlayer(getUuid());
-        player.sendActionBar(Component.text((xp <= 0 ? "" : "+") + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY)));
+        boolean negative = xp<0;
+        String color = (negative)?"red":"green";
+        if(negative) {
+            player.sendMessage("Negative XP Warning: " + skillType.name() + ": " + skill.getXp() + " (+ " + ((xp > 0) ? ChatColor.GREEN : ChatColor.RED) + xp + ")");
+        }
+        Component message = MiniMessage.miniMessage().deserialize(
+                "<white>"+skill.getXp()+"</white> " +
+                "<"+color+">(" +(negative?"":"+") +xp+")</"+color+"> " +
+                "<gray>"+getDisplayName(skillType)+"</gray>");
+
+//        Component component = Component.text("["+skill.getXp()+"] "+(xp <= 0 ? "" : "+") + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY));
+
+        player.sendActionBar(message);
         int currentLevel = this.getSkillLevel(skillType);
         if (this.isSoundEnabled) {
             float pitch = 0.8f + (float) (Math.random() * 0.4f); // random between 0.8–1.2
@@ -293,6 +312,22 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         }
         throw new IllegalStateException("Couldn't get skill " + skillType.toString());
     }
+
+
+    /**
+     * TODO PDC-xp-hotfix for later if we need it
+     *
+    public void reloadSkillsXp(@Nullable Player player) {
+        if(player.){
+           if player doesn't have PDC, do nothing, but store existing values
+        }
+        for(SkillType type : SkillType.values()){
+            if(type.){
+
+            }
+        }
+    }
+    */
 
     @Data
     public static class AnalyticPlayerData {
