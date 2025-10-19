@@ -28,6 +28,12 @@ import static com.minecraftcivilizations.specialization.Listener.Player.PlayerDe
 public class Recipes {
 
     public static void init() {
+        registerCustomItems();
+        registerRecipes();
+        startPeriodicRecipeRefresh();
+    }
+
+    private static void registerCustomItems() {
         CustomItem customItem = new CustomItem(Material.PAPER, Component.text("Bandage").color(NamedTextColor.WHITE));
         customItem.addLore(Specialization.getInstance(), List.of(
                 Component.empty(),
@@ -37,10 +43,10 @@ public class Recipes {
         CustomAbility customAbility = new CustomAbility();
         customAbility.setAbilityFunction(customAbilityFunction -> {
             CustomPlayer cHealer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(customAbilityFunction.getUniqueId());
-            if(cHealer.getSkillLevel(SkillType.HEALER) == 0) return;
+            if (cHealer.getSkillLevel(SkillType.HEALER) == 0) return;
             if (customAbilityFunction.getTargetEntity(4) instanceof Player player && player.getHealth() < player.getAttribute(Attribute.MAX_HEALTH).getValue()) {
                 Player healer = Bukkit.getPlayer(customAbilityFunction.getUniqueId());
-                if(healer == null || healer.getFoodLevel() < 3) return;
+                if (healer == null || healer.getFoodLevel() < 3) return;
 
                 healer.setFoodLevel(healer.getFoodLevel() - 3);
                 player.heal(10);
@@ -56,51 +62,107 @@ public class Recipes {
         customAbility.setName("Bandage");
         customAbility.setDescription("Bandage");
 
-        CustomItemAbilityRegistry.register(new NamespacedKey(Specialization.getInstance(), "bandage"), customAbility);
-
         customItem.addAbility(new NamespacedKey(Specialization.getInstance(), "bandage"));
-
         CustomItemRegistry.register(new NamespacedKey(Specialization.getInstance(), "bandage"), customItem);
-
-        ShapelessRecipe shapelessRecipe = new ShapelessRecipe(new NamespacedKey(Specialization.getInstance(), "bandage"), customItem.getItem());
-        shapelessRecipe.addIngredient(8, Material.PAPER);
-        shapelessRecipe.addIngredient(Material.SUGAR_CANE);
-        Bukkit.addRecipe(shapelessRecipe, true);
-
-        ShapedRecipe shapedRecipe = new ShapedRecipe(NamespacedKey.minecraft("rail"), new ItemStack(Material.RAIL).add(64));
-        shapedRecipe.shape(
-                "I I",
-                "ISI",
-                "I I"
-        );
-        shapedRecipe.setIngredient('I', Material.IRON_INGOT);
-        shapedRecipe.setIngredient('S', Material.STICK);
-        Bukkit.removeRecipe(NamespacedKey.minecraft("rail"));
-        Bukkit.addRecipe(shapedRecipe);
-
-        addNetherRecipes();
     }
 
-    public static void addNetherRecipes(){
-        ShapelessRecipe netheriteUpgrade = new ShapelessRecipe(new NamespacedKey(Specialization.getInstance(), "netherite_upgrade"), new ItemStack(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE));
-        netheriteUpgrade.addIngredient(1, Material.NETHERITE_INGOT);
-        netheriteUpgrade.addIngredient(6, Material.DIAMOND);
-        netheriteUpgrade.addIngredient(1, Material.NETHER_WART_BLOCK);
-        Bukkit.addRecipe(netheriteUpgrade, true);
+    public static void registerRecipes() {
+        Bukkit.getLogger().info("[Recipes] Registering custom recipes...");
+        int successCount = 0;
+        int failCount = 0;
 
-        ShapelessRecipe blazeRod = new ShapelessRecipe(new NamespacedKey(Specialization.getInstance(), "blaze_rod"), new ItemStack(Material.BLAZE_ROD));
-        blazeRod.addIngredient(1, Material.GOLD_INGOT);
-        blazeRod.addIngredient(3, Material.GUNPOWDER);
-        blazeRod.addIngredient(1, Material.CRIMSON_NYLIUM);
-        blazeRod.addIngredient(1, Material.WARPED_NYLIUM);
-        Bukkit.addRecipe(blazeRod, true);
+        for (NamespacedKey key : CustomItemRegistry.getItems().keySet()) {
+            CustomItem customItem = CustomItemRegistry.getItem(key);
+            if (customItem != null) {
+                try {
+                    ShapelessRecipe shapelessRecipe = new ShapelessRecipe(key, customItem.getItem());
+                    if (key.getKey().equals("bandage")) {
+                        shapelessRecipe.addIngredient(8, Material.PAPER);
+                        shapelessRecipe.addIngredient(Material.SUGAR_CANE);
+                    }
 
-        ShapedRecipe netherWart = new ShapedRecipe(new NamespacedKey(Specialization.getInstance(), "nether_wart"), new ItemStack(Material.NETHER_WART));
-        netherWart.shape(" E ", "DDD", " B ");
-        netherWart.setIngredient('E', Material.BEETROOT);
-        netherWart.setIngredient('D', Material.COARSE_DIRT);
-        netherWart.setIngredient('B', Material.BLAZE_POWDER);
-        Bukkit.addRecipe(netherWart, true);
+                    Bukkit.addRecipe(shapelessRecipe, true);
+                    Bukkit.getLogger().info("[Recipes] ✓ Registered recipe: " + key);
+                    successCount++;
+                } catch (Exception e) {
+                    Bukkit.getLogger().warning("[Recipes] ✗ Failed to register recipe: " + key + " - " + e.getMessage());
+                    failCount++;
+                }
+            }
+        }
+
+        try {
+            ShapedRecipe shapedRecipe = new ShapedRecipe(NamespacedKey.minecraft("rail"), new ItemStack(Material.RAIL).add(64));
+            shapedRecipe.shape(
+                    "I I",
+                    "ISI",
+                    "I I"
+            );
+            shapedRecipe.setIngredient('I', Material.IRON_INGOT);
+            shapedRecipe.setIngredient('S', Material.STICK);
+            Bukkit.removeRecipe(NamespacedKey.minecraft("rail"));
+            Bukkit.addRecipe(shapedRecipe);
+            Bukkit.getLogger().info("[Recipes] ✓ Registered modified recipe: minecraft:rail");
+            successCount++;
+        } catch (Exception e) {
+            Bukkit.getLogger().warning("[Recipes] ✗ Failed to register rail recipe - " + e.getMessage());
+            failCount++;
+        }
+
+        int netherCount = addNetherRecipes();
+        successCount += netherCount;
+
+        Bukkit.getLogger().info("[Recipes] Registration complete: " + successCount + " successful, " + failCount + " failed");
     }
 
+    private static void startPeriodicRecipeRefresh() {
+        Bukkit.getScheduler().runTaskTimerAsynchronously(Specialization.getInstance(), () -> {
+            Bukkit.getLogger().info("[Recipes] Periodic recipe refresh triggered");
+            Bukkit.getScheduler().runTask(Specialization.getInstance(), Recipes::registerRecipes);
+        }, 1200L, 1200L);
+    }
+
+    public static int addNetherRecipes() {
+        int count = 0;
+
+        try {
+            ShapelessRecipe netheriteUpgrade = new ShapelessRecipe(new NamespacedKey(Specialization.getInstance(), "netherite_upgrade"), new ItemStack(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE));
+            netheriteUpgrade.addIngredient(1, Material.NETHERITE_INGOT);
+            netheriteUpgrade.addIngredient(6, Material.DIAMOND);
+            netheriteUpgrade.addIngredient(1, Material.NETHER_WART_BLOCK);
+            Bukkit.addRecipe(netheriteUpgrade, true);
+            Bukkit.getLogger().info("[Recipes] ✓ Registered recipe: specialization:netherite_upgrade");
+            count++;
+        } catch (Exception e) {
+            Bukkit.getLogger().warning("[Recipes] ✗ Failed to register netherite_upgrade - " + e.getMessage());
+        }
+
+        try {
+            ShapelessRecipe blazeRod = new ShapelessRecipe(new NamespacedKey(Specialization.getInstance(), "blaze_rod"), new ItemStack(Material.BLAZE_ROD));
+            blazeRod.addIngredient(1, Material.GOLD_INGOT);
+            blazeRod.addIngredient(3, Material.GUNPOWDER);
+            blazeRod.addIngredient(1, Material.CRIMSON_NYLIUM);
+            blazeRod.addIngredient(1, Material.WARPED_NYLIUM);
+            Bukkit.addRecipe(blazeRod, true);
+            Bukkit.getLogger().info("[Recipes] ✓ Registered recipe: specialization:blaze_rod");
+            count++;
+        } catch (Exception e) {
+            Bukkit.getLogger().warning("[Recipes] ✗ Failed to register blaze_rod - " + e.getMessage());
+        }
+
+        try {
+            ShapedRecipe netherWart = new ShapedRecipe(new NamespacedKey(Specialization.getInstance(), "nether_wart"), new ItemStack(Material.NETHER_WART));
+            netherWart.shape(" E ", "DDD", " B ");
+            netherWart.setIngredient('E', Material.BEETROOT);
+            netherWart.setIngredient('D', Material.COARSE_DIRT);
+            netherWart.setIngredient('B', Material.BLAZE_POWDER);
+            Bukkit.addRecipe(netherWart, true);
+            Bukkit.getLogger().info("[Recipes] ✓ Registered recipe: specialization:nether_wart");
+            count++;
+        } catch (Exception e) {
+            Bukkit.getLogger().warning("[Recipes] ✗ Failed to register nether_wart - " + e.getMessage());
+        }
+
+        return count;
+    }
 }
