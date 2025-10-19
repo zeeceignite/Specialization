@@ -122,9 +122,14 @@ tasks.register('copyPluginJar', Copy) {
     dependsOn shadowJar
     from(shadowJar.archiveFile)
 
-    def exportPath = project.findProperty("export.path") ?: "$buildDir/export"
-    into exportPath
+    def exportPath = project.findProperty("export.path")
+    onlyIf { exportPath != null }
+
+    if (exportPath) {
+        into(exportPath)
+    }
 }
+
 
 tasks.build {
     dependsOn tasks.copyPluginJar
