@@ -62,8 +62,10 @@ public class Recipes {
         customAbility.setName("Bandage");
         customAbility.setDescription("Bandage");
 
-        customItem.addAbility(new NamespacedKey(Specialization.getInstance(), "bandage"));
-        CustomItemRegistry.register(new NamespacedKey(Specialization.getInstance(), "bandage"), customItem);
+        NamespacedKey bandageKey = new NamespacedKey(Specialization.getInstance(), "bandage");
+        CustomItemAbilityRegistry.register(bandageKey, customAbility);
+        customItem.addAbility(bandageKey);
+        CustomItemRegistry.register(bandageKey, customItem);
     }
 
     public static void registerRecipes() {
