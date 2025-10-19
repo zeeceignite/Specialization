@@ -121,7 +121,9 @@ paperweight.reobfArtifactConfiguration = ReobfArtifactConfiguration.getMOJANG_PR
 tasks.register('copyPluginJar', Copy) {
     dependsOn shadowJar
     from(shadowJar.archiveFile)
-    into project.findProperty("export.path")
+
+    def exportPath = project.findProperty("export.path") ?: "$buildDir/export"
+    into exportPath
 }
 
 tasks.build {
