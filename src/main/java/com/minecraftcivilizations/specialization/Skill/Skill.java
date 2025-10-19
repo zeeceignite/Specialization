@@ -1,8 +1,16 @@
 package com.minecraftcivilizations.specialization.Skill;
 
+import com.minecraftcivilizations.specialization.Specialization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
+import org.bukkit.NamespacedKey;
+import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataType;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @AllArgsConstructor
 public class Skill {
@@ -27,12 +35,38 @@ public class Skill {
         return out_min + (x - in_min) * (out_max - out_min) / (in_max - in_min);
     }
 
-    public void applyXp(double xp, boolean allowNegative) {
-        if (!allowNegative) {
-            this.xp += Math.max(xp, 0);
-        } else {
-            this.xp += xp;
+
+    public void applyXp(Player player, double appliedXp, boolean allowNegative) {
+        if(appliedXp!=0) {
+            if (!allowNegative) {
+                this.xp += Math.max(appliedXp, 0); //prevents unintentional negative xp gain
+            } else {
+                this.xp += appliedXp; //can potentially subtract xp
+                if (this.xp < 0) {
+                    this.xp = 0; //ensures xp does not get set below zero
+                }
+            }
+            //instant serialize hot-patch until redesign
+            // TODO PDC-xp-hotfix
+            //  player.getPersistentDataContainer().set(skilltype_key_map.get(skillType), PersistentDataType.INTEGER, (int) appliedXp);
         }
         this.lastUpdate = System.currentTimeMillis();
     }
+
+
+
+    // PDC-xp-hotfix static Map<SkillType, NamespacedKey> skilltype_key_map = new HashMap<SkillType, NamespacedKey>();
+    /**
+     * PDC-xp-hotfix TODO do not remove until xp loss bug has been resolved
+     * This assigns a NamespacedKey for each SkillType
+     * Runs on startup
+     */
+    /*
+    public static void InitializeSkillKeys(Specialization plugin) {
+        for(SkillType type : SkillType.values()){
+            NamespacedKey key = new NamespacedKey(plugin, "skill."+type.name().toLowerCase()+".xp");
+            skilltype_key_map.put(type, key);
+        }
+    }
+     */
 }
