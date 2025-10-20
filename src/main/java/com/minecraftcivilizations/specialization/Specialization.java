@@ -292,6 +292,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new RandomNameBulkTestCommand());
         commandManager.registerCommand(new RerollNameCommand(localNameGenerator));
         commandManager.registerCommand(new XPLeaderboardCommand());
+        commandManager.registerCommand(new EmoteCommand(this));
 
 
     }
