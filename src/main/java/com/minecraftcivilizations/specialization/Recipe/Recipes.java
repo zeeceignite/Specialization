@@ -125,7 +125,7 @@ public class Recipes {
             Bukkit.getLogger().info("[Recipes] Periodic recipe refresh triggered");
             Debug.broadcast("recipes", "Periodic recipe refresh triggered", null, true);
             Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> Recipes.registerRecipes(true));
-        }, 120L, 120L);
+        }, 1200L, 1200L);
     }
 
     public static int addNetherRecipes(boolean reloading) {
