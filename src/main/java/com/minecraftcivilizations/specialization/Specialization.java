@@ -37,6 +37,7 @@ import com.minecraftcivilizations.specialization.Listener.Player.Interactions.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Inventories.CraftingListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Inventories.FurnaceListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Inventories.StonecutterListener;
+import com.minecraftcivilizations.specialization.Listener.XpTransferBookListener;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Player.LocalNameGenerator;
 import com.minecraftcivilizations.specialization.Player.PreJoinEventListener;
@@ -126,6 +127,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new Berserk(), this);
         getServer().getPluginManager().registerEvents(new ArmorDamageReductionListener(), this);
         getServer().getPluginManager().registerEvents(new PatDown(), this);
+        getServer().getPluginManager().registerEvents(new XpTransferBookListener(), this);
 
 
         //town data does not need to wait anymore
