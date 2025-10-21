@@ -4,6 +4,7 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import com.minecraftcivilizations.specialization.Debug.Debug;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Ability.AbilityCastEvent;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Ability.CustomAbility;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Ability.CustomItemAbilityRegistry;
@@ -29,7 +30,7 @@ public class Recipes {
 
     public static void init() {
         registerCustomItems();
-        registerRecipes();
+        registerRecipes(false);
         startPeriodicRecipeRefresh();
     }
 
@@ -68,8 +69,9 @@ public class Recipes {
         CustomItemRegistry.register(bandageKey, customItem);
     }
 
-    public static void registerRecipes() {
-        Bukkit.getLogger().info("[Recipes] Registering custom recipes...");
+    public static void registerRecipes(boolean reloading) {
+        String register_mode = (reloading?"Re-registered":"Registered");
+        Bukkit.getLogger().info("[Recipes] "+(reloading?"Re-registering":"registering")+" custom recipes...");
         int successCount = 0;
         int failCount = 0;
 
@@ -82,12 +84,12 @@ public class Recipes {
                         shapelessRecipe.addIngredient(8, Material.PAPER);
                         shapelessRecipe.addIngredient(Material.SUGAR_CANE);
                     }
-
                     Bukkit.addRecipe(shapelessRecipe, true);
-                    Bukkit.getLogger().info("[Recipes] ✓ Registered recipe: " + key);
+                    Bukkit.getLogger().info("[Recipes] ✓ "+register_mode+" recipe: " + key);
                     successCount++;
                 } catch (Exception e) {
-                    Bukkit.getLogger().warning("[Recipes] ✗ Failed to register recipe: " + key + " - " + e.getMessage());
+                    if(!reloading)
+                        Bukkit.getLogger().warning("[Recipes] ✗ Failed to "+register_mode+" recipe: " + key + " - " + e.getMessage());
                     failCount++;
                 }
             }
@@ -104,14 +106,15 @@ public class Recipes {
             shapedRecipe.setIngredient('S', Material.STICK);
             Bukkit.removeRecipe(NamespacedKey.minecraft("rail"));
             Bukkit.addRecipe(shapedRecipe);
-            Bukkit.getLogger().info("[Recipes] ✓ Registered modified recipe: minecraft:rail");
+            Bukkit.getLogger().info("[Recipes] ✓ "+register_mode+" modified recipe: minecraft:rail");
             successCount++;
         } catch (Exception e) {
-            Bukkit.getLogger().warning("[Recipes] ✗ Failed to register rail recipe - " + e.getMessage());
+            if(!reloading)
+                Bukkit.getLogger().warning("[Recipes] ✗ Failed to "+register_mode+" rail recipe - " + e.getMessage());
             failCount++;
         }
 
-        int netherCount = addNetherRecipes();
+        int netherCount = addNetherRecipes(reloading);
         successCount += netherCount;
 
         Bukkit.getLogger().info("[Recipes] Registration complete: " + successCount + " successful, " + failCount + " failed");
@@ -120,11 +123,12 @@ public class Recipes {
     private static void startPeriodicRecipeRefresh() {
         Bukkit.getScheduler().runTaskTimerAsynchronously(Specialization.getInstance(), () -> {
             Bukkit.getLogger().info("[Recipes] Periodic recipe refresh triggered");
-            Bukkit.getScheduler().runTask(Specialization.getInstance(), Recipes::registerRecipes);
-        }, 1200L, 1200L);
+            Debug.broadcast("recipes", "Periodic recipe refresh triggered", null, true);
+            Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> Recipes.registerRecipes(true));
+        }, 120L, 120L);
     }
 
-    public static int addNetherRecipes() {
+    public static int addNetherRecipes(boolean reloading) {
         int count = 0;
 
         try {
@@ -136,7 +140,8 @@ public class Recipes {
             Bukkit.getLogger().info("[Recipes] ✓ Registered recipe: specialization:netherite_upgrade");
             count++;
         } catch (Exception e) {
-            Bukkit.getLogger().warning("[Recipes] ✗ Failed to register netherite_upgrade - " + e.getMessage());
+            if(!reloading)
+                Bukkit.getLogger().warning("[Recipes] ✗ Failed to register netherite_upgrade - " + e.getMessage());
         }
 
         try {
@@ -149,7 +154,8 @@ public class Recipes {
             Bukkit.getLogger().info("[Recipes] ✓ Registered recipe: specialization:blaze_rod");
             count++;
         } catch (Exception e) {
-            Bukkit.getLogger().warning("[Recipes] ✗ Failed to register blaze_rod - " + e.getMessage());
+            if(!reloading)
+                Bukkit.getLogger().warning("[Recipes] ✗ Failed to register blaze_rod - " + e.getMessage());
         }
 
         try {
@@ -162,7 +168,8 @@ public class Recipes {
             Bukkit.getLogger().info("[Recipes] ✓ Registered recipe: specialization:nether_wart");
             count++;
         } catch (Exception e) {
-            Bukkit.getLogger().warning("[Recipes] ✗ Failed to register nether_wart - " + e.getMessage());
+            if(!reloading)
+                Bukkit.getLogger().warning("[Recipes] ✗ Failed to register nether_wart - " + e.getMessage());
         }
 
         return count;

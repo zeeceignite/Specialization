@@ -7,7 +7,7 @@ import com.minecraftcivilizations.specialization.Listener.Player.XpGainMonitor;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
-import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.Debug.Debug;
 import com.minecraftcivilizations.specialization.util.LoreUtils;
 import lombok.Data;
 import lombok.Getter;
@@ -20,11 +20,9 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -136,14 +134,14 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         if(negative) {
             player.sendMessage("Negative XP Warning: " + skillType.name() + ": " + skill.getXp() + " (+ " + ((xp > 0) ? ChatColor.GREEN : ChatColor.RED) + xp + ")");
         }
-        Component message = MiniMessage.miniMessage().deserialize(
+        Component simple_xp_msg = MiniMessage.miniMessage().deserialize(
                 "<white>"+skill.getXp()+"</white> " +
                 "<"+color+">(" +(negative?"":"+") +xp+")</"+color+"> " +
                 "<gray>"+getDisplayName(skillType)+"</gray>");
 
 //        Component component = Component.text("["+skill.getXp()+"] "+(xp <= 0 ? "" : "+") + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY));
 
-        player.sendActionBar(message);
+        player.sendActionBar(simple_xp_msg);
         int currentLevel = this.getSkillLevel(skillType);
         if (this.isSoundEnabled) {
             float pitch = 0.8f + (float) (Math.random() * 0.4f); // random between 0.8–1.2
