@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.Listener;
 
+import com.minecraftcivilizations.specialization.Debug.Debug;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.SmartEntity.SmartEntity;
@@ -24,7 +25,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import static com.minecraftcivilizations.specialization.util.MathUtils.*;
-
+import static org.bukkit.ChatColor.*;
 import java.nio.channels.Channel;
 import java.util.*;
 
@@ -43,15 +44,23 @@ public class XpTransferBookListener implements Listener {
     private static final NamespacedKey XP_BLESSED_KEY = new NamespacedKey(Specialization.getInstance(), "xp_blessed_book");
     private static final NamespacedKey XP_AMOUNT_KEY = new NamespacedKey(Specialization.getInstance(), "xp_amount");
 
+    private String book_contents;
 
-
+    public XpTransferBookListener() {
+        //IF MODIFYING THIS: Move to applyBookInstructions temporarily, then move back to constructor when done
+        book_contents = """
+                §l   -XP Transfer-
+                §8     Sign To Confirm
+                §3    (Max of 3 Levels)
+                
+                
+                
+                §5§l§nEnter Levels:§r """;
+    }
 
     private void applyBookInstructions(BookMeta book_meta) {
-        book_meta.setPages(List.of("""
-            §5Xp Level Transfer
-            §lSign To Confirm
 
-            Amount: """));
+        book_meta.setPages(List.of(book_contents));
     }
 
 
@@ -91,13 +100,17 @@ public class XpTransferBookListener implements Listener {
             BookMeta book_meta = (BookMeta) item.getItemMeta();
             if (book_meta == null) return; // this should never happen
 
+            if(book_meta.hasPages()){
+                return; // Prevents wiping existing books
+            }
 
             //Blessing of book will be successful
 
-            book_meta.setDisplayName(ChatColor.AQUA + "Blessed XP Transfer Book");
+            book_meta.setDisplayName(ChatColor.AQUA + "XP Transfer Book");
             book_meta.setLore(List.of(
                     ChatColor.GRAY + "Blessed by " + player.getName(),
-                    ChatColor.DARK_AQUA + "Write an amount and sign to store XP."
+                    ChatColor.DARK_AQUA + "Write an amount and sign to store XP.",
+                    ChatColor.DARK_RED + "Max of 3 levels"
             ));
             applyBookInstructions(book_meta);
             book_meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -129,8 +142,10 @@ public class XpTransferBookListener implements Listener {
             player.giveExp(xp);
             ItemStack is = player.getInventory().getItemInMainHand();
             is.setAmount(is.getAmount()-1);
+
+            Debug.broadcast("xpbook", WHITE+player.getName()+" consumed an XP book of "+GREEN+xp+WHITE+" xp");
             player.sendMessage(ChatColor.GREEN + "You absorbed " + xp + " XP from the book!");
-            new SmartEntitySpiral(player);
+            new SmartEntitySpiral(player, xp);
         }
     }
 
@@ -171,11 +186,11 @@ public class XpTransferBookListener implements Listener {
         }
 
 
-        String[] page_split = pages.getFirst().split("Amount:");
+        String[] page_split = pages.getFirst().split("Levels:");
         if(page_split.length<2){
             return;
         }
-        String number_string = page_split[1].strip();
+        String number_string = ChatColor.stripColor(page_split[1].strip());
         int requestedLevels;
         try{
             requestedLevels = Math.max(0, Integer.valueOf(number_string));
@@ -187,7 +202,6 @@ public class XpTransferBookListener implements Listener {
         if(requestedLevels > max_levels){
             requestedLevels = max_levels;
         }
-        //do value checks here TODO
 
         int playerLevel = player.getLevel();
         if (requestedLevels > playerLevel) requestedLevels = playerLevel;
@@ -202,9 +216,8 @@ public class XpTransferBookListener implements Listener {
             return;
         }
 
-        // this is temporary
-        meta.setDisplayName(ChatColor.RESET+""+ChatColor.AQUA+"Tome of Knowledge with " + totalXp + "");
-//        meta.setLore(ChatColor.RESET+""+ChatColor.AQUA+"Tome of Knowledge with " + totalXp + "");
+        // this temporarily stores the metadata to be transfered into the new book meta later
+        meta.setDisplayName(ChatColor.RESET+""+ChatColor.AQUA+"Tome of Knowledge with " + totalXp + " XP");
 
         player.setTotalExperience(targetXp);
         player.setLevel(playerLevel - requestedLevels);
@@ -221,8 +234,10 @@ public class XpTransferBookListener implements Listener {
         ItemStack xpBook = new ItemStack(Material.BOOK);
         ItemMeta xpMeta = xpBook.getItemMeta();
 
+        Debug.broadcast("xpbook", WHITE+"Xp Book created by "+YELLOW+player.getName()+YELLOW+" with "+GREEN+totalXp+WHITE+" xp");
+
         if (player.getInventory().getItemInMainHand().getType() != Material.WRITABLE_BOOK){
-            player.sendMessage(ChatColor.GREEN + "Stop trying to exploit nerd...");
+            player.sendMessage(GREEN + "Stop trying to exploit nerd...");
             return;
         }
 
@@ -230,9 +245,10 @@ public class XpTransferBookListener implements Listener {
         xpMeta.setDisplayName(old_meta.getDisplayName());
 //            xpMeta.setDisplayNae(ChatColor.LIGHT_PURPLE + "Stored XP Book");
         xpMeta.setLore(List.of(
-                ChatColor.DARK_PURPLE + "Contains " + totalXp + " XP",
-                ChatColor.GRAY + "Shift-right-click to absorb.",
-                ChatColor.WHITE + "Signed by: " + ChatColor.GOLD+old_meta.getTitle())
+                        GRAY + "Shift-right-click to absorb.",
+                    LIGHT_PURPLE+old_meta.getTitle(),
+    //                DARK_PURPLE + "Contains " + totalXp + " XP",
+                    WHITE + "Signed by: " + GOLD+player.getName())
         );
         // ChatColor.GOLD+event.getNewBookMeta().getTitle())
         xpMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -242,7 +258,7 @@ public class XpTransferBookListener implements Listener {
 
         player.getInventory().setItemInMainHand(xpBook);
         player.updateInventory();
-        player.sendMessage(ChatColor.GREEN + "XP sealed into book: " + totalXp + " points.");
+        player.sendMessage(GREEN + "XP sealed into book: " + totalXp + " points.");
     }
 
     private static int getTotalXpForLevel(int level) {
@@ -264,31 +280,38 @@ public class XpTransferBookListener implements Listener {
     class SmartEntitySpiral extends SmartEntity{
 
         double height = 0;
+        double radius = 1;
+        int experience;
+        int scaled_exp;
 
-        public SmartEntitySpiral(Entity owner){
+        public SmartEntitySpiral(Entity owner, int exp){
             super(owner, owner.getLocation());
+            this.experience = exp;
+            this.scaled_exp = Math.min((experience/10)+10, 50);
         }
 
         @Override
         public void update() {
             Location old_location = location.clone();
-            height+=0.1;
-            double radius = 0.8;
-            double x = Math.sin(height*8)*radius;
-            double z = Math.cos(height*8)*radius;
+            radius += -0.0125;
+            height += 0.05;
+            double x = Math.sin(height*32)*radius;
+            double z = Math.cos(height*32)*radius;
 
             if(owner!=null) {
                 location = owner.getLocation().add(x, height, z);
             }
-            location.getWorld().spawnParticle(Particle.ENCHANT, lerpLocationFast(old_location, location,0.5f), 0, 0,0,0);
-            location.getWorld().spawnParticle(Particle.ENCHANT, location, 0, 0,0,0);
 
-            if(tick%3==0) {
-                float pitch = 0.8f+((float)tick/30f);
+            int particles = (int)(scaled_exp/2);
+            location.getWorld().spawnParticle(Particle.ENCHANT, lerpLocationFast(old_location, location,0.5f), 3, 0,0,0);
+            location.getWorld().spawnParticle(Particle.ENCHANT, location, 3, 0,0,0);
+
+            if(tick % 4 == 0) {
+                float pitch = 0.6f+((float)tick/40f);
                 location.getWorld().playSound(location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.1f, pitch);
             }
 //            location.getWorld().spawnParticle
-            if(tick>20){
+            if(tick > scaled_exp){
                 destroy();
             }
         }

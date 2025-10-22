@@ -1,7 +1,9 @@
 package com.minecraftcivilizations.specialization.SmartEntity;
 
 
+import com.minecraftcivilizations.specialization.Debug.Debug;
 import com.minecraftcivilizations.specialization.Specialization;
+import org.bukkit.ChatColor;
 import org.bukkit.event.Listener;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -65,12 +67,14 @@ public class SmartEntityManager implements Listener{
 
     void registerEntity(SmartEntity entity){
         entities_to_add.add(entity);
+//        Debug.broadcast("smartentities", ChatColor.YELLOW+"Smart Entity created by "+(entity.owner!=null?entity.owner.getName():"null")+" at "+entity.location.toString());
         dirty = true;
         entities_exist = true;
     }
 
     void unregisterEntity(SmartEntity entity){
         entities_to_remove.add(entity);
+//        Debug.broadcast("smartentities", ChatColor.RED+"Smart Entity died");
         dirty = true;
     }
 
