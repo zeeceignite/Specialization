@@ -1,16 +1,9 @@
 package com.minecraftcivilizations.specialization.Skill;
 
-import com.minecraftcivilizations.specialization.Specialization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
-import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataType;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @AllArgsConstructor
 public class Skill {

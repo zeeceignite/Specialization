@@ -27,7 +27,6 @@ import com.minecraftcivilizations.specialization.Listener.Player.Blocks.PlaceBlo
 import com.minecraftcivilizations.specialization.Listener.Player.Combat.ArmorDamageReductionListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Combat.Berserk;
 import com.minecraftcivilizations.specialization.Listener.Player.Combat.CrossBowListener;
-import com.minecraftcivilizations.specialization.Listener.Player.Combat.Instinct;
 import com.minecraftcivilizations.specialization.Listener.Player.Combat.PatDown;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.FoodInteractionListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.PlayerInteractEntityListener;
@@ -48,6 +47,8 @@ import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementMana
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.SmartEntity.SmartEntityManager;
+import com.minecraftcivilizations.specialization.Debug.DebugListenCommand;
+import com.minecraftcivilizations.specialization.Debug.Debug;
 import com.minecraftcivilizations.specialization.util.LocatorBarManager;
 import com.mojang.authlib.GameProfile;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Component.ComponentUtils;
@@ -65,7 +66,6 @@ import org.bukkit.World;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -79,14 +79,15 @@ import java.util.stream.Collectors;
 public final class Specialization extends JavaPlugin {
 
     public static Logger logger;
-    private static LocalNameGenerator localNameGenerator;
+    private LocalNameGenerator localNameGenerator;
+    private Debug debug;
 
     SmartEntityManager smart_entity_manager;
 
     @Override
     public void onEnable() {
-
         logger = getLogger();
+        debug = new Debug();
         saveResource("first_names.txt", false);
         saveResource("last_names.txt", false);
         SpecializationConfig.initialize();
@@ -183,7 +184,7 @@ public final class Specialization extends JavaPlugin {
                 ff.set(gameProfile, ComponentUtils.serializeComponentAsString(localName));
 
             } catch (NoSuchFieldException | IllegalAccessException e) {
-                Bukkit.getLogger().severe("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+                logger.severe("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
                 e.printStackTrace();
             }
         });
@@ -264,6 +265,9 @@ public final class Specialization extends JavaPlugin {
         return getPlugin(Specialization.class);
     }
 
+    PaperCommandManager commandManager;
+
+
     private void setupCommands() {
 
         try {
@@ -272,8 +276,7 @@ public final class Specialization extends JavaPlugin {
             throw new RuntimeException(e);
         }
 
-
-        PaperCommandManager commandManager = new PaperCommandManager(this);
+        commandManager = new PaperCommandManager(this);
 
 
         // --- TAB COMPLETIONS ---
@@ -296,6 +299,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new RandomNameBulkTestCommand());
         commandManager.registerCommand(new RerollNameCommand(localNameGenerator));
         commandManager.registerCommand(new XPLeaderboardCommand());
+        new DebugListenCommand(commandManager);
 
 
     }
@@ -394,5 +398,9 @@ public final class Specialization extends JavaPlugin {
             player.sendMessage(Component.text("Migrated " + migratedCount + " old bandage(s) to new format").color(NamedTextColor.YELLOW));
             Bukkit.getLogger().info("[Migration] Migrated " + migratedCount + " bandages for player " + player.getName());
         }
+    }
+
+    public Debug getDebugUtils() {
+        return debug;
     }
 }
