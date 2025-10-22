@@ -47,6 +47,7 @@ import com.minecraftcivilizations.specialization.Recipe.Recipes;
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.SmartEntity.SmartEntityManager;
 import com.minecraftcivilizations.specialization.util.LocatorBarManager;
 import com.mojang.authlib.GameProfile;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Component.ComponentUtils;
@@ -80,6 +81,8 @@ public final class Specialization extends JavaPlugin {
     public static Logger logger;
     private static LocalNameGenerator localNameGenerator;
 
+    SmartEntityManager smart_entity_manager;
+
     @Override
     public void onEnable() {
 
@@ -88,14 +91,12 @@ public final class Specialization extends JavaPlugin {
         saveResource("last_names.txt", false);
         SpecializationConfig.initialize();
         MongoConnection.startDBConnection();
-
-//        TeamManager.initializeTeams();
-
         // TODO PDC-xp-hotfix
         //  Skill.InitializeSkillKeys(this);
 
-        setupCommands();
+        smart_entity_manager = new SmartEntityManager(this);
 
+        setupCommands();
 
         getServer().getPluginManager().registerEvents(new PlayerMineListener(), this);
         getServer().getPluginManager().registerEvents(new BreakBlockListener(), this);
@@ -254,6 +255,7 @@ public final class Specialization extends JavaPlugin {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+        smart_entity_manager.shutdown();
         DataManager.getScheduler().shutdown();
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().saveAll();
     }
