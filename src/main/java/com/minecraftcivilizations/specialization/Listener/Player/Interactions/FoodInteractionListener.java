@@ -142,13 +142,13 @@ public class FoodInteractionListener implements Listener {
 
         String effectSummary;
         if (healerLevel >= SkillLevel.GRANDMASTER.getLevel()) {
-            effectSummary = "Regeneration III 60s, Absorption II 60s";
+            effectSummary = "Regeneration I 20s, Absorption I 20s";
         } else if (healerLevel >= SkillLevel.MASTER.getLevel()) {
-            effectSummary = "Regeneration II 20s, Absorption I 40s";
+            effectSummary = "Regeneration I 15s, Absorption I 15s";
         } else if (healerLevel >= SkillLevel.EXPERT.getLevel()) {
-            effectSummary = "Regeneration II 20s";
+            effectSummary = "Regeneration I 10s, Absorption I 10s";
         } else { // Journeyman
-            effectSummary = "Regeneration I 30s";
+            effectSummary = "Regeneration I 5s, Absorption I 5s";
         }
 
         customItem.addLore(Specialization.getInstance(), List.of(
@@ -184,7 +184,9 @@ public class FoodInteractionListener implements Listener {
             absorptionAmplifier = 0;
         } else if (healerLevel >= SkillLevel.EXPERT.getLevel()) {
             regenDurationTicks = 10 * 20;
-            regenAmplifier = 1;
+            regenAmplifier = 0;
+            absorptionDurationTicks = 10 * 20;
+            absorptionAmplifier = 0;
         } else if (healerLevel >= SkillLevel.JOURNEYMAN.getLevel()) {
             regenDurationTicks = 5 * 20;
             regenAmplifier = 0;
