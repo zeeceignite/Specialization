@@ -7,7 +7,7 @@ import com.minecraftcivilizations.specialization.Listener.Player.XpGainMonitor;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
-import com.minecraftcivilizations.specialization.Debug.Debug;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.LoreUtils;
 import lombok.Data;
 import lombok.Getter;
@@ -139,8 +139,17 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
                 "<"+color+">(" +(negative?"":"+") +xp+")</"+color+"> " +
                 "<gray>"+getDisplayName(skillType)+"</gray>");
 
-//        Component component = Component.text("["+skill.getXp()+"] "+(xp <= 0 ? "" : "+") + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY));
 
+        // Debug XP if applicable
+        if (Debug.isListeningToChannel(player, "xp")){
+            Debug.message(player, "xp",
+                    MiniMessage.miniMessage().deserialize(player.getName()+" xp: ")
+                            .append(simple_xp_msg)
+                            .append(Component.space())
+                            .append(Debug.formatLocationClickable(player.getLocation(), true)),
+                    null
+            );
+        }
         player.sendActionBar(simple_xp_msg);
         int currentLevel = this.getSkillLevel(skillType);
         if (this.isSoundEnabled) {

@@ -5,7 +5,7 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
-import com.minecraftcivilizations.specialization.Debug.Debug;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Ability.AbilityCastEvent;

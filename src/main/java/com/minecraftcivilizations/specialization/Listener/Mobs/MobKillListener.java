@@ -5,7 +5,9 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.EntityType;
@@ -15,6 +17,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 
+import java.text.DecimalFormat;
 import java.util.Comparator;
 import java.util.List;
 
@@ -59,6 +62,14 @@ public class MobKillListener implements Listener {
         
         // If player has no skills or their main class is Guardsman, no damage reduction
         if (bestSkill == null || bestSkill.getSkillType() == SkillType.GUARDSMAN) {
+            if(Debug.isAnyoneListening("damage", true)) {
+                Debug.broadcast(
+                        "damage",
+                        "[IsGuardMan] "+ChatColor.GRAY+"Damage: " + ChatColor.WHITE+
+                                ((double)(Math.round(event.getDamage()*100))/100)+
+                                (event.isCritical()? ChatColor.GREEN+" (CRIT!)":""),
+                        "Original Damage: "+((double)(Math.round(event.getDamage()*100))/100));
+            }
             return;
         }
         
@@ -68,5 +79,16 @@ public class MobKillListener implements Listener {
         double reducedDamage = currentDamage * (1.0 - damageReduction);
         
         event.setDamage(reducedDamage);
+
+//        DecimalFormat df = new DecimalFormat("0.00");
+//        ;
+        if(Debug.isAnyoneListening("damage", true)) {
+            Debug.broadcast(
+                    "damage",
+                    "[Reduced:NotGuardsman] "+ChatColor.GRAY+"Damage: " + ChatColor.WHITE+
+                            ((double)(Math.round(reducedDamage*100))/100)+
+                            (event.isCritical()? ChatColor.GREEN+" (CRIT!)":""),
+                    "Original Damage: "+((double)(Math.round(currentDamage*100))/100));
+        }
     }
 }

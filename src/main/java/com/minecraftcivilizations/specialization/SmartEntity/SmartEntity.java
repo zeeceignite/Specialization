@@ -19,6 +19,7 @@ public class SmartEntity {
 
     public SmartEntity(Entity owner, Location location){
         this.owner = owner;
+
         this.location = location;
 //        if(owner instanceof Player player){
 //            player.sendMessage("created entity at "+location.toString());

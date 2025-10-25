@@ -1,9 +1,7 @@
 package com.minecraftcivilizations.specialization.SmartEntity;
 
 
-import com.minecraftcivilizations.specialization.Debug.Debug;
 import com.minecraftcivilizations.specialization.Specialization;
-import org.bukkit.ChatColor;
 import org.bukkit.event.Listener;
 import org.bukkit.scheduler.BukkitRunnable;
 

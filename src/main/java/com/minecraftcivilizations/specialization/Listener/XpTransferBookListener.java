@@ -1,14 +1,12 @@
 package com.minecraftcivilizations.specialization.Listener;
 
-import com.minecraftcivilizations.specialization.Debug.Debug;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.SmartEntity.SmartEntity;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
-import net.kyori.adventure.text.Component;
 import org.bukkit.*;
-import org.bukkit.entity.Ambient;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -26,7 +24,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import static com.minecraftcivilizations.specialization.util.MathUtils.*;
 import static org.bukkit.ChatColor.*;
-import java.nio.channels.Channel;
+
 import java.util.*;
 
 /**

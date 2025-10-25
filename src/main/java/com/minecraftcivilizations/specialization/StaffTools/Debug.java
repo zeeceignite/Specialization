@@ -1,9 +1,14 @@
-package com.minecraftcivilizations.specialization.Debug;
+package com.minecraftcivilizations.specialization.StaffTools;
 
 import com.minecraftcivilizations.specialization.Specialization;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,10 +18,11 @@ import java.util.*;
  * Utilies that aim to help with server development and debugging
  * Please use it when trying to debug things.
  * see: DebugListenCommand.java for commands
- * @author Alectriciti
  */
 public class Debug {
 
+
+    public static String TITLE = ChatColor.DARK_GRAY + "[debug]";
     /**
      * intended use:
      * /debug add <debug_channel>
@@ -24,9 +30,49 @@ public class Debug {
      */
 
     // debug_channel -> List of Players registered to that channel
-    private final Map<String, Set<Player>> debug_listening = new HashMap<String, Set<Player>>();
-    private final Map<Player, List<String>> listening_channels = new HashMap<Player, List<String>>(); //used specifically for tab completion
-    private final List<String> debug_channels = new ArrayList<String>(); //used by command suggestions
+    private Map<String, Set<Player>> debug_listening = new HashMap<String, Set<Player>>();
+    private Map<Player, List<String>> listening_channels = new HashMap<Player, List<String>>(); //used specifically for tab completion
+    private List<String> debug_channels = new ArrayList<String>(); //used by command suggestions
+
+    /**
+     * returns if a player is listening to a specific debug channel
+     * useful for quickly determining if a debug message should even be built
+     * to prevent complex debug messages for being sent
+     * see CustomPlayer.java for an example of why this is optimal
+     */
+    public static boolean isListeningToChannel(Player player, String debug_channel) {
+        Debug debug = getInstance();
+        if(debug.listening_channels.containsKey(player)){
+            if(debug.listening_channels.get(player).contains(debug_channel)){
+                return true;
+            }
+            return false;
+        }
+        return false;
+    }
+
+    /**
+     * Determines if anyone is listening to this channel before sending a message to it
+     * Good to use if sending a detailed debug message
+     */
+    public static boolean isAnyoneListening(String debug_channel, boolean create_channel_regardless) {
+        Debug debug = getInstance();
+        if(!debug.debug_listening.containsKey(debug_channel)) {
+            if(create_channel_regardless){
+                debug.debug_listening.put(debug_channel, new HashSet<>());
+            }
+            return false;
+        }
+        return !debug.debug_listening.get(debug_channel).isEmpty();
+    }
+
+    static void resetAllValues(CommandSender commander) {
+        Debug debug = getInstance();
+        debug.debug_listening = new HashMap<String, Set<Player>>();
+        debug.listening_channels = new HashMap<Player, List<String>>();
+        debug.debug_channels = new ArrayList<String>();
+        Specialization.getInstance().getLogger().info("Debug Cache Globally Reset by "+commander.getName());
+    }
 
     /**
      * This registers a player to a debug channel to listen to it
@@ -37,19 +83,35 @@ public class Debug {
         }
         Set<Player> player_set = getOrCreatePlayerSet(debug_channel, false);
         player_set.add(player);
+        listening_channels.computeIfAbsent(player, p -> new ArrayList<String>()).add(debug_channel);
     }
 
     /**
      * This unregisters a player fromm the channel they're listening to
      */
     public void unregisterPlayerChannel(Player player, String debug_channel){
+        debug_channel = debug_channel.toLowerCase();
         Set<Player> player_set = getOrCreatePlayerSet(debug_channel, false);
         player_set.remove(player);
+        listening_channels.computeIfAbsent(player, p -> new ArrayList<String>()).remove(debug_channel);
     }
 
+    public void registerPlayerToAllChannels(Player player) {
+        for(String channel : debug_channels){
+            registerPlayerChannel(player, channel);
+        }
+    }
+
+    public void unregisterPlayerToAllChannels(Player player) {
+        for(String channel : debug_channels){
+            unregisterPlayerChannel(player, channel);
+        }
+    }
 
     private Set<Player> getOrCreatePlayerSet(String debug_channel, boolean add_to_suggestions){
+        debug_channel = debug_channel.toLowerCase();
         Set<Player> player_set;
+
         //retrieve debug channel list
         if(debug_listening.containsKey(debug_channel)) {
             player_set = debug_listening.get(debug_channel);
@@ -99,6 +161,7 @@ public class Debug {
     }
 
     private static void broadcastFinalize(String debug_channel, Component comp, boolean register_channel) {
+        debug_channel = debug_channel.toLowerCase();
         for(Player player : getInstance().getOrCreatePlayerSet(debug_channel, register_channel)){
             player.sendMessage(comp);
         }
@@ -110,18 +173,30 @@ public class Debug {
 
 
     public static void message(Player player, String debug_channel, String msg){
-        message(player, debug_channel, msg, null);
+        message(player, getPrefix(debug_channel).toString() + debug_channel, msg, null);
     }
+
     /**
      * Sends a debug to a player who is listening to a debug channel
-     * /debug add <debug_channel>
-     * /debug remove <debug_channel>
      */
     public static void message(Player player, String debug_channel, String msg, String hover_details){
         Debug debug = getInstance();
         Component comp = debug.formatDebugMessageDefault(debug_channel, msg, hover_details);
         if(debug.getOrCreatePlayerSet(debug_channel, false).contains(player)){
             player.sendMessage(comp);
+        }
+    }
+
+    /**
+     * Sends a debug to a player who is listening to a debug channel
+     */
+    public static void message(Player player, String debug_channel, Component msg, Component hover) {
+     Debug debug = getInstance();
+        if(hover!=null){
+            msg = msg.hoverEvent(HoverEvent.showText(hover));
+        }
+        if(debug.getOrCreatePlayerSet(debug_channel, false).contains(player)){
+            player.sendMessage(getPrefix(debug_channel).append(msg));
         }
     }
 
@@ -144,7 +219,7 @@ public class Debug {
     }
 
     private static @NotNull Component getPrefix(String debug_channel) {
-        return MiniMessage.miniMessage().deserialize("<dark_gray>[debug:" + debug_channel + "]:</dark_gray> ");
+        return MiniMessage.miniMessage().deserialize("<dark_gray>[debug:" + debug_channel.toLowerCase() + "]:</dark_gray> ");
     }
 
     /**
@@ -165,5 +240,45 @@ public class Debug {
     public static Debug getInstance(){
         return Specialization.getInstance().getDebugUtils();
     }
+
+
+
+    private static TextColor red = TextColor.color(1, 0.7f, 0.7f);
+    private static TextColor green = TextColor.color(0.7f, 1, 0.7f);
+    private static TextColor blue = TextColor.color(0.7f, 0.7f, 1);
+
+    /**
+     *
+     */
+    public static String formatLocation(Location location){
+        return "<gray>"+location.getWorld().getName()+"</gray>,"
+                +"<red>"+(int)location.getX()+"</red>, "
+                +"<green>"+(int)location.getY()+"</green>, "
+                +"<blue>"+(int)location.getZ()+"</blue>";
+    }
+    /**
+     *
+     */
+    public static Component formatLocationColored(Location location){
+        return MiniMessage.miniMessage().deserialize("<gray>"+location.getWorld().getName()+"[</gray>"
+                +"<red>"+(int)location.getX()+"</red>, "
+                +"<green>"+(int)location.getY()+"</green>, "
+                +"<blue>"+(int)location.getZ()+"</blue><gray>]</gray>");
+    }
+
+    /**
+     * Creates a clickable location
+     */
+    public static Component formatLocationClickable(Location location, boolean compact){
+        Component c;
+        if(compact) {
+            c = MiniMessage.miniMessage().deserialize("<blue>[loc]</blue>");
+            c = c.hoverEvent(formatLocationColored(location));
+        }else{
+            c = formatLocationColored(location);
+        }
+        return c.clickEvent(ClickEvent.suggestCommand("/tp "+location.getBlockX()+" "+location.getBlockY()+" "+location.getBlockZ()));
+    }
+
 
 }

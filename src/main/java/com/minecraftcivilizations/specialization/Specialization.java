@@ -47,8 +47,8 @@ import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementMana
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.SmartEntity.SmartEntityManager;
-import com.minecraftcivilizations.specialization.Debug.DebugListenCommand;
-import com.minecraftcivilizations.specialization.Debug.Debug;
+import com.minecraftcivilizations.specialization.StaffTools.DebugListenCommand;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.LocatorBarManager;
 import com.mojang.authlib.GameProfile;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Component.ComponentUtils;
@@ -69,6 +69,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -87,6 +88,17 @@ public final class Specialization extends JavaPlugin {
     @Override
     public void onEnable() {
         logger = getLogger();
+
+        com.minecraftcivilizations.specialization.StaffTools.HotswapInspector.inspect(
+                com.minecraftcivilizations.specialization.StaffTools.Debug.class,
+                Path.of("C:/Users/alect/design/games/minecraft/specialization_dev/Specialization/build/classes/java/main/com/minecraftcivilizations/specialization/StaffTools/Debug.class")
+        );
+        getLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        getLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        getLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        getLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        getLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+
         debug = new Debug();
         saveResource("first_names.txt", false);
         saveResource("last_names.txt", false);
@@ -146,10 +158,10 @@ public final class Specialization extends JavaPlugin {
         world.setGameRule(GameRule.LOCATOR_BAR, true);
         world.setGameRule(GameRule.WATER_SOURCE_CONVERSION, false);
         world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
+
         //global game rules
         Bukkit.getWorlds().forEach(w -> w.setGameRule(GameRule.NATURAL_REGENERATION, false));
         Bukkit.getWorlds().forEach(w -> w.setGameRule(GameRule.DO_TRADER_SPAWNING, false));
-
 
         Recipes.init();
         Blueprints.init();
@@ -236,7 +248,6 @@ public final class Specialization extends JavaPlugin {
                     customPlayer.setWasDownedOnLogout(false);
                 }
             }
-
             MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().removeCustomPlayer(playerQuitEvent.getPlayer().getUniqueId());
         });
 

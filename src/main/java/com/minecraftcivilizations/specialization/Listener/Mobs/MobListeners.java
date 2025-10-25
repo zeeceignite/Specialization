@@ -5,6 +5,7 @@ import com.minecraftcivilizations.specialization.MobGoals.BreakBlockMobGoal;
 import com.minecraftcivilizations.specialization.MobGoals.TargetPlayerMobGoal;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
@@ -62,7 +63,15 @@ public class MobListeners implements Listener {
         if(!(event.getDamager() instanceof Player player)) return;
         if(!(event.getEntity() instanceof Monster)) return;
         CustomPlayer cPlayer = CoreUtil.getPlayer(player);
-        event.setDamage(event.getDamage() + cPlayer.getSkillLevel(SkillType.GUARDSMAN) * 2.5);
+        double original_damage = event.getDamage();
+        double damage = original_damage + cPlayer.getSkillLevel(SkillType.GUARDSMAN) * 2.5;
+        event.setDamage(damage);
+        if(Debug.isAnyoneListening("damage", true)) {
+            Debug.broadcast(
+                    "damage",
+                    "[onPlayerAttackMob] New Damage: " + damage,
+                    "Original Damage: "+original_damage);
+        }
     }
 
 }
