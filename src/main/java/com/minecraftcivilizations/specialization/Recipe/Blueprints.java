@@ -27,7 +27,7 @@ public class Blueprints {
 
     public static void init(){
         registerBlueprintItems();
-        registerBlueprintRecipes(false);
+        registerBlueprintRecipes(true);
         startPeriodicBlueprintRefresh(); // still doesn't work
         // October 25: Culprit was Recipes.java "minecraft:rail"
     }
