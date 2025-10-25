@@ -31,7 +31,7 @@ public class Recipes {
     public static void init() {
         registerCustomItems();
         registerRecipes(false);
-        startPeriodicRecipeRefresh();
+        startPeriodicRecipeRefresh(); //temporary patch to re-register minecraft:rail
     }
 
     private static void registerCustomItems() {
@@ -74,26 +74,25 @@ public class Recipes {
         Bukkit.getLogger().info("[Recipes] "+(reloading?"Re-registering":"registering")+" custom recipes...");
         int successCount = 0;
         int failCount = 0;
-
-        for (NamespacedKey key : CustomItemRegistry.getItems().keySet()) {
-            CustomItem customItem = CustomItemRegistry.getItem(key);
-            if (customItem != null) {
-                try {
-                    ShapelessRecipe shapelessRecipe = new ShapelessRecipe(key, customItem.getItem());
-                    if (key.getKey().equals("bandage")) {
-                        shapelessRecipe.addIngredient(8, Material.PAPER);
-                        shapelessRecipe.addIngredient(Material.SUGAR_CANE);
-                    }
-                    Bukkit.addRecipe(shapelessRecipe, true);
-                    Bukkit.getLogger().info("[Recipes] ✓ "+register_mode+" recipe: " + key);
-                    successCount++;
-                } catch (Exception e) {
-                    if(!reloading)
-                        Bukkit.getLogger().warning("[Recipes] ✗ Failed to "+register_mode+" recipe: " + key + " - " + e.getMessage());
-                    failCount++;
-                }
-            }
-        }
+//        for (NamespacedKey key : CustomItemRegistry.getItems().keySet()) {
+//            CustomItem customItem = CustomItemRegistry.getItem(key);
+//            if (customItem != null) {
+//                try {
+//                    ShapelessRecipe shapelessRecipe = new ShapelessRecipe(key, customItem.getItem());
+//                    if (key.getKey().equals("bandage")) {
+//                        shapelessRecipe.addIngredient(8, Material.PAPER);
+//                        shapelessRecipe.addIngredient(Material.SUGAR_CANE);
+//                    }
+//                    Bukkit.addRecipe(shapelessRecipe, true);
+//                    Bukkit.getLogger().info("[Recipes] ✓ "+register_mode+" recipe: " + key);
+//                    successCount++;
+//                } catch (Exception e) {
+//                    if(!reloading)
+//                        Bukkit.getLogger().warning("[Recipes] ✗ Failed to "+register_mode+" recipe: " + key + " - " + e.getMessage());
+//                    failCount++;
+//                }
+//            }
+//        }
 
         try {
             ShapedRecipe shapedRecipe = new ShapedRecipe(NamespacedKey.minecraft("rail"), new ItemStack(Material.RAIL).add(64));
@@ -104,7 +103,8 @@ public class Recipes {
             );
             shapedRecipe.setIngredient('I', Material.IRON_INGOT);
             shapedRecipe.setIngredient('S', Material.STICK);
-            Bukkit.removeRecipe(NamespacedKey.minecraft("rail"));
+
+//            Bukkit.removeRecipe(NamespacedKey.minecraft("rail"));
             Bukkit.addRecipe(shapedRecipe);
             Bukkit.getLogger().info("[Recipes] ✓ "+register_mode+" modified recipe: minecraft:rail");
             successCount++;

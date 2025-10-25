@@ -80,8 +80,7 @@ public class DebugListenCommand extends BaseCommand implements Listener {
                 "<white>/debug reset</white>\n"+
                         "<gray>"+"Resets all global debug settings"+"</gray>"
         );
-        sender.sendMessage(Debug.TITLE + WHITE + "/debug on <debug_channel> "
-                +GRAY+"registers you to a specific channel");
+        sender.sendMessage(Debug.TITLE + WHITE + "basically just /debug on to listen to all debug channels - ask alec how to use until this cmd is finished");
     }
 
     public static void registerCompletions(PaperCommandManager manager) {

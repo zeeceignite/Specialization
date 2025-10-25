@@ -34,6 +34,23 @@ public class Debug {
     private Map<Player, List<String>> listening_channels = new HashMap<Player, List<String>>(); //used specifically for tab completion
     private List<String> debug_channels = new ArrayList<String>(); //used by command suggestions
 
+
+    public Debug(){
+        setupDefaultChannels();
+    }
+
+    /**
+     * Establishes known/global default values.
+     * If adding a new channel, specify it here.
+     */
+    private void setupDefaultChannels() {
+        getOrCreateChannelPlayerSet("recipes", true);
+        getOrCreateChannelPlayerSet("xp", true);
+        getOrCreateChannelPlayerSet("damage", true);
+        getOrCreateChannelPlayerSet("chat", true);
+        getOrCreateChannelPlayerSet("levelup", true);
+    }
+
     /**
      * returns if a player is listening to a specific debug channel
      * useful for quickly determining if a debug message should even be built
@@ -71,6 +88,7 @@ public class Debug {
         debug.debug_listening = new HashMap<String, Set<Player>>();
         debug.listening_channels = new HashMap<Player, List<String>>();
         debug.debug_channels = new ArrayList<String>();
+        debug.setupDefaultChannels();
         Specialization.getInstance().getLogger().info("Debug Cache Globally Reset by "+commander.getName());
     }
 
@@ -81,7 +99,7 @@ public class Debug {
         if (!player.hasPermission("specialization.debug")) {
             return;
         }
-        Set<Player> player_set = getOrCreatePlayerSet(debug_channel, false);
+        Set<Player> player_set = getOrCreateChannelPlayerSet(debug_channel, false);
         player_set.add(player);
         listening_channels.computeIfAbsent(player, p -> new ArrayList<String>()).add(debug_channel);
     }
@@ -91,7 +109,7 @@ public class Debug {
      */
     public void unregisterPlayerChannel(Player player, String debug_channel){
         debug_channel = debug_channel.toLowerCase();
-        Set<Player> player_set = getOrCreatePlayerSet(debug_channel, false);
+        Set<Player> player_set = getOrCreateChannelPlayerSet(debug_channel, false);
         player_set.remove(player);
         listening_channels.computeIfAbsent(player, p -> new ArrayList<String>()).remove(debug_channel);
     }
@@ -108,7 +126,7 @@ public class Debug {
         }
     }
 
-    private Set<Player> getOrCreatePlayerSet(String debug_channel, boolean add_to_suggestions){
+    private Set<Player> getOrCreateChannelPlayerSet(String debug_channel, boolean add_to_suggestions){
         debug_channel = debug_channel.toLowerCase();
         Set<Player> player_set;
 
@@ -162,7 +180,7 @@ public class Debug {
 
     private static void broadcastFinalize(String debug_channel, Component comp, boolean register_channel) {
         debug_channel = debug_channel.toLowerCase();
-        for(Player player : getInstance().getOrCreatePlayerSet(debug_channel, register_channel)){
+        for(Player player : getInstance().getOrCreateChannelPlayerSet(debug_channel, register_channel)){
             player.sendMessage(comp);
         }
     }
@@ -182,7 +200,7 @@ public class Debug {
     public static void message(Player player, String debug_channel, String msg, String hover_details){
         Debug debug = getInstance();
         Component comp = debug.formatDebugMessageDefault(debug_channel, msg, hover_details);
-        if(debug.getOrCreatePlayerSet(debug_channel, false).contains(player)){
+        if(debug.getOrCreateChannelPlayerSet(debug_channel, false).contains(player)){
             player.sendMessage(comp);
         }
     }
@@ -195,7 +213,7 @@ public class Debug {
         if(hover!=null){
             msg = msg.hoverEvent(HoverEvent.showText(hover));
         }
-        if(debug.getOrCreatePlayerSet(debug_channel, false).contains(player)){
+        if(debug.getOrCreateChannelPlayerSet(debug_channel, false).contains(player)){
             player.sendMessage(getPrefix(debug_channel).append(msg));
         }
     }

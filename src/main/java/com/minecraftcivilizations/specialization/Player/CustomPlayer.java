@@ -7,6 +7,7 @@ import com.minecraftcivilizations.specialization.Listener.Player.XpGainMonitor;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.LoreUtils;
 import lombok.Data;
@@ -142,13 +143,18 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
         // Debug XP if applicable
         if (Debug.isListeningToChannel(player, "xp")){
-            Debug.message(player, "xp",
-                    MiniMessage.miniMessage().deserialize(player.getName()+" xp: ")
-                            .append(simple_xp_msg)
-                            .append(Component.space())
-                            .append(Debug.formatLocationClickable(player.getLocation(), true)),
-                    null
-            );
+            try {
+                Debug.message(player, "xp",
+                        MiniMessage.miniMessage().deserialize(player.getName() + " xp: ")
+                                .append(simple_xp_msg)
+                                .append(Component.space())
+                                .append(Debug.formatLocationClickable(player.getLocation(), true)),
+                        null
+                );
+            }catch(Exception e){
+                e.printStackTrace();
+                Specialization.getInstance().getLogger().info("BAD DEBUG in CustomPlayer.java");
+            }
         }
         player.sendActionBar(simple_xp_msg);
         int currentLevel = this.getSkillLevel(skillType);
@@ -168,12 +174,14 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
         if (previousLevel != currentLevel) {
             applyEffects();
+            String skill_name = SkillType.getDisplayName(skillType);
             if (previousLevel < currentLevel) {
                 player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 100, 1);
-                player.sendMessage(LoreUtils.createLoreLine("You have leveled up " + SkillType.getDisplayName(skillType) + ", you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
+                player.sendMessage(LoreUtils.createLoreLine("You have leveled up " + skill_name + ", you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
+                Debug.broadcast("levelup", player.getName()+" leveled up "+skill_name);
             } else {
                 player.playSound(player, Sound.ITEM_BOTTLE_FILL_DRAGONBREATH, 100F, 1.5F);
-                player.sendMessage(LoreUtils.createLoreLine("Your " + SkillType.getDisplayName(skillType) + "ing ability has deteriorated, you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
+                player.sendMessage(LoreUtils.createLoreLine("Your " + skill_name + "ing ability has deteriorated, you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
             }
             while (currentLevel > 0) {
                 Set<NamespacedKey> recipes =
@@ -201,7 +209,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
                 }
                 if(player.getActivePotionEffects().stream().noneMatch(effect -> effect.getType().equals(potionEffectType) && effect.getAmplifier() > dataEffect.secondValue())){
                     player.removePotionEffect(potionEffectType);
-                    player.addPotionEffect(new PotionEffect(potionEffectType,-1, dataEffect.secondValue()));
+                    player.addPotionEffect(new PotionEffect(potionEffectType,-1, dataEffect.secondValue(), false, true, true));
                 }
             }
         });

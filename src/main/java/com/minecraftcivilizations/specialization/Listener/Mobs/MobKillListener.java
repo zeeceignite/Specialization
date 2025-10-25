@@ -5,11 +5,13 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -59,24 +61,30 @@ public class MobKillListener implements Listener {
         Skill bestSkill = customPlayer.getSkills().stream()
                 .max(Comparator.comparingDouble(Skill::getXp))
                 .orElse(null);
-        
-        // If player has no skills or their main class is Guardsman, no damage reduction
-        if (bestSkill == null || bestSkill.getSkillType() == SkillType.GUARDSMAN) {
-            if(Debug.isAnyoneListening("damage", true)) {
-                Debug.broadcast(
-                        "damage",
-                        "[IsGuardMan] "+ChatColor.GRAY+"Damage: " + ChatColor.WHITE+
-                                ((double)(Math.round(event.getDamage()*100))/100)+
-                                (event.isCritical()? ChatColor.GREEN+" (CRIT!)":""),
-                        "Original Damage: "+((double)(Math.round(event.getDamage()*100))/100));
-            }
-            return;
-        }
-        
+
+        Entity victim = event.getEntity();
+
+
+        //get effect level of guardsman
+
+//        Specialization.getInstance().info(customPlayer.getSkillLevel(SkillType.GUARDSMAN));
+
+
+        //blessed food unstackable
+        //customPlayer.getSkillLevel(SkillType.GUARDSMAN))
+        //weighted armor
+        //
+
+        int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
+        double reduction = 0.5 + ((double)lvl/10);
+
+//        reduction = 1;
+        String reduction_msg = ChatColor.GOLD+" (x"+reduction+")";
+
         // Apply damage reduction for non-Guardsman players attacking mobs
-        double damageReduction = SpecializationConfig.getGuardsmanConfig().get("NON_GUARDSMAN_DAMAGE_REDUCTION", Double.class);
+//        double damageReduction = SpecializationConfig.getGuardsmanConfig().get("NON_GUARDSMAN_DAMAGE_REDUCTION", Double.class);
         double currentDamage = event.getFinalDamage();
-        double reducedDamage = currentDamage * (1.0 - damageReduction);
+        double reducedDamage = currentDamage * reduction;
         
         event.setDamage(reducedDamage);
 
@@ -85,10 +93,15 @@ public class MobKillListener implements Listener {
         if(Debug.isAnyoneListening("damage", true)) {
             Debug.broadcast(
                     "damage",
-                    "[Reduced:NotGuardsman] "+ChatColor.GRAY+"Damage: " + ChatColor.WHITE+
+                    victim.getName()+ChatColor.GRAY+" took damage: " + ChatColor.RED+
                             ((double)(Math.round(reducedDamage*100))/100)+
-                            (event.isCritical()? ChatColor.GREEN+" (CRIT!)":""),
-                    "Original Damage: "+((double)(Math.round(currentDamage*100))/100));
+                            (event.isCritical()? ChatColor.GREEN+" (CRIT!)":"")+
+                            (reduction_msg),
+                    "Original Damage: "+((double)(Math.round(currentDamage*100))/100)+"\n"+
+                        "["+damager.getName()+" is GuardMan lvl "+lvl+"]"+"\n"+
+                                "Attacker: "+damager.getName()
+//                            ChatColor.RED+"Attacker: "+ChatColor.WHITE+damager.getName()
+            );
         }
     }
 }

@@ -4,6 +4,7 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -21,7 +22,6 @@ public class ArmorDamageReductionListener implements Listener {
         if (!SpecializationConfig.getArmorDamageReductionConfig().get("ENABLED", Boolean.class)) {
             return;
         }
-
         
         // Only apply damage reduction to players being damaged by mobs
         if (!(event.getEntity() instanceof Player)) {
@@ -67,6 +67,8 @@ public class ArmorDamageReductionListener implements Listener {
             totalDamageReduction += bootsReduction;
         }
 
+        Entity victim = event.getEntity();
+
         // Apply damage reduction with configured cap - ONLY if there's actually reduction to apply
         if (totalDamageReduction > 0) {
             double maxReduction = SpecializationConfig.getArmorDamageReductionConfig().get("MAX_TOTAL_REDUCTION", Double.class);
@@ -79,20 +81,22 @@ public class ArmorDamageReductionListener implements Listener {
             if(Debug.isAnyoneListening("damage", true)) {
                 Debug.broadcast(
                         "damage",
-                        "[ArmorReduce] "+ ChatColor.GRAY+"reducedDamage: " + ChatColor.WHITE+
+                        victim.getName()+ ChatColor.GRAY+" took "+ ChatColor.RED+"REDUCED"+ChatColor.WHITE+" damage: " + ChatColor.WHITE+
                                 ((double)(Math.round(event.getDamage()*100))/100)+
                                 ChatColor.RED+"[REDUCED]"+
                                 (event.isCritical()? ChatColor.GREEN+" (CRIT!)":""),
-                        "Original damage: "+event.getDamage());
+                        "Original damage: "+event.getDamage()+"\n"+
+                        "[Armor Reduced Damage]");
             }
         }else{
             if(Debug.isAnyoneListening("damage", true)) {
                 Debug.broadcast(
                         "damage",
-                        "[ArmorReduce] "+ ChatColor.GRAY+"reducedDamage: " + ChatColor.WHITE+
+                        victim.getName()+" "+ ChatColor.GRAY+" was damaged: " + ChatColor.WHITE+
                                 ((double)(Math.round(event.getDamage()*100))/100)+
                                 (event.isCritical()? ChatColor.GREEN+" (CRIT!)":""),
-                        "Original damage: "+event.getDamage());
+                        "Original damage: "+event.getDamage()
+                );
             }
         }
         // DO NOT call setDamage() when totalDamageReduction is 0 - this was causing the bug

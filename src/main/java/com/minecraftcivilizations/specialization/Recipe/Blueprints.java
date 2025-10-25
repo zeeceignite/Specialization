@@ -28,7 +28,8 @@ public class Blueprints {
     public static void init(){
         registerBlueprintItems();
         registerBlueprintRecipes(false);
-        startPeriodicBlueprintRefresh();
+//        startPeriodicBlueprintRefresh(); we shouldn't need this anymore. only use if troubleshooting
+        // October 25: Culprit was Recipes.java "minecraft:rail"
     }
 
     private static void registerBlueprintItems(){
