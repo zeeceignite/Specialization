@@ -99,9 +99,9 @@ public class ReinforcementManager {
 
                             int batchSize = list.size() > 25 ? 3 : 1; // batch 3 if >25 reinforced blocks
                             for (int i = 0; i < batchSize; i++) {
+                                index = (index + 1) % list.size();
                                 Reinforcement r = list.get(index);
                                 spawnParticle(player, r);
-                                index = (index + 1) % list.size();
                             }
 
                             chunkIndices.put(chunk, index);
@@ -124,29 +124,33 @@ public class ReinforcementManager {
         Location base = b.getLocation().add(0.5, 0.5, 0.5);
 
         double offset = 0.55;
+            double random_a = Math.random()*0.33;
+            double random_b = Math.random()*0.33;
         Vector[] dirs = {
-                new Vector(offset, 0, 0),
-                new Vector(-offset, 0, 0),
-                new Vector(0, offset, 0),
-                new Vector(0, -offset, 0),
-                new Vector(0, 0, offset),
-                new Vector(0, 0, -offset)
+                new Vector(offset, random_a, random_b),
+                new Vector(-offset, random_b, random_a),
+                new Vector(random_a, offset, random_b),
+                new Vector(random_b, -offset, random_a),
+                new Vector(random_a, random_b, offset),
+                new Vector(random_b, random_a, -offset)
         };
 
         Particle.DustOptions dust = r.isHeavy() ? new Particle.DustOptions(Color.fromRGB(150,150, 150), 1.6f)
                 : new Particle.DustOptions(Color.fromRGB(250,150, 100), 1.0f);
 
+
+
         for (Vector v : dirs) {
-            Location loc = base.clone().add(v)
-                    .add(Math.random() * 0.1 - 0.05, Math.random() * 0.1 - 0.05, Math.random() * 0.1 - 0.05);
-            double velX = (Math.random() - 0.5) * 0.02;
-            double velY = (Math.random() - 0.5) * 0.02;
-            double velZ = (Math.random() - 0.5) * 0.02;
+            Location loc = base.clone().add(v);
+//                    .add(Math.random() * 0.1 - 0.05, Math.random() * 0.1 - 0.05, Math.random() * 0.1 - 0.05);
+//            double velX = (Math.random() - 0.5) * 0.02;
+//            double velY = (Math.random() - 0.5) * 0.02;
+//            double velZ = (Math.random() - 0.5) * 0.02;
 
 
 
             // REDSTONE particle with no gravity and slight drift
-            player.spawnParticle(Particle.DUST, loc, 1, velX, velY, velZ, 0, dust, true);
+            player.spawnParticle(Particle.DUST, loc, 1, 0, 0, 0, 0, dust, true);
         }
     }
 
