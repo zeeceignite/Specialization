@@ -20,60 +20,111 @@ public class ReinforcementManager {
     public static final NamespacedKey namespacedKey = new NamespacedKey(Specialization.getInstance(), "reinforcedBlocks");
 
     private static final Map<Vector, Long> lastTimeSpawnedParticle = new HashMap<>();
-    private static final long cooldown = 1000L;
-
-    // store per-chunk index for cycling through reinforced blocks
+    private static final Map<Chunk, Set<Reinforcement>> cachedReinforcements = new HashMap<>();
+    private static final Map<Chunk, Long> cacheTime = new HashMap<>();
     private static final Map<Chunk, Integer> chunkIndices = new HashMap<>();
 
-    //This runs a check on all loaded chunks. If the chunk has the namespace it will then
-    //Get the locations of the reinforced blocks and spawn 6 particles around the block. Iterating 1 block per check.
+    private static final long cooldown = 1000L; // per-block particle cooldown
+    private static final long CACHE_EXPIRE_MS = 2 * 60 * 1000L; // 2 minutes
+    private static final int CHUNK_RADIUS = 3; //scan radius around player to show particles
 
     // --------------------- PARTICLE STREAMING ---------------------
     public static void startReinforcement() {
+
+        // --- Player scan every 3 seconds ---
         new BukkitRunnable() {
             @Override
             public void run() {
-                for (World world : Bukkit.getWorlds()) {
-                    for (Chunk chunk : world.getLoadedChunks()) {
-                        // Early exit if chunk has no reinforced blocks
-                        if (!chunk.getPersistentDataContainer().has(namespacedKey)) continue;
+                long now = System.currentTimeMillis();
+                Iterator<Map.Entry<Chunk, Long>> it = cacheTime.entrySet().iterator();
 
-                        Set<Reinforcement> reinforcedSet = getReinforcedBlocks(chunk);
-                        if (reinforcedSet == null || reinforcedSet.isEmpty()) continue;
+                // Clean old cache
+                while (it.hasNext()) {
+                    Map.Entry<Chunk, Long> e = it.next();
+                    if (now - e.getValue() > CACHE_EXPIRE_MS) {
+                        cachedReinforcements.remove(e.getKey());
+                        chunkIndices.remove(e.getKey());
+                        it.remove();
+                    }
+                }
 
-                        // Convert to list for indexed access
-                        List<Reinforcement> reinforcedBlocks = new ArrayList<>(reinforcedSet);
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    if (!isHoldingReinforcementItem(player)) continue;
 
-                        // Get current index for this chunk
-                        int index = chunkIndices.getOrDefault(chunk, 0);
-                        if (index >= reinforcedBlocks.size()) index = 0;
+                    Chunk playerChunk = player.getLocation().getChunk();
+                    World world = player.getWorld();
 
-                        // Get block to show particle for
-                        Reinforcement r = reinforcedBlocks.get(index);
+                    for (int dx = -CHUNK_RADIUS; dx <= CHUNK_RADIUS; dx++) {
+                        for (int dz = -CHUNK_RADIUS; dz <= CHUNK_RADIUS; dz++) {
+                            int cx = playerChunk.getX() + dx;
+                            int cz = playerChunk.getZ() + dz;
+                            Chunk chunk = world.getChunkAt(cx, cz);
 
-                        // Show particle to all players currently seeing this chunk
-                        for (Player player : chunk.getPlayersSeeingChunk()) {
-                            spawnParticle(player, r);
+                            if (!cachedReinforcements.containsKey(chunk)) {
+                                Set<Reinforcement> set = getReinforcedBlocks(chunk);
+                                if (set != null && !set.isEmpty()) {
+                                    cachedReinforcements.put(chunk, set);
+                                    cacheTime.put(chunk, now);
+                                }
+                            } else {
+                                cacheTime.put(chunk, now); // refresh cache activity
+                            }
                         }
+                    }
+                }
+            }
+        }.runTaskTimerAsynchronously(Specialization.getInstance(), 0L, 60L); // every 3 seconds (60 ticks)
 
-                        // Update index for next tick
-                        chunkIndices.put(chunk, (index + 1) % reinforcedBlocks.size());
+        // --- Particle update every tick ---
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    if (!isHoldingReinforcementItem(player)) continue;
+
+                    Chunk baseChunk = player.getLocation().getChunk();
+                    World world = player.getWorld();
+
+                    for (int dx = -CHUNK_RADIUS; dx <= CHUNK_RADIUS; dx++) {
+                        for (int dz = -CHUNK_RADIUS; dz <= CHUNK_RADIUS; dz++) {
+                            int cx = baseChunk.getX() + dx;
+                            int cz = baseChunk.getZ() + dz;
+                            Chunk chunk = world.getChunkAt(cx, cz);
+
+                            Set<Reinforcement> set = cachedReinforcements.get(chunk);
+                            if (set == null || set.isEmpty()) continue;
+
+                            List<Reinforcement> list = new ArrayList<>(set);
+                            int index = chunkIndices.getOrDefault(chunk, 0);
+
+                            int batchSize = list.size() > 25 ? 3 : 1; // batch 3 if >25 reinforced blocks
+                            for (int i = 0; i < batchSize; i++) {
+                                Reinforcement r = list.get(index);
+                                spawnParticle(player, r);
+                                index = (index + 1) % list.size();
+                            }
+
+                            chunkIndices.put(chunk, index);
+                        }
                     }
                 }
             }
         }.runTaskTimer(Specialization.getInstance(), 0L, 1L); // every tick
     }
 
-    private static void spawnParticle(Player player, Reinforcement r) {
+        private static void spawnParticle(Player player, Reinforcement r) {
         long now = System.currentTimeMillis();
-        Long last = lastTimeSpawnedParticle.get(r.location());
-        if (last != null && now - last < cooldown) return;
+        synchronized (lastTimeSpawnedParticle) {
+            Long last = lastTimeSpawnedParticle.get(r.location());
+            if (last != null && now - last < cooldown) return;
+            lastTimeSpawnedParticle.put(r.location(), now);
+        }
 
         Block b = player.getWorld().getBlockAt(r.location().getBlockX(), r.location().getBlockY(), r.location().getBlockZ());
         Location base = b.getLocation().add(0.5, 0.5, 0.5);
 
         double offset = 0.55;
-        Vector[] directions = new Vector[]{
+        Vector[] dirs = {
                 new Vector(offset, 0, 0),
                 new Vector(-offset, 0, 0),
                 new Vector(0, offset, 0),
@@ -82,14 +133,33 @@ public class ReinforcementManager {
                 new Vector(0, 0, -offset)
         };
 
-        for (Vector v : directions) {
+        Particle.DustOptions dust = r.isHeavy() ? new Particle.DustOptions(Color.fromRGB(150,150, 150), 1.6f)
+                : new Particle.DustOptions(Color.fromRGB(250,150, 100), 1.0f);
+
+        for (Vector v : dirs) {
             Location loc = base.clone().add(v)
                     .add(Math.random() * 0.1 - 0.05, Math.random() * 0.1 - 0.05, Math.random() * 0.1 - 0.05);
-            player.spawnParticle(Particle.CRIT, loc, 1, 0, 0, 0, 0);
-        }
+            double velX = (Math.random() - 0.5) * 0.02;
+            double velY = (Math.random() - 0.5) * 0.02;
+            double velZ = (Math.random() - 0.5) * 0.02;
 
-        lastTimeSpawnedParticle.put(r.location(), now);
+
+
+            // REDSTONE particle with no gravity and slight drift
+            player.spawnParticle(Particle.DUST, loc, 1, velX, velY, velZ, 0, dust, true);
+        }
     }
+
+
+
+    // --------------------- ITEM CHECK ---------------------
+    private static boolean isHoldingReinforcementItem(Player player) {
+        if (player == null) return false;
+        player.getInventory().getItemInMainHand();
+        Material type = player.getInventory().getItemInMainHand().getType();
+        return type == Material.IRON_INGOT || type == Material.COPPER_INGOT;
+    }
+
 
     // --------------------- REINFORCEMENT METHODS ---------------------
     public static boolean addReinforcement(Player player, Block block, boolean isHeavy) {
@@ -102,6 +172,8 @@ public class ReinforcementManager {
         if (!blocks.add(new Reinforcement(block.getLocation().toVector(), isHeavy))) return false;
 
         chunk.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, new Gson().toJson(blocks));
+        cachedReinforcements.put(chunk, blocks);
+        cacheTime.put(chunk, System.currentTimeMillis());
 
         Player target = player != null ? player : block.getWorld().getNearbyPlayers(block.getLocation(), 4.0)
                 .stream().findFirst().orElse(null);
@@ -123,6 +195,8 @@ public class ReinforcementManager {
         if (r == null) r = new HashSet<>();
         if (!r.add(new Reinforcement(b.getLocation().toVector(), h))) return false;
         c.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, new Gson().toJson(r));
+        cachedReinforcements.put(c, r);
+        cacheTime.put(c, System.currentTimeMillis());
         return true;
     }
 
@@ -133,6 +207,8 @@ public class ReinforcementManager {
         reinforcedBlocks.remove(new Reinforcement(block.getLocation().toVector(), false));
         reinforcedBlocks.remove(new Reinforcement(block.getLocation().toVector(), true));
         chunk.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, new Gson().toJson(reinforcedBlocks));
+        cachedReinforcements.put(chunk, reinforcedBlocks);
+        cacheTime.put(chunk, System.currentTimeMillis());
     }
 
     public static boolean isReinforced(Block block) {
@@ -163,9 +239,17 @@ public class ReinforcementManager {
     }
 
     private static Set<Reinforcement> getReinforcedBlocks(Chunk chunk) {
+        if (cachedReinforcements.containsKey(chunk)) {
+            cacheTime.put(chunk, System.currentTimeMillis());
+            return cachedReinforcements.get(chunk);
+        }
         if (!chunk.getPersistentDataContainer().has(namespacedKey)) return null;
         String s = chunk.getPersistentDataContainer().get(namespacedKey, PersistentDataType.STRING);
-        return new Gson().fromJson(s, new TypeToken<Set<Reinforcement>>() {
-        }.getType());
+        Set<Reinforcement> set = new Gson().fromJson(s, new TypeToken<Set<Reinforcement>>() {}.getType());
+        if (set != null && !set.isEmpty()) {
+            cachedReinforcements.put(chunk, set);
+            cacheTime.put(chunk, System.currentTimeMillis());
+        }
+        return set;
     }
 }
