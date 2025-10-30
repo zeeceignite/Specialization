@@ -18,7 +18,6 @@ import com.minecraftcivilizations.specialization.Distance.TownManager;
 import com.minecraftcivilizations.specialization.Listener.BurnListener;
 import com.minecraftcivilizations.specialization.Listener.Blocks.ReinforcementProtectionListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.ExplodeListener;
-import com.minecraftcivilizations.specialization.Listener.Mobs.MobKillListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.MobListeners;
 import com.minecraftcivilizations.specialization.Listener.Player.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.BreakBlockListener;
@@ -80,23 +79,16 @@ public final class Specialization extends JavaPlugin {
     private LocalNameGenerator localNameGenerator;
     private Debug debug;
 
+    private CombatManager combatManager;
+
     SmartEntityManager smart_entity_manager;
+
 
     @Override
     public void onEnable() {
         logger = getLogger();
 
-        com.minecraftcivilizations.specialization.StaffTools.HotswapInspector.inspect(
-                com.minecraftcivilizations.specialization.StaffTools.Debug.class,
-                Path.of("C:/Users/alect/design/games/minecraft/specialization_dev/Specialization/build/classes/java/main/com/minecraftcivilizations/specialization/StaffTools/Debug.class")
-        );
-        getLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        getLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        getLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        getLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        getLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-
-        debug = new Debug();
+        debug = new Debug(this);
         saveResource("first_names.txt", false);
         saveResource("last_names.txt", false);
         SpecializationConfig.initialize();
@@ -118,8 +110,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
         getServer().getPluginManager().registerEvents(new FishingListener(), this);
-        getServer().getPluginManager().registerEvents(new MobKillListener(), this); // Mob Damage + Guardsman XP
-        new CombatManager(this); // Guardsman Damage Output
+        combatManager = new CombatManager(this); // Guardsman Damage Output
         new FoodInteractionListener(this);
         getServer().getPluginManager().registerEvents(new HungerSystemListener(this), this);
         getServer().getPluginManager().registerEvents(new LeashListener(), this);
@@ -136,8 +127,6 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CrossBowListener(), this);
         getServer().getPluginManager().registerEvents(new LocalChat(), this);
         getServer().getPluginManager().registerEvents(new MobListeners(), this);
-        getServer().getPluginManager().registerEvents(new Berserk(), this);
-        getServer().getPluginManager().registerEvents(new ArmorDamageReductionListener(), this);
         getServer().getPluginManager().registerEvents(new PatDown(), this);
         getServer().getPluginManager().registerEvents(new XpTransferBookListener(), this);
 

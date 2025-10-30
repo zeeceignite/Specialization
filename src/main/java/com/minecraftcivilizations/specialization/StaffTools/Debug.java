@@ -10,8 +10,12 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.jetbrains.annotations.NotNull;
 
+import java.text.DecimalFormat;
 import java.util.*;
 
 /**
@@ -19,8 +23,7 @@ import java.util.*;
  * Please use it when trying to debug things.
  * see: DebugListenCommand.java for commands
  */
-public class Debug {
-
+public class Debug implements Listener {
 
     public static String TITLE = ChatColor.DARK_GRAY + "[debug]";
     /**
@@ -35,8 +38,14 @@ public class Debug {
     private List<String> debug_channels = new ArrayList<String>(); //used by command suggestions
 
 
-    public Debug(){
+    public Debug(Specialization plugin){
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
         setupDefaultChannels();
+    }
+
+    @EventHandler
+    public void onLogout(PlayerQuitEvent event){
+        unregisterPlayerToAllChannels(event.getPlayer());
     }
 
     /**
@@ -296,6 +305,16 @@ public class Debug {
             c = formatLocationColored(location);
         }
         return c.clickEvent(ClickEvent.suggestCommand("/tp "+location.getBlockX()+" "+location.getBlockY()+" "+location.getBlockZ()));
+    }
+
+
+    private static DecimalFormat decimal_format = new DecimalFormat("#.##");
+
+    /**
+     * Helper for formatting decimals
+     */
+    public static String formatDecimal(double d){
+        return decimal_format.format(d);
     }
 
 

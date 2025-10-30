@@ -1,28 +1,32 @@
 package com.minecraftcivilizations.specialization.Listener.Player.Combat;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
-import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Config.ConfigFile;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
-public class ArmorDamageReductionListener implements Listener {
+public class ArmorDamageReduction {
 
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
+    CombatManager combatManager;
+    public ArmorDamageReduction(CombatManager combatManager) {
+        this.combatManager = combatManager;
+    }
+
+    /**
+     * Reduce Damage taken by Mobs
+     */
+    public void applyArmorReduction(EntityDamageByEntityEvent event) {
         // Check if the system is enabled
         if (!SpecializationConfig.getArmorDamageReductionConfig().get("ENABLED", Boolean.class)) {
             return;
         }
-        
+
         // Only apply damage reduction to players being damaged by mobs
         if (!(event.getEntity() instanceof Player)) {
             return;
@@ -117,24 +121,47 @@ public class ArmorDamageReductionListener implements Listener {
      * Get the material multiplier for an armor piece
      */
     private double getMaterialMultiplier(ItemStack armor) {
-        String materialName = armor.getType().name();
-        
-        if (materialName.startsWith("LEATHER_")) {
-            return SpecializationConfig.getArmorDamageReductionConfig().get("LEATHER_MULTIPLIER", Double.class);
-        } else if (materialName.startsWith("CHAINMAIL_")) {
-            return SpecializationConfig.getArmorDamageReductionConfig().get("CHAINMAIL_MULTIPLIER", Double.class);
-        } else if (materialName.startsWith("IRON_")) {
-            return SpecializationConfig.getArmorDamageReductionConfig().get("IRON_MULTIPLIER", Double.class);
-        } else if (materialName.startsWith("DIAMOND_")) {
-            return SpecializationConfig.getArmorDamageReductionConfig().get("DIAMOND_MULTIPLIER", Double.class);
-        } else if (materialName.startsWith("GOLDEN_")) {
-            return SpecializationConfig.getArmorDamageReductionConfig().get("GOLDEN_MULTIPLIER", Double.class);
-        } else if (materialName.startsWith("NETHERITE_")) {
-            return SpecializationConfig.getArmorDamageReductionConfig().get("NETHERITE_MULTIPLIER", Double.class);
+        ConfigFile cfg = SpecializationConfig.getArmorDamageReductionConfig();
+        switch (armor.getType()) {
+            case DIAMOND_BOOTS:
+            case DIAMOND_CHESTPLATE:
+            case DIAMOND_LEGGINGS:
+            case DIAMOND_HELMET:
+                return cfg("DIAMOND_MULTIPLIER");
+            case IRON_BOOTS:
+            case IRON_CHESTPLATE:
+            case IRON_LEGGINGS:
+            case IRON_HELMET:
+                return cfg("IRON_MULTIPLIER");
+            case LEATHER_BOOTS:
+            case LEATHER_CHESTPLATE:
+            case LEATHER_LEGGINGS:
+            case LEATHER_HELMET:
+                return cfg("LEATHER_MULTIPLIER");
+            case CHAINMAIL_BOOTS:
+            case CHAINMAIL_CHESTPLATE:
+            case CHAINMAIL_LEGGINGS:
+            case CHAINMAIL_HELMET:
+                return cfg("CHAINMAIL_MULTIPLIER");
+            case GOLDEN_BOOTS:
+            case GOLDEN_CHESTPLATE:
+            case GOLDEN_LEGGINGS:
+            case GOLDEN_HELMET:
+                return cfg("GOLDEN_MULTIPLIER");
+            case NETHERITE_BOOTS:
+            case NETHERITE_CHESTPLATE:
+            case NETHERITE_LEGGINGS:
+            case NETHERITE_HELMET:
+                return cfg("NETHERITE_MULTIPLIER");
+            default:
+                // Default to iron multiplier for unknown materials
+                return cfg("IRON_MULTIPLIER");
         }
-        
-        // Default to iron multiplier for unknown materials
-        return SpecializationConfig.getArmorDamageReductionConfig().get("IRON_MULTIPLIER", Double.class);
+    }
+
+    //Grabs cfg
+    private double cfg(String key){
+        return SpecializationConfig.getArmorDamageReductionConfig().get(key, Double.class);
     }
     
     /**
