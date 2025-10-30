@@ -11,6 +11,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -19,6 +20,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -27,6 +29,16 @@ import java.util.Objects;
 import java.util.Random;
 
 public class FoodInteractionListener implements Listener {
+
+    Specialization plugin;
+
+    NamespacedKey BLESSED_FOOD_KEY;
+
+    public FoodInteractionListener(Specialization plugin){
+        this.plugin = plugin;
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        BLESSED_FOOD_KEY = new NamespacedKey(plugin, "BLESSED_FOOD");
+    }
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
@@ -157,7 +169,10 @@ public class FoodInteractionListener implements Listener {
                 Component.text("Healer Level: " + healerLevel).color(NamedTextColor.GRAY),
                 Component.text(effectSummary).color(NamedTextColor.GRAY)
         ));
-        item.setItemMeta(customItem.getItem().getItemMeta());
+        ItemMeta meta = customItem.getItem().getItemMeta();
+        meta.setEnchantmentGlintOverride(true); //glowing food
+        meta.getPersistentDataContainer().set(BLESSED_FOOD_KEY, PersistentDataType.BOOLEAN, true);
+        item.setItemMeta(meta);
     }
 
 
@@ -209,6 +224,8 @@ public class FoodInteractionListener implements Listener {
         }
 
 
+
+
         // Keep your existing “restore max health if below normal” behavior
         if (SpecializationConfig.getHealthConfig().get("HEALTH_ENABLED", Boolean.class)) {
             double currentMaxHealth = Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).getValue();
@@ -245,17 +262,20 @@ public class FoodInteractionListener implements Listener {
         return 0;
     }
 
+
+
     private boolean isBlessedFood(ItemStack item) {
         if (item == null || item.getItemMeta() == null) return false;
-        List<Component> lore = item.getItemMeta().lore();
-        if (lore == null) return false;
-        for (Component component : lore) {
-            if (component instanceof net.kyori.adventure.text.TextComponent) {
-                String content = ((net.kyori.adventure.text.TextComponent) component).content();
-                if ("Blessed Food".equals(content)) return true;
-            }
-        }
-        return false;
+        return item.getItemMeta().getPersistentDataContainer().has(BLESSED_FOOD_KEY, PersistentDataType.BOOLEAN);
+//        List<Component> lore = item.getItemMeta().lore();
+//        if (lore == null) return false;
+//        for (Component component : lore) {
+//            if (component instanceof net.kyori.adventure.text.TextComponent) {
+//                String content = ((net.kyori.adventure.text.TextComponent) component).content();
+//                if ("Blessed Food".equals(content)) return true;
+//            }
+//        }
+//        return false;
     }
 
     private String getItemName(ItemStack item) {

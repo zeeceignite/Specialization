@@ -24,10 +24,7 @@ import com.minecraftcivilizations.specialization.Listener.Player.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.BreakBlockListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.PlayerMineListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.PlaceBlockListener;
-import com.minecraftcivilizations.specialization.Listener.Player.Combat.ArmorDamageReductionListener;
-import com.minecraftcivilizations.specialization.Listener.Player.Combat.Berserk;
-import com.minecraftcivilizations.specialization.Listener.Player.Combat.CrossBowListener;
-import com.minecraftcivilizations.specialization.Listener.Player.Combat.PatDown;
+import com.minecraftcivilizations.specialization.Listener.Player.Combat.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.FoodInteractionListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.PlayerInteractEntityListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.PlayerInteractListener;
@@ -107,7 +104,7 @@ public final class Specialization extends JavaPlugin {
         // TODO PDC-xp-hotfix
         //  Skill.InitializeSkillKeys(this);
 
-        smart_entity_manager = new SmartEntityManager(this);
+        smart_entity_manager = new SmartEntityManager(this); //used for advanced particle systems
 
         setupCommands();
 
@@ -121,8 +118,9 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
         getServer().getPluginManager().registerEvents(new FishingListener(), this);
-        getServer().getPluginManager().registerEvents(new MobKillListener(), this);
-        getServer().getPluginManager().registerEvents(new FoodInteractionListener(), this);
+        getServer().getPluginManager().registerEvents(new MobKillListener(), this); // Mob Damage + Guardsman XP
+        new CombatManager(this); // Guardsman Damage Output
+        new FoodInteractionListener(this);
         getServer().getPluginManager().registerEvents(new HungerSystemListener(this), this);
         getServer().getPluginManager().registerEvents(new LeashListener(), this);
         getServer().getPluginManager().registerEvents(new BedListener(), this);

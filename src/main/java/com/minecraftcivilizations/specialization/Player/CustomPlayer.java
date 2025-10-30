@@ -3,6 +3,7 @@ package com.minecraftcivilizations.specialization.Player;
 import com.google.common.collect.Queues;
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Events.SkillLevelChangeEvent;
 import com.minecraftcivilizations.specialization.Listener.Player.XpGainMonitor;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
@@ -173,7 +174,9 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
 
         if (previousLevel != currentLevel) {
-            applyEffects();
+            SkillLevelChangeEvent level_change_event = new SkillLevelChangeEvent(this, player, skillType, previousLevel, currentLevel, xp);
+            Bukkit.getPluginManager().callEvent(level_change_event);
+//            applyEffects(); disabled for testing new combat
             String skill_name = SkillType.getDisplayName(skillType);
             if (previousLevel < currentLevel) {
                 player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 100, 1);
@@ -194,6 +197,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
         }
     }
+
 
     public void applyEffects(){
         Player player = Bukkit.getPlayer(getUuid());
@@ -232,7 +236,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         while (level < SkillLevel.values().length && !isMissingXpForLevel(skillType, level+1) && !isMissingPercentForLevel(skillType, level+1)) {
             level++;
         }
-        return level;
+        return Math.min(5, level); // prevents levels above 5
     }
 
 
@@ -370,4 +374,5 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         }
         return result;
     }
+
 }

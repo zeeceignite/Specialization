@@ -66,12 +66,12 @@ public class MobListeners implements Listener {
         double original_damage = event.getDamage();
         double damage = original_damage + cPlayer.getSkillLevel(SkillType.GUARDSMAN) * 2.5;
         event.setDamage(damage);
-        if(Debug.isAnyoneListening("damage", true)) {
-            Debug.broadcast(
-                    "damage",
-                    "[onPlayerAttackMob] New Damage: " + damage,
-                    "Original Damage: "+original_damage);
-        }
+//        if(Debug.isAnyoneListening("damage", true)) {
+//            Debug.broadcast(
+//                    "damage",
+//                    "[vs_mob] New Damage: " + damage,
+//                    "Original Damage: "+original_damage);
+//        }
     }
 
 }

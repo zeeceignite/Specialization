@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 
 @AllArgsConstructor
 public class Skill {
+
     @Getter
     @Setter
     private SkillType skillType;
@@ -16,6 +17,10 @@ public class Skill {
     private long lastUpdate;
 
 
+
+    /**
+     * This should be pre-cached per level <= max_level
+     */
     public static double getXPNeededForLevel(int level) {
         return Math.floor(1.8 * (25 * Math.pow(level, 2) + (5 * level) + (200 * Math.pow(2.45, level))) - 300);
     }
