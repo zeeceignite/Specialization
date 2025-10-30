@@ -17,8 +17,7 @@ public class PlayerUtil {
         int total = getExp(player);
         if (total < xp_amount) return false;
 
-        total -= xp_amount;
-        changeExp(player, total);
+        changeExp(player, -xp_amount);
 //        setTotalXp(player, total);
         return true;
     }

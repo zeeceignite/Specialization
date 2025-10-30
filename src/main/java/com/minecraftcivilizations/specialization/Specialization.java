@@ -36,6 +36,7 @@ import com.minecraftcivilizations.specialization.Listener.Player.Interactions.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Inventories.CraftingListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Inventories.FurnaceListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Inventories.StonecutterListener;
+import com.minecraftcivilizations.specialization.Listener.RepairingListener;
 import com.minecraftcivilizations.specialization.Listener.XpTransferBookListener;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Player.LocalNameGenerator;
@@ -89,16 +90,6 @@ public final class Specialization extends JavaPlugin {
     public void onEnable() {
         logger = getLogger();
 
-        com.minecraftcivilizations.specialization.StaffTools.HotswapInspector.inspect(
-                com.minecraftcivilizations.specialization.StaffTools.Debug.class,
-                Path.of("C:/Users/alect/design/games/minecraft/specialization_dev/Specialization/build/classes/java/main/com/minecraftcivilizations/specialization/StaffTools/Debug.class")
-        );
-        getLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        getLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        getLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        getLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        getLogger().info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-
         debug = new Debug();
         saveResource("first_names.txt", false);
         saveResource("last_names.txt", false);
@@ -142,7 +133,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ArmorDamageReductionListener(), this);
         getServer().getPluginManager().registerEvents(new PatDown(), this);
         getServer().getPluginManager().registerEvents(new XpTransferBookListener(), this);
-
+        getServer().getPluginManager().registerEvents(new RepairingListener(), this);
 
         //town data does not need to wait anymore
         TownManager.scanAllPlayersForTownsAsync();

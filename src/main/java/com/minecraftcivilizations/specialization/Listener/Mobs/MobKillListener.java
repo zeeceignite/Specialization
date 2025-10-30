@@ -26,7 +26,7 @@ import java.util.List;
 public class MobKillListener implements Listener {
 
     @EventHandler
-    public void GuardsmanKillListener(EntityDeathEvent e){
+    public void GuardsmanKillListener(EntityDeathEvent e) {
         if (e.getEntity().getKiller() != null) {
             Player player = e.getEntity().getKiller();
             assert player != null;
@@ -41,67 +41,69 @@ public class MobKillListener implements Listener {
         }
     }
 
-    public void addCustomDrops(EntityDeathEvent e){
-        List<NamespacedKey> items = SpecializationConfig.getMobDropsConfig().get(e.getEntityType(), new TypeToken<>() {});
+    public void addCustomDrops(EntityDeathEvent e) {
+        List<NamespacedKey> items = SpecializationConfig.getMobDropsConfig().get(e.getEntityType(), new TypeToken<>() {
+        });
         Material.matchMaterial(e.getEntityType().getKey().getKey());
 
     }
-
-    @EventHandler
-    public void GuardsmanDamageListener (EntityDamageByEntityEvent event) {
-        // Check if the damager is a player
-        if (!(event.getDamager() instanceof Player)) {
-            return;
-        }
-        
-        Player damager = (Player) event.getDamager();
-        CustomPlayer customPlayer = CoreUtil.getPlayer(damager);
-        
-        // Get the player's highest skill (main class)
-        Skill bestSkill = customPlayer.getSkills().stream()
-                .max(Comparator.comparingDouble(Skill::getXp))
-                .orElse(null);
-
-        Entity victim = event.getEntity();
-
-
-        //get effect level of guardsman
-
+}
+//
+//    @EventHandler
+//    public void GuardsmanDamageListener (EntityDamageByEntityEvent event) {
+//        // Check if the damager is a player
+//        if (!(event.getDamager() instanceof Player)) {
+//            return;
+//        }
+//
+//        Player damager = (Player) event.getDamager();
+//        CustomPlayer customPlayer = CoreUtil.getPlayer(damager);
+//
+//        // Get the player's highest skill (main class)
+//        Skill bestSkill = customPlayer.getSkills().stream()
+//                .max(Comparator.comparingDouble(Skill::getXp))
+//                .orElse(null);
+//
+//        Entity victim = event.getEntity();
+//
+//
+//        //get effect level of guardsman
+//
 //        Specialization.getInstance().info(customPlayer.getSkillLevel(SkillType.GUARDSMAN));
-
-
-        //blessed food unstackable
-        //customPlayer.getSkillLevel(SkillType.GUARDSMAN))
-        //weighted armor
-        //
-
-        int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
-        double reduction = 0.5 + ((double)lvl/10);
-
-//        reduction = 1;
-        String reduction_msg = ChatColor.GOLD+" (x"+reduction+")";
-
-        // Apply damage reduction for non-Guardsman players attacking mobs
-//        double damageReduction = SpecializationConfig.getGuardsmanConfig().get("NON_GUARDSMAN_DAMAGE_REDUCTION", Double.class);
-        double currentDamage = event.getFinalDamage();
-        double reducedDamage = currentDamage * reduction;
-        
-        event.setDamage(reducedDamage);
-
+//
+//
+//        //blessed food unstackable
+//        //customPlayer.getSkillLevel(SkillType.GUARDSMAN))
+//        //weighted armor
+//        //
+//
+//        int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
+//        double reduction = 0.5 + ((double)lvl/10);
+//
+//      reduction = 1;
+//        String reduction_msg = ChatColor.GOLD+" (x"+reduction+")";
+//
+//        // Apply damage reduction for non-Guardsman players attacking mobs
+//       double damageReduction = SpecializationConfig.getGuardsmanConfig().get("NON_GUARDSMAN_DAMAGE_REDUCTION", Double.class);
+//        double currentDamage = event.getFinalDamage();
+//        double reducedDamage = currentDamage * reduction;
+//
+//        event.setDamage(reducedDamage);
+//
 //        DecimalFormat df = new DecimalFormat("0.00");
 //        ;
-        if(Debug.isAnyoneListening("damage", true)) {
-            Debug.broadcast(
-                    "damage",
-                    victim.getName()+ChatColor.GRAY+" took damage: " + ChatColor.RED+
-                            ((double)(Math.round(reducedDamage*100))/100)+
-                            (event.isCritical()? ChatColor.GREEN+" (CRIT!)":"")+
-                            (reduction_msg),
-                    "Original Damage: "+((double)(Math.round(currentDamage*100))/100)+"\n"+
-                        "["+damager.getName()+" is GuardMan lvl "+lvl+"]"+"\n"+
-                                "Attacker: "+damager.getName()
+//        if(Debug.isAnyoneListening("damage", true)) {
+//            Debug.broadcast(
+//                    "damage",
+//                    victim.getName()+ChatColor.GRAY+" took damage: " + ChatColor.RED+
+//                            ((double)(Math.round(reducedDamage*100))/100)+
+//                            (event.isCritical()? ChatColor.GREEN+" (CRIT!)":"")+
+//                            (reduction_msg),
+//                    "Original Damage: "+((double)(Math.round(currentDamage*100))/100)+"\n"+
+//                        "["+damager.getName()+" is GuardMan lvl "+lvl+"]"+"\n"+
+//                                "Attacker: "+damager.getName()
 //                            ChatColor.RED+"Attacker: "+ChatColor.WHITE+damager.getName()
-            );
-        }
-    }
-}
+//            );
+//        }
+//    }
+//}
