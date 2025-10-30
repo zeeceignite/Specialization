@@ -2,18 +2,29 @@ package com.minecraftcivilizations.specialization.Player;
 
 import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class LocalNameGenerator {
+public class LocalNameGenerator implements Listener {
 
     private List<String> firstNames;
     private List<String> lastNames;
@@ -25,10 +36,24 @@ public class LocalNameGenerator {
     private static File fnFile;
     private static File lnFile;
 
+
+        private final Set<String> tempUsedNames = new HashSet<>();
+        private final Map<UUID, TempNameData> tempNames = new ConcurrentHashMap<>();
+
+        public static class TempNameData {
+            public String initialName;
+            public List<String> options;
+            public long expirationTime;
+            public boolean confirmed;
+        }
+
     /**
      * @throws IOException if either file can't be read
      */
-    public LocalNameGenerator() throws IOException {
+    public LocalNameGenerator(Specialization specialization) throws IOException {
+        if (specialization != null) {
+            specialization.getServer().getPluginManager().registerEvents(this, specialization);
+        }
         fnFile = new File(Specialization.getInstance().getDataFolder(), "first_names.txt");
         lnFile = new File(Specialization.getInstance().getDataFolder(), "last_names.txt");
         firstNames = new ArrayList<>();
@@ -577,6 +602,106 @@ public class LocalNameGenerator {
             if (groups == null || groups.isEmpty()) return null;
             return groups.get(new Random().nextInt(groups.size()));
         }
+    }
+
+
+    //------------------Temp name/optional names helpers---------------------//
+
+    /** Assign 1 main + 2 temporary names for a player */
+    public List<String> assignTempNames(UUID playerUUID) {
+        // Step 1: main name
+        String main = nextName();
+
+        // Step 2: 2 temporary options
+        List<String> tempOptions = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            String candidate;
+            do {
+                candidate = nextName(); // will throw if exhausted
+            } while (candidate.equals(main) || tempOptions.contains(candidate) || tempUsedNames.contains(candidate));
+            tempOptions.add(candidate);
+            tempUsedNames.add(candidate);
+        }
+
+        // Step 3: store in temp map
+        TempNameData data = new TempNameData();
+        data.initialName = main;
+        data.options = tempOptions;
+        data.expirationTime = System.currentTimeMillis() + 10 * 60 * 1000; // 10 minutes
+        data.confirmed = false;
+
+        tempNames.put(playerUUID, data);
+
+        List<String> result = new ArrayList<>();
+        result.add(main);
+        result.addAll(tempOptions);
+        return result;
+    }
+
+    /** Confirm player's choice */
+    public boolean confirmTempName(UUID uuid, String selected) {
+        TempNameData data = tempNames.get(uuid);
+        if (data == null || data.confirmed) return false;
+
+        if (!selected.equals(data.initialName) && !data.options.contains(selected)) return false;
+
+        // Reserve the chosen name permanently
+        usedNames.add(selected);
+
+        // Release unused temps
+        for (String temp : data.options) {
+            if (!temp.equals(selected)) tempUsedNames.remove(temp);
+        }
+
+        data.initialName = selected;
+        data.confirmed = true;
+        tempNames.remove(uuid);
+        return true;
+    }
+
+    /** Clean up expired temporary names */
+    public void cleanupExpiredTemps() {
+        long now = System.currentTimeMillis();
+        tempNames.entrySet().removeIf(entry -> {
+            TempNameData data = entry.getValue();
+            if (!data.confirmed && data.expirationTime <= now) {
+                for (String temp : data.options) tempUsedNames.remove(temp);
+                return true;
+            }
+            return false;
+        });
+    }
+
+
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+
+        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1, 1);
+
+        // Generate main + temp names
+        List<String> names = assignTempNames(uuid);
+
+        // Show main name
+        player.sendMessage(
+                Component.text("Your initial name is: ", NamedTextColor.GREEN)
+                        .append(Component.text(names.get(0), NamedTextColor.AQUA)
+                                .decoration(TextDecoration.ITALIC, false))
+        );
+
+        // Show clickable options
+        Component message = Component.text("Click to choose: ", NamedTextColor.YELLOW);
+        for (int i = 1; i < names.size(); i++) {
+            String temp = names.get(i);
+            message = message.append(Component.text(temp, NamedTextColor.GOLD)
+                    .hoverEvent(HoverEvent.showText(Component.text("Click to select " + temp)))
+                    .clickEvent(ClickEvent.runCommand("/rerollname custom " + player.getName() + " " + temp))
+                    .append(Component.text(i < names.size() - 1 ? " / " : "", NamedTextColor.YELLOW))
+            );
+        }
+        player.sendMessage(message);
     }
 
 }

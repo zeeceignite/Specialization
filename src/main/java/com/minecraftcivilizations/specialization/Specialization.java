@@ -123,7 +123,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new StonecutterListener(this), this);
         getServer().getPluginManager().registerEvents(new CraftingListener(this), this);
         getServer().getPluginManager().registerEvents(new FurnaceListener(), this);
-        getServer().getPluginManager().registerEvents(new PreJoinEventListener(), this);
+
         new TownManager();
         getServer().getPluginManager().registerEvents(new MoveListener(), this);
         getServer().getPluginManager().registerEvents(new CrossBowListener(), this);
@@ -133,6 +133,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ArmorDamageReductionListener(), this);
         getServer().getPluginManager().registerEvents(new PatDown(), this);
         getServer().getPluginManager().registerEvents(new XpTransferBookListener(), this);
+        getServer().getPluginManager().registerEvents(new RepairingListener(), this);
         getServer().getPluginManager().registerEvents(new RepairingListener(), this);
 
         //town data does not need to wait anymore
@@ -273,7 +274,7 @@ public final class Specialization extends JavaPlugin {
     private void setupCommands() {
 
         try {
-            localNameGenerator = new LocalNameGenerator();
+            localNameGenerator = new LocalNameGenerator(this);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

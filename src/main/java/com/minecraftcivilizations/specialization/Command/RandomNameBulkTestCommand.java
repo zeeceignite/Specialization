@@ -22,7 +22,7 @@ public class RandomNameBulkTestCommand extends BaseCommand {
     @CommandPermission("specialization.rollallnames")
     public void onRollAllNames(Player sender, @Single int totalRolls) {
         try {
-            LocalNameGenerator generator = new LocalNameGenerator();
+            LocalNameGenerator generator = new LocalNameGenerator(null);
             List<String> results = new ArrayList<>();
 
             for (int i = 0; i < totalRolls; i++) {
