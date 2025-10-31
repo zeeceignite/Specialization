@@ -18,7 +18,6 @@ import com.minecraftcivilizations.specialization.Distance.TownManager;
 import com.minecraftcivilizations.specialization.Listener.BurnListener;
 import com.minecraftcivilizations.specialization.Listener.Blocks.ReinforcementProtectionListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.ExplodeListener;
-import com.minecraftcivilizations.specialization.Listener.Mobs.MobListeners;
 import com.minecraftcivilizations.specialization.Listener.Player.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.BreakBlockListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.PlayerMineListener;
@@ -47,6 +46,7 @@ import com.minecraftcivilizations.specialization.StaffTools.DebugListenCommand;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.LocatorBarManager;
 import com.mojang.authlib.GameProfile;
+import lombok.Getter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Component.ComponentUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
@@ -54,11 +54,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import net.minecraft.server.level.ServerPlayer;
-import org.bukkit.Bukkit;
-import org.bukkit.GameRule;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -76,6 +72,8 @@ import java.util.stream.Collectors;
 public final class Specialization extends JavaPlugin {
 
     public static Logger logger;
+
+    @Getter
     private LocalNameGenerator localNameGenerator;
     private Debug debug;
 
@@ -117,7 +115,6 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BedListener(), this);
         getServer().getPluginManager().registerEvents(new LocatorBarManager(this), this);
         getServer().getPluginManager().registerEvents(new ReinforcementProtectionListener(), this);
-
         getServer().getPluginManager().registerEvents(new StonecutterListener(this), this);
         getServer().getPluginManager().registerEvents(new CraftingListener(this), this);
         getServer().getPluginManager().registerEvents(new FurnaceListener(), this);
@@ -126,7 +123,6 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new MoveListener(), this);
         getServer().getPluginManager().registerEvents(new CrossBowListener(), this);
         getServer().getPluginManager().registerEvents(new LocalChat(), this);
-        getServer().getPluginManager().registerEvents(new MobListeners(), this);
         getServer().getPluginManager().registerEvents(new PatDown(), this);
         getServer().getPluginManager().registerEvents(new XpTransferBookListener(), this);
 
@@ -163,6 +159,7 @@ public final class Specialization extends JavaPlugin {
             try {
                 CustomPlayer load = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().load(playerJoinEvent.getUniqueId());
                 Component localName;
+                String real_name = playerJoinEvent.getName();
                 if (load != null) {
                     MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().addCustomPlayer(load);
                     localName = load.getName();
@@ -182,6 +179,8 @@ public final class Specialization extends JavaPlugin {
                 ff.setAccessible(true);
                 ff.set(gameProfile, ComponentUtils.serializeComponentAsString(localName));
 
+                Debug.broadcast("login", ChatColor.YELLOW+real_name+" has joined the server ("+localName+")");
+
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 logger.severe("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
                 e.printStackTrace();
@@ -191,7 +190,7 @@ public final class Specialization extends JavaPlugin {
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerJoin(playerJoinEvent -> {
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(playerJoinEvent.getUniqueId());
             applyCustomName(playerJoinEvent.getPlayer(), customPlayer.getName());
-            customPlayer.applyEffects();
+//            customPlayer.applyEffects();
 
             // Migrate old bandages to new format
             Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {

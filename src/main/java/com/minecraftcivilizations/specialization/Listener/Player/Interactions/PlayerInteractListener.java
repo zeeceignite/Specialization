@@ -225,7 +225,7 @@ public class PlayerInteractListener implements Listener {
                 () -> {
                     CustomPlayer cp = CoreUtil.getPlayer(e.getPlayer());
                     if (cp != null) {
-                        cp.applyEffects(); // your existing method that reapplies class bonus effects
+//                        cp.applyEffects(); // your existing method that reapplies class bonus effects
                     }
                 },
                 1L

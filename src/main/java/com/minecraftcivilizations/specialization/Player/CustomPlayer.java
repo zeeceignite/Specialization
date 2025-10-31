@@ -10,6 +10,7 @@ import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
+import com.minecraftcivilizations.specialization.util.CoreUtil;
 import com.minecraftcivilizations.specialization.util.LoreUtils;
 import lombok.Data;
 import lombok.Getter;
@@ -373,6 +374,11 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
             lastEatenFood.poll();
         }
         return result;
+    }
+
+
+    public static CustomPlayer getCustomPlayer(Player player){
+        return CoreUtil.getPlayer(player);
     }
 
 }

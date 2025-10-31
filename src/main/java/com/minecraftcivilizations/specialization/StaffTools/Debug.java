@@ -246,7 +246,7 @@ public class Debug implements Listener {
     }
 
     private static @NotNull Component getPrefix(String debug_channel) {
-        return MiniMessage.miniMessage().deserialize("<dark_gray>[debug:" + debug_channel.toLowerCase() + "]:</dark_gray> ");
+        return MiniMessage.miniMessage().deserialize("<dark_gray>[" + debug_channel.toLowerCase() + "]:</dark_gray> ");
     }
 
     /**

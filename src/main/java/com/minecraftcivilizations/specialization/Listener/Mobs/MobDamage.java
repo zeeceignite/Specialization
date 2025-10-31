@@ -1,11 +1,10 @@
 package com.minecraftcivilizations.specialization.Listener.Mobs;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Listener.Player.Combat.CombatManager;
 import com.minecraftcivilizations.specialization.MobGoals.BreakBlockMobGoal;
 import com.minecraftcivilizations.specialization.MobGoals.TargetPlayerMobGoal;
-import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
-import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
@@ -18,7 +17,11 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 
-public class MobListeners implements Listener {
+public class MobDamage implements Listener {
+
+    public MobDamage(CombatManager combatManager) {
+
+    }
 
     @EventHandler
     public void onMobSpawn(EntitySpawnEvent event) {
@@ -38,10 +41,11 @@ public class MobListeners implements Listener {
         Bukkit.getMobGoals().addGoal(monster,0, new TargetPlayerMobGoal(monster));
     }
 
-    @EventHandler
-    public void onMobAttack(EntityDamageByEntityEvent event){
-        if(!(event.getDamager() instanceof Enemy)) return;
-        if(!(event.getEntity() instanceof Player player)) return;
+    /**
+     * Amplifies mob damage
+     */
+    public void onMobAttack(Player player, EntityDamageByEntityEvent event){
+        if(!(event.getDamager() instanceof Enemy enemy)) return;
 
         double newDamage;
         if(player.getWorld().isDayTime()){
@@ -56,22 +60,6 @@ public class MobListeners implements Listener {
             }
         }
         event.setDamage(newDamage);
-    }
-
-    @EventHandler
-    public void onPlayerAttackMob(EntityDamageByEntityEvent event){
-        if(!(event.getDamager() instanceof Player player)) return;
-        if(!(event.getEntity() instanceof Monster)) return;
-        CustomPlayer cPlayer = CoreUtil.getPlayer(player);
-        double original_damage = event.getDamage();
-        double damage = original_damage + cPlayer.getSkillLevel(SkillType.GUARDSMAN) * 2.5;
-        event.setDamage(damage);
-//        if(Debug.isAnyoneListening("damage", true)) {
-//            Debug.broadcast(
-//                    "damage",
-//                    "[vs_mob] New Damage: " + damage,
-//                    "Original Damage: "+original_damage);
-//        }
     }
 
 }

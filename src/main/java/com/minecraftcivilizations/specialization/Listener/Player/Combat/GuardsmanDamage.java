@@ -12,13 +12,11 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -31,7 +29,9 @@ import static org.bukkit.entity.EntityType.*;
 
 /**
  * Applies Damage, Crit Multipliers for Guardsman
- * Handles primary Guardsman XP gain
+ * Handles Primary Guardsman XP gain
+ * Carefully balanced
+ * @author Alectriciti
  */
 public class GuardsmanDamage implements Listener {
 
@@ -46,94 +46,7 @@ public class GuardsmanDamage implements Listener {
 
         //setup
         MAX_HEALTH_KEY = new NamespacedKey(plugin, "guardsman_max_health");
-        initializeMobXpMappings();
     }
-
-    EnumMap<EntityType, Double> mob_xp_mappings = new EnumMap<>(EntityType.class);
-
-    private void initializeMobXpMappings() {
-        putXpFor(2, RAVAGER, WITHER, ENDER_DRAGON);
-        putXpFor(1.5, PILLAGER, ILLUSIONER, VINDICATOR, EVOKER, ELDER_GUARDIAN, WITCH);
-        putXpFor(1.25, CREEPER);
-        putXpFor(1.0, ENDERMAN,
-                ZOMBIE, HUSK, DROWNED, ZOMBIE_VILLAGER,
-                SKELETON, STRAY, BOGGED, WITHER_SKELETON,
-                SPIDER, CAVE_SPIDER,
-                PHANTOM, BLAZE, BREEZE, GHAST, SHULKER);
-        putXpFor(0.5, SLIME, MAGMA_CUBE, SILVERFISH, ENDERMITE, CREAKING, GUARDIAN);
-        putXpFor(0.25, PIGLIN_BRUTE, HOGLIN);
-
-    }
-
-    private void putXpFor(double xp, EntityType...entities){
-        for(EntityType e : entities){
-            mob_xp_mappings.put(e, xp);
-        }
-    }
-
-    /**
-     * Called from CombatManager
-     */
-    public void applyGuardsmanDamage(EntityDamageByEntityEvent event) {
-        Player damager = (Player) event.getDamager(); //damager is always a player
-        CustomPlayer customPlayer = CoreUtil.getPlayer(damager);
-
-        // Get the player's highest skill (dmain class)
-//        Skill bestSkill = customPlayer.getSkills().stream()
-//                .max(Comparator.comparingDouble(Skill::getXp))
-//                .orElse(null);
-
-        Entity victim = event.getEntity();
-
-        int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
-        double multiplier = Math.pow( 1.075, lvl); //1.0 + ((double)lvl/10);
-
-        // Apply damage reduction for non-Guardsman players attacking mobs
-//        double damageReduction = SpecializationConfig.getGuardsmanConfig().get("NON_GUARDSMAN_DAMAGE_REDUCTION", Double.class);
-        double currentDamage = event.getFinalDamage();
-        double reducedDamage = currentDamage * multiplier;
-
-        String crit_msg = "";
-        double crit_multiplier = 1.0;
-        if(event.isCritical()){
-            reducedDamage *= 0.6666;
-            crit_multiplier = 0.1+Math.pow( 1.03475, lvl);
-            reducedDamage *= (crit_multiplier);
-//            reducedDamage *= crit_multiplier;
-            crit_msg = GOLD+" ("+GRAY+"CRIT: "+GOLD+(Debug.formatDecimal(crit_multiplier) +"x)");
-        }
-
-        String reduction_msg = YELLOW+" ("+GRAY+"SKILL:"+YELLOW+Debug.formatDecimal(multiplier)+"x)"+crit_msg
-                +GREEN+" ("+GRAY+"TOTAL:"+GREEN+Debug.formatDecimal(crit_multiplier*multiplier)+"x)";
-
-
-        //finalize damage
-        event.setDamage(reducedDamage);
-
-            if(mob_xp_mappings.containsKey(victim.getType())){
-                LivingEntity le = (LivingEntity) victim;
-                double xp = event.getDamage();
-                if(xp > le.getHealth()){
-                    xp = le.getHealth();
-                }
-                customPlayer.addSkillXp(SkillType.GUARDSMAN, (int) (xp* mob_xp_mappings.get(victim.getType())));
-            }
-
-        if(Debug.isAnyoneListening("damage", true)) {
-            Debug.broadcast(
-                    "damage",
-                    "⚔ " + ChatColor.RED+
-                            ((double)(Math.round(reducedDamage*100))/100)+
-                            (reduction_msg),
-                    "Original Damage: "+((double)(Math.round(currentDamage*100))/100)+"\n"+
-                            "["+damager.getName()+" is GuardMan lvl "+lvl+"]"+"\n"+
-                            "Attacker: "+damager.getName()
-            );
-        }
-    }
-
-
-
 
     @EventHandler
     public void onGuardsmanLevelUp(SkillLevelChangeEvent event){
@@ -152,6 +65,77 @@ public class GuardsmanDamage implements Listener {
             attribute.addModifier(modifier);
         }
     }
+
+    /**
+     * Called from CombatManager
+     */
+    public void applyGuardsmanDamage(CustomPlayer customPlayer, EntityDamageByEntityEvent event) {
+        Player damager = (Player) event.getDamager(); //damager is always a player
+
+        // Get the player's highest skill (dmain class)
+//        Skill bestSkill = customPlayer.getSkills().stream()
+//                .max(Comparator.comparingDouble(Skill::getXp))
+//                .orElse(null);
+
+        Entity victim = event.getEntity();
+
+        int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
+        double multiplier = Math.pow( 1.125, lvl) - 0.5; //1.0 + ((double)lvl/10);
+
+
+        //debugging
+        String crit_msg = "";
+        String extra_msg = "";
+
+
+        // Apply damage reduction for non-Guardsman players attacking mobs
+//        double damageReduction = SpecializationConfig.getGuardsmanConfig().get("NON_GUARDSMAN_DAMAGE_REDUCTION", Double.class);
+        double original_damage = event.getDamage();
+        double new_damage = original_damage * multiplier;
+
+        /**
+         * Guardsman Extra Mob Damage Bonus
+         */
+        if(victim instanceof Monster monster){
+            double extra = Math.max(0, ((double)lvl-2))/2.0 ;
+            if(extra>=0) {
+                new_damage += extra;
+                extra_msg = DARK_RED + " (" + DARK_RED + "+" + (Debug.formatDecimal(extra) + " 💀)");
+            }
+        }
+        double crit_multiplier = 1.0;
+        if(event.isCritical()){
+            new_damage *= 0.6666; //inverse of 1.5x, extra 6 for safe measure <_<
+            crit_multiplier = 0.1+Math.pow( 1.07475, lvl); //slight exponent boost to crit
+            new_damage *= (crit_multiplier); //apply custom crit
+            crit_msg = GOLD+" ("+GRAY+"✨ "+GOLD+(Debug.formatDecimal(crit_multiplier) +"x)");
+        }
+
+        String reduction_msg = extra_msg+YELLOW+" ("+GRAY+"⚔ "+YELLOW+Debug.formatDecimal(multiplier)+"x)"+crit_msg
+                +GREEN+" ("+GRAY+"🟰:"+GREEN+Debug.formatDecimal(crit_multiplier*multiplier)+"x)";
+
+
+        //finalize damage
+        event.setDamage(new_damage);
+
+        if(Debug.isAnyoneListening("damage", true)) {
+            String modifiers = "";
+
+            for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
+                modifiers += "\n<gray>"+m.name()+"</gray>: "+Debug.formatDecimal(event.getDamage(m));
+            }
+            Debug.broadcast(
+                    "damage",
+                    RED+ Debug.formatDecimal(original_damage)+
+                            (reduction_msg)
+                            +RED+" [❤ "+Debug.formatDecimal(CombatManager.calculateTotalDamage(event))+"]",
+                            "["+damager.getName()+" is GuardMan lvl "+lvl+"]"+"\n"+
+                            "Attacker: "+damager.getName()+modifiers
+            );
+        }
+    }
+
+
 
 
 }
