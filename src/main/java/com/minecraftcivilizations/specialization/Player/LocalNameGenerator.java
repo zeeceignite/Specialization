@@ -7,17 +7,23 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
+import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -36,16 +42,6 @@ public class LocalNameGenerator implements Listener {
     private static File fnFile;
     private static File lnFile;
 
-
-        private final Set<String> tempUsedNames = new HashSet<>();
-        private final Map<UUID, TempNameData> tempNames = new ConcurrentHashMap<>();
-
-        public static class TempNameData {
-            public String initialName;
-            public List<String> options;
-            public long expirationTime;
-            public boolean confirmed;
-        }
 
     /**
      * @throws IOException if either file can't be read
@@ -474,6 +470,7 @@ public class LocalNameGenerator implements Listener {
 
         int totalUpper = (totalPossible > 0) ? totalPossible : Math.max(1, firstNames.size() * lastNames.size());
 
+
         if (usedNames.size() >= totalUpper) {
             Specialization.logger.severe("[LocalNameGenerator] All possible name combinations have been used (exact="
                     + (totalPossible > 0 ? totalPossible : "unknown") + ", used=" + usedNames.size() + ")!");
@@ -489,6 +486,11 @@ public class LocalNameGenerator implements Listener {
                 NameRoll first = generateNameRoll(firstNames, null);
                 NameRoll last = generateNameRoll(lastNames, first);
                 String name = first.getName() + "_" + last.getName();
+
+             if (usedNames.contains(name) || tempUsedNames.contains(name) ||
+                tempNames.values().stream().anyMatch(t -> t.initialName.equals(name) || t.options.contains(name))) {
+                    continue; // name already reserved somewhere
+                  }
 
                 if (name.length() > 16) continue;
 
@@ -590,8 +592,6 @@ public class LocalNameGenerator implements Listener {
 
 
 
-
-
     protected static class NameRoll {
         @Getter
         String name;
@@ -607,56 +607,37 @@ public class LocalNameGenerator implements Listener {
 
     //------------------Temp name/optional names helpers---------------------//
 
-    /** Assign 1 main + 2 temporary names for a player */
-    public List<String> assignTempNames(UUID playerUUID) {
-        // Step 1: main name
-        String main = nextName();
+    private final Set<String> tempUsedNames = new HashSet<>();
+    private final Map<UUID, TempNameData> tempNames = new ConcurrentHashMap<>();
 
-        // Step 2: 2 temporary options
+    public static class TempNameData {
+        public String initialName;
+        public List<String> options;
+        public long expirationTime;
+        public boolean confirmed;
+    }
+
+    /** Assign current player name as base + 2 temporary options */
+    public List<String> assignTempNames(UUID playerUUID, String currentName) {
+        String main = currentName;
+
+        // generate 2 temporary names using nextName (handles uniqueness internally)
         List<String> tempOptions = new ArrayList<>();
-        for (int i = 0; i < 2; i++) {
-            String candidate;
-            do {
-                candidate = nextName(); // will throw if exhausted
-            } while (candidate.equals(main) || tempOptions.contains(candidate) || tempUsedNames.contains(candidate));
-            tempOptions.add(candidate);
-            tempUsedNames.add(candidate);
-        }
+        tempOptions.add(nextName());
+        tempOptions.add(nextName());
+        tempUsedNames.addAll(tempOptions);
 
-        // Step 3: store in temp map
         TempNameData data = new TempNameData();
         data.initialName = main;
         data.options = tempOptions;
         data.expirationTime = System.currentTimeMillis() + 10 * 60 * 1000; // 10 minutes
         data.confirmed = false;
-
         tempNames.put(playerUUID, data);
 
         List<String> result = new ArrayList<>();
         result.add(main);
         result.addAll(tempOptions);
         return result;
-    }
-
-    /** Confirm player's choice */
-    public boolean confirmTempName(UUID uuid, String selected) {
-        TempNameData data = tempNames.get(uuid);
-        if (data == null || data.confirmed) return false;
-
-        if (!selected.equals(data.initialName) && !data.options.contains(selected)) return false;
-
-        // Reserve the chosen name permanently
-        usedNames.add(selected);
-
-        // Release unused temps
-        for (String temp : data.options) {
-            if (!temp.equals(selected)) tempUsedNames.remove(temp);
-        }
-
-        data.initialName = selected;
-        data.confirmed = true;
-        tempNames.remove(uuid);
-        return true;
     }
 
     /** Clean up expired temporary names */
@@ -672,6 +653,8 @@ public class LocalNameGenerator implements Listener {
         });
     }
 
+    // Key for permanent name selection
+    private final NamespacedKey PERMANENT_NAME_KEY = new NamespacedKey(Specialization.getInstance(), "permanent_name");
 
 
     @EventHandler
@@ -679,29 +662,104 @@ public class LocalNameGenerator implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1, 1);
+        // Check PDC for permanent name
+        boolean hasPermanentName = player.getPersistentDataContainer().has(PERMANENT_NAME_KEY, PersistentDataType.BYTE);
+        if (hasPermanentName) return; // Already chosen → skip everything
 
-        // Generate main + temp names
-        List<String> names = assignTempNames(uuid);
+        // Block if player has already played >10min
+        if (!canSelectTempName(player)) {
+            return;
+        }
 
-        // Show main name
+        Component mainTitle = MiniMessage.miniMessage().deserialize("Your name is: <gold>" + player.getName() + "</gold>");
+        Component subTitle = MiniMessage.miniMessage().deserialize("<gray>You have <red>" + getRemainingTime(player) + " </red>minutes to reroll name.</gray>");
+
+        Title t = Title.title(mainTitle, subTitle, 20, 150, 50);
+
+        player.showTitle(t);
+        // Retrieve temp data
+        TempNameData data = tempNames.get(uuid);
+
+        List<String> names;
+        if (data == null) {
+            // First time or no temp data → assign new temp names
+            names = assignTempNames(uuid, player.getName());
+        } else {
+            // Reuse previous temp names
+            names = new ArrayList<>();
+            names.add(data.initialName);
+            names.addAll(data.options);
+        }
+        player.sendMessage(MiniMessage.miniMessage().deserialize("<black>====================================================</black>"));
+        // Display current name
         player.sendMessage(
-                Component.text("Your initial name is: ", NamedTextColor.GREEN)
-                        .append(Component.text(names.get(0), NamedTextColor.AQUA)
+                Component.text("Your current name is: ", NamedTextColor.GRAY)
+                        .append(Component.text(names.getFirst(), NamedTextColor.GOLD)
                                 .decoration(TextDecoration.ITALIC, false))
         );
 
-        // Show clickable options
-        Component message = Component.text("Click to choose: ", NamedTextColor.YELLOW);
+        // Build clickable name options (suggest command)
+        Component message = Component.text("Rerolled Names: ", NamedTextColor.GRAY);
+
         for (int i = 1; i < names.size(); i++) {
             String temp = names.get(i);
-            message = message.append(Component.text(temp, NamedTextColor.GOLD)
+
+            // Name selection button (suggest command)
+            Component nameComponent = MiniMessage.miniMessage().deserialize("<gray>[<aqua>" + temp + "</aqua>]</gray>")
                     .hoverEvent(HoverEvent.showText(Component.text("Click to select " + temp)))
-                    .clickEvent(ClickEvent.runCommand("/rerollname custom " + player.getName() + " " + temp))
-                    .append(Component.text(i < names.size() - 1 ? " / " : "", NamedTextColor.YELLOW))
-            );
+                    .clickEvent(ClickEvent.runCommand("/setnameoption " + temp));
+
+            message = message.append(nameComponent);
+
+            if (i < names.size() - 1) {
+                message = message.append(Component.text(" || ", NamedTextColor.GRAY));
+            }
         }
         player.sendMessage(message);
+        player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>You have <red>" + getRemainingTime(player) + "</red> minute(s) to select a rerolled name.</gray>"));
+        player.sendMessage(MiniMessage.miniMessage().deserialize("<black>====================================================</black>"));
+    }
+
+    public boolean confirmNameChoice(UUID playerUUID, String selectedName) {
+        Player player = Bukkit.getPlayer(playerUUID);
+        if (player == null) return false;
+
+        // Block if player has already played >10min
+        if (!canSelectTempName(player)) {
+            player.sendMessage("§cYou can no longer confirm a temporary name.");
+            return false;
+        }
+
+        TempNameData data = tempNames.get(playerUUID);
+        if (data == null || data.confirmed) return false;
+
+        if (!selectedName.equals(data.initialName) && !data.options.contains(selectedName)) return false;
+
+        usedNames.add(selectedName);
+        for (String temp : data.options) {
+            if (!temp.equals(selectedName)) tempUsedNames.remove(temp);
+        }
+
+        data.initialName = selectedName;
+        data.confirmed = true;
+        tempNames.remove(playerUUID);
+
+        // Mark in PDC
+        player.getPersistentDataContainer().set(PERMANENT_NAME_KEY, PersistentDataType.BYTE, (byte) 1);
+
+        return true;
+    }
+
+    long timeLimitMinute = 10;
+
+    public long getRemainingTime(Player player){
+        int ticksPlayed = player.getStatistic(Statistic.PLAY_ONE_MINUTE);
+        return timeLimitMinute - (ticksPlayed / 1200L);
+    }
+
+    public boolean canSelectTempName(Player player){
+        long remaining = getRemainingTime(player);
+        return remaining > 0; // still under 10 minutes
     }
 
 }

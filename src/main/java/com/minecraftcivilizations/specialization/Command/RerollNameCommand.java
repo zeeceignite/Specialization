@@ -15,6 +15,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.NoSuchElementException;
+import java.util.UUID;
 
 @CommandAlias("rerollname|reroll")
 @CommandPermission("specialization.rerollname")
@@ -29,6 +30,7 @@ public class RerollNameCommand extends BaseCommand {
         this.rerollKey = new NamespacedKey(MinecraftCivilizationsCore.getInstance(), "reroll_timestamp");
     }
 
+    // ---------------- Default reroll ----------------
     @Default
     @CommandCompletion("@players")
     @Description("Reroll your own username or another player's username")
@@ -64,7 +66,6 @@ public class RerollNameCommand extends BaseCommand {
 
         try {
             String newNameStr = nameGenerator.nextName();
-            // Confirmation messages
             if (target.equals(sender)) {
                 sender.sendMessage("§aSuccessfully rerolled §c" + target.getName() + "§6 -> §f" + newNameStr);
             } else {
@@ -95,14 +96,15 @@ public class RerollNameCommand extends BaseCommand {
         }
 
         long now = System.currentTimeMillis();
-
         sender.sendMessage("§aSuccessfully set custom name §6" + target.getName() + " §6-> §f" + desiredName);
         applyName(sender, target, desiredName, now);
 
         if (!target.equals(sender)) {
-            target.sendMessage("§aSuccessfully set custom name §6" + target.getName() + " §6-> §f" + desiredName);
+            target.sendMessage("§aYour name has been set to: §f" + desiredName);
         }
     }
+
+
 
     // ---------------- Internal helper ----------------
     private void applyName(Player sender, Player target, String newNameStr, long now) {
@@ -118,7 +120,6 @@ public class RerollNameCommand extends BaseCommand {
         customPlayer.setName(newName);
         Specialization.getInstance().applyCustomName(target, newName);
 
-        // Mark reroll timestamp if rerolling self
         if (target.equals(sender)) {
             sender.getPersistentDataContainer().set(rerollKey, PersistentDataType.LONG, now);
         }

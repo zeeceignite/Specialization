@@ -119,7 +119,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BedListener(), this);
         getServer().getPluginManager().registerEvents(new LocatorBarManager(this), this);
         getServer().getPluginManager().registerEvents(new ReinforcementProtectionListener(), this);
-
+        getServer().getPluginManager().registerEvents(new PreJoinEventListener(), this);
         getServer().getPluginManager().registerEvents(new StonecutterListener(this), this);
         getServer().getPluginManager().registerEvents(new CraftingListener(this), this);
         getServer().getPluginManager().registerEvents(new FurnaceListener(), this);
@@ -138,6 +138,8 @@ public final class Specialization extends JavaPlugin {
 
         //town data does not need to wait anymore
         TownManager.scanAllPlayersForTownsAsync();
+
+
 
 
         //overworld game rules
@@ -256,6 +258,7 @@ public final class Specialization extends JavaPlugin {
         AnalyticsData.autoPoll();
     }
 
+
     @Override
     public void onDisable() {
         // Plugin shutdown logic
@@ -279,6 +282,12 @@ public final class Specialization extends JavaPlugin {
             throw new RuntimeException(e);
         }
 
+        // Cleans up optional names held in temp reserves
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            localNameGenerator.cleanupExpiredTemps();
+        }, 0L, 10 * 60 * 20L); // every 10 minutes
+
+
         commandManager = new PaperCommandManager(this);
 
 
@@ -288,7 +297,6 @@ public final class Specialization extends JavaPlugin {
                         .map(Enum::name)
                         .collect(Collectors.toList())
         );
-
         commandManager.registerCommand(new ClassCommand());
         commandManager.registerCommand(new SetXpCommand());
         commandManager.registerCommand(new SetLoreCommand());
@@ -301,6 +309,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new PurgeGoldenApplesCommand());
         commandManager.registerCommand(new RandomNameBulkTestCommand());
         commandManager.registerCommand(new RerollNameCommand(localNameGenerator));
+        commandManager.registerCommand(new NameChoiceCommand(localNameGenerator));
         commandManager.registerCommand(new XPLeaderboardCommand());
         new DebugListenCommand(commandManager);
 

@@ -108,7 +108,7 @@
 {Vast|Endless|Expansive} [Space]
 {Celestial|Ethereal|Astral} [Space]
 {Orbiting|Unbounded} [Space]
-{Ecliptic|Far-reaching|Unfathomed} [Space]
+{Ecliptic|Steamy|Unfathomed} [Space]
 
 # Visual
 {Shimmering|Glinting|Twinkling} [Visual]
@@ -118,6 +118,12 @@
 {Glowing|Illuminated|Brightened} [Visual]
 {Flickering|Glinting|Glistening} [Visual]
 {Veiled|Hazy|Obscured} [Visual]
+
+# Happy
+
+# Mellow
+
+{lowercased} [Mellow]
 
 
 
