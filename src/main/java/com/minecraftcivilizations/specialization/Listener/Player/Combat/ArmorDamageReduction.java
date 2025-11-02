@@ -31,42 +31,32 @@ public class ArmorDamageReduction {
 
     /**
      * Reduce Damage taken by Mobs
+     * TARGET: 16 hits with iron, 32 hits with diamond
      */
     public void applyArmorReduction(Player victim, EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof LivingEntity attacker)) return;
 
         // Check if the system is enabled
-        if (!enabled) {
-            return;
-        }
+//        if (!enabled) {
+//            return;
+//        }
         CustomPlayer customPlayer = CustomPlayer.getCustomPlayer(victim);
 
         int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
 //        if(lvl>=5){
 //            return; //full effectiveness
 //        }
+        ArmorStats stats = ArmorStats.getArmorStats(victim.getEquipment());
+//        Debug.broadcast("armorstats", BLUE+"Armor: "+WHITE+stats.getArmor()+BLUE+" Toughness: "+WHITE+stats.getToughness());
 
         double armor_reduction = event.getDamage(ARMOR);
-
-        double armor_effectiveness = 0.5+(((double)lvl)/10); // level gets mapped from (lvl0 to lvl5) to (1.0 to 0.5)
+        //gain 5% more armor effecitveness per guardsman level
+        double armor_effectiveness = 1+(((double)lvl)/20);
         double final_armor_reduction = armor_reduction * armor_effectiveness;
+
         event.setDamage(ARMOR, final_armor_reduction);
 
         //Blocking
-
-//        double blocking_reduction = event.getDamage(BLOCKING);
-//        double blocking_penalty = 0;
-//        if(victim.isBlocking()){
-//            if (lvl<2){
-//                blocking_penalty = -1.5;
-//            }else if(lvl<4){
-//                blocking_penalty = -0.75;
-//            }
-//            double final_blocking_reduction = blocking_reduction - blocking_penalty;
-//            event.setDamage(BLOCKING, final_blocking_reduction);
-//
-//        }
-
         //scaled armor reduction effectiveness according to guardsman level
 
         if(Debug.isAnyoneListening("armor", true)) {
@@ -78,7 +68,7 @@ public class ArmorDamageReduction {
 
             Debug.broadcast(
                     "armor",
-                    RED+ Debug.formatDecimal(event.getDamage())+
+                    WHITE+victim.getName()+" "+RED+ Debug.formatDecimal(event.getDamage())+
                             (WHITE+" ["+BLUE+"🅱: "+Debug.formatDecimal(armor_reduction)+"]")+
                             (WHITE+" ["+AQUA+"👕: "+armor_effectiveness+"x"+WHITE+"]")+
 //                            (victim.isBlocking()?(WHITE+" ["+GRAY+"🛡: "+blocking_penalty+WHITE+"]"):"")+
@@ -90,74 +80,6 @@ public class ArmorDamageReduction {
                             +modifiers
             );
         }
-        /**
-         * OLD IMPLEMENTATION BELOW
-         * v v v v v v v v v v v v
-         */
-//        PlayerInventory inventory = player.getInventory();
-//
-//        double totalDamageReduction = 0.0;
-//
-//        // Check helmet
-//        ItemStack helmet = inventory.getHelmet();
-//        if (helmet != null && isArmor(helmet)) {
-//            double helmetReduction = calculateArmorReduction(helmet, "HELMET_BASE_REDUCTION");
-//            totalDamageReduction += helmetReduction;
-//        }
-//
-//        // Check chestplate
-//        ItemStack chestplate = inventory.getChestplate();
-//        if (chestplate != null && isArmor(chestplate)) {
-//            double chestplateReduction = calculateArmorReduction(chestplate, "CHESTPLATE_BASE_REDUCTION");
-//            totalDamageReduction += chestplateReduction;
-//        }
-//
-//        // Check leggings
-//        ItemStack leggings = inventory.getLeggings();
-//        if (leggings != null && isArmor(leggings)) {
-//            double leggingsReduction = calculateArmorReduction(leggings, "LEGGINGS_BASE_REDUCTION");
-//            totalDamageReduction += leggingsReduction;
-//        }
-//
-//        // Check boots
-//        ItemStack boots = inventory.getBoots();
-//        if (boots != null && isArmor(boots)) {
-//            double bootsReduction = calculateArmorReduction(boots, "BOOTS_BASE_REDUCTION");
-//            totalDamageReduction += bootsReduction;
-//        }
-//
-//        Entity victim = event.getEntity();
-//
-//        // Apply damage reduction with configured cap - ONLY if there's actually reduction to apply
-//        if (totalDamageReduction > 0) {
-//            double maxReduction = SpecializationConfig.getArmorDamageReductionConfig().get("MAX_TOTAL_REDUCTION", Double.class);
-//            double originalTotalReduction = totalDamageReduction;
-//            totalDamageReduction = Math.min(totalDamageReduction, maxReduction);
-//
-//            double originalDamage = event.getDamage();
-//            double reducedDamage = originalDamage * (1.0 - totalDamageReduction);
-//            event.setDamage(reducedDamage);
-//            if(Debug.isAnyoneListening("damage", true)) {
-//                Debug.broadcast(
-//                        "damage",
-//                        victim.getName()+ ChatColor.GRAY+" took "+ ChatColor.RED+"REDUCED"+ChatColor.WHITE+" damage: " + ChatColor.WHITE+
-//                                Debug.formatDecimal(event.getDamage())+
-//                                (event.isCritical()? ChatColor.GREEN+" (CRIT!)":""),
-//                        "Original damage: "+event.getDamage()+"\n"+
-//                        "[Armor Reduced Damage]");
-//            }
-//        }else{
-//            if(Debug.isAnyoneListening("damage", true)) {
-//                Debug.broadcast(
-//                        "damage",
-//                        victim.getName()+" "+ ChatColor.GRAY+" was damaged: " + ChatColor.WHITE+
-//                                ((double)(Math.round(event.getDamage()*100))/100)+
-//                                (event.isCritical()? ChatColor.GREEN+" (CRIT!)":""),
-//                        "Original damage: "+event.getDamage()
-//                );
-//            }
-//        }
-        // DO NOT call setDamage() when totalDamageReduction is 0 - this was causing the bug
 
     }
     

@@ -123,7 +123,7 @@ public class Recipes {
     private static void startPeriodicRecipeRefresh() {
         Bukkit.getScheduler().runTaskTimerAsynchronously(Specialization.getInstance(), () -> {
             Bukkit.getLogger().info("[Recipes] Periodic recipe refresh triggered");
-            Debug.broadcast("recipes", "Periodic recipe refresh triggered", null, true);
+//            Debug.broadcast("recipes", "Periodic recipe refresh triggered", null, true);
             Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> Recipes.registerRecipes(true));
         }, 1200L, 1200L);
     }

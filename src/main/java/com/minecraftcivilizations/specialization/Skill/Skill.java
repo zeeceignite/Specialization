@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.Skill;
 
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,13 +17,30 @@ public class Skill {
     @Getter
     private long lastUpdate;
 
-
+    static final int MAX_LEVEL = 5;
+    public static double[] CACHED_LEVELS;
 
     /**
-     * This should be pre-cached per level <= max_level
+     * Optimized ⚡
+     * Called at runtime. (No need to run this math 5 times per XP Action...)
+     */
+    public static void InitCacheXPLevelFormula() {
+        CACHED_LEVELS = new double[MAX_LEVEL + 1];
+        CACHED_LEVELS[0] = 0.0;
+        //ASSIGN XP CURVE FORMULA
+        for (int lvl = 1; lvl <= MAX_LEVEL; lvl++) {
+            CACHED_LEVELS[lvl] =
+                    Math.floor(1.8 * (25 * Math.pow(lvl, 2) + (5 * lvl) + (200 * Math.pow(2.45, lvl))) - 300);
+        }
+    }
+
+    /**
+     * Optimized AF ⚡
+     * Uses a pre-cached lookup, you're welcome.
      */
     public static double getXPNeededForLevel(int level) {
-        return Math.floor(1.8 * (25 * Math.pow(level, 2) + (5 * level) + (200 * Math.pow(2.45, level))) - 300);
+        Debug.broadcast("xp", "xp needed lookup");
+        return CACHED_LEVELS[Math.max(0, Math.min(MAX_LEVEL, level))];
     }
 
     public static double mapValue(double x, double in_min, double in_max, double out_min, double out_max) {
@@ -32,7 +50,6 @@ public class Skill {
         }
         return out_min + (x - in_min) * (out_max - out_min) / (in_max - in_min);
     }
-
 
     public void applyXp(Player player, double appliedXp, boolean allowNegative) {
         if(appliedXp!=0) {
@@ -44,27 +61,8 @@ public class Skill {
                     this.xp = 0; //ensures xp does not get set below zero
                 }
             }
-            //instant serialize hot-patch until redesign
-            // TODO PDC-xp-hotfix
-            //  player.getPersistentDataContainer().set(skilltype_key_map.get(skillType), PersistentDataType.INTEGER, (int) appliedXp);
         }
         this.lastUpdate = System.currentTimeMillis();
     }
 
-
-
-    // PDC-xp-hotfix static Map<SkillType, NamespacedKey> skilltype_key_map = new HashMap<SkillType, NamespacedKey>();
-    /**
-     * PDC-xp-hotfix TODO do not remove until xp loss bug has been resolved
-     * This assigns a NamespacedKey for each SkillType
-     * Runs on startup
-     */
-    /*
-    public static void InitializeSkillKeys(Specialization plugin) {
-        for(SkillType type : SkillType.values()){
-            NamespacedKey key = new NamespacedKey(plugin, "skill."+type.name().toLowerCase()+".xp");
-            skilltype_key_map.put(type, key);
-        }
-    }
-     */
 }

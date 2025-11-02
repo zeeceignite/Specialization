@@ -12,6 +12,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,7 +35,7 @@ public class Debug implements Listener {
 
     // debug_channel -> List of Players registered to that channel
     private Map<String, Set<Player>> debug_listening = new HashMap<String, Set<Player>>();
-    private Map<Player, List<String>> listening_channels = new HashMap<Player, List<String>>(); //used specifically for tab completion
+    private Map<UUID, List<String>> listening_channels = new HashMap<UUID, List<String>>(); //used specifically for tab completion
     private List<String> debug_channels = new ArrayList<String>(); //used by command suggestions
 
 
@@ -48,6 +49,21 @@ public class Debug implements Listener {
         unregisterPlayerToAllChannels(event.getPlayer());
     }
 
+
+    @EventHandler
+    public void onLogin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+
+        // If we have a remembered list for this player (unlikely if we cleared on quit),
+        // restore them to those channels first.
+        List<String> remembered = listening_channels.get(player.getUniqueId());
+        if (remembered != null && !remembered.isEmpty()) {
+            for (String ch : remembered) {
+                getOrCreateChannelPlayerSet(ch, false).add(player);
+            }
+        }
+    }
+
     /**
      * Establishes known/global default values.
      * If adding a new channel, specify it here.
@@ -56,6 +72,8 @@ public class Debug implements Listener {
         getOrCreateChannelPlayerSet("recipes", true);
         getOrCreateChannelPlayerSet("xp", true);
         getOrCreateChannelPlayerSet("damage", true);
+        getOrCreateChannelPlayerSet("armor", true);
+        getOrCreateChannelPlayerSet("weight", true);
         getOrCreateChannelPlayerSet("chat", true);
         getOrCreateChannelPlayerSet("levelup", true);
     }
@@ -68,8 +86,8 @@ public class Debug implements Listener {
      */
     public static boolean isListeningToChannel(Player player, String debug_channel) {
         Debug debug = getInstance();
-        if(debug.listening_channels.containsKey(player)){
-            if(debug.listening_channels.get(player).contains(debug_channel)){
+        if(debug.listening_channels.containsKey(player.getUniqueId())){
+            if(debug.listening_channels.get(player.getUniqueId()).contains(debug_channel)){
                 return true;
             }
             return false;
@@ -95,7 +113,7 @@ public class Debug implements Listener {
     static void resetAllValues(CommandSender commander) {
         Debug debug = getInstance();
         debug.debug_listening = new HashMap<String, Set<Player>>();
-        debug.listening_channels = new HashMap<Player, List<String>>();
+        debug.listening_channels = new HashMap<UUID, List<String>>();
         debug.debug_channels = new ArrayList<String>();
         debug.setupDefaultChannels();
         Specialization.getInstance().getLogger().info("Debug Cache Globally Reset by "+commander.getName());
@@ -110,7 +128,7 @@ public class Debug implements Listener {
         }
         Set<Player> player_set = getOrCreateChannelPlayerSet(debug_channel, false);
         player_set.add(player);
-        listening_channels.computeIfAbsent(player, p -> new ArrayList<String>()).add(debug_channel);
+        listening_channels.computeIfAbsent(player.getUniqueId(), p -> new ArrayList<String>()).add(debug_channel);
     }
 
     /**
@@ -120,7 +138,7 @@ public class Debug implements Listener {
         debug_channel = debug_channel.toLowerCase();
         Set<Player> player_set = getOrCreateChannelPlayerSet(debug_channel, false);
         player_set.remove(player);
-        listening_channels.computeIfAbsent(player, p -> new ArrayList<String>()).remove(debug_channel);
+        listening_channels.computeIfAbsent(player.getUniqueId(), p -> new ArrayList<String>()).remove(debug_channel);
     }
 
     public void registerPlayerToAllChannels(Player player) {
@@ -258,8 +276,8 @@ public class Debug implements Listener {
 
     public static List<String> getPlayerChannels(Player player){
         Debug debug = getInstance();
-        if(debug.listening_channels.containsKey(player)){
-            return debug.listening_channels.get(player);
+        if(debug.listening_channels.containsKey(player.getUniqueId())){
+            return debug.listening_channels.get(player.getUniqueId());
         }
         return new ArrayList<String>();
     }

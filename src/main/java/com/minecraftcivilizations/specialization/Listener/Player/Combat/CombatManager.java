@@ -7,6 +7,7 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.*;
@@ -36,6 +37,7 @@ public class CombatManager implements Listener {
     private final ArmorEquipAttributes armorEquip;
     private final Berserk berserk; // Berserk Manager
 
+    @Getter
     final Specialization plugin;
 
     public CombatManager(Specialization specialization) {
@@ -65,8 +67,9 @@ public class CombatManager implements Listener {
             // This should ONLY apply to mob damage, not PVP damage
             if(event.getEntity() instanceof Player player) {
 //                    Debug.broadcast("damage", "original damage: "+event.getDamager());
-                mobDamage.onMobAttack(player, event);
+                mobDamage.onMobAttack(player, event); //increases base damage of mobs
                 armorDamageReduction.applyArmorReduction(player, event);
+
             }
         }
     }
@@ -108,7 +111,7 @@ public class CombatManager implements Listener {
             if (xp > le.getHealth()) {
                 xp = le.getHealth();
             }
-            customPlayer.addSkillXp(SkillType.GUARDSMAN, (int) (xp * mob_xp_mappings.get(victim.getType())));
+            customPlayer.addSkillXp(SkillType.GUARDSMAN, (int) (xp * mob_xp_mappings.get(victim.getType())), true);
         }
     }
 

@@ -92,7 +92,7 @@ public class Blueprints {
     private static void startPeriodicBlueprintRefresh() {
         Bukkit.getScheduler().runTaskTimerAsynchronously(Specialization.getInstance(), () -> {
             Bukkit.getLogger().info("[Blueprints] Periodic blueprint recipe refresh triggered");
-            Debug.broadcast("recipes", "Periodic blueprint recipe refresh triggered", null, true);
+//            Debug.broadcast("recipes", "Periodic blueprint recipe refresh triggered", null, true);
             Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> Blueprints.registerBlueprintRecipes(true));
         }, 1200L, 1200L);
     }

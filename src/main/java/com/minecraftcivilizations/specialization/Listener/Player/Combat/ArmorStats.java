@@ -1,10 +1,16 @@
 package com.minecraftcivilizations.specialization.Listener.Player.Combat;
 
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+
+import java.util.Objects;
 
 /**
  * Holds pairs of armor/toughness for later calculation
@@ -69,6 +75,18 @@ public final class ArmorStats {
         this.knockback_resist = knockback_resist;
     }
 
+    public static double getArmorHeight(EquipmentSlot slot) {
+        switch (slot) {
+            case FEET: return 0.1;
+            case LEGS: return 0.8;
+            case CHEST: return 1.2;
+            case HEAD: return 1.6;
+            case HAND:
+            case OFF_HAND: return 1.1;
+            default: return 1.0;
+        }
+    }
+
     @Override
     public String toString() {
         return "ArmorStats{armor=" + armor + ", toughness=" + toughness + ", knockback="+knockback_resist+"}";
@@ -77,7 +95,7 @@ public final class ArmorStats {
     /**
      * Returns specific Vanilla Stats for individual pieces of armor
      */
-    public static ArmorStats getStats(Material armor) {
+    public static ArmorStats getVanillaStats(Material armor) {
         if (armor == null) return new ArmorStats(0, 0);
 
         switch (armor) {
@@ -139,6 +157,65 @@ public final class ArmorStats {
         }
     }
 
+    /**
+     * Returns a block that matches the material
+     */
+    public static Material getMaterialBlockType(Material armor){
+        switch (armor) {
+            // Leather
+            case LEATHER_HELMET:
+            case LEATHER_CHESTPLATE:
+            case LEATHER_LEGGINGS:
+            case LEATHER_BOOTS:
+                return Material.SOUL_SOIL;
+
+            // Chainmail
+            case CHAINMAIL_HELMET:
+            case CHAINMAIL_CHESTPLATE:
+            case CHAINMAIL_LEGGINGS:
+            case CHAINMAIL_BOOTS:
+                return Material.CHAIN;
+
+            // Iron
+            case IRON_HELMET:
+            case IRON_CHESTPLATE:
+            case IRON_LEGGINGS:
+            case IRON_BOOTS:
+                return Material.IRON_BLOCK;
+
+            // Gold
+            case GOLDEN_HELMET:
+            case GOLDEN_CHESTPLATE:
+            case GOLDEN_LEGGINGS:
+            case GOLDEN_BOOTS:
+                return Material.GOLD_BLOCK;
+
+            // Diamond
+            case DIAMOND_HELMET:
+            case DIAMOND_CHESTPLATE:
+            case DIAMOND_LEGGINGS:
+            case DIAMOND_BOOTS:
+                return Material.DIAMOND_BLOCK;
+
+            // Netherite
+            case NETHERITE_HELMET:
+            case NETHERITE_CHESTPLATE:
+            case NETHERITE_LEGGINGS:
+            case NETHERITE_BOOTS:
+                return Material.NETHERITE_BLOCK;
+
+            // Turtle
+            case TURTLE_HELMET:
+                return Material.EMERALD_BLOCK;
+
+            default:
+                return Material.AIR;
+        }
+    }
+
+    /**
+     * Returns a material that is used in the creation of the armor piece
+     */
     public static Material getMaterialType(Material armor) {
         switch (armor) {
             // Leather
@@ -234,6 +311,47 @@ public final class ArmorStats {
             default:
                 return null;
         }
+    }
+
+    public static ArmorStats getArmorStats(EntityEquipment equipment) {
+        if (equipment == null) return new ArmorStats(0, 0);
+
+        double total_armor = 0;
+        double total_toughness = 0;
+
+        ItemStack[] armor_items = {
+                equipment.getHelmet(),
+                equipment.getChestplate(),
+                equipment.getLeggings(),
+                equipment.getBoots()
+        };
+
+        for (ItemStack item : armor_items) {
+            if (item == null || !item.hasItemMeta()){
+//                Debug.broadcast("armorstats", item.getType().name()+" has no meta");
+                continue;
+            }
+
+            ItemMeta meta = item.getItemMeta();
+            if (meta == null){
+//                Debug.broadcast("armorstats", item.getType().name()+" meta is null");
+                continue;
+            }
+
+            if(meta.hasAttributeModifiers()) {
+                for (AttributeModifier mod : Objects.requireNonNull(meta.getAttributeModifiers(Attribute.ARMOR))) {
+                    total_armor += mod.getAmount();
+                }
+                for (AttributeModifier mod : Objects.requireNonNull(meta.getAttributeModifiers(Attribute.ARMOR_TOUGHNESS))) {
+                    total_toughness += mod.getAmount();
+                }
+            }else{
+                ArmorStats stats = getVanillaStats(item.getType());
+                total_armor += stats.getArmor();
+                total_toughness += stats.getToughness();
+            }
+        }
+        return new ArmorStats(total_armor, total_toughness);
     }
 
 

@@ -61,7 +61,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -86,6 +85,7 @@ public final class Specialization extends JavaPlugin {
     public void onEnable() {
         logger = getLogger();
 
+        Skill.InitCacheXPLevelFormula();
         debug = new Debug(this);
         saveResource("first_names.txt", false);
         saveResource("last_names.txt", false);
@@ -192,10 +192,11 @@ public final class Specialization extends JavaPlugin {
             applyCustomName(playerJoinEvent.getPlayer(), customPlayer.getName());
 //            customPlayer.applyEffects();
 
+            // We don't really need this anymore right? -Alec
             // Migrate old bandages to new format
-            Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
-                migrateLegacyItems(playerJoinEvent.getPlayer());
-            }, 10L);
+//            Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
+//                migrateLegacyItems(playerJoinEvent.getPlayer());
+//            }, 10L);
 
             // TODO PDC-xp-hotfix for later if we need it
             //  customPlayer.reloadSkillsXp(playerJoinEvent.getPlayer());
@@ -367,6 +368,7 @@ public final class Specialization extends JavaPlugin {
         return packet;
     }
 
+    @Deprecated // ...right? - Alec TODO confirm and remove
     private void migrateLegacyItems(Player player) {
         int migratedCount = 0;
         
