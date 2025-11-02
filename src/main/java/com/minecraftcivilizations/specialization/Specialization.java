@@ -15,6 +15,7 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Data.MongoConnection;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
+import com.minecraftcivilizations.specialization.Listener.Blocks.AutoCrafterListener;
 import com.minecraftcivilizations.specialization.Listener.BurnListener;
 import com.minecraftcivilizations.specialization.Listener.Blocks.ReinforcementProtectionListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.ExplodeListener;
@@ -123,6 +124,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new StonecutterListener(this), this);
         getServer().getPluginManager().registerEvents(new CraftingListener(this), this);
         getServer().getPluginManager().registerEvents(new FurnaceListener(), this);
+        getServer().getPluginManager().registerEvents(new AutoCrafterListener(), this);
 
         new TownManager();
         getServer().getPluginManager().registerEvents(new MoveListener(), this);
