@@ -3,8 +3,8 @@ package com.minecraftcivilizations.specialization.Recipe;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
-import com.minecraftcivilizations.specialization.util.CoreUtil;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
+import com.minecraftcivilizations.specialization.util.CoreUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Ability.AbilityCastEvent;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Ability.CustomAbility;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Ability.CustomItemAbilityRegistry;
@@ -16,9 +16,11 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Tag;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
 
@@ -115,6 +117,8 @@ public class Recipes {
         }
 
         int netherCount = addNetherRecipes(reloading);
+        addUnobtainableRecipes();
+
         successCount += netherCount;
 
         Bukkit.getLogger().info("[Recipes] Registration complete: " + successCount + " successful, " + failCount + " failed");
@@ -173,5 +177,19 @@ public class Recipes {
         }
 
         return count;
+    }
+
+    public static void addUnobtainableRecipes(){
+        ShapedRecipe catEgg = new ShapedRecipe(new NamespacedKey(Specialization.getInstance(), "cat_spawn_egg"), new ItemStack(Material.CAT_SPAWN_EGG));
+        catEgg.shape("FFF", " E ", "FDF");
+        catEgg.setIngredient('F', Material.TROPICAL_FISH);
+        catEgg.setIngredient('E', Material.EGG);
+        catEgg.setIngredient('D', Material.DIAMOND);
+        Bukkit.addRecipe(catEgg, true);
+
+        ShapedRecipe bell = new ShapedRecipe(new NamespacedKey(Specialization.getInstance(), "bell"), new ItemStack(Material.BELL));
+        bell.shape(" W ", "GGG", "GGG");
+        bell.setIngredient('W', new RecipeChoice.MaterialChoice(Tag.PLANKS));
+        bell.setIngredient('G', Material.GOLD_INGOT);
     }
 }
