@@ -117,7 +117,12 @@ public class Recipes {
         }
 
         int netherCount = addNetherRecipes(reloading);
-        addUnobtainableRecipes();
+
+        try {
+            addUnobtainableRecipes();
+        } catch (Exception ignored){
+            // recipe already added
+        }
 
         successCount += netherCount;
 
