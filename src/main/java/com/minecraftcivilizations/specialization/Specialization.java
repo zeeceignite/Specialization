@@ -137,6 +137,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new XpTransferBookListener(), this);
         getServer().getPluginManager().registerEvents(new RepairingListener(), this);
         getServer().getPluginManager().registerEvents(new RepairingListener(), this);
+        getServer().getPluginManager().registerEvents(new PhantomRideListener(), this);
 
         //town data does not need to wait anymore
         TownManager.scanAllPlayersForTownsAsync();
