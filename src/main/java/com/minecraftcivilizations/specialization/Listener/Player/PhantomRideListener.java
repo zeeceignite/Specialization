@@ -114,6 +114,10 @@ public class PhantomRideListener implements Listener {
         }
         if ((event.getPlayer().isSneaking())) return;
 
+        // prevent multiple riders ===
+        if (!phantom.getPassengers().isEmpty()) {
+            return;
+        }
 
         if (!player.isInsideVehicle()) {
             phantom.addPassenger(player);
