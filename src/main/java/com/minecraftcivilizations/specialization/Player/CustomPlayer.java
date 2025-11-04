@@ -242,7 +242,6 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     }
 
 
-     */
     public int getSkillLevel(SkillType skillType) {
         Skill skill = getSkill(skillType);
         double xp = skill.getXp();

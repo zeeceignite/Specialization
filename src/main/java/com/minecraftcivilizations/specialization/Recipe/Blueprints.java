@@ -52,15 +52,15 @@ public class Blueprints {
                 CustomItemRegistry.register(blueprintKey, customItem);
                 count++;
             } catch (Exception e) {
-                Bukkit.getLogger().warning("[Blueprints] Failed to register blueprint item - " + e.getMessage());
+//                Bukkit.getLogger().warning("[Blueprints] Failed to register blueprint item - " + e.getMessage());
             }
         }
         
-        Bukkit.getLogger().info("[Blueprints] Registered " + count + " blueprint items");
+//        Bukkit.getLogger().info("[Blueprints] Registered " + count + " blueprint items");
     }
 
     public static void registerBlueprintRecipes(boolean reloading){
-        Bukkit.getLogger().info("[Blueprints] Registering blueprint recipes...");
+//        Bukkit.getLogger().info("[Blueprints] Registering blueprint recipes...");
         int successCount = 0;
         int failCount = 0;
         
@@ -73,25 +73,25 @@ public class Blueprints {
                 if (customItem != null) {
                     Recipe recipe = makeBlueprintRecipe(blueprintBase.getType(), customItem.getItem(), blueprintKey);
                     Bukkit.addRecipe(recipe, true);
-                    Bukkit.getLogger().info("[Blueprints] ✓ Registered recipe: " + blueprintKey);
+//                    Bukkit.getLogger().info("[Blueprints] ✓ Registered recipe: " + blueprintKey);
                     successCount++;
                 } else {
-                    Bukkit.getLogger().warning("[Blueprints] ✗ Blueprint item not found in registry: " + blueprintKey);
+//                    Bukkit.getLogger().warning("[Blueprints] ✗ Blueprint item not found in registry: " + blueprintKey);
                     failCount++;
                 }
             } catch (Exception e) {
-                if (!reloading)
-                    Bukkit.getLogger().warning("[Blueprints] ✗ Failed to register blueprint recipe - " + e.getMessage());
+//                if (!reloading)
+//                    Bukkit.getLogger().warning("[Blueprints] ✗ Failed to register blueprint recipe - " + e.getMessage());
                 failCount++;
             }
         }
         
-        Bukkit.getLogger().info("[Blueprints] Registration complete: " + successCount + " successful, " + failCount + " failed");
+//        Bukkit.getLogger().info("[Blueprints] Registration complete: " + successCount + " successful, " + failCount + " failed");
     }
 
     private static void startPeriodicBlueprintRefresh() {
         Bukkit.getScheduler().runTaskTimerAsynchronously(Specialization.getInstance(), () -> {
-            Bukkit.getLogger().info("[Blueprints] Periodic blueprint recipe refresh triggered");
+//            Bukkit.getLogger().info("[Blueprints] Periodic blueprint recipe refresh triggered");
 //            Debug.broadcast("recipes", "Periodic blueprint recipe refresh triggered", null, true);
             Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> Blueprints.registerBlueprintRecipes(true));
         }, 1200L, 1200L);

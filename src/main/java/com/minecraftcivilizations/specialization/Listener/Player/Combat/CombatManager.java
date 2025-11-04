@@ -6,21 +6,26 @@ import com.minecraftcivilizations.specialization.Listener.Mobs.MobDamage;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.plugin.RegisteredListener;
 
 import java.util.EnumMap;
 import java.util.List;
 
+import static org.bukkit.ChatColor.RED;
 import static org.bukkit.entity.EntityType.*;
 
 /**
@@ -66,15 +71,50 @@ public class CombatManager implements Listener {
             //Attacker is a Mob
             // This should ONLY apply to mob damage, not PVP damage
             if(event.getEntity() instanceof Player player) {
-//                    Debug.broadcast("damage", "original damage: "+event.getDamager());
-                mobDamage.onMobAttack(player, event); //increases base damage of mobs
-                armorDamageReduction.applyArmorReduction(player, event);
+                //increase damage of mobs to players
+                mobDamage.onMobAttack(player, event);
 
             }
         }
+
+        //Finally, apply GLOBAL armor reduction
+        if(event.getEntity() instanceof LivingEntity le) {
+            armorDamageReduction.applyArmorReduction(le, event);
+        }
+
+
     }
 
+    
+    @EventHandler(priority = EventPriority.MONITOR)
+            public void monitorEvents(EntityDamageByEntityEvent event){
+        HandlerList handlers = event.getHandlers();
+        int i = 0;
+        for(RegisteredListener l : handlers.getRegisteredListeners()){
+            Specialization.getInstance().getLogger().info(i+":"+l.getPlugin().getName());
+            i++;
 
+        }
+        String modifiers = "";
+
+        for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
+            if(event.getDamage(m)!=0)
+                modifiers += "\n<gray>"+m.name()+"</gray>: "+Debug.formatDecimal(event.getDamage(m));
+        }
+        Debug.broadcast(
+                "damage",
+                RED+ "[Final Damage Modifiers]",
+                modifiers
+        );
+
+    }
+    private double safeGet(EntityDamageByEntityEvent event, EntityDamageEvent.DamageModifier mod) {
+        try {
+            return event.getDamage(mod);
+        } catch (IllegalArgumentException ex) {
+            return 0.0;
+        }
+    }
 
     EnumMap<EntityType, Double> mob_xp_mappings = new EnumMap<>(EntityType.class);
 

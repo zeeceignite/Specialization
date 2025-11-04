@@ -33,28 +33,47 @@ public class ArmorDamageReduction {
      * Reduce Damage taken by Mobs
      * TARGET: 16 hits with iron, 32 hits with diamond
      */
-    public void applyArmorReduction(Player victim, EntityDamageByEntityEvent event) {
-        if (!(event.getDamager() instanceof LivingEntity attacker)) return;
+    public void applyArmorReduction(LivingEntity victim, EntityDamageByEntityEvent event) {
+//        if (!(event.getDamager() instanceof LivingEntity attacker)) return;
 
         // Check if the system is enabled
 //        if (!enabled) {
 //            return;
 //        }
-        CustomPlayer customPlayer = CustomPlayer.getCustomPlayer(victim);
 
-        int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
+//        int lvl = 0;
+//
+//        boolean is_player = false;
+//        if(victim instanceof Player player) {
+//            // Utilize Guardsman Armor buff
+//            is_player = true;
+//            CustomPlayer customPlayer = CustomPlayer.getCustomPlayer(player);
+//            lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
+//        }
+
+
 //        if(lvl>=5){
 //            return; //full effectiveness
 //        }
         ArmorStats stats = ArmorStats.getArmorStats(victim.getEquipment());
-//        Debug.broadcast("armorstats", BLUE+"Armor: "+WHITE+stats.getArmor()+BLUE+" Toughness: "+WHITE+stats.getToughness());
+        double original_base = event.getDamage(BASE);
+        double original_armor = event.getDamage(ARMOR);
+        double armor_ceiling = 40;
 
-        double armor_reduction = event.getDamage(ARMOR);
-        //gain 5% more armor effecitveness per guardsman level
-        double armor_effectiveness = 1+(((double)lvl)/20);
-        double final_armor_reduction = armor_reduction * armor_effectiveness;
+        double armor = stats.getArmor();
+        double toughness = stats.getToughness();
 
-        event.setDamage(ARMOR, final_armor_reduction);
+
+        double ARMOR_REDUCTION = original_base * (armor / armor_ceiling); //(HARD SUBTRACT)
+        double TOUGHNESS_REDUCTION = Math.max (0, toughness / 4); //(HARD SUBTRACT)
+
+
+        double TOTAL_REDUCTION;
+        TOTAL_REDUCTION = Math.min(original_base, (ARMOR_REDUCTION) + (TOUGHNESS_REDUCTION));
+
+
+        //inverse finally
+        event.setDamage(ARMOR, -TOTAL_REDUCTION);
 
         //Blocking
         //scaled armor reduction effectiveness according to guardsman level
@@ -63,20 +82,24 @@ public class ArmorDamageReduction {
             String modifiers = "";
 
             for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
+                if(event.getDamage(m)!=0)
                 modifiers += "\n<gray>"+m.name()+"</gray>: "+Debug.formatDecimal(event.getDamage(m));
             }
 
             Debug.broadcast(
                     "armor",
-                    WHITE+victim.getName()+" "+RED+ Debug.formatDecimal(event.getDamage())+
-                            (WHITE+" ["+BLUE+"🅱: "+Debug.formatDecimal(armor_reduction)+"]")+
-                            (WHITE+" ["+AQUA+"👕: "+armor_effectiveness+"x"+WHITE+"]")+
+                    //WHITE+victim.getName()+" "+*
+                    RED+ Debug.formatDecimal(event.getDamage())+
+                            (WHITE+" ["+BLUE+"🅱: "+Debug.formatDecimal(original_armor)+"]")+
+//                            (is_player?(WHITE+" ["+AQUA+"👕: "+armor_effectiveness+"x"+WHITE+"]"):"")+
 //                            (victim.isBlocking()?(WHITE+" ["+GRAY+"🛡: "+blocking_penalty+WHITE+"]"):"")+
-                            (WHITE+" ["+GREEN+"🚫: "+Debug.formatDecimal(final_armor_reduction)+"]")+
+                            (WHITE+" ["+GREEN+"🚫: "+Debug.formatDecimal(TOTAL_REDUCTION)+"]")+
                             (event.isCritical()? GREEN+" (CRIT!)":"")+
                             RED+" [❤ "+Debug.formatDecimal(CombatManager.calculateTotalDamage(event))+"]"
                     ,
-                    "Original damage: "+event.getDamage()
+                    "<blue>ARMOR REDUCTION:</blue> "+Debug.formatDecimal(ARMOR_REDUCTION)+"\n"
+                            +"<light_purple>TOUGHNESS REDUCTION:</light_purple> "+Debug.formatDecimal(TOUGHNESS_REDUCTION)+"\n"
+                            +"\nOriginal damage: "+Debug.formatDecimal(event.getDamage())
                             +modifiers
             );
         }

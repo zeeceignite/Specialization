@@ -84,11 +84,11 @@ public class Recipes {
                         shapelessRecipe.addIngredient(Material.SUGAR_CANE);
                     }
                     Bukkit.addRecipe(shapelessRecipe, true);
-                    Bukkit.getLogger().info("[Recipes] ✓ "+register_mode+" recipe: " + key);
+//                    Bukkit.getLogger().info("[Recipes] ✓ "+register_mode+" recipe: " + key);
                     successCount++;
                 } catch (Exception e) {
-                    if(!reloading)
-                        Bukkit.getLogger().warning("[Recipes] ✗ Failed to "+register_mode+" recipe: " + key + " - " + e.getMessage());
+//                    if(!reloading)
+//                        Bukkit.getLogger().warning("[Recipes] ✗ Failed to "+register_mode+" recipe: " + key + " - " + e.getMessage());
                     failCount++;
                 }
             }
@@ -106,23 +106,23 @@ public class Recipes {
 
             Bukkit.removeRecipe(NamespacedKey.minecraft("rail"));
             Bukkit.addRecipe(shapedRecipe);
-            Bukkit.getLogger().info("[Recipes] ✓ "+register_mode+" modified recipe: minecraft:rail");
+//            Bukkit.getLogger().info("[Recipes] ✓ "+register_mode+" modified recipe: minecraft:rail");
             successCount++;
         } catch (Exception e) {
-            if(!reloading)
-                Bukkit.getLogger().warning("[Recipes] ✗ Failed to "+register_mode+" rail recipe - " + e.getMessage());
+//            if(!reloading)
+//                Bukkit.getLogger().warning("[Recipes] ✗ Failed to "+register_mode+" rail recipe - " + e.getMessage());
             failCount++;
         }
 
         int netherCount = addNetherRecipes(reloading);
         successCount += netherCount;
 
-        Bukkit.getLogger().info("[Recipes] Registration complete: " + successCount + " successful, " + failCount + " failed");
+//        Bukkit.getLogger().info("[Recipes] Registration complete: " + successCount + " successful, " + failCount + " failed");
     }
 
     private static void startPeriodicRecipeRefresh() {
         Bukkit.getScheduler().runTaskTimerAsynchronously(Specialization.getInstance(), () -> {
-            Bukkit.getLogger().info("[Recipes] Periodic recipe refresh triggered");
+//            Bukkit.getLogger().info("[Recipes] Periodic recipe refresh triggered");
 //            Debug.broadcast("recipes", "Periodic recipe refresh triggered", null, true);
             Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> Recipes.registerRecipes(true));
         }, 1200L, 1200L);
@@ -137,11 +137,11 @@ public class Recipes {
             netheriteUpgrade.addIngredient(6, Material.DIAMOND);
             netheriteUpgrade.addIngredient(1, Material.NETHER_WART_BLOCK);
             Bukkit.addRecipe(netheriteUpgrade, true);
-            Bukkit.getLogger().info("[Recipes] ✓ Registered recipe: specialization:netherite_upgrade");
+//            Bukkit.getLogger().info("[Recipes] ✓ Registered recipe: specialization:netherite_upgrade");
             count++;
         } catch (Exception e) {
-            if(!reloading)
-                Bukkit.getLogger().warning("[Recipes] ✗ Failed to register netherite_upgrade - " + e.getMessage());
+//            if(!reloading)
+//                Bukkit.getLogger().warning("[Recipes] ✗ Failed to register netherite_upgrade - " + e.getMessage());
         }
 
         try {
@@ -151,11 +151,11 @@ public class Recipes {
             blazeRod.addIngredient(1, Material.CRIMSON_NYLIUM);
             blazeRod.addIngredient(1, Material.WARPED_NYLIUM);
             Bukkit.addRecipe(blazeRod, true);
-            Bukkit.getLogger().info("[Recipes] ✓ Registered recipe: specialization:blaze_rod");
+//            Bukkit.getLogger().info("[Recipes] ✓ Registered recipe: specialization:blaze_rod");
             count++;
         } catch (Exception e) {
-            if(!reloading)
-                Bukkit.getLogger().warning("[Recipes] ✗ Failed to register blaze_rod - " + e.getMessage());
+//            if(!reloading)
+//                Bukkit.getLogger().warning("[Recipes] ✗ Failed to register blaze_rod - " + e.getMessage());
         }
 
         try {
@@ -165,11 +165,11 @@ public class Recipes {
             netherWart.setIngredient('D', Material.COARSE_DIRT);
             netherWart.setIngredient('B', Material.BLAZE_POWDER);
             Bukkit.addRecipe(netherWart, true);
-            Bukkit.getLogger().info("[Recipes] ✓ Registered recipe: specialization:nether_wart");
+//            Bukkit.getLogger().info("[Recipes] ✓ Registered recipe: specialization:nether_wart");
             count++;
         } catch (Exception e) {
-            if(!reloading)
-                Bukkit.getLogger().warning("[Recipes] ✗ Failed to register nether_wart - " + e.getMessage());
+//            if(!reloading)
+//                Bukkit.getLogger().warning("[Recipes] ✗ Failed to register nether_wart - " + e.getMessage());
         }
 
         return count;
