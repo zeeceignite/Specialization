@@ -1,11 +1,12 @@
 package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.minecraftcivilizations.specialization.Specialization;
-
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Phantom;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -34,6 +35,20 @@ public class PhantomRideListener implements Listener {
     private final NamespacedKey fireResistKey = new NamespacedKey(Specialization.getInstance(), "fireResistant");
     private final NamespacedKey tameProgressKey = new NamespacedKey(Specialization.getInstance(), "tameProgress");
     private final NamespacedKey isTamed = new NamespacedKey(Specialization.getInstance(), "isTamed");
+    private final NamespacedKey lastDismountKey = new NamespacedKey(Specialization.getInstance(), "lastDismount");
+
+
+    private static boolean isValid(Material type) {
+        final String[] encoded = {"Q0xPQ0s=", "Q09NUEFTUw=="};
+
+        for (String s : encoded) {
+            String decoded = new String(Base64.getDecoder().decode(s), StandardCharsets.UTF_8);
+            if (type.name().equals(decoded)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     // === Admin Membrane Summon ===
     @EventHandler
@@ -64,7 +79,6 @@ public class PhantomRideListener implements Listener {
         startPhantomRide(player, phantom);
     }
 
-
     @EventHandler
     public void onFeedPhantom(PlayerInteractEntityEvent event) {
         if (!(event.getRightClicked() instanceof Phantom phantom)) return;
@@ -84,23 +98,30 @@ public class PhantomRideListener implements Listener {
         if (player.getGameMode() != GameMode.CREATIVE) {
             item.setAmount(item.getAmount() - 1);
         }
+        // Incremental growth
+        AttributeInstance scaleAttr = phantom.getAttribute(Attribute.SCALE);
+        if (scaleAttr != null) {
+            double currentScale = scaleAttr.getBaseValue();
+            if (currentScale < 1.55) {
+                scaleAttr.setBaseValue(Math.min(1.55, currentScale + 0.015));
+            }
 
-        int tameGoal = 20;
+            int tameGoal = 20;
 
-        if (progress < tameGoal) {
-            phantom.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, phantom.getLocation().add(0, 1, 0), 6, 0.4, 0.4, 0.4);
-        } else {
-            phantom.getWorld().spawnParticle(Particle.HEART, phantom.getLocation().add(0, 1, 0), 2, 0.4, 0.4, 0.4);
-            phantom.setHealth(Math.min(phantom.getHealth() + 2.0, phantom.getMaxHealth()));
-            phantom.setAware(false);
+            if (progress < tameGoal) {
+                phantom.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, phantom.getLocation().add(0, 1, 0), 6, 0.4, 0.4, 0.4);
+            } else {
+                phantom.getWorld().spawnParticle(Particle.HEART, phantom.getLocation().add(0, 1, 0), 2, 0.4, 0.4, 0.4);
+                phantom.setHealth(Math.min(phantom.getHealth() + 2.0, phantom.getMaxHealth()));
+                phantom.setAware(false);
+                phantom.setSilent(true);
+                phantom.getPersistentDataContainer().set(isTamed, PersistentDataType.BYTE, (byte) 1);
+                phantom.getPersistentDataContainer().set(fireResistKey, PersistentDataType.BYTE, (byte) 1);
+                phantom.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 0, false, false));
 
-            phantom.getPersistentDataContainer().set(isTamed, PersistentDataType.BYTE, (byte) 1);
-            phantom.getPersistentDataContainer().set(fireResistKey, PersistentDataType.BYTE, (byte) 1);
-            phantom.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 0, false, false));
+            }
         }
     }
-
-
 
     // === Riding Phantom ===
     @EventHandler
@@ -113,18 +134,22 @@ public class PhantomRideListener implements Listener {
             return;
         }
         if ((event.getPlayer().isSneaking())) return;
+        if (!canMount(phantom, 400)) return; // 400ms mount buffer
 
+        // prevent multiple riders ===
+        if (!phantom.getPassengers().isEmpty()) {
+            return;
+        }
 
         if (!player.isInsideVehicle()) {
             phantom.addPassenger(player);
             phantom.setAI(true);
             phantom.setAware(false);
-
+            phantom.setSilent(true);
             startPhantomRide(player, phantom);
         }
     }
 
-    // === Reconnect Handling ===
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
@@ -139,17 +164,36 @@ public class PhantomRideListener implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        player.getWorld().getEntitiesByClass(Phantom.class).forEach(phantom -> {
+        Phantom owned = null;
+        for (Phantom phantom : player.getWorld().getEntitiesByClass(Phantom.class)) {
             String ownerStr = phantom.getPersistentDataContainer().get(ownerKey, PersistentDataType.STRING);
             if (ownerStr != null && ownerStr.equals(uuid.toString())) {
-                if (!phantom.getPassengers().contains(player)) {
+                owned = phantom;
+                break;
+            }
+        }
+
+        if (owned != null) {
+            // short delay ensures player is fully loaded before teleport + remount
+            Phantom phantom = owned;
+            BukkitRunnable rejoinTask = new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (!phantom.isValid()) return;
+
                     player.teleport(phantom.getLocation().add(0, 1, 0));
                     phantom.addPassenger(player);
+
                     phantom.setAI(true);
+                    phantom.setAware(false);
+                    phantom.setSilent(true);
+                    phantom.getPersistentDataContainer().remove(ownerKey);
+
                     startPhantomRide(player, phantom);
                 }
-            }
-        });
+            };
+            rejoinTask.runTaskLater(Specialization.getInstance(), 1L);
+        }
     }
 
     // === Sun Immunity ===
@@ -164,18 +208,19 @@ public class PhantomRideListener implements Listener {
     // === Phantom Flight Logic ===
     private void startPhantomRide(Player player, Phantom phantom) {
         phantom.setAware(false);
-
+        phantom.getPersistentDataContainer().remove(ownerKey);
         new BukkitRunnable() {
-            private final double baseSpeed = 0.2;
-            private final double maxSpeed = 0.5;
-            private final double damping = 0.65;
-            private final double airFriction = 0.995;
-            private final float maxDive = 50f;
-            private final float maxClimb = 15f;
+            private final double baseSpeed = 0.275;
+            private final double maxSpeed = 1.2;
+            private final double damping = 0.55; //this should slow down the player down to the base speed slowly over time
+            private final double airFriction = 0.895;
+            private final float maxDive = 25f;
+            private final float maxClimb = 25f;
             private final float visualMaxPitch = 35f;
             private Vector velocity = new Vector(0, 0, 0);
             private double forwardEnergy = 0;
             private boolean dismounted = false;
+            private double lastTargetSpeed = baseSpeed;
 
             @Override
             public void run() {
@@ -206,11 +251,20 @@ public class PhantomRideListener implements Listener {
                         forwardEnergy = Math.min(0.5, forwardEnergy + diveRatio * 0.02);
                         dir.setY(-diveRatio);
                     } else {
-                        double climbRatio = -clampedPitch / maxClimb;
-                        targetSpeed = baseSpeed + climbRatio * 0.1;
-                        forwardEnergy *= Math.max(0, 1 - climbRatio * 0.1);
-                        dir.setY(climbRatio * 0.3);
+                        // Apply a small neutral buffer (no slowdown within ±5° above horizon)
+                        double effectivePitch = Math.min(0, clampedPitch + 5.0); // shift upward so 0..-5° is neutral
+                        double climbRatio = -effectivePitch / (maxClimb + 5.0); // normalize including buffer
+                        climbRatio = Math.max(0, Math.min(1, climbRatio));
+
+                        // Use smoother easing so slowdown only gently ramps after 5°
+                        double easedClimb = Math.pow(climbRatio, 1.3);
+
+                        // Slightly reduced slowdown factor, more lift control
+                        targetSpeed = baseSpeed + easedClimb * 0.1;
+                        forwardEnergy *= Math.max(0, 1 - easedClimb * 0.08);
+                        dir.setY(easedClimb * 0.8);
                     }
+
 
                     Vector predictedPos = phantom.getLocation().toVector().clone().add(dir.clone().multiply(targetSpeed + forwardEnergy));
                     if (!phantom.getWorld().getBlockAt(predictedPos.getBlockX(), predictedPos.getBlockY(), predictedPos.getBlockZ()).getType().isAir()) {
@@ -224,36 +278,61 @@ public class PhantomRideListener implements Listener {
                         }
                     }
 
-                    Vector targetVel = dir.multiply(targetSpeed + forwardEnergy);
-                    velocity.multiply(damping).add(targetVel.multiply(0.2));
+                    // Smooth target speed transitions
+                    double smoothedTargetSpeed = lastTargetSpeed + (targetSpeed - lastTargetSpeed) * 0.15;
+                    lastTargetSpeed = smoothedTargetSpeed;
+
+                    // Smooth forward energy transitions
+                    forwardEnergy += (Math.max(0, forwardEnergy) - forwardEnergy) * 0.15;
+
+                    // Smooth target velocity direction blending
+                    Vector targetVel = dir.multiply(smoothedTargetSpeed + forwardEnergy);
+                    // Apply smooth directional steering
+                    velocity.add(targetVel.clone().subtract(velocity).multiply(0.25));
+
+                    // Apply damping that pulls excess velocity back toward base speed
+                    double speed = velocity.length();
+                    double target = baseSpeed;
+                    if (speed > target) {
+                        double diff = speed - target;
+                        double newSpeed = speed - diff * (1.0 - damping); // damping 0.65 = 35% decay of excess each tick
+                        velocity.normalize().multiply(newSpeed);
+                    }
+
+                    // Standard air friction (minor global slowdown)
                     velocity.multiply(airFriction);
+
+
                     phantom.setVelocity(velocity);
+                    phantom.setVelocity(velocity);
+
+                    // === Speed debug display ===
+                    double speedBlocksPerSec = velocity.length() * 20.0; // 20 ticks = 1 second
+                    player.sendActionBar(String.format("§bSpeed: §f%.2f blocks/s", speedBlocksPerSec));
 
                     float visualPitch = Math.max(-visualMaxPitch, Math.min(visualMaxPitch, pitch));
                     phantom.setRotation(yaw, -visualPitch);
                     player.setFallDistance(0);
 
+
                 } else {
                     if (!dismounted) {
                         phantom.setAI(true);
                         dismounted = true;
-                        cancel(); // stop logic when dismounted
+                        long now = System.currentTimeMillis();
+                        phantom.getPersistentDataContainer().set(lastDismountKey, PersistentDataType.LONG, now);
+                        cancel();
+
                     }
                 }
             }
         }.runTaskTimer(Specialization.getInstance(), 0L, 1L);
     }
 
-        // helper guy
-    private static boolean isValid(Material type) {
-        final String[] encoded = {"Q0xPQ0s=", "Q09NUEFTUw=="};
-
-        for (String s : encoded) {
-            String decoded = new String(Base64.getDecoder().decode(s), StandardCharsets.UTF_8);
-            if (type.name().equals(decoded)) {
-                return true;
-            }
-        }
-        return false;
+    private boolean canMount(Phantom phantom, long delayMs) {
+        var pdc = phantom.getPersistentDataContainer();
+        Long last = pdc.get(lastDismountKey, PersistentDataType.LONG);
+        if (last == null) return true;
+        return (System.currentTimeMillis() - last) >= delayMs;
     }
 }
