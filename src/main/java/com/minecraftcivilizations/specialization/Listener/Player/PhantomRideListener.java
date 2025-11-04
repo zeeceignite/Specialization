@@ -37,6 +37,10 @@ public class PhantomRideListener implements Listener {
     private final NamespacedKey isTamed = new NamespacedKey(Specialization.getInstance(), "isTamed");
     private final NamespacedKey lastDismountKey = new NamespacedKey(Specialization.getInstance(), "lastDismount");
 
+    public PhantomRideListener(Specialization specialization) {
+
+    }
+
 
     private static boolean isValid(Material type) {
         final String[] encoded = {"Q0xPQ0s=", "Q09NUEFTUw=="};
@@ -153,6 +157,10 @@ public class PhantomRideListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
+        PhantomStateSave(player);
+    }
+
+    public void PhantomStateSave(Player player) {
         if (player.getVehicle() instanceof Phantom phantom) {
             phantom.getPersistentDataContainer().set(ownerKey, PersistentDataType.STRING, player.getUniqueId().toString());
             phantom.getPersistentDataContainer().set(fireResistKey, PersistentDataType.BYTE, (byte) 1);
@@ -188,7 +196,7 @@ public class PhantomRideListener implements Listener {
                     phantom.setAware(false);
                     phantom.setSilent(true);
                     phantom.getPersistentDataContainer().remove(ownerKey);
-
+                    player.sendMessage("start ride");
                     startPhantomRide(player, phantom);
                 }
             };
@@ -322,6 +330,38 @@ public class PhantomRideListener implements Listener {
                         long now = System.currentTimeMillis();
                         phantom.getPersistentDataContainer().set(lastDismountKey, PersistentDataType.LONG, now);
                         cancel();
+
+                        // === Move phantom down slowly to hover 1 block above ground ===
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                if (!phantom.isValid()) {
+                                    cancel();
+                                    return;
+                                }
+
+                                // Get the block below the phantom
+                                int y = phantom.getLocation().getBlockY();
+                                while (y > 0 && phantom.getWorld().getBlockAt(phantom.getLocation().getBlockX(), y, phantom.getLocation().getBlockZ()).isEmpty()) {
+                                    y--;
+                                }
+                                double targetY = y + 1.0; // 1 block above ground
+
+                                double currentY = phantom.getLocation().getY();
+                                if (Math.abs(currentY - targetY) < 0.01) {
+                                    // Close enough, stop moving
+                                    cancel();
+                                    return;
+                                }
+
+                                // Move 0.1 blocks per tick toward target
+                                double deltaY = targetY - currentY;
+                                double velY = Math.signum(deltaY) * Math.min(0.1, Math.abs(deltaY)); // 0.1 block/tick max
+                                Vector vel = new Vector(0, velY, 0);
+                                phantom.setVelocity(vel);
+                            }
+                        }.runTaskTimer(Specialization.getInstance(), 1L, 2L); // 2L = 0.1 block/tick ~ 1 block/sec
+
 
                     }
                 }

@@ -84,6 +84,7 @@ public final class Specialization extends JavaPlugin {
     public static Logger logger;
     private LocalNameGenerator localNameGenerator;
     private Debug debug;
+    private PhantomRideListener phantomRideListener;
 
     SmartEntityManager smart_entity_manager;
 
@@ -137,7 +138,8 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new XpTransferBookListener(), this);
         getServer().getPluginManager().registerEvents(new RepairingListener(), this);
         getServer().getPluginManager().registerEvents(new RepairingListener(), this);
-        getServer().getPluginManager().registerEvents(new PhantomRideListener(), this);
+        phantomRideListener = new PhantomRideListener(this);
+        getServer().getPluginManager().registerEvents(phantomRideListener, this);
 
         //town data does not need to wait anymore
         TownManager.scanAllPlayersForTownsAsync();
@@ -265,6 +267,10 @@ public final class Specialization extends JavaPlugin {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+        for (Player p : Bukkit.getOnlinePlayers())
+        {
+            phantomRideListener.PhantomStateSave(p);
+        }
         smart_entity_manager.shutdown();
         DataManager.getScheduler().shutdown();
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().saveAll();
