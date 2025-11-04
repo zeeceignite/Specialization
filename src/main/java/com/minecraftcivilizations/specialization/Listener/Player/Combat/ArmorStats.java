@@ -314,7 +314,10 @@ public final class ArmorStats {
     }
 
     public static ArmorStats getArmorStats(EntityEquipment equipment) {
-        if (equipment == null) return new ArmorStats(0, 0);
+        if (equipment == null) {
+            Debug.broadcast("armorstats", "returning null!");
+            return new ArmorStats(0, 0);
+        }
 
         double total_armor = 0;
         double total_toughness = 0;
@@ -327,18 +330,12 @@ public final class ArmorStats {
         };
 
         for (ItemStack item : armor_items) {
-            if (item == null || !item.hasItemMeta()){
-//                Debug.broadcast("armorstats", item.getType().name()+" has no meta");
+            if (item == null){
                 continue;
             }
-
             ItemMeta meta = item.getItemMeta();
-            if (meta == null){
-//                Debug.broadcast("armorstats", item.getType().name()+" meta is null");
-                continue;
-            }
 
-            if(meta.hasAttributeModifiers()) {
+            if((meta != null) && meta.hasAttributeModifiers()) {
                 for (AttributeModifier mod : Objects.requireNonNull(meta.getAttributeModifiers(Attribute.ARMOR))) {
                     total_armor += mod.getAmount();
                 }

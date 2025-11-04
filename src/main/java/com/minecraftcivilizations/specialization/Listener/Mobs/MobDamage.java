@@ -75,8 +75,8 @@ public class MobDamage implements Listener {
     public void onMobAttack(Player player, EntityDamageByEntityEvent event){
         if(!(event.getDamager() instanceof Enemy enemy)) return;
 
-        double newDamage = event.getDamage(EntityDamageEvent.DamageModifier.BASE);
-        event.setDamage(EntityDamageEvent.DamageModifier.BASE, newDamage*2.0);
+//        double newDamage = event.getDamage(EntityDamageEvent.DamageModifier.BASE);
+//        event.setDamage(EntityDamageEvent.DamageModifier.BASE, newDamage*2.0);
 
 //      BACKUP PLAN FOR MOB DAMAGE:
 //        Ensure this method is called after CombatManager's ArmorReduction.

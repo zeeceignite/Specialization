@@ -9,6 +9,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Zombie;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.EntityEquipment;
@@ -58,15 +59,15 @@ public class ArmorDamageReduction {
         ArmorStats stats = ArmorStats.getArmorStats(victim.getEquipment());
         double original_base = event.getDamage(BASE);
         double original_armor = event.getDamage(ARMOR);
-        double armor_ceiling = 40;
+        double armor_ceiling = 24;
 
         double armor = stats.getArmor();
         double toughness = stats.getToughness();
 
 
-        double ARMOR_REDUCTION = original_base * (armor / armor_ceiling); //(HARD SUBTRACT)
-        double TOUGHNESS_REDUCTION = Math.max (0, toughness / 4); //(HARD SUBTRACT)
-
+        double ARMOR_REDUCTION = original_base * (armor / armor_ceiling);
+        double TOUGHNESS_REDUCTION = Math.max (0, toughness / 16);
+//        double TOUGHNESS_REDUCTION = 0; //(HARD SUBTRACT)
 
         double TOTAL_REDUCTION;
         TOTAL_REDUCTION = Math.min(original_base, (ARMOR_REDUCTION) + (TOUGHNESS_REDUCTION));
@@ -89,10 +90,10 @@ public class ArmorDamageReduction {
             Debug.broadcast(
                     "armor",
                     //WHITE+victim.getName()+" "+*
-                    RED+ Debug.formatDecimal(event.getDamage())+
-                            (WHITE+" ["+BLUE+"🅱: "+Debug.formatDecimal(original_armor)+"]")+
-//                            (is_player?(WHITE+" ["+AQUA+"👕: "+armor_effectiveness+"x"+WHITE+"]"):"")+
-//                            (victim.isBlocking()?(WHITE+" ["+GRAY+"🛡: "+blocking_penalty+WHITE+"]"):"")+
+                    DARK_RED+"Reduction: "+RED+ Debug.formatDecimal(event.getDamage())+
+//                            (WHITE+" ["+BLUE+"🅱: "+Debug.formatDecimal(original_armor)+"]")+
+                            WHITE+" ["+BLUE+"👕: "+Debug.formatDecimal(-ARMOR_REDUCTION)+"x"+WHITE+"]"+
+                            ((stats.getToughness()>0)?(WHITE+" ["+GRAY+"🪨: "+Debug.formatDecimal(-TOUGHNESS_REDUCTION)+WHITE+"]"):"")+
                             (WHITE+" ["+GREEN+"🚫: "+Debug.formatDecimal(TOTAL_REDUCTION)+"]")+
                             (event.isCritical()? GREEN+" (CRIT!)":"")+
                             RED+" [❤ "+Debug.formatDecimal(CombatManager.calculateTotalDamage(event))+"]"

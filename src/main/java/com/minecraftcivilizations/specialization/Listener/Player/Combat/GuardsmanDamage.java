@@ -2,6 +2,7 @@ package com.minecraftcivilizations.specialization.Listener.Player.Combat;
 
 import com.minecraftcivilizations.specialization.Events.SkillLevelChangeEvent;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
+import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
@@ -17,6 +18,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -36,8 +38,6 @@ public class GuardsmanDamage implements Listener {
     Specialization plugin;
     NamespacedKey MAX_HEALTH_KEY;
     CombatManager combatManager;
-
-    private final double EXTRA_PENETRATION_PER_ARMOR = 0.25;
 
     public GuardsmanDamage(CombatManager combatManager) {
         this.combatManager = combatManager;
@@ -80,7 +80,19 @@ public class GuardsmanDamage implements Listener {
         Entity victim = event.getEntity();
 
         int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
-        double multiplier = Math.pow( 1.0774, lvl) - 0.25; //1.0 + ((double)lvl/10);
+
+        double multiplier = 0.5;
+        SkillLevel skill_level = SkillLevel.getSkillLevelFromInt(lvl);
+        switch(skill_level){
+            case NOVICE -> multiplier = 0.55;
+            case APPRENTICE -> multiplier = 0.75;
+            case JOURNEYMAN -> multiplier = 0.9;
+            case EXPERT ->  multiplier = 1.0;
+            case MASTER ->  multiplier = 1.3;
+            case GRANDMASTER -> multiplier = 1.5;
+        }
+//        double multiplier = Math.pow(1.084, lvl) - 0.5; //1.0 + ((double)lvl/10);
+//        double multiplier = 0.5 + Math.sqrt(lvl / 5.0) * 0.654;
 //        if(multiplier>1.0){
 //            multiplier = 1.0;
 //        }
@@ -96,6 +108,9 @@ public class GuardsmanDamage implements Listener {
 //        double damageReduction = SpecializationConfig.getGuardsmanConfig().get("NON_GUARDSMAN_DAMAGE_REDUCTION", Double.class);
         double original_damage = event.getDamage(BASE);
         double new_damage = original_damage * multiplier;
+//        event.setDamage(ABSORPTION, 0);
+
+//        event.setDamage(ABSORPTION, event.getDamage(ABSORPTION)/2);
 
         /**
          * Guardsman Extra Mob Damage Bonus
@@ -111,115 +126,45 @@ public class GuardsmanDamage implements Listener {
 //        }
 
 
-        // Armor Bonus for EXPERT and above
-//        if((victim instanceof LivingEntity le) && lvl>=3) {
-//
-//            double new_armor = event.getDamage(EntityDamageEvent.DamageModifier.ARMOR);
-//            if (new_armor < -0.1) {
-//                EntityEquipment equipment = le.getEquipment();
-//                double total_extra_penetration = 0;
-//
-//                World w = victim.getWorld();
-//                int armor_roll = lvl - 2; // extra rolls for higher levels
-//
-//                Set<EquipmentSlot> set = new HashSet<EquipmentSlot>();
-//                EnumMap<EquipmentSlot, Material> map = new EnumMap<>(EquipmentSlot.class);
-//                for (int i = 0; i < armor_roll; i++) {
-//                    set.add(pickRandomArmorSlot());
-//                }
-//                for (EquipmentSlot slot : set) {
-//                    ItemStack item = equipment.getItem(slot);
-//                    if (item != null) {
-//                        Material m = ArmorStats.getMaterialBlockType(item.getType());
-//                        if (m != Material.AIR) {
-//                            map.put(slot, m);
-//                            total_extra_penetration += EXTRA_PENETRATION_PER_ARMOR; //stacks damage
-//                        }
-//                    }
-//                }
-//                if (total_extra_penetration > 0) {
-//                    new_armor = Math.min(0, new_armor + total_extra_penetration);
-//                    event.setDamage(EntityDamageEvent.DamageModifier.ARMOR, Math.min(0, new_armor));
-//
-//
-//
-//                    armor_msg = LIGHT_PURPLE+" ("+GRAY+"👕:+"+LIGHT_PURPLE+Debug.formatDecimal(total_extra_penetration)+")";
-//
-//                    Sound sound = null;
-//                    for (Map.Entry<EquipmentSlot, Material> slot : map.entrySet()) {
-//                        Material mat = slot.getValue();
-//                        if(sound==null){
-//                            if(mat==Material.SOUL_SOIL){
-//                                sound = Sound.BLOCK_NYLIUM_FALL;
-//                            }else if(mat==Material.NETHERITE_BLOCK){
-//                                sound = Sound.BLOCK_NETHER_BRICKS_BREAK;
-//                            }else if(mat==Material.CHAIN){
-//                                sound = Sound.BLOCK_CHAIN_BREAK;
-//                            }else{
-//                                if(ThreadLocalRandom.current().nextBoolean()) {
-//                                    sound = Sound.BLOCK_COPPER_GRATE_HIT;
-//                                }else{
-//                                    sound = Sound.BLOCK_COPPER_GRATE_HIT;
-//                                }
-//                            }
-//                        }
-//                        double y = ArmorStats.getArmorHeight(slot.getKey());
-//                        w.spawnParticle(Particle.BLOCK, victim.getLocation().add(0, y, 0), 4, 0.125, 0.125, 0.125, 0, mat.createBlockData(), true);
-//                    }
-//                    if(sound!=null) {
-//                        w.playSound(victim.getLocation(), sound, SoundCategory.PLAYERS, 0.95f, 1.2f + ThreadLocalRandom.current().nextFloat(0.2f));
-//                    }
-////                    Particle.DustOptions dust =new Particle.DustOptions(Color color, 10);
-////                    w.spawnParticle(Particle.ANGRY_VILLAGER, monster.getEyeLocation(), 4, 0.5,0.6,0.5,0);
-//                    }
-//            }
-//        }
 
 
-        double crit_multiplier = 1.0;
-        if(event.isCritical()){
-            new_damage *= 0.6666; //inverse of 1.5x, extra 6 for safe measure <_<
-            crit_multiplier = 0.2+Math.pow( 1.06475, lvl); //slight exponent boost to crit
-            new_damage *= (crit_multiplier); //apply custom crit
-            crit_msg = GOLD+" ("+GRAY+"✨ "+GOLD+(Debug.formatDecimal(crit_multiplier) +"x)");
-        }
 
-        String reduction_msg = extra_msg+YELLOW+" ("+GRAY+"⚔ "+YELLOW+Debug.formatDecimal(multiplier)+"x)"+crit_msg
-                +armor_msg
-                +GREEN+" ("+GRAY+"🟰:"+GREEN+Debug.formatDecimal(crit_multiplier*multiplier)+"x)";
+        String reduction_msg = extra_msg + YELLOW + " (" + GRAY + "⚔ " + YELLOW + Debug.formatDecimal(multiplier) + "x)"
+                + armor_msg;
+//                +GREEN+" ("+GRAY+"🟰:"+GREEN+Debug.formatDecimal(crit_multiplier*multiplier)+"x)";
 
 
         new_damage = Math.max(0, new_damage);
 
+
+
+
+
+
+        double temp = 0;
+
+
         //finalize damage
         event.setDamage(BASE, new_damage);
-        event.setDamage(ARMOR, 0);
+//        event.setDamage(ARMOR, 0);
+//        event.setDamage(RESISTANCE, 0);
 
-        if(Debug.isAnyoneListening("damage", true)) {
+
+        if (Debug.isAnyoneListening("damage", true)) {
             String modifiers = "";
 
             for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
-                if(event.getDamage(m)!=0)
-                modifiers += "\n<gray>"+m.name()+"</gray>: "+Debug.formatDecimal(event.getDamage(m));
+                if (event.getDamage(m) != 0)
+                    modifiers += "\n<gray>" + m.name() + "</gray>: " + Debug.formatDecimal(event.getDamage(m));
             }
             Debug.broadcast(
                     "damage",
-                    RED+ Debug.formatDecimal(original_damage)+
+                    DARK_RED + "Base Damage: "+RED+Debug.formatDecimal(original_damage) +
                             (reduction_msg)
-                            +RED+" [❤ "+Debug.formatDecimal(CombatManager.calculateTotalDamage(event))+"]",
-                            "["+damager.getName()+" is GuardMan lvl "+lvl+"]"+"\n"+
-                            "Attacker: "+damager.getName()+modifiers
+                            + RED + " [❤ " + Debug.formatDecimal(CombatManager.calculateTotalDamage(event)) + "]",
+                    "[" + damager.getName() + " is GuardMan lvl " + lvl + "]" + "\n" +
+                            "Attacker: " + damager.getName() + modifiers
             );
-        }
-    }
-
-    private EquipmentSlot pickRandomArmorSlot() {
-        switch(ThreadLocalRandom.current().nextInt(4)){
-            case 0: return EquipmentSlot.HEAD;
-            case 1: return EquipmentSlot.CHEST;
-            case 2: return EquipmentSlot.LEGS;
-            case 3: return EquipmentSlot.FEET;
-            default: return null;
         }
     }
 

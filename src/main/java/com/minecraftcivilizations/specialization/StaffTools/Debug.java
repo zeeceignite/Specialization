@@ -14,7 +14,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.jetbrains.annotations.NotNull;
 
 import java.text.DecimalFormat;
 import java.util.*;
@@ -263,7 +262,7 @@ public class Debug implements Listener {
 //        return comp;
     }
 
-    private static @NotNull Component getPrefix(String debug_channel) {
+    private static Component getPrefix(String debug_channel) {
         return MiniMessage.miniMessage().deserialize("<dark_gray>[" + debug_channel.toLowerCase() + "]:</dark_gray> ");
     }
 
@@ -332,7 +331,7 @@ public class Debug implements Listener {
      * Helper for formatting decimals
      */
     public static String formatDecimal(double d){
-        return decimal_format.format(d);
+        return new DecimalFormat("0.00").format(d);
     }
 
 
