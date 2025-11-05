@@ -140,12 +140,6 @@ public class CombatManager implements Listener {
             }
         }
 
-
-        //display player CHARGE
-        if(charge_amount!=-1.0) {
-            extramsg += GOLD + " [⚡" + Debug.formatDecimal(charge_amount) + "]";
-        }
-
         //Finally, apply GLOBAL armor reduction
         if(event.getEntity() instanceof LivingEntity le) {
             armorDamageReduction.applyArmorReduction(le, event);
@@ -156,7 +150,7 @@ public class CombatManager implements Listener {
 //        Debug.broadcast("armor", "");
 
 
-        double DAMAGE_MINIMUM = 0.025 * original_base;
+        double DAMAGE_MINIMUM = 0.075 * original_base;
         if(calculateTotalDamage(event) <= DAMAGE_MINIMUM){
 //            event.setCancelled(true);
             Entity entity = event.getEntity();
@@ -166,8 +160,14 @@ public class CombatManager implements Listener {
                 event.setDamage(m, 0);
             }
             event.setDamage(BASE, DAMAGE_MINIMUM);
-            extramsg += DARK_GRAY+"[Minimum]";
+            extramsg += DARK_GRAY+" [Minimum]";
             entity.getWorld().playSound(entity.getLocation(), Sound.BLOCK_HEAVY_CORE_PLACE, SoundCategory.PLAYERS, 0.75f,ThreadLocalRandom.current().nextFloat(0.1f)+0.75f);
+        }
+
+
+        //display player CHARGE
+        if(charge_amount!=-1.0) {
+            extramsg += GOLD + " [⚡" + Debug.formatDecimal(charge_amount) + "]";
         }
 
         String modifiers = "";
@@ -254,7 +254,7 @@ public class CombatManager implements Listener {
                             }
                         }
                         double y = ArmorStats.getArmorHeight(slot.getKey());
-                        w.spawnParticle(Particle.BLOCK, victim.getLocation().add(0, y, 0), 4, 0.125, 0.125, 0.125, 0, mat.createBlockData(), true);
+                        w.spawnParticle(Particle.BLOCK, victim.getLocation().add(0, y, 0), (int)total_extra_penetration, 0.125, 0.125, 0.125, 0, mat.createBlockData(), true);
                     }
                     if(sound!=null) {
                         w.playSound(victim.getLocation(), sound, SoundCategory.PLAYERS, 0.95f, 1.2f + ThreadLocalRandom.current().nextFloat(0.2f));
