@@ -126,16 +126,18 @@ public class CombatManager implements Listener {
 //        CoreUtil.getPlayer(player.customPlayer.getUuid());
 //        custom
         if(event.isCritical()){
-            double crit_multiplier = 1.5;
+            double crit_add = 1.5;
             CustomPlayer customPlayer = CoreUtil.getPlayer(event.getDamager().getUniqueId());
             if(customPlayer!=null) {
                 int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
                 double base = event.getDamage(BASE);
-                double new_base = base * crit_multiplier;
-                crit_multiplier = 0.2 + Math.pow(1.06475, lvl); //slight exponent boost to crit
-                extramsg += GREEN+" [✨ "+Debug.formatDecimal(crit_multiplier)+"x]";
+//                crit_add = Math.min(1.5, 0.2 + Math.pow(1.055, lvl)); //slight exponent boost to crit
+                crit_add = 0.5 + (0.125 * (double)lvl);
+                double new_base = base + crit_add;
+                extramsg += GREEN+" [✨+"+Debug.formatDecimal(crit_add)+"]";
 //            new_damage *= (crit_multiplier); //apply custom crit
 //            crit_msg = GOLD+" ("+GRAY+"✨ "+GOLD+(Debug.formatDecimal(crit_multiplier) +"x)");
+
                 event.setDamage(BASE, new_base);
             }
         }
@@ -150,7 +152,7 @@ public class CombatManager implements Listener {
 //        Debug.broadcast("armor", "");
 
 
-        double DAMAGE_MINIMUM = 0.075 * original_base;
+        double DAMAGE_MINIMUM = 0.15 * original_base;
         if(calculateTotalDamage(event) <= DAMAGE_MINIMUM){
 //            event.setCancelled(true);
             Entity entity = event.getEntity();

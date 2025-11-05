@@ -84,13 +84,14 @@ public class GuardsmanDamage implements Listener {
         double multiplier = 0.5;
         SkillLevel skill_level = SkillLevel.getSkillLevelFromInt(lvl);
         switch(skill_level){
-            case NOVICE -> multiplier = 0.55;
-            case APPRENTICE -> multiplier = 0.75;
-            case JOURNEYMAN -> multiplier = 0.9;
-            case EXPERT ->  multiplier = 1.0;
-            case MASTER ->  multiplier = 1.3;
-            case GRANDMASTER -> multiplier = 1.5;
+            case NOVICE -> multiplier = 0.8;
+            case APPRENTICE -> multiplier = 0.9;
+            case JOURNEYMAN -> multiplier = 1.0;
+            case EXPERT ->  multiplier = 1.25;
+            case MASTER ->  multiplier = 1.35; //1.4
+            case GRANDMASTER -> multiplier = 1.45;
         }
+
 //        double multiplier = Math.pow(1.084, lvl) - 0.5; //1.0 + ((double)lvl/10);
 //        double multiplier = 0.5 + Math.sqrt(lvl / 5.0) * 0.654;
 //        if(multiplier>1.0){

@@ -8,11 +8,14 @@ import io.papermc.paper.event.entity.EntityEquipmentChangedEvent;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -151,6 +154,21 @@ public class ArmorEquipAttributes implements Listener {
     public ItemStack applyWeight(ItemStack item, double custom_weight){
         ItemMeta meta = item.getItemMeta();
         if(meta.getPersistentDataContainer().has(WEIGHT_KEY))return null; //returning null skips applying
+
+
+        // IRON TOUGHNESS
+        if(item.getType().name().contains("IRON_")){
+            AttributeModifier mod_armor = new AttributeModifier(
+                    new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase()+"_armor"),
+                    ArmorStats.getVanillaStats(item.getType()).getArmor(),
+                    AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR);
+            meta.addAttributeModifier(Attribute.ARMOR, mod_armor);
+            AttributeModifier mod_tough = new AttributeModifier(
+                    new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase()+"_toughness"),
+                    1,
+                    AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR);
+            meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, mod_tough);
+        }
 
         double weight; //weight to apply to the item
         if(custom_weight!=-1) {
