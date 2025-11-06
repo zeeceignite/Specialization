@@ -182,7 +182,7 @@ public class GuardsmanDamage implements Listener {
                     "damage",
                     DARK_RED + "Base Damage: "+RED+Debug.formatDecimal(original_damage) +
                             (reduction_msg)
-                            + RED + " [❤ " + Debug.formatDecimal(CombatManager.calculateTotalDamage(event)) + "]",
+                            + RED + " [❤ " + Debug.formatDecimal(event.getDamage(BASE)) + "]",
                     "<gold>This output displays the calculated Guardsman Damage\nas if Vanilla Armor was being utilized</gold>\n"
                             +"[" + damager.getName() + " is GuardMan lvl " + lvl + "]" + "\n" +
                             "Attacker: " + damager.getName() + modifiers

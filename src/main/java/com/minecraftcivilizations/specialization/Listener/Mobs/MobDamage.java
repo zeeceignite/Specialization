@@ -49,9 +49,9 @@ public class MobDamage implements Listener {
 //                attr.setBaseValue(new_value);
 //                attr.addModifier(AttributeModifier);
         }
-        if(event.getEntity() instanceof LivingEntity){
-            return; //temporary logic disable
-        }
+//        if(event.getEntity() instanceof LivingEntity){
+//            return; //temporary logic disable
+//        }
 
         if(!(event.getEntity() instanceof Monster monster)) return;
         double speedAddition;
