@@ -40,6 +40,8 @@ import static org.bukkit.event.entity.EntityDamageEvent.DamageModifier.*;
 public class CombatManager implements Listener {
 
 
+    public static NamespacedKey CRIT_BONUS_KEY;
+
     private final GuardsmanDamage guardsmanDamage;
 //    private final DynamicArmor dynamicArmor; DLC feature by Alectriciti
     private final ArmorDamageReduction armorDamageReduction; // Handles MOB -> PLAYER damage
@@ -53,6 +55,7 @@ public class CombatManager implements Listener {
     public CombatManager(Specialization specialization) {
         this.plugin = specialization;
         specialization.getServer().getPluginManager().registerEvents(this, specialization);
+        CRIT_BONUS_KEY = new NamespacedKey(specialization, "CRIT_BONUS");
         guardsmanDamage = new GuardsmanDamage(this);
         mobDamage = new MobDamage(this);
 //        dynamicArmor = new DynamicArmor(this);

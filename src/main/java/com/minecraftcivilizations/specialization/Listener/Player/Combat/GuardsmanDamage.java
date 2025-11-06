@@ -81,29 +81,33 @@ public class GuardsmanDamage implements Listener {
 
         int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
 
-        double multiplier = 1.0;
+        double multiplier = 0.5;
         double add = 0.0;
         SkillLevel skill_level = SkillLevel.getSkillLevelFromInt(lvl);
         switch(skill_level){
-            case NOVICE -> {}
+            case NOVICE -> {
+                multiplier = 0.25;
+                add = 0.75;
+            }
             case APPRENTICE -> {
-//                add = 1.0;
+                multiplier = 0.275;
+                add = 1.0;
             }
             case JOURNEYMAN -> {
-//                multiplier = 1.05;
-//                add = 1.0;
+                multiplier = 0.3;
+                add = 1.0;
             }
             case EXPERT ->  {
-//                multiplier = 1.1;
-//                add = 1.0;
+                multiplier = 0.35;
+                add = 1.5;
             }
             case MASTER ->  {
-//                multiplier = 1.2;
-//                add = 2.0;
+                multiplier = 0.375;
+                add = 2.0;
             } //1.4
             case GRANDMASTER -> {
-//                multiplier = 1.25;
-//                add = 3.0;
+                multiplier = 0.375;
+                add = 2.5;
             }
         }
 

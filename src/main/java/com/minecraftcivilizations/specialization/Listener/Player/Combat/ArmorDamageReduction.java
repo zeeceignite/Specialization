@@ -65,7 +65,7 @@ public class ArmorDamageReduction {
         double toughness = stats.getToughness();
 
 
-        double ARMOR_REDUCTION = original_base * (armor / armor_ceiling);
+        double ARMOR_REDUCTION = original_base * (armor / armor_ceiling) / 2;
         double TOUGHNESS_REDUCTION = Math.max (0, toughness / 16);
 //        double TOUGHNESS_REDUCTION = 0; //(HARD SUBTRACT)
 
