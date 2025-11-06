@@ -12,6 +12,7 @@ import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.minecraftcivilizations.specialization.Analytics.AnalyticsData;
 import com.minecraftcivilizations.specialization.Command.*;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.CustomItem.CustomItemManager;
 import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Data.MongoConnection;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
@@ -53,6 +54,7 @@ import com.minecraftcivilizations.specialization.StaffTools.DebugListenCommand;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.LocatorBarManager;
 import com.mojang.authlib.GameProfile;
+import lombok.Getter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Component.ComponentUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
@@ -71,11 +73,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -86,12 +84,16 @@ public final class Specialization extends JavaPlugin {
     private Debug debug;
     private PhantomRideListener phantomRideListener;
 
-    SmartEntityManager smart_entity_manager;
+    //follow this pattern from now on
+    @Getter
+    private SmartEntityManager smart_entity_manager;
+
+    @Getter
+    private CustomItemManager customItemManager;
 
     @Override
     public void onEnable() {
         logger = getLogger();
-
         debug = new Debug();
         saveResource("first_names.txt", false);
         saveResource("last_names.txt", false);
@@ -100,7 +102,13 @@ public final class Specialization extends JavaPlugin {
         // TODO PDC-xp-hotfix
         //  Skill.InitializeSkillKeys(this);
 
-        smart_entity_manager = new SmartEntityManager(this);
+
+
+
+    smart_entity_manager = new SmartEntityManager(this);
+    customItemManager = new CustomItemManager(this);
+    customItemManager.initializeCustomItems();
+
 
         setupCommands();
 
@@ -169,6 +177,7 @@ public final class Specialization extends JavaPlugin {
         Bukkit.updateRecipes();
 
 
+
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setCustomPlayerClass(CustomPlayer.class);
 
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPrePlayerJoin(playerJoinEvent -> {
@@ -206,9 +215,9 @@ public final class Specialization extends JavaPlugin {
             customPlayer.applyEffects();
 
             // Migrate old bandages to new format
-            Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
-                migrateLegacyItems(playerJoinEvent.getPlayer());
-            }, 10L);
+//            Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
+//                migrateLegacyItems(playerJoinEvent.getPlayer());
+//            }, 10L);
 
             // TODO PDC-xp-hotfix for later if we need it
             //  customPlayer.reloadSkillsXp(playerJoinEvent.getPlayer());
@@ -299,13 +308,18 @@ public final class Specialization extends JavaPlugin {
 
         commandManager = new PaperCommandManager(this);
 
-
         // --- TAB COMPLETIONS ---
         commandManager.getCommandCompletions().registerCompletion("classes", c ->
                 Arrays.stream(SkillType.values())
                         .map(Enum::name)
                         .collect(Collectors.toList())
         );
+
+        // Register tab completion for all custom items
+        commandManager.getCommandCompletions().registerCompletion("customitems", c ->
+                new ArrayList<>(customItemManager.getCustomItemIds())
+        );
+
         commandManager.registerCommand(new ClassCommand());
         commandManager.registerCommand(new SetXpCommand());
         commandManager.registerCommand(new SetLoreCommand());
@@ -320,6 +334,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new RerollNameCommand(localNameGenerator));
         commandManager.registerCommand(new NameChoiceCommand(localNameGenerator));
         commandManager.registerCommand(new XPLeaderboardCommand());
+        commandManager.registerCommand(new CustomItemCommand(customItemManager));
         new DebugListenCommand(commandManager);
 
 
@@ -391,35 +406,6 @@ public final class Specialization extends JavaPlugin {
         return packet;
     }
 
-    private void migrateLegacyItems(Player player) {
-        int migratedCount = 0;
-        
-        for (org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
-            if (item != null && item.getType() == Material.PAPER) {
-                Component displayName = item.displayName();
-                String plainName = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(displayName);
-                if (plainName.contains("Bandage")) {
-                    NamespacedKey bandageKey = new NamespacedKey(Specialization.getInstance(), "bandage");
-                    minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItem newBandage = 
-                        minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItemRegistry.getItem(bandageKey);
-                    
-                    if (newBandage != null) {
-                        int amount = item.getAmount();
-                        org.bukkit.inventory.ItemStack newItem = newBandage.getItem();
-                        newItem.setAmount(amount);
-                        player.getInventory().remove(item);
-                        player.getInventory().addItem(newItem);
-                        migratedCount++;
-                    }
-                }
-            }
-        }
-        
-        if (migratedCount > 0) {
-            player.sendMessage(Component.text("Migrated " + migratedCount + " old bandage(s) to new format").color(NamedTextColor.YELLOW));
-            Bukkit.getLogger().info("[Migration] Migrated " + migratedCount + " bandages for player " + player.getName());
-        }
-    }
 
     public Debug getDebugUtils() {
         return debug;
