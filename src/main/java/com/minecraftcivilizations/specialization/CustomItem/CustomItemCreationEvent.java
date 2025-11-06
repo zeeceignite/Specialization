@@ -9,7 +9,7 @@ import org.bukkit.inventory.ItemStack;
 
 /**
  *
- * @author  alectriciti, jfrogy
+ * @author ⚡ alectriciti ⚡
  */
 public class CustomItemCreationEvent extends Event implements Cancellable {
 

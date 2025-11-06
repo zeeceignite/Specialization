@@ -4,11 +4,14 @@ import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import lombok.Getter;
 import net.md_5.bungee.api.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.inventory.CraftItemEvent;
+import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
@@ -19,23 +22,27 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.*;
 
 /**
- *
- * @author  alectriciti, jfrogy
+ * The manager of the new Custom Item system
+ * Think of this as the motherboard for Custom Items
+ * It dispatches events to Custom Items
+ * @author ⚡ alectriciti ⚡
  */
 public class CustomItemManager implements Listener {
 
-    static NamespacedKey key_custom_item_id = new NamespacedKey("specialization", "custom_item_id");
-    //This holds ALL custom items, even ones that are not enabled
-//    public Set<CustomItem> custom_items_to_register = new HashSet<CustomItem>(); // For Loading ONLY
+    static final NamespacedKey key_custom_item_id = new NamespacedKey("specialization", "custom_item_id");
 
-    //Holds registered custom items
-    public Map<String, CustomItem> custom_items_loaded = new HashMap<String, CustomItem>();
+    // primary registry of custom items, used by events
+    private Map<String, CustomItem> custom_items_loaded = new HashMap<String, CustomItem>();
 
-    //Used by Custom Item Command for Tab Completion
+    // a simple list of all custom items, mostly for commands
     @Getter
-    public List<String> customItemIds = new ArrayList<String>();
+    private List<CustomItem> customItems = new ArrayList<CustomItem>();
 
+    // used by CustomItemCommand for Tab Completion
+    @Getter
+    private List<String> customItemIds = new ArrayList<String>();
 
+    // items are defined and referenced here
     DefineCustomItems definitions;
 
     public CustomItemManager(Specialization plugin){
@@ -56,12 +63,51 @@ public class CustomItemManager implements Listener {
     }
 
 
-    void registerItem(CustomItem customItem) {
-        Specialization.getInstance().getLogger().info("Registering Custom Item: "+customItem.getId());
+    void registerItem(CustomItem custom_item) {
+        Specialization.getInstance().getLogger().info("Registering Custom Item: "+custom_item.getId());
 //        custom_items_to_register.add(customItem);
-        custom_items_loaded.put(customItem.getId(), customItem);
-        customItemIds.add(customItem.getId());
+        custom_items_loaded.put(custom_item.getId(), custom_item); //used for event lookup
+        customItems.add(custom_item); //used by commands (for item reference)
+        customItemIds.add(custom_item.getId()); //used by commands (for tab completion)
     }
+
+
+
+    @EventHandler
+    public void onPrepareCraft(PrepareItemCraftEvent event) {
+        ItemStack result = event.getInventory().getResult();
+        if (result == null) return;
+
+        CustomItem ci = getCustomItem(result);
+        if (ci != null) {
+            Debug.broadcast("customitem", "prepare crafting custom item");
+            Player player = (Player) event.getView().getPlayer();
+            if (!ci.canPlayerCraft(player)) {
+                // Hide the result
+                event.getInventory().setResult(new ItemStack(Material.AIR));
+            }
+        }
+    }
+
+    @EventHandler
+    public void onCraftItem(CraftItemEvent event) {
+        CustomItem ci = getCustomItem(event.getCurrentItem());
+        if (ci != null) {
+            Debug.broadcast("customitem", "crafting custom item");
+            Player player = (Player) event.getWhoClicked();
+            if (!ci.canPlayerCraft(player)) {
+                // Prevent crafting entirely
+                event.setCancelled(true);
+                player.sendMessage("§cYou cannot craft this item!");
+            }
+        }
+    }
+
+
+//    @EventHandler TODO merge with other branch
+//    public void onLevelUpEvent(PlayerChangeLevelEvent event){
+//      //display unlocked recipes
+//    }
 
     /**
      * Called when disabling an item
@@ -113,11 +159,16 @@ public class CustomItemManager implements Listener {
         return true;
     }
 
+    /**
+     * Returns if the item was null
+     */
     public boolean enableItem(String id) {
         CustomItem item = custom_items_loaded.get(id);
-        if (item == null) return false;
-        item.setEnabled(true);
-        return true;
+        if(item!=null){
+            if(item.isEnabled()) return false;
+            item.setEnabled(true);
+        }
+        return false;
     }
 
     public void reloadItem(String id) {

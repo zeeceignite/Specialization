@@ -82,6 +82,22 @@ public class CustomItemCommand extends BaseCommand {
         sender.sendMessage("§aRefreshed custom item: §f" + id);
     }
 
+    // --- LIST ---
+    @Subcommand("list|l")
+    @Syntax("/customitem list")
+    @Description("Lists all custom items with their status")
+    @CommandPermission("civlabs.customitem")
+    public void onList(Player sender) {
+        sender.sendMessage("§7==== §eCustom Items §7====");
+
+        for (CustomItem item : customItemManager.getCustomItems()) {
+            boolean enabled = item.isEnabled();
+            // Use a colored bullet/emoji to indicate status
+            String icon = enabled ? "§a●" : "§8●"; // green for enabled, gray for disabled
+            sender.sendMessage(icon + " §f" + item.getId() + " §7(" + item.getDisplayName() + ")");
+        }
+    }
+
     // --- DEFAULT / HELP ---
     @Default
     @Syntax("/customitem help")
@@ -93,5 +109,6 @@ public class CustomItemCommand extends BaseCommand {
         sender.sendMessage("§e/ci e <id> §7- Enable a custom item");
         sender.sendMessage("§e/ci d <id> §7- Disable a custom item");
         sender.sendMessage("§e/ci r <id> §7- Refresh a custom item");
+        sender.sendMessage("§e/ci l §7- Shows a list of all custom items");
     }
 }

@@ -36,62 +36,62 @@ public class Recipes {
         startPeriodicRecipeRefresh(); //temporary patch to re-register minecraft:rail
     }
     private static void registerCustomItems() {
-        CustomItem customItem = new CustomItem(Material.PAPER, Component.text("Bandage").color(NamedTextColor.WHITE));
-        customItem.addLore(Specialization.getInstance(), List.of(
-                Component.text("Shift + Right Click another player to heal.").color(NamedTextColor.BLUE),
-                Component.empty(),
-                Component.text("Amount Healed and XP gained scale with Healer level.").color(NamedTextColor.GRAY)
-        ));
-
-        // Add enchantment glint (visual only)
-        ItemStack item = customItem.getItem();
-        var meta = item.getItemMeta();
-        meta.setEnchantmentGlintOverride(true);
-        item.setItemMeta(meta);
-        customItem.setItem(item);
-
-        CustomAbility customAbility = new CustomAbility();
-        customAbility.setAbilityFunction(customAbilityFunction -> {
-            CustomPlayer cHealer = (CustomPlayer) MinecraftCivilizationsCore.getInstance()
-                    .getCustomPlayerManager().getCustomPlayer(customAbilityFunction.getUniqueId());
-            if (cHealer.getSkillLevel(SkillType.HEALER) == 0) return;
-
-            Player healer = Bukkit.getPlayer(customAbilityFunction.getUniqueId());
-            if (healer == null || healer.getFoodLevel() < 3) return;
-
-            Player target = null;
-            if (customAbilityFunction.getTargetEntity(4) instanceof Player p)
-                target = p;
-            else
-                target = healer; // fallback to self-heal
-
-            if (target.getHealth() >= target.getAttribute(Attribute.MAX_HEALTH).getValue()) return;
-
-            int level = Math.min(cHealer.getSkillLevel(SkillType.HEALER), 5);
-            double healAmount = 2 + ((level - 1) * (8.0 / 4.0)); // 2→10
-            int xp = 15 + (int) ((level - 1) * (35.0 / 4.0));    // 15→50
-
-            healer.setFoodLevel(healer.getFoodLevel() - 3);
-            target.setHealth(Math.min(target.getHealth() + healAmount, target.getAttribute(Attribute.MAX_HEALTH).getValue()));
-            cHealer.addSkillXp(SkillType.HEALER, xp);
-
-            CustomPlayer healedPlayer = CoreUtil.getPlayer(target.getUniqueId());
-            healedPlayer.setDowned(false);
-
-            ItemStack hand = healer.getInventory().getItemInMainHand();
-            hand.setAmount(hand.getAmount() - 1);
-            healer.getInventory().setItemInMainHand(hand);
-
-            removeDownedArmorStand(target);
-        });
-        customAbility.setCooldown(1);
-        customAbility.setCastEvent(AbilityCastEvent.SNEAK_RIGHT_CLICK);
-        customAbility.setName("Bandage");
-
-        NamespacedKey bandageKey = new NamespacedKey(Specialization.getInstance(), "bandage");
-        CustomItemAbilityRegistry.register(bandageKey, customAbility);
-        customItem.addAbility(bandageKey);
-        CustomItemRegistry.register(bandageKey, customItem);
+//        CustomItem customItem = new CustomItem(Material.PAPER, Component.text("Bandage").color(NamedTextColor.WHITE));
+//        customItem.addLore(Specialization.getInstance(), List.of(
+//                Component.text("Shift + Right Click another player to heal.").color(NamedTextColor.BLUE),
+//                Component.empty(),
+//                Component.text("Amount Healed and XP gained scale with Healer level.").color(NamedTextColor.GRAY)
+//        ));
+//
+//        // Add enchantment glint (visual only)
+//        ItemStack item = customItem.getItem();
+//        var meta = item.getItemMeta();
+//        meta.setEnchantmentGlintOverride(true);
+//        item.setItemMeta(meta);
+//        customItem.setItem(item);
+//
+//        CustomAbility customAbility = new CustomAbility();
+//        customAbility.setAbilityFunction(customAbilityFunction -> {
+//            CustomPlayer cHealer = (CustomPlayer) MinecraftCivilizationsCore.getInstance()
+//                    .getCustomPlayerManager().getCustomPlayer(customAbilityFunction.getUniqueId());
+//            if (cHealer.getSkillLevel(SkillType.HEALER) == 0) return;
+//
+//            Player healer = Bukkit.getPlayer(customAbilityFunction.getUniqueId());
+//            if (healer == null || healer.getFoodLevel() < 3) return;
+//
+//            Player target = null;
+//            if (customAbilityFunction.getTargetEntity(4) instanceof Player p)
+//                target = p;
+//            else
+//                target = healer; // fallback to self-heal
+//
+//            if (target.getHealth() >= target.getAttribute(Attribute.MAX_HEALTH).getValue()) return;
+//
+//            int level = Math.min(cHealer.getSkillLevel(SkillType.HEALER), 5);
+//            double healAmount = 2 + ((level - 1) * (8.0 / 4.0)); // 2→10
+//            int xp = 15 + (int) ((level - 1) * (35.0 / 4.0));    // 15→50
+//
+//            healer.setFoodLevel(healer.getFoodLevel() - 3);
+//            target.setHealth(Math.min(target.getHealth() + healAmount, target.getAttribute(Attribute.MAX_HEALTH).getValue()));
+//            cHealer.addSkillXp(SkillType.HEALER, xp);
+//
+//            CustomPlayer healedPlayer = CoreUtil.getPlayer(target.getUniqueId());
+//            healedPlayer.setDowned(false);
+//
+//            ItemStack hand = healer.getInventory().getItemInMainHand();
+//            hand.setAmount(hand.getAmount() - 1);
+//            healer.getInventory().setItemInMainHand(hand);
+//
+//            removeDownedArmorStand(target);
+//        });
+//        customAbility.setCooldown(1);
+//        customAbility.setCastEvent(AbilityCastEvent.SNEAK_RIGHT_CLICK);
+//        customAbility.setName("Bandage");
+//
+//        NamespacedKey bandageKey = new NamespacedKey(Specialization.getInstance(), "bandage");
+//        CustomItemAbilityRegistry.register(bandageKey, customAbility);
+//        customItem.addAbility(bandageKey);
+//        CustomItemRegistry.register(bandageKey, customItem);
     }
 
 
@@ -105,10 +105,12 @@ public class Recipes {
             if (customItem != null) {
                 try {
                     ShapelessRecipe shapelessRecipe = new ShapelessRecipe(key, customItem.getItem());
-                    if (key.getKey().equals("bandage")) {
-                        shapelessRecipe.addIngredient(8, Material.PAPER);
-                        shapelessRecipe.addIngredient(Material.SUGAR_CANE);
-                    }
+
+//                    if (key.getKey().equals("bandage")) {
+//                        shapelessRecipe.addIngredient(8, Material.PAPER);
+//                        shapelessRecipe.addIngredient(Material.SUGAR_CANE);
+//                    }
+
                     Bukkit.addRecipe(shapelessRecipe, true);
                     Bukkit.getLogger().info("[Recipes] ✓ "+register_mode+" recipe: " + key);
                     successCount++;

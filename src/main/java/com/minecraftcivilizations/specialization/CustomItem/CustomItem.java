@@ -1,9 +1,12 @@
 package com.minecraftcivilizations.specialization.CustomItem;
 
+import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -12,6 +15,7 @@ import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.components.CustomModelDataComponent;
+import org.bukkit.inventory.meta.components.UseCooldownComponent;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
@@ -28,7 +32,9 @@ public abstract class CustomItem {
     protected String customModelData; // null = not used
     protected int maxStackSize;
     protected boolean enabled;
-    protected long cooldownMillis;
+
+    @Setter
+    public NamespacedKey cooldownGroup;
 
     protected String permission;
 
@@ -46,47 +52,39 @@ public abstract class CustomItem {
                       Material material,
                       String customModelData,
                       int maxStackSize,
-                      boolean enabled,
-                      long cooldownMillis) {
+                      boolean enabled) {
         this.id = id;
         this.displayName = displayName;
         this.material = material;
         this.customModelData = customModelData;
         this.maxStackSize = maxStackSize;
         this.enabled = enabled;
-        this.cooldownMillis = cooldownMillis;
-
+        this.cooldownGroup = new NamespacedKey("civlabs", "cooldown_"+id);
         Specialization.getInstance().getCustomItemManager().registerItem(this);
-
     }
 
     public abstract void init();
 
 
 
+    /**
+     * Returns if the player can craft or not
+     */
+    public boolean canPlayerCraft(Player player){
+        return true;
+    }
+
     // === Constructor variations ===
     public CustomItem(String id, String displayName, Material material) {
-        this(id, displayName, material, id, -1, true, 0);
+        this(id, displayName, material, id, -1, true);
     }
 
     public CustomItem(String id, String displayName, Material material, String customModelData) {
-        this(id, displayName, material, customModelData, -1, true, 0);
+        this(id, displayName, material, customModelData, -1, true);
     }
 
     public CustomItem(String id, String displayName, Material material, boolean enabled) {
-        this(id, displayName, material, id, -1, enabled, 0);
-    }
-
-    public CustomItem(String id, String displayName, Material material, long cooldownMillis) {
-        this(id, displayName, material, id, -1, true, cooldownMillis);
-    }
-
-    public CustomItem(String id, String displayName, Material material, String customModelData, long cooldownMillis) {
-        this(id, displayName, material, customModelData, -1, true, cooldownMillis);
-    }
-
-    public CustomItem(String id, String displayName, Material material, String customModelData, int maxStackSize, boolean enabled) {
-        this(id, displayName, material, customModelData, maxStackSize, enabled, 0);
+        this(id, displayName, material, id, -1, enabled);
     }
 
     // === Accessors ===
@@ -114,29 +112,29 @@ public abstract class CustomItem {
         return enabled;
     }
 
-    public long getCooldownMillis() {
-        return cooldownMillis;
-    }
+//    public long getCooldownMillis() {
+//        return cooldownMillis;
+//    }
 
     // === Cooldown Logic ===
-    public boolean isOnCooldown(Player player) {
-        if (cooldownMillis <= 0) return false;
-        Long last = lastUse.get(player.getUniqueId());
-        return last != null && System.currentTimeMillis() - last < cooldownMillis;
-    }
-
-    public void startCooldown(Player player) {
-        if (cooldownMillis > 0)
-            lastUse.put(player.getUniqueId(), System.currentTimeMillis());
-    }
-
-    public long getRemainingCooldown(Player player) {
-        if (cooldownMillis <= 0) return 0;
-        Long last = lastUse.get(player.getUniqueId());
-        if (last == null) return 0;
-        long remaining = cooldownMillis - (System.currentTimeMillis() - last);
-        return Math.max(remaining, 0);
-    }
+//    public boolean isOnCooldown(Player player) {
+//        if (cooldownMillis <= 0) return false;
+//        Long last = lastUse.get(player.getUniqueId());
+//        return last != null && System.currentTimeMillis() - last < cooldownMillis;
+//    }
+//
+//    public void startCooldown(Player player) {
+//        if (cooldownMillis > 0)
+//            lastUse.put(player.getUniqueId(), System.currentTimeMillis());
+//    }
+//
+//    public long getRemainingCooldown(Player player) {
+//        if (cooldownMillis <= 0) return 0;
+//        Long last = lastUse.get(player.getUniqueId());
+//        if (last == null) return 0;
+//        long remaining = cooldownMillis - (System.currentTimeMillis() - last);
+//        return Math.max(remaining, 0);
+//    }
 
     public final ItemStack createItemStack(){
         return createItemStack(1, null);
@@ -159,6 +157,10 @@ public abstract class CustomItem {
             meta.setDisplayName(displayName);
         }
 
+        if(maxStackSize>0) {
+            meta.setMaxStackSize(maxStackSize);
+        }
+
         if (customModelData != null) {
             CustomModelDataComponent c = meta.getCustomModelDataComponent();
             List<String> strings = new ArrayList<String>();
@@ -167,18 +169,35 @@ public abstract class CustomItem {
             meta.setCustomModelDataComponent(c);
         }
 
+        if(cooldownGroup!=null) {
+            UseCooldownComponent cd = meta.getUseCooldown();
+            cd.setCooldownGroup(cooldownGroup);
+            meta.setUseCooldown(cd);
+        }
+
         onCreateItem(item_stack, meta);
         item_stack.setItemMeta(meta);
 
         CustomItemCreationEvent event = new CustomItemCreationEvent(this, item_stack, player);
         Bukkit.getPluginManager().callEvent(event);
 
-
         if(event.isCancelled()){
             return null;
         }
         return item_stack;
     };
+
+    public void applyCooldown(Player player, int cooldown){
+        player.setCooldown(cooldownGroup, cooldown);
+    }
+
+    public boolean isOnCooldown(Player player){
+        return player.getCooldown(cooldownGroup)>0;
+    }
+
+    public int getCooldown(Player player){
+        return player.getCooldown(cooldownGroup);
+    }
 
 
     /**
@@ -206,11 +225,6 @@ public abstract class CustomItem {
 
     public final void setEnabled(boolean b) {
         this.enabled = b;
-//        if(b){
-//            CustomItemManager.getInstance().registerItem(this);
-//        }else {
-//            CustomItemManager.getInstance().unregisterItem(this);
-//        }
         Specialization.getInstance().getLogger().info("Custom Item: "+id+ " has been "+ (b?"ENABLED":"DISABLED"));
     }
 

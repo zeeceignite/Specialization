@@ -18,9 +18,13 @@ public class DefineCustomItems {
 
 
     CustomItem bandage = new Bandage("bandage", "Bandage");
+//    CustomItem bandage_super = new Bandage("bandage_super", "Bandage");
 
 
-    CustomItem cool_sword = new CustomItem("cool_sword", "Cool Sword", Material.DIAMOND_SWORD){
+    CustomItem blessed_food = new BlessedFood("blessed_food");
+
+
+    CustomItem cool_sword = new CustomItem("cool_sword", "Cool Sword", Material.DIAMOND_SWORD, "cool_sword"){
 
         @Override
         public void init() {
@@ -34,7 +38,7 @@ public class DefineCustomItems {
 
         @Override
         public void onInteract(PlayerInteractEvent event, ItemStack itemStack) {
-            event.getPlayer().getWorld().spawnParticle(Particle.CLOUD, event.getPlayer().getLocation(), 100, 2, 2, 2);
+            event.getPlayer().getWorld().spawnParticle(Particle.CLOUD, event.getPlayer().getLocation(), 100, 0.2f, 0.2f, 0.2f);
             event.getPlayer().playSound(event.getPlayer(), Sound.ENTITY_ENDER_DRAGON_FLAP, 1, 1);
         }
     };
