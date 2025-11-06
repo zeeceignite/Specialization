@@ -81,15 +81,30 @@ public class GuardsmanDamage implements Listener {
 
         int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
 
-        double multiplier = 0.5;
+        double multiplier = 1.0;
+        double add = 0.0;
         SkillLevel skill_level = SkillLevel.getSkillLevelFromInt(lvl);
         switch(skill_level){
-            case NOVICE -> multiplier = 0.8;
-            case APPRENTICE -> multiplier = 0.9;
-            case JOURNEYMAN -> multiplier = 1.0;
-            case EXPERT ->  multiplier = 1.25;
-            case MASTER ->  multiplier = 1.35; //1.4
-            case GRANDMASTER -> multiplier = 1.45;
+            case NOVICE -> {}
+            case APPRENTICE -> {
+//                add = 1.0;
+            }
+            case JOURNEYMAN -> {
+//                multiplier = 1.05;
+//                add = 1.0;
+            }
+            case EXPERT ->  {
+//                multiplier = 1.1;
+//                add = 1.0;
+            }
+            case MASTER ->  {
+//                multiplier = 1.2;
+//                add = 2.0;
+            } //1.4
+            case GRANDMASTER -> {
+//                multiplier = 1.25;
+//                add = 3.0;
+            }
         }
 
 //        double multiplier = Math.pow(1.084, lvl) - 0.5; //1.0 + ((double)lvl/10);
@@ -108,7 +123,7 @@ public class GuardsmanDamage implements Listener {
         // Apply damage reduction for non-Guardsman players attacking mobs
 //        double damageReduction = SpecializationConfig.getGuardsmanConfig().get("NON_GUARDSMAN_DAMAGE_REDUCTION", Double.class);
         double original_damage = event.getDamage(BASE);
-        double new_damage = original_damage * multiplier;
+        double new_damage = ((original_damage) * multiplier)+add;
 //        event.setDamage(ABSORPTION, 0);
 
 //        event.setDamage(ABSORPTION, event.getDamage(ABSORPTION)/2);
@@ -131,6 +146,7 @@ public class GuardsmanDamage implements Listener {
 
 
         String reduction_msg = extra_msg + YELLOW + " (" + GRAY + "⚔ " + YELLOW + Debug.formatDecimal(multiplier) + "x)"
+                + AQUA + " (" + GRAY + "⚔ +" + AQUA + Debug.formatDecimal(add) + ")"
                 + armor_msg;
 //                +GREEN+" ("+GRAY+"🟰:"+GREEN+Debug.formatDecimal(crit_multiplier*multiplier)+"x)";
 
@@ -163,7 +179,8 @@ public class GuardsmanDamage implements Listener {
                     DARK_RED + "Base Damage: "+RED+Debug.formatDecimal(original_damage) +
                             (reduction_msg)
                             + RED + " [❤ " + Debug.formatDecimal(CombatManager.calculateTotalDamage(event)) + "]",
-                    "[" + damager.getName() + " is GuardMan lvl " + lvl + "]" + "\n" +
+                    "<gold>This output displays the calculated Guardsman Damage\nas if Vanilla Armor was being utilized</gold>\n"
+                            +"[" + damager.getName() + " is GuardMan lvl " + lvl + "]" + "\n" +
                             "Attacker: " + damager.getName() + modifiers
             );
         }

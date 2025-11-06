@@ -64,7 +64,6 @@ public class CombatManager implements Listener {
 
     @EventHandler
     public void GlobalDamageListener(EntityDamageByEntityEvent event) {
-
         double original_base = event.getDamage(BASE);
         boolean fully_charged = false;
         double charge_amount = -1.0;
@@ -102,10 +101,10 @@ public class CombatManager implements Listener {
         double absorption_to_remove = 0;
         if (absorption < 0) {
             if(event.getDamage(INVULNERABILITY_REDUCTION)==0) {
-                if (event.getEntity() instanceof Damageable x) {
-                    double absorption_hearts = x.getAbsorptionAmount();
-                    if(fully_charged) {
-                        x.setAbsorptionAmount(Math.max(0, absorption_hearts - 1));
+                if (event.getEntity() instanceof Damageable target) {
+                    double absorption_hearts = target.getAbsorptionAmount();
+                    if(charge_amount>0.5) {
+                        target.setAbsorptionAmount(Math.max(0, absorption_hearts - 1));
                     }
                     event.setDamage(BASE, 0);
                 }

@@ -90,15 +90,16 @@ public class ArmorDamageReduction {
             Debug.broadcast(
                     "armor",
                     //WHITE+victim.getName()+" "+*
-                    DARK_RED+"Reduction: "+RED+ Debug.formatDecimal(event.getDamage())+
+                    RED+ Debug.formatDecimal(event.getDamage(BASE))+
 //                            (WHITE+" ["+BLUE+"🅱: "+Debug.formatDecimal(original_armor)+"]")+
-                            WHITE+" ["+BLUE+"👕: "+Debug.formatDecimal(-ARMOR_REDUCTION)+"x"+WHITE+"]"+
-                            ((stats.getToughness()>0)?(WHITE+" ["+GRAY+"🪨: "+Debug.formatDecimal(-TOUGHNESS_REDUCTION)+WHITE+"]"):"")+
+                            WHITE+" ["+BLUE+"👕: "+Debug.formatDecimal(ARMOR_REDUCTION)+"x"+WHITE+"]"+
+                            ((stats.getToughness()>0)?(WHITE+" ["+GRAY+"🪨: -"+Debug.formatDecimal(TOUGHNESS_REDUCTION)+WHITE+"]"):"")+
                             (WHITE+" ["+GREEN+"🚫: "+Debug.formatDecimal(TOTAL_REDUCTION)+"]")+
-                            (event.isCritical()? GREEN+" (CRIT!)":"")+
+//                            (event.isCritical()? GREEN+" (CRIT!)":"")+
                             RED+" [❤ "+Debug.formatDecimal(CombatManager.calculateTotalDamage(event))+"]"
                     ,
-                    "<blue>ARMOR REDUCTION:</blue> "+Debug.formatDecimal(ARMOR_REDUCTION)+"\n"
+                    "<blue>The <red>input</red> displays base damage.\nThe output displays the new calculated damage\nwith Custom Armor Reduction\n</blue>\n"
+                            +"<blue>ARMOR REDUCTION:</blue> "+Debug.formatDecimal(ARMOR_REDUCTION)+"\n"
                             +"<light_purple>TOUGHNESS REDUCTION:</light_purple> "+Debug.formatDecimal(TOUGHNESS_REDUCTION)+"\n"
                             +"\nOriginal damage: "+Debug.formatDecimal(event.getDamage())
                             +modifiers
