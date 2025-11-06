@@ -10,7 +10,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -49,6 +48,7 @@ public class Debug {
         getOrCreateChannelPlayerSet("damage", true);
         getOrCreateChannelPlayerSet("chat", true);
         getOrCreateChannelPlayerSet("levelup", true);
+        getOrCreateChannelPlayerSet("customitem", true);
     }
 
     /**
@@ -173,6 +173,7 @@ public class Debug {
         }
         broadcastFinalize(debug_channel, getPrefix(debug_channel).append(comp), false);
     }
+
     public static void broadcast(String debug_channel, Component msg, Component hover, boolean register_channel){
         Component comp = msg.hoverEvent(HoverEvent.showText(hover));
         broadcastFinalize(debug_channel, getPrefix(debug_channel).append(comp), register_channel);
@@ -191,7 +192,7 @@ public class Debug {
 
 
     public static void message(Player player, String debug_channel, String msg){
-        message(player, getPrefix(debug_channel).toString() + debug_channel, msg, null);
+        message(player, debug_channel, msg, null);
     }
 
     /**
@@ -226,7 +227,7 @@ public class Debug {
      * @return
      */
     Component formatDebugMessageDefault(String debug_channel, String msg, String hover_details){
-        Component comp = getPrefix(debug_channel).append(Component.text(msg));//+msg);
+        Component comp = getPrefix(debug_channel).append(MiniMessage.miniMessage().deserialize(net.md_5.bungee.api.ChatColor.stripColor(msg)));//+msg);
         if(hover_details!=null) {
             Component hover = MiniMessage.miniMessage().deserialize(hover_details);
             return comp.hoverEvent(HoverEvent.showText(hover));
@@ -236,7 +237,7 @@ public class Debug {
 //        return comp;
     }
 
-    private static @NotNull Component getPrefix(String debug_channel) {
+    private static Component getPrefix(String debug_channel) {
         return MiniMessage.miniMessage().deserialize("<dark_gray>[debug:" + debug_channel.toLowerCase() + "]:</dark_gray> ");
     }
 

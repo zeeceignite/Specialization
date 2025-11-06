@@ -299,7 +299,11 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     public void setDowned(boolean downed) {
         if (this.isDowned != downed) {
             this.isDowned = downed;
-            if (!downed) return;
+            if (!downed){
+                Player player = Bukkit.getPlayer(CustomPlayer.this.getUuid());
+                player.leaveVehicle();
+                return;
+            }
             lastDowned = System.currentTimeMillis();
             new BukkitRunnable() {
                 final double totalTime = SpecializationConfig.getDownedConfig().get("TIME_TO_DEATH_IN_TICKS", Double.class);
