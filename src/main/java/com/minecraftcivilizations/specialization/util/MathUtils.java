@@ -105,6 +105,22 @@ public class MathUtils {
         return new Vector(x, y, z);
     }
 
+    /**
+     * Converts a player's yaw and pitch to a direction vector
+     * @param yaw turn angle
+     * @param pitch look up/down angle
+     */
+    public static Vector getDirectionVector(float yaw, float pitch) {
+        double yawRad = Math.toRadians(-yaw);
+        double pitchRad = Math.toRadians(-pitch);
+
+        double x = Math.cos(pitchRad) * Math.sin(yawRad);
+        double y = Math.sin(pitchRad);
+        double z = Math.cos(pitchRad) * Math.cos(yawRad);
+
+        return new Vector(x, y, z);
+    }
+
 
 
 }

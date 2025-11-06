@@ -29,6 +29,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Berserk implements Listener {
 
+    CombatManager combatManager;
+
+    public Berserk(CombatManager manager){
+        this.combatManager = manager;
+        manager.plugin.getServer().getPluginManager().registerEvents(this, manager.plugin);
+    }
+
     // Tracks players who already triggered Berserk this life
     private final Set<UUID> usedBerserkThisLife = ConcurrentHashMap.newKeySet();
 
@@ -50,7 +57,7 @@ public class Berserk implements Listener {
 
         // Trigger only on crossing from >5 to <=5 this hit
         if (before > 5.0 && after <= 5.0) {
-            showMyTitleWithDurations(player);
+            showBerserkDurationTitle(player);
             applyBerserk(player);
 
             // Mark as used for this life
@@ -70,7 +77,7 @@ public class Berserk implements Listener {
         usedBerserkThisLife.remove(e.getPlayer().getUniqueId());
     }
 
-    public void showMyTitleWithDurations(final @NonNull Audience target) {
+    public void showBerserkDurationTitle(final @NonNull Audience target) {
         final Title.Times times = Title.Times.times(
                 Duration.ofMillis(500),
                 Duration.ofMillis(3000),

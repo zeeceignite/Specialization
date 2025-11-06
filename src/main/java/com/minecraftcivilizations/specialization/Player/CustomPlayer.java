@@ -3,12 +3,14 @@ package com.minecraftcivilizations.specialization.Player;
 import com.google.common.collect.Queues;
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Events.SkillLevelChangeEvent;
 import com.minecraftcivilizations.specialization.Listener.Player.XpGainMonitor;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
+import com.minecraftcivilizations.specialization.util.CoreUtil;
 import com.minecraftcivilizations.specialization.util.LoreUtils;
 import lombok.Data;
 import lombok.Getter;
@@ -108,21 +110,33 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     }
 
 
+    /**
+     * Classic straightforward add XP
+     */
     public void addSkillXp(SkillType skillType, double xp) {
-
-        addSkillXp(skillType, xp, null, false);
+        addSkillXp(skillType, xp, null, false, false);
     }
-
-    public void addSkillXp(SkillType skillType, double xp, Location soundlocation) {
-
-        addSkillXp(skillType, xp, soundlocation, false);
-    }
-
 
     /**
-     * addSkillxp, but with extra location for sound.
+     * Silent for Combat XP
      */
-    public void addSkillXp(SkillType skillType, double xp, Location soundLocation, boolean allowNegative) {
+    public void addSkillXp(SkillType skillType, double xp, boolean silent) {
+
+        addSkillXp(skillType, xp, null, false, silent);
+    }
+
+    /**
+     * Add XP with physical location for sound
+     */
+    public void addSkillXp(SkillType skillType, double xp, Location soundlocation) {
+
+        addSkillXp(skillType, xp, soundlocation, false, false);
+    }
+
+    /**
+     * Add XP with all parameters
+     */
+    public void addSkillXp(SkillType skillType, double xp, Location soundLocation, boolean allowNegative, boolean silent) {
         Player player = Bukkit.getPlayer(getUuid());
 
         if (skillType == null || xp == 0) return;
@@ -158,7 +172,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         }
         player.sendActionBar(simple_xp_msg);
         int currentLevel = this.getSkillLevel(skillType);
-        if (this.isSoundEnabled) {
+        if (!silent && this.isSoundEnabled) {
             float pitch = 0.8f + (float) (Math.random() * 0.4f); // random between 0.8–1.2
             if(soundLocation != null){
                 player.playSound(soundLocation.add(0.5, 0.5, 0.5), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.UI, 0.02f, pitch);
@@ -173,7 +187,9 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
 
         if (previousLevel != currentLevel) {
-            applyEffects();
+            SkillLevelChangeEvent level_change_event = new SkillLevelChangeEvent(this, player, skillType, previousLevel, currentLevel, xp);
+            Bukkit.getPluginManager().callEvent(level_change_event);
+//            applyEffects(); disabled for testing new combat
             String skill_name = SkillType.getDisplayName(skillType);
             if (previousLevel < currentLevel) {
                 player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 100, 1);
@@ -194,6 +210,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
         }
     }
+
 
     public void applyEffects(){
         Player player = Bukkit.getPlayer(getUuid());
@@ -226,13 +243,26 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
 
     public int getSkillLevel(SkillType skillType) {
-        int level;
-        // So, so sorry if you have to read this, it was fixed about 10 times and I forgot to call it, so now it looks like this :sad:
-        level = 0;
-        while (level < SkillLevel.values().length && !isMissingXpForLevel(skillType, level+1) && !isMissingPercentForLevel(skillType, level+1)) {
-            level++;
+        Skill skill = getSkill(skillType);
+        double xp = skill.getXp();
+
+        double[] cached_levels = Skill.CACHED_LEVELS;
+        int last_level = cached_levels.length - 1;
+
+        for (int lvl = 0; lvl < last_level; lvl++) {
+            if (xp < cached_levels[lvl + 1]) return lvl;
         }
-        return level;
+
+        return last_level; // max level
+
+        //Shhhh, there... it's all over now... Just close your eyes and rest 💀💀💀
+//        int level;
+//        // So, so sorry if you have to read this, it was fixed about 10 times and I forgot to call it, so now it looks like this :sad:
+//        level = 0;
+//        while (level < SkillLevel.values().length && !isMissingXpForLevel(skillType, level+1) && !isMissingPercentForLevel(skillType, level+1)) {
+//            level++;
+//        }
+//        return Math.min(5, level); // prevents levels above 5
     }
 
 
@@ -374,4 +404,10 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         }
         return result;
     }
+
+
+    public static CustomPlayer getCustomPlayer(Player player){
+        return CoreUtil.getPlayer(player);
+    }
+
 }

@@ -16,16 +16,13 @@ public enum SkillLevel {
     @Getter
     private final int level;
 
+    private static final SkillLevel[] VALUES = values();
+
+    //Optimized ⚡
     public static SkillLevel getSkillLevelFromInt(int skillLevel) {
-        if (skillLevel >= SkillLevel.values().length) {
-            return getSkillLevelFromInt(SkillLevel.values().length - 1);
-        }
-        for (SkillLevel level : SkillLevel.values()) {
-            if (level.level == skillLevel) {
-                return level;
-            }
-        }
-        return SkillLevel.NOVICE;
+        if (skillLevel < 0) return NOVICE;
+        if (skillLevel >= VALUES.length) return GRANDMASTER;
+        return VALUES[skillLevel];
     }
 
     public static String getDisplayName(SkillLevel skillLevel) {

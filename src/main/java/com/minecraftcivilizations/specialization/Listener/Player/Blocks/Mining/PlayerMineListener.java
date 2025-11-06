@@ -76,7 +76,7 @@ public class PlayerMineListener implements Listener {
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
-        if (event.getAction().name().contains("RIGHT_CLICK")) {
+        if (event.getAction().isRightClick()) {
             resetPlayerBreakSpeed(event.getPlayer().getUniqueId());
         }
     }

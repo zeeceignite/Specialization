@@ -10,7 +10,12 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
+import java.text.DecimalFormat;
 import java.util.*;
 
 /**
@@ -18,8 +23,7 @@ import java.util.*;
  * Please use it when trying to debug things.
  * see: DebugListenCommand.java for commands
  */
-public class Debug {
-
+public class Debug implements Listener {
 
     public static String TITLE = ChatColor.DARK_GRAY + "[debug]";
     /**
@@ -30,12 +34,33 @@ public class Debug {
 
     // debug_channel -> List of Players registered to that channel
     private Map<String, Set<Player>> debug_listening = new HashMap<String, Set<Player>>();
-    private Map<Player, List<String>> listening_channels = new HashMap<Player, List<String>>(); //used specifically for tab completion
+    private Map<UUID, List<String>> listening_channels = new HashMap<UUID, List<String>>(); //used specifically for tab completion
     private List<String> debug_channels = new ArrayList<String>(); //used by command suggestions
 
 
-    public Debug(){
+    public Debug(Specialization plugin){
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
         setupDefaultChannels();
+    }
+
+    @EventHandler
+    public void onLogout(PlayerQuitEvent event){
+        unregisterPlayerToAllChannels(event.getPlayer());
+    }
+
+
+    @EventHandler
+    public void onLogin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+
+        // If we have a remembered list for this player (unlikely if we cleared on quit),
+        // restore them to those channels first.
+        List<String> remembered = listening_channels.get(player.getUniqueId());
+        if (remembered != null && !remembered.isEmpty()) {
+            for (String ch : remembered) {
+                getOrCreateChannelPlayerSet(ch, false).add(player);
+            }
+        }
     }
 
     /**
@@ -46,6 +71,8 @@ public class Debug {
         getOrCreateChannelPlayerSet("recipes", true);
         getOrCreateChannelPlayerSet("xp", true);
         getOrCreateChannelPlayerSet("damage", true);
+        getOrCreateChannelPlayerSet("armor", true);
+        getOrCreateChannelPlayerSet("weight", true);
         getOrCreateChannelPlayerSet("chat", true);
         getOrCreateChannelPlayerSet("levelup", true);
         getOrCreateChannelPlayerSet("customitem", true);
@@ -59,8 +86,8 @@ public class Debug {
      */
     public static boolean isListeningToChannel(Player player, String debug_channel) {
         Debug debug = getInstance();
-        if(debug.listening_channels.containsKey(player)){
-            if(debug.listening_channels.get(player).contains(debug_channel)){
+        if(debug.listening_channels.containsKey(player.getUniqueId())){
+            if(debug.listening_channels.get(player.getUniqueId()).contains(debug_channel)){
                 return true;
             }
             return false;
@@ -86,7 +113,7 @@ public class Debug {
     static void resetAllValues(CommandSender commander) {
         Debug debug = getInstance();
         debug.debug_listening = new HashMap<String, Set<Player>>();
-        debug.listening_channels = new HashMap<Player, List<String>>();
+        debug.listening_channels = new HashMap<UUID, List<String>>();
         debug.debug_channels = new ArrayList<String>();
         debug.setupDefaultChannels();
         Specialization.getInstance().getLogger().info("Debug Cache Globally Reset by "+commander.getName());
@@ -101,7 +128,7 @@ public class Debug {
         }
         Set<Player> player_set = getOrCreateChannelPlayerSet(debug_channel, false);
         player_set.add(player);
-        listening_channels.computeIfAbsent(player, p -> new ArrayList<String>()).add(debug_channel);
+        listening_channels.computeIfAbsent(player.getUniqueId(), p -> new ArrayList<String>()).add(debug_channel);
     }
 
     /**
@@ -111,7 +138,7 @@ public class Debug {
         debug_channel = debug_channel.toLowerCase();
         Set<Player> player_set = getOrCreateChannelPlayerSet(debug_channel, false);
         player_set.remove(player);
-        listening_channels.computeIfAbsent(player, p -> new ArrayList<String>()).remove(debug_channel);
+        listening_channels.computeIfAbsent(player.getUniqueId(), p -> new ArrayList<String>()).remove(debug_channel);
     }
 
     public void registerPlayerToAllChannels(Player player) {
@@ -238,7 +265,7 @@ public class Debug {
     }
 
     private static Component getPrefix(String debug_channel) {
-        return MiniMessage.miniMessage().deserialize("<dark_gray>[debug:" + debug_channel.toLowerCase() + "]:</dark_gray> ");
+        return MiniMessage.miniMessage().deserialize("<dark_gray>[" + debug_channel.toLowerCase() + "]:</dark_gray> ");
     }
 
     /**
@@ -250,8 +277,8 @@ public class Debug {
 
     public static List<String> getPlayerChannels(Player player){
         Debug debug = getInstance();
-        if(debug.listening_channels.containsKey(player)){
-            return debug.listening_channels.get(player);
+        if(debug.listening_channels.containsKey(player.getUniqueId())){
+            return debug.listening_channels.get(player.getUniqueId());
         }
         return new ArrayList<String>();
     }
@@ -297,6 +324,16 @@ public class Debug {
             c = formatLocationColored(location);
         }
         return c.clickEvent(ClickEvent.suggestCommand("/tp "+location.getBlockX()+" "+location.getBlockY()+" "+location.getBlockZ()));
+    }
+
+
+    private static DecimalFormat decimal_format = new DecimalFormat("#.##");
+
+    /**
+     * Helper for formatting decimals
+     */
+    public static String formatDecimal(double d){
+        return new DecimalFormat("0.00").format(d);
     }
 
 

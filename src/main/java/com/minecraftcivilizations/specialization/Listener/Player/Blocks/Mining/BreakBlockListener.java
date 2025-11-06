@@ -51,10 +51,10 @@ public class BreakBlockListener implements Listener {
             if (pair != null && pair.firstValue() != null && pair.secondValue() != null) {
                 if (blockData instanceof Ageable age) {
                     if (age.getMaximumAge() == age.getAge()) {
-                        player.addSkillXp(pair.firstValue(), pair.secondValue(), event.getBlock().getLocation(), true);
+                        player.addSkillXp(pair.firstValue(), pair.secondValue(), event.getBlock().getLocation());
                     }
                 } else {
-                    player.addSkillXp(pair.firstValue(), pair.secondValue(), event.getBlock().getLocation(), true);
+                    player.addSkillXp(pair.firstValue(), pair.secondValue(), event.getBlock().getLocation());
                 }
             }
         }

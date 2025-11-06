@@ -20,16 +20,11 @@ import com.minecraftcivilizations.specialization.Listener.Blocks.AutoCrafterList
 import com.minecraftcivilizations.specialization.Listener.BurnListener;
 import com.minecraftcivilizations.specialization.Listener.Blocks.ReinforcementProtectionListener;
 import com.minecraftcivilizations.specialization.Listener.Mobs.ExplodeListener;
-import com.minecraftcivilizations.specialization.Listener.Mobs.MobKillListener;
-import com.minecraftcivilizations.specialization.Listener.Mobs.MobListeners;
 import com.minecraftcivilizations.specialization.Listener.Player.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.BreakBlockListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.PlayerMineListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.PlaceBlockListener;
-import com.minecraftcivilizations.specialization.Listener.Player.Combat.ArmorDamageReductionListener;
-import com.minecraftcivilizations.specialization.Listener.Player.Combat.Berserk;
-import com.minecraftcivilizations.specialization.Listener.Player.Combat.CrossBowListener;
-import com.minecraftcivilizations.specialization.Listener.Player.Combat.PatDown;
+import com.minecraftcivilizations.specialization.Listener.Player.Combat.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.FoodInteractionListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.PlayerInteractEntityListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.PlayerInteractListener;
@@ -62,11 +57,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import net.minecraft.server.level.ServerPlayer;
-import org.bukkit.Bukkit;
-import org.bukkit.GameRule;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -74,12 +65,18 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public final class Specialization extends JavaPlugin {
 
     public static Logger logger;
+
+    @Getter
     private LocalNameGenerator localNameGenerator;
     private Debug debug;
     private PhantomRideListener phantomRideListener;
@@ -90,11 +87,15 @@ public final class Specialization extends JavaPlugin {
 
     @Getter
     private CustomItemManager customItemManager;
+    private CombatManager combatManager;
+
 
     @Override
     public void onEnable() {
         logger = getLogger();
-        debug = new Debug();
+
+        Skill.InitCacheXPLevelFormula();
+        debug = new Debug(this);
         saveResource("first_names.txt", false);
         saveResource("last_names.txt", false);
         SpecializationConfig.initialize();
@@ -122,8 +123,8 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
         getServer().getPluginManager().registerEvents(new FishingListener(), this);
-        getServer().getPluginManager().registerEvents(new MobKillListener(), this);
-        getServer().getPluginManager().registerEvents(new FoodInteractionListener(), this);
+        combatManager = new CombatManager(this); // Guardsman Damage Output
+        new FoodInteractionListener(this);
         getServer().getPluginManager().registerEvents(new HungerSystemListener(this), this);
         getServer().getPluginManager().registerEvents(new LeashListener(), this);
         getServer().getPluginManager().registerEvents(new BedListener(), this);
@@ -139,9 +140,6 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new MoveListener(), this);
         getServer().getPluginManager().registerEvents(new CrossBowListener(), this);
         getServer().getPluginManager().registerEvents(new LocalChat(), this);
-        getServer().getPluginManager().registerEvents(new MobListeners(), this);
-        getServer().getPluginManager().registerEvents(new Berserk(), this);
-        getServer().getPluginManager().registerEvents(new ArmorDamageReductionListener(), this);
         getServer().getPluginManager().registerEvents(new PatDown(), this);
         getServer().getPluginManager().registerEvents(new XpTransferBookListener(), this);
         getServer().getPluginManager().registerEvents(new RepairingListener(), this);
@@ -184,6 +182,7 @@ public final class Specialization extends JavaPlugin {
             try {
                 CustomPlayer load = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().load(playerJoinEvent.getUniqueId());
                 Component localName;
+                String real_name = playerJoinEvent.getName();
                 if (load != null) {
                     MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().addCustomPlayer(load);
                     localName = load.getName();
@@ -203,6 +202,8 @@ public final class Specialization extends JavaPlugin {
                 ff.setAccessible(true);
                 ff.set(gameProfile, ComponentUtils.serializeComponentAsString(localName));
 
+                Debug.broadcast("login", ChatColor.YELLOW+real_name+" has joined the server ("+localName+")");
+
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 logger.severe("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
                 e.printStackTrace();
@@ -212,8 +213,9 @@ public final class Specialization extends JavaPlugin {
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerJoin(playerJoinEvent -> {
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(playerJoinEvent.getUniqueId());
             applyCustomName(playerJoinEvent.getPlayer(), customPlayer.getName());
-            customPlayer.applyEffects();
+//            customPlayer.applyEffects();
 
+            // We don't really need this anymore right? -Alec
             // Migrate old bandages to new format
 //            Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
 //                migrateLegacyItems(playerJoinEvent.getPlayer());
