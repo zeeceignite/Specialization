@@ -1,10 +1,7 @@
 package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.minecraftcivilizations.specialization.Specialization;
-import org.bukkit.GameMode;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Particle;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Phantom;
@@ -13,10 +10,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityCombustEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -36,7 +30,7 @@ public class PhantomRideListener implements Listener {
     private final NamespacedKey tameProgressKey = new NamespacedKey(Specialization.getInstance(), "tameProgress");
     private final NamespacedKey isTamed = new NamespacedKey(Specialization.getInstance(), "isTamed");
     private final NamespacedKey lastDismountKey = new NamespacedKey(Specialization.getInstance(), "lastDismount");
-
+    private final int scale = 5;
     public PhantomRideListener(Specialization specialization) {
 
     }
@@ -74,6 +68,7 @@ public class PhantomRideListener implements Listener {
             p.setPersistent(true);
             p.setRemoveWhenFarAway(false);
             p.setFireTicks(0);
+            p.setSize(scale);
             p.setGlowing(false);
             p.setCustomNameVisible(false);
             p.getPersistentDataContainer().set(fireResistKey, PersistentDataType.BYTE, (byte) 1);
@@ -102,15 +97,16 @@ public class PhantomRideListener implements Listener {
         if (player.getGameMode() != GameMode.CREATIVE) {
             item.setAmount(item.getAmount() - 1);
         }
-        // Incremental growth
-        AttributeInstance scaleAttr = phantom.getAttribute(Attribute.SCALE);
-        if (scaleAttr != null) {
-            double currentScale = scaleAttr.getBaseValue();
-            if (currentScale < 1.55) {
-                scaleAttr.setBaseValue(Math.min(1.55, currentScale + 0.015));
-            }
 
-            int tameGoal = 20;
+        int tameGoal = 20;
+        double growthRatio = Math.min(1.0, progress / (double) tameGoal);
+        int baseSize = 1;
+        int targetSize = scale; // your final size (e.g., 5)
+        int newSize = baseSize + (int) Math.floor(growthRatio * (targetSize - baseSize));
+
+        if (phantom.getSize() < newSize) {
+            phantom.setSize(newSize);
+
 
             if (progress < tameGoal) {
                 phantom.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, phantom.getLocation().add(0, 1, 0), 6, 0.4, 0.4, 0.4);
@@ -119,6 +115,9 @@ public class PhantomRideListener implements Listener {
                 phantom.setHealth(Math.min(phantom.getHealth() + 2.0, phantom.getMaxHealth()));
                 phantom.setAware(false);
                 phantom.setSilent(true);
+                phantom.setPersistent(true);
+                phantom.setRemoveWhenFarAway(false);
+                phantom.setFireTicks(0);
                 phantom.getPersistentDataContainer().set(isTamed, PersistentDataType.BYTE, (byte) 1);
                 phantom.getPersistentDataContainer().set(fireResistKey, PersistentDataType.BYTE, (byte) 1);
                 phantom.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 0, false, false));
@@ -146,6 +145,7 @@ public class PhantomRideListener implements Listener {
         }
 
         if (!player.isInsideVehicle()) {
+            player.playSound(player.getLocation(), Sound.ENTITY_STRIDER_SADDLE, SoundCategory.PLAYERS, 0.5f, 1f);
             phantom.addPassenger(player);
             phantom.setAI(true);
             phantom.setAware(false);
@@ -209,6 +209,7 @@ public class PhantomRideListener implements Listener {
     public void onPhantomCombust(EntityCombustEvent event) {
         if (!(event.getEntity() instanceof Phantom phantom)) return;
         if (phantom.getPersistentDataContainer().getOrDefault(fireResistKey, PersistentDataType.BYTE, (byte) 0) == 1) {
+            phantom.setFireTicks(0);
             event.setCancelled(true);
         }
     }
@@ -219,9 +220,9 @@ public class PhantomRideListener implements Listener {
         phantom.getPersistentDataContainer().remove(ownerKey);
         new BukkitRunnable() {
             private final double baseSpeed = 0.275;
-            private final double maxSpeed = 1.2;
-            private final double damping = 0.55; //this should slow down the player down to the base speed slowly over time
-            private final double airFriction = 0.895;
+            private final double maxSpeed = 1.85;
+            private final double maxCruiseSpeed = 0.29;
+            private final double airFriction = 0.855;
             private final float maxDive = 25f;
             private final float maxClimb = 25f;
             private final float visualMaxPitch = 35f;
@@ -303,7 +304,7 @@ public class PhantomRideListener implements Listener {
                     double target = baseSpeed;
                     if (speed > target) {
                         double diff = speed - target;
-                        double newSpeed = speed - diff * (1.0 - damping); // damping 0.65 = 35% decay of excess each tick
+                        double newSpeed = speed - diff * (1.0 - maxCruiseSpeed);
                         velocity.normalize().multiply(newSpeed);
                     }
 
@@ -328,6 +329,8 @@ public class PhantomRideListener implements Listener {
                         phantom.setAI(true);
                         dismounted = true;
                         long now = System.currentTimeMillis();
+                        player.playSound(player.getLocation(), Sound.ENTITY_STRIDER_SADDLE, SoundCategory.PLAYERS, 0.5f, 0.7f);
+
                         phantom.getPersistentDataContainer().set(lastDismountKey, PersistentDataType.LONG, now);
                         cancel();
 
