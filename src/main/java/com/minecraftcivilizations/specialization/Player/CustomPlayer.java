@@ -8,6 +8,7 @@ import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.LoreUtils;
 import lombok.Data;
 import lombok.Getter;
@@ -20,11 +21,9 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -136,14 +135,28 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         if(negative) {
             player.sendMessage("Negative XP Warning: " + skillType.name() + ": " + skill.getXp() + " (+ " + ((xp > 0) ? ChatColor.GREEN : ChatColor.RED) + xp + ")");
         }
-        Component message = MiniMessage.miniMessage().deserialize(
+        Component simple_xp_msg = MiniMessage.miniMessage().deserialize(
                 "<white>"+skill.getXp()+"</white> " +
                 "<"+color+">(" +(negative?"":"+") +xp+")</"+color+"> " +
                 "<gray>"+getDisplayName(skillType)+"</gray>");
 
-//        Component component = Component.text("["+skill.getXp()+"] "+(xp <= 0 ? "" : "+") + xp).color(NamedTextColor.WHITE).append(Component.text(" (" + getDisplayName(skillType) + ")").color(NamedTextColor.GRAY));
 
-        player.sendActionBar(message);
+        // Debug XP if applicable
+        if (Debug.isListeningToChannel(player, "xp")){
+            try {
+                Debug.message(player, "xp",
+                        MiniMessage.miniMessage().deserialize(player.getName() + " xp: ")
+                                .append(simple_xp_msg)
+                                .append(Component.space())
+                                .append(Debug.formatLocationClickable(player.getLocation(), true)),
+                        null
+                );
+            }catch(Exception e){
+                e.printStackTrace();
+                Specialization.getInstance().getLogger().info("BAD DEBUG in CustomPlayer.java");
+            }
+        }
+        player.sendActionBar(simple_xp_msg);
         int currentLevel = this.getSkillLevel(skillType);
         if (this.isSoundEnabled) {
             float pitch = 0.8f + (float) (Math.random() * 0.4f); // random between 0.8–1.2
@@ -161,12 +174,14 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
         if (previousLevel != currentLevel) {
             applyEffects();
+            String skill_name = SkillType.getDisplayName(skillType);
             if (previousLevel < currentLevel) {
                 player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 100, 1);
-                player.sendMessage(LoreUtils.createLoreLine("You have leveled up " + SkillType.getDisplayName(skillType) + ", you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
+                player.sendMessage(LoreUtils.createLoreLine("You have leveled up " + skill_name + ", you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
+                Debug.broadcast("levelup", player.getName()+" leveled up "+skill_name);
             } else {
                 player.playSound(player, Sound.ITEM_BOTTLE_FILL_DRAGONBREATH, 100F, 1.5F);
-                player.sendMessage(LoreUtils.createLoreLine("Your " + SkillType.getDisplayName(skillType) + "ing ability has deteriorated, you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
+                player.sendMessage(LoreUtils.createLoreLine("Your " + skill_name + "ing ability has deteriorated, you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
             }
             while (currentLevel > 0) {
                 Set<NamespacedKey> recipes =
@@ -194,7 +209,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
                 }
                 if(player.getActivePotionEffects().stream().noneMatch(effect -> effect.getType().equals(potionEffectType) && effect.getAmplifier() > dataEffect.secondValue())){
                     player.removePotionEffect(potionEffectType);
-                    player.addPotionEffect(new PotionEffect(potionEffectType,-1, dataEffect.secondValue()));
+                    player.addPotionEffect(new PotionEffect(potionEffectType,-1, dataEffect.secondValue(), false, true, true));
                 }
             }
         });
@@ -284,7 +299,11 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     public void setDowned(boolean downed) {
         if (this.isDowned != downed) {
             this.isDowned = downed;
-            if (!downed) return;
+            if (!downed){
+                Player player = Bukkit.getPlayer(CustomPlayer.this.getUuid());
+                player.leaveVehicle();
+                return;
+            }
             lastDowned = System.currentTimeMillis();
             new BukkitRunnable() {
                 final double totalTime = SpecializationConfig.getDownedConfig().get("TIME_TO_DEATH_IN_TICKS", Double.class);

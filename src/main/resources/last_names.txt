@@ -87,9 +87,13 @@
 
 # Visual
 {Gleam|Shimmer|Flash} [Visual] [Light]
+{Sunshine|Sunrise|Sunset} [Visual] [Light] [Dark]
 {Shadow|Dim|Shade} [Visual] [Light]
 {Radiance|Glint|Sparkle} [Visual] [Soft]
 {Twinkle|Flicker|Lumina} [Visual] [Light]
+
+# Happy
+{sunshine} [Mellow]
 
 
 

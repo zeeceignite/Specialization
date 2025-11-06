@@ -56,7 +56,6 @@ public class DataManager {
 
         // TODO Future note for CivCore : Make sure you handle exceptions with e.printStackTrace(); so we can figure out when things go wrong.
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().saveAll();
-
     };
 
     // this is done so analytics are exactly every 10 min, so its clean

@@ -5,6 +5,7 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Ability.AbilityCastEvent;
@@ -26,8 +27,9 @@ public class Blueprints {
 
     public static void init(){
         registerBlueprintItems();
-        registerBlueprintRecipes();
-        startPeriodicBlueprintRefresh();
+        registerBlueprintRecipes(true);
+        startPeriodicBlueprintRefresh(); // still doesn't work
+        // October 25: Culprit was Recipes.java "minecraft:rail"
     }
 
     private static void registerBlueprintItems(){
@@ -57,7 +59,7 @@ public class Blueprints {
         Bukkit.getLogger().info("[Blueprints] Registered " + count + " blueprint items");
     }
 
-    public static void registerBlueprintRecipes(){
+    public static void registerBlueprintRecipes(boolean reloading){
         Bukkit.getLogger().info("[Blueprints] Registering blueprint recipes...");
         int successCount = 0;
         int failCount = 0;
@@ -78,7 +80,8 @@ public class Blueprints {
                     failCount++;
                 }
             } catch (Exception e) {
-                Bukkit.getLogger().warning("[Blueprints] ✗ Failed to register blueprint recipe - " + e.getMessage());
+                if (!reloading)
+                    Bukkit.getLogger().warning("[Blueprints] ✗ Failed to register blueprint recipe - " + e.getMessage());
                 failCount++;
             }
         }
@@ -89,7 +92,8 @@ public class Blueprints {
     private static void startPeriodicBlueprintRefresh() {
         Bukkit.getScheduler().runTaskTimerAsynchronously(Specialization.getInstance(), () -> {
             Bukkit.getLogger().info("[Blueprints] Periodic blueprint recipe refresh triggered");
-            Bukkit.getScheduler().runTask(Specialization.getInstance(), Blueprints::registerBlueprintRecipes);
+            Debug.broadcast("recipes", "Periodic blueprint recipe refresh triggered", null, true);
+            Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> Blueprints.registerBlueprintRecipes(true));
         }, 1200L, 1200L);
     }
 

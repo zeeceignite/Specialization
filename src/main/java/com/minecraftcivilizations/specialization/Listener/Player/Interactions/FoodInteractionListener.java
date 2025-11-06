@@ -142,13 +142,13 @@ public class FoodInteractionListener implements Listener {
 
         String effectSummary;
         if (healerLevel >= SkillLevel.GRANDMASTER.getLevel()) {
-            effectSummary = "Regeneration III 60s, Absorption II 60s";
+            effectSummary = "Regeneration I 20s, Absorption I 20s";
         } else if (healerLevel >= SkillLevel.MASTER.getLevel()) {
-            effectSummary = "Regeneration II 20s, Absorption I 40s";
+            effectSummary = "Regeneration I 15s, Absorption I 15s";
         } else if (healerLevel >= SkillLevel.EXPERT.getLevel()) {
-            effectSummary = "Regeneration II 20s";
+            effectSummary = "Regeneration I 10s, Absorption I 10s";
         } else { // Journeyman
-            effectSummary = "Regeneration I 30s";
+            effectSummary = "Regeneration I 5s, Absorption I 5s";
         }
 
         customItem.addLore(Specialization.getInstance(), List.of(
@@ -173,37 +173,41 @@ public class FoodInteractionListener implements Listener {
         Integer absorptionAmplifier = null;
 
         if (healerLevel >= SkillLevel.GRANDMASTER.getLevel()) {
-            // L5: 60s Regen III + 60s Abs II
-            regenDurationTicks = 60 * 20;
-            regenAmplifier = 2;
-            absorptionDurationTicks = 60 * 20;
-            absorptionAmplifier = 1;
-        } else if (healerLevel >= SkillLevel.MASTER.getLevel()) {
-            // L4: 20s Regen II + 40s Abs I
             regenDurationTicks = 20 * 20;
-            regenAmplifier = 1;
-            absorptionDurationTicks = 40 * 20;
+            regenAmplifier = 0;
+            absorptionDurationTicks = 20 * 20;
+            absorptionAmplifier = 0;
+        } else if (healerLevel >= SkillLevel.MASTER.getLevel()) {
+            regenDurationTicks = 15 * 20;
+            regenAmplifier = 0;
+            absorptionDurationTicks = 15 * 20;
             absorptionAmplifier = 0;
         } else if (healerLevel >= SkillLevel.EXPERT.getLevel()) {
-            // L3: 20s Regen II
-            regenDurationTicks = 20 * 20;
-            regenAmplifier = 1;
-        } else if (healerLevel >= SkillLevel.JOURNEYMAN.getLevel()) {
-            // L2: 30s Regen I
-            regenDurationTicks = 30 * 20;
+            regenDurationTicks = 10 * 20;
             regenAmplifier = 0;
+            absorptionDurationTicks = 10 * 20;
+            absorptionAmplifier = 0;
+        } else if (healerLevel >= SkillLevel.JOURNEYMAN.getLevel()) {
+            regenDurationTicks = 5 * 20;
+            regenAmplifier = 0;
+            absorptionDurationTicks = 5 * 20;
+            absorptionAmplifier = 0;
         } else {
             // Below Journeyman shouldn’t be able to bless; safe no-op
             return;
         }
 
+        boolean saturate = false;
         // Apply effects
         if (regenDurationTicks > 0) {
+            saturate = true;
             player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, regenDurationTicks, regenAmplifier));
         }
         if (absorptionDurationTicks != null && absorptionAmplifier != null) {
+            saturate = true;
             player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, absorptionDurationTicks, absorptionAmplifier));
         }
+
 
         // Keep your existing “restore max health if below normal” behavior
         if (SpecializationConfig.getHealthConfig().get("HEALTH_ENABLED", Boolean.class)) {

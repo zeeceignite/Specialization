@@ -24,6 +24,7 @@ public class XPLeaderboardCommand extends BaseCommand {
     // --- Default: overall XP leaderboard ---
     @Default
     public void showOverallLeaderboard(Player sender) {
+        sender.sendMessage(Component.text("testo", NamedTextColor.GREEN));
         if (!sender.hasPermission("civlabs.xpleaderboard")) {
             sender.sendMessage(Component.text("You do not have permission.", NamedTextColor.RED));
             return;

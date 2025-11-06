@@ -30,12 +30,10 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager.isHeavilyReinforced;
-import static com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager.isLightlyReinforced;
-import static com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager.isReinforced;
-import static com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager.removeReinforcement;
+import static com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager.*;
 
 public class BreakBlockListener implements Listener {
+
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
         AttributeInstance breakSpeedAttr = event.getPlayer().getAttribute(Attribute.BLOCK_BREAK_SPEED);
@@ -46,24 +44,13 @@ public class BreakBlockListener implements Listener {
             CustomPlayer player = CoreUtil.getPlayer(event.getPlayer().getUniqueId());
             BlockData blockData = event.getBlock().getBlockData();
 
-            if(isReinforced(event.getBlock())) {
-                Location dropLocation = event.getBlock().getLocation().add(0.5, 0.5, 0.5);
-
-                if(isHeavilyReinforced(event.getBlock())) {
-                    event.getBlock().getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT, 1));
-                    event.getPlayer().sendMessage("You have received 1 iron ingot for breaking heavily reinforced blocks!");
-                }
-                if(isLightlyReinforced(event.getBlock())) {
-                    event.getBlock().getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT, 1));
-                    event.getPlayer().sendMessage("You have received 1 copper ingot for breaking lightly reinforced blocks!");
-                }
-                for (Block b : getMultiBlocks(event.getBlock())) {
-                    removeReinforcement(b);
-                }
+            if (isReinforced(event.getBlock())) {
+                handleReinforcedDrop(event.getBlock(), event.getPlayer());
             }
+
             if (pair != null && pair.firstValue() != null && pair.secondValue() != null) {
                 if (blockData instanceof Ageable age) {
-                    if(age.getMaximumAge() == age.getAge()) {
+                    if (age.getMaximumAge() == age.getAge()) {
                         player.addSkillXp(pair.firstValue(), pair.secondValue(), event.getBlock().getLocation(), true);
                     }
                 } else {
@@ -72,6 +59,23 @@ public class BreakBlockListener implements Listener {
             }
         }
         minerListener(event);
+        farmerListener(event);
+    }
+
+    private void handleReinforcedDrop(Block block, org.bukkit.entity.Player player) {
+        Location dropLocation = block.getLocation().add(0.5, 0.5, 0.5);
+
+        if (isHeavilyReinforced(block)) {
+            block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT));
+            player.sendMessage("You have received 1 iron ingot for breaking heavily reinforced blocks!");
+        }
+        if (isLightlyReinforced(block)) {
+            block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT));
+            player.sendMessage("You have received 1 copper ingot for breaking lightly reinforced blocks!");
+        }
+        for (Block b : getMultiBlocks(block)) {
+            removeReinforcement(b);
+        }
     }
 
     public void minerListener(BlockBreakEvent event) {
@@ -84,52 +88,6 @@ public class BreakBlockListener implements Listener {
         }
     }
 
-
-    @EventHandler
-    public void onEntityExplode(EntityExplodeEvent event) {
-        onBlocksExplode(event.blockList());
-    }
-
-    @EventHandler
-    public void onBlockExplode(BlockExplodeEvent event) {
-        onBlocksExplode(event.blockList());
-    }
-
-    private void onBlocksExplode(List<Block> blocks) {
-        blocks.forEach(block -> {
-            if(isReinforced(block)) {
-                Location dropLocation = block.getLocation().add(0.5, 0.5, 0.5);
-
-                if(isHeavilyReinforced(block)) {
-                    double heavy = SpecializationConfig.getReinforcementConfig().get("HEAVY_EXPLOSION_RESISTANCE", Double.class);
-                    Material type = block.getType();
-                    BlockData data = block.getBlockData();
-                    Bukkit.getScheduler().runTaskLater(Specialization.getInstance(),() -> {
-                        if(Math.random() < heavy) {
-                            block.setType(type);
-                            block.setBlockData(data);
-                        }else block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT, 1));
-                    }, 3);
-                }
-                if(isLightlyReinforced(block)) {
-                    double light = SpecializationConfig.getReinforcementConfig().get("LIGHT_EXPLOSION_RESISTANCE", Double.class);
-                    Material type = block.getType();
-                    BlockData data = block.getBlockData();
-                    Bukkit.getScheduler().runTaskLater(Specialization.getInstance(),() -> {
-                        if(Math.random() < light) {
-                            block.setType(type);
-                            block.setBlockData(data);
-                        }else block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT, 1));
-                    },3);
-                }
-                for (Block b : getMultiBlocks(block)) {
-                    removeReinforcement(b);
-                }
-            }
-        });
-    }
-
-    @EventHandler
     public void farmerListener(BlockBreakEvent event) {
         CustomPlayer player = CoreUtil.getPlayer(event.getPlayer());
         Material materialName = event.getBlock().getType();
@@ -146,10 +104,8 @@ public class BreakBlockListener implements Listener {
 
         if(random < chance) {
             event.setDropItems(true);
-        }else {
-            if (event.getBlock().getBlockData() instanceof Ageable || otherFarmables.contains(materialName)) {
-                event.setDropItems(false);
-            }
+        } else if (event.getBlock().getBlockData() instanceof Ageable || otherFarmables.contains(materialName)) {
+            event.setDropItems(false);
         }
     }
 
@@ -159,13 +115,56 @@ public class BreakBlockListener implements Listener {
         BlockData d = b.getBlockData();
         switch (d) {
             case Door door -> l.add(b.getRelative(door.getHalf() == Bisected.Half.TOP ? BlockFace.DOWN : BlockFace.UP));
-            case Bed bed ->
-                    l.add(b.getRelative(bed.getPart() == Bed.Part.HEAD ? bed.getFacing().getOppositeFace() : bed.getFacing()));
+            case Bed bed -> l.add(b.getRelative(bed.getPart() == Bed.Part.HEAD ? bed.getFacing().getOppositeFace() : bed.getFacing()));
             case Bisected bi -> l.add(b.getRelative(bi.getHalf() == Bisected.Half.TOP ? BlockFace.DOWN : BlockFace.UP));
-            default -> {
-            }
+            default -> {}
         }
         return l;
     }
 
+    @EventHandler
+    public void onEntityExplode(EntityExplodeEvent event) {
+        handleExplosion(event.blockList());
+    }
+
+    @EventHandler
+    public void onBlockExplode(BlockExplodeEvent event) {
+        handleExplosion(event.blockList());
+    }
+
+    private void handleExplosion(List<Block> blocks) {
+        blocks.forEach(block -> {
+            if (!isReinforced(block)) return;
+
+            Location dropLocation = block.getLocation().add(0.5, 0.5, 0.5);
+            Material type = block.getType();
+            org.bukkit.block.data.BlockData data = block.getBlockData();
+
+            if (isHeavilyReinforced(block)) {
+                double heavy = SpecializationConfig.getReinforcementConfig().get("HEAVY_EXPLOSION_RESISTANCE", Double.class);
+                Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
+                    if (Math.random() < heavy) {
+                        block.setType(type);
+                        block.setBlockData(data);
+                    } else {
+                        block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT));
+                    }
+                }, 3L);
+            }
+
+            if (isLightlyReinforced(block)) {
+                double light = SpecializationConfig.getReinforcementConfig().get("LIGHT_EXPLOSION_RESISTANCE", Double.class);
+                Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
+                    if (Math.random() < light) {
+                        block.setType(type);
+                        block.setBlockData(data);
+                    } else {
+                        block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT));
+                    }
+                }, 3L);
+            }
+
+            for (Block b : getMultiBlocks(block)) removeReinforcement(b);
+        });
+    }
 }
