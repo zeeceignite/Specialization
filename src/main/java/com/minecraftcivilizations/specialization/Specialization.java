@@ -110,7 +110,7 @@ public final class Specialization extends JavaPlugin {
     customItemManager = new CustomItemManager(this);
     customItemManager.initializeCustomItems();
     phantomRideListener = new PhantomRideListener(this);
-    emoteListener = new EmoteListener();
+    emoteListener = new EmoteListener(this);
 
 
         setupCommands();
@@ -150,7 +150,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new RepairingListener(), this);
         getServer().getPluginManager().registerEvents(new RepairingListener(), this);
         getServer().getPluginManager().registerEvents(phantomRideListener, this);
-        getServer().getPluginManager().registerEvents(new EmoteListener(), this);
+        getServer().getPluginManager().registerEvents(new EmoteListener(this), this);
 
         //town data does not need to wait anymore
         TownManager.scanAllPlayersForTownsAsync();
