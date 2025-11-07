@@ -7,7 +7,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.data.type.Slab;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.Player;
@@ -17,7 +16,11 @@ import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.CrossbowMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,12 +30,60 @@ import java.util.Map;
 public class EmoteCommand extends BaseCommand implements Listener {
 
     private final Map<Player, Interaction> activeBase = new HashMap<>();
+    private final Map<Player, BukkitTask> activePoint = new HashMap<>();
     private final JavaPlugin plugin;
 
     public EmoteCommand(JavaPlugin plugin) {
         this.plugin = plugin;
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
+
+    @Subcommand("point|p")
+    @Syntax("/emote point")
+    @CommandPermission("specialization.emote.point")
+    public void givePointCrossbow(Player player) {
+        if (!player.getInventory().getItemInMainHand().isEmpty()) {
+            player.sendMessage("§cYour main hand must be empty to use this command.");
+            return;
+        }
+
+        ItemStack crossbow = new ItemStack(Material.CROSSBOW);
+        CrossbowMeta meta = (CrossbowMeta) crossbow.getItemMeta();
+        if (meta != null) {
+            meta.setCustomModelData(420);
+            meta.setDisplayName("§6Point");
+
+            // Load it with a dummy projectile (can be arrow or spectral arrow)
+            meta.addChargedProjectile(new ItemStack(Material.ARROW));
+
+            crossbow.setItemMeta(meta);
+        }
+        player.getInventory().setItemInMainHand(crossbow);
+
+        player.sendMessage("§aYou received the Point Crossbow!");
+    }
+
+    @Subcommand("clap|c")
+    @Syntax("/emote clap")
+    @CommandPermission("specialization.emote.clap")
+    public void giveClapCrossbow(Player player) {
+        if (!player.getInventory().getItemInMainHand().isEmpty()) {
+            player.sendMessage("§cYour main hand must be empty to use this command.");
+            return;
+        }
+
+        ItemStack crossbow = new ItemStack(Material.CROSSBOW);
+        ItemMeta meta = crossbow.getItemMeta();
+        if (meta != null) {
+            meta.setCustomModelData(69); // custom clap crossbow ID
+            meta.setDisplayName("§6Clap");
+            crossbow.setItemMeta(meta);
+        }
+
+        player.getInventory().setItemInMainHand(crossbow);
+        player.sendMessage("§aYou received the Clap Crossbow!");
+    }
+
 
     // --- Right-click sit ---
     @EventHandler
@@ -45,31 +96,15 @@ public class EmoteCommand extends BaseCommand implements Listener {
         if (!player.getInventory().getItemInMainHand().getType().isAir()) return;
         if (player.isSneaking() || activeBase.containsKey(player)) return;
         if (block.getLocation().distanceSquared(player.getLocation()) > 2.25) return;
+        if (blockHasPassenger(block)) {
+            player.sendMessage("§cSomeone is already sitting here.");
+            return;
+        }
 
         sit(player, block);
         event.setCancelled(true);
     }
 
-    //todo needs edge case protection for upsidedown stairs and this needs to work lol
-//
-//    // --- /sit command ---
-//    @Subcommand("sit")
-//    public void sit(Player player) {
-//        if (activeBase.containsKey(player)) {
-//            player.sendMessage("§cYou're already sitting.");
-//            return;
-//        }
-//
-//        Block block = player.getLocation().getBlock().getRelative(BlockFace.UP);
-//        if (!isValidSeatBlock(block)) {
-//            player.sendMessage("§cYou can't sit here.");
-//            return;
-//        }
-//
-//        sit(player, block);
-//    }
-
-    // --- Core sit logic ---
     private void sit(Player player, Block block) {
         Location loc = getSeatLocation(block);
 
@@ -77,33 +112,45 @@ public class EmoteCommand extends BaseCommand implements Listener {
             i.setResponsive(false);
             i.setInteractionWidth(0);
             i.setInteractionHeight(0);
+            i.setInvulnerable(true);
+            i.setGravity(false);
         });
 
-        seat.addPassenger(player);
         activeBase.put(player, seat);
+
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (seat.isValid() && !player.isInsideVehicle()) seat.addPassenger(player);
+        });
     }
 
-    // --- Cancel on sneak ---
+    private boolean blockHasPassenger(Block block) {
+        Location loc = getSeatLocation(block);
+        for (Interaction seat : activeBase.values()) {
+            if (seat.getLocation().distanceSquared(loc) < 0.01) return true;
+        }
+        return false;
+    }
+
     @EventHandler
     public void onSneak(PlayerToggleSneakEvent e) {
         Player p = e.getPlayer();
-        if (e.isSneaking() && activeBase.containsKey(p)) cancelEmote(p);
+        if (e.isSneaking()) {
+            if (activeBase.containsKey(p)) cancelEmote(p);
+        }
     }
 
-    // --- Cancel on quit ---
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
         cancelEmote(e.getPlayer());
+        BukkitTask t = activePoint.remove(e.getPlayer());
+        if (t != null) t.cancel();
     }
 
-    // --- Cancel if block updates or player stands up ---
     @EventHandler
     public void onBlockPhysics(BlockPhysicsEvent e) {
         activeBase.forEach((player, seat) -> {
             Block below = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
-            if (seat.getLocation().getBlock().equals(e.getBlock()) || below.getType().isAir()) {
-                cancelEmote(player);
-            }
+            if (seat.getLocation().getBlock().equals(e.getBlock()) || below.getType().isAir()) cancelEmote(player);
         });
     }
 
@@ -113,10 +160,8 @@ public class EmoteCommand extends BaseCommand implements Listener {
         if (player.isInsideVehicle()) player.leaveVehicle();
     }
 
-    // --- Helpers ---
     private boolean isValidSeatBlock(Block block) {
         if (block == null) return false;
-
         Block above = block.getRelative(BlockFace.UP);
         if (!above.isPassable()) return false;
 
@@ -132,30 +177,27 @@ public class EmoteCommand extends BaseCommand implements Listener {
     }
 
     private Location getSeatLocation(Block block) {
-        Location loc = block.getLocation().clone().add(0.5, 0, 0.5); // default: top of block
-
+        Location loc = block.getLocation().clone().add(0.5, 0, 0.5);
         Material type = block.getType();
         String name = type.name();
 
-        if (name.endsWith("_STAIRS")) loc.add(0, 0.5, 0);
-        else if (name.endsWith("_SLAB")) loc.add(0, 0.5, 0);
+        if (name.endsWith("_STAIRS") || name.endsWith("_SLAB")) loc.add(0, 0.5, 0);
 
         if (block.getBlockData() instanceof org.bukkit.block.data.Directional dir) {
             switch (dir.getFacing()) {
                 case NORTH -> loc.add(0, 0, 0.25);
                 case SOUTH -> loc.add(0, 0, -0.25);
-                case WEST  -> loc.add(0.25, 0, 0);
-                case EAST  -> loc.add(-0.25, 0, 0);
+                case WEST -> loc.add(0.25, 0, 0);
+                case EAST -> loc.add(-0.25, 0, 0);
             }
             loc.setYaw(switch (dir.getFacing()) {
                 case NORTH -> 0f;
                 case SOUTH -> 180f;
-                case WEST  -> -90f;
-                case EAST  -> 90f;
+                case WEST -> -90f;
+                case EAST -> 90f;
                 default -> 0f;
             });
         }
-
         return loc;
     }
 }

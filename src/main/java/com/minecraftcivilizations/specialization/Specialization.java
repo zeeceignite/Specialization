@@ -83,6 +83,7 @@ public final class Specialization extends JavaPlugin {
     private LocalNameGenerator localNameGenerator;
     private Debug debug;
     private PhantomRideListener phantomRideListener;
+    private EmoteListener emoteListener;
 
     //follow this pattern from now on
     @Getter
@@ -108,6 +109,8 @@ public final class Specialization extends JavaPlugin {
     smart_entity_manager = new SmartEntityManager(this);
     customItemManager = new CustomItemManager(this);
     customItemManager.initializeCustomItems();
+    phantomRideListener = new PhantomRideListener(this);
+    emoteListener = new EmoteListener();
 
 
         setupCommands();
@@ -146,8 +149,8 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new XpTransferBookListener(), this);
         getServer().getPluginManager().registerEvents(new RepairingListener(), this);
         getServer().getPluginManager().registerEvents(new RepairingListener(), this);
-        phantomRideListener = new PhantomRideListener(this);
         getServer().getPluginManager().registerEvents(phantomRideListener, this);
+        getServer().getPluginManager().registerEvents(new EmoteListener(), this);
 
         //town data does not need to wait anymore
         TownManager.scanAllPlayersForTownsAsync();
