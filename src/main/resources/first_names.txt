@@ -126,9 +126,6 @@
 {lowercased} [Mellow]
 
 
-
-
-
 #defualts -
 Ancient
 Mystic
@@ -201,11 +198,13 @@ Withered
 Drowned
 Lovely
 Chaotic
+True
 Lil
 Smelly
 Lazy
 Wonky
 Whispered
 Witherborn
+Goofy
 
 Shot
