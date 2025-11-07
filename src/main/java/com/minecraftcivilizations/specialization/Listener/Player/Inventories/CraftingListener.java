@@ -5,12 +5,11 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
-import org.bukkit.Bukkit;
-import org.bukkit.Keyed;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -34,13 +33,29 @@ public class CraftingListener implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onCraft(CraftItemEvent event) {
         if (!(event.getWhoClicked() instanceof Player player) || event.getCurrentItem() == null) return;
 
         if (!isCraftingActionValid(event)) {
+            event.setResult(Event.Result.DENY);
+            event.setCancelled(true); //added to custom item override support
             return;
         }
+
+        Debug.broadcast("craft",
+                "<gray>🎬:</gray> "+event.getAction().name() + " <blue>📦: "+event.getCurrentItem().getType().name()+"</blue> <green>🖱:"+event.getCursor().getType().name(),
+                "<blue>Current Item: </blue>"+event.getCurrentItem().getType().name()+"\n"
+                +"<green>Cursor Item: </green>"+event.getCursor().getType().name());
+        /**
+         *
+         * Currently, trying to drop an item while an Item is on your cursor
+         * will result in this event continuing on to other methods
+         * such as CustomWeapon.java
+         *
+         * - Alec
+         *
+         */
 
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance()
                 .getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
@@ -53,7 +68,10 @@ public class CraftingListener implements Listener {
         int foodLevel = player.getFoodLevel();
 
         if(foodLevel < reduction || foodLevel < 1){
+            event.setResult(Event.Result.DENY);
             event.setCancelled(true);
+            player.playSound(player.getLocation(), Sound.BLOCK_CHORUS_FLOWER_GROW, 0.5f, 1.25f);
+            player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>You're too hungry to craft</red>"));
             return;
         }
 

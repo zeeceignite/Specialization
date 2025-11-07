@@ -8,6 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
@@ -42,17 +43,19 @@ public class CustomItemManager implements Listener {
     @Getter
     private List<String> customItemIds = new ArrayList<String>();
 
+    Specialization plugin;
     // items are defined and referenced here
     DefineCustomItems definitions;
 
     public CustomItemManager(Specialization plugin){
+        this.plugin = plugin;
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
     public void initializeCustomItems(){
         custom_items_loaded = new HashMap<String, CustomItem>();
         customItemIds = new ArrayList<String>();
-        definitions = new DefineCustomItems();
+        definitions = new DefineCustomItems(plugin);
         for(CustomItem customItem : custom_items_loaded.values()){
             customItem.init();
         }
@@ -89,7 +92,7 @@ public class CustomItemManager implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOW)
     public void onCraftItem(CraftItemEvent event) {
         CustomItem ci = getCustomItem(event.getCurrentItem());
         if (ci != null) {
@@ -214,11 +217,18 @@ public class CustomItemManager implements Listener {
 
     @EventHandler
     public void onItemHeld(PlayerItemHeldEvent event) {
+        ItemStack old_item = event.getPlayer().getInventory().getItem(event.getPreviousSlot());
         ItemStack new_item = event.getPlayer().getInventory().getItem(event.getNewSlot());
         if (new_item != null) {
             CustomItem custom = getCustomItem(new_item);
             if (custom != null) {
-                custom.onItemSwitchTo(event, new_item);
+                custom.onItemSwitchTo(event, old_item, new_item);
+            }
+        }
+        if (old_item != null) {
+            CustomItem custom = getCustomItem(old_item);
+            if (custom != null) {
+                custom.onItemSwitchAway(event, old_item, new_item);
             }
         }
     }

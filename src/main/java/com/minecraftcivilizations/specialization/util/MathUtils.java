@@ -18,6 +18,21 @@ public class MathUtils {
     public static double random(int min, int max){
         return ThreadLocalRandom.current().nextInt(max-min)+min;
     }
+
+    /**
+     * Rolls 0.0 to 1.0
+     */
+    public static double rollDouble(){
+        return ThreadLocalRandom.current().nextDouble();
+    }
+    public static boolean rollBoolean(){
+        return ThreadLocalRandom.current().nextBoolean();
+    }
+
+    public static double quantize(double value, double amount) {
+        return Math.round(value / amount) * amount;
+    }
+
     public static Vector randomDirection(){
         return new Vector(
                 random(-1f,1f),

@@ -2,6 +2,7 @@ package com.minecraftcivilizations.specialization.CustomItem;
 
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
@@ -87,6 +88,13 @@ public abstract class CustomItem {
         this(id, displayName, material, id, -1, enabled);
     }
 
+    /**
+     * Creates a typless Custom Item, to allow for variants such as swords
+     */
+    public CustomItem(String id) {
+        this(id, null, null, id, 0, true);
+    }
+
     // === Accessors ===
     public String getId() {
         return id;
@@ -136,21 +144,42 @@ public abstract class CustomItem {
 //        return Math.max(remaining, 0);
 //    }
 
-    public final ItemStack createItemStack(){
+    public ItemStack createItemStack(){
         return createItemStack(1, null);
     }
 
-    public final ItemStack createItemStack(int amount){
+    public ItemStack createItemStack(int amount){
         return createItemStack(amount, null);
+    }
+
+    public ItemStack createItemStack(Material mat){
+        return createItemStack(1, mat, null);
     }
 
     /**
      * Call this to actually create an ItemStack
      */
-    public final ItemStack createItemStack(int amount, Player player) {
-        ItemStack item_stack = new ItemStack(material, amount);
-        ItemMeta meta = item_stack.getItemMeta();
+    public ItemStack createItemStack(int amount, Player player) {
+        return createItemStack(amount, material, player);
+    }
 
+    /**
+     * Call this to actually create an ItemStack
+     */
+    public ItemStack createItemStack(int amount, Material mat_override, Player player) {
+        ItemStack item_stack = new ItemStack(mat_override, amount);
+        return wrapItemStack(item_stack, player);
+    }
+
+    /**
+     * Wraps the ItemStack to convert it into this Custom Item
+     */
+    public ItemStack wrapItemStack(ItemStack item_stack, Player player) {
+        ItemMeta meta = item_stack.getItemMeta();
+        if(meta.getPersistentDataContainer().has(CustomItemManager.key_custom_item_id)){
+            Debug.broadcast("customitem", "tried re-wrapping "+ item_stack.getType()+" as "+getId()+"!!!");
+            return item_stack;
+        }
         meta.getPersistentDataContainer().set(CustomItemManager.key_custom_item_id, PersistentDataType.STRING, getId());
 
         if(displayName!=null) {
@@ -175,7 +204,7 @@ public abstract class CustomItem {
             meta.setUseCooldown(cd);
         }
 
-        onCreateItem(item_stack, meta);
+        onCreateItem(item_stack, meta, player);
         item_stack.setItemMeta(meta);
 
         CustomItemCreationEvent event = new CustomItemCreationEvent(this, item_stack, player);
@@ -185,7 +214,9 @@ public abstract class CustomItem {
             return null;
         }
         return item_stack;
-    };
+    }
+
+    ;
 
     public void applyCooldown(Player player, int cooldown){
         player.setCooldown(cooldownGroup, cooldown);
@@ -203,7 +234,7 @@ public abstract class CustomItem {
     /**
      * Extra Logic provided by Custom Item Classes
      */
-    public abstract void onCreateItem(ItemStack itemStack, ItemMeta meta);
+    public abstract void onCreateItem(ItemStack itemStack, ItemMeta meta, Player player_who_crafted);
 
 
     /*
@@ -212,8 +243,9 @@ public abstract class CustomItem {
      * and should remain empty bodies in this class
      */
     public void onInteract(PlayerInteractEvent event, ItemStack itemStack){}
-    public void onItemSwitchTo(PlayerItemHeldEvent event, ItemStack newItem) {}
     public void onInteractEntity(PlayerInteractEntityEvent event, ItemStack itemStack){}
+    public void onItemSwitchTo(PlayerItemHeldEvent event, ItemStack oldItem, ItemStack newItem) {}
+    public void onItemSwitchAway(PlayerItemHeldEvent event, ItemStack oldItem, ItemStack newItem) {}
 
     // Called when the player damages a block (e.g., mining)
     public void onBlockBreak(BlockBreakEvent event) {}
@@ -227,7 +259,4 @@ public abstract class CustomItem {
         this.enabled = b;
         Specialization.getInstance().getLogger().info("Custom Item: "+id+ " has been "+ (b?"ENABLED":"DISABLED"));
     }
-
-
-
 }

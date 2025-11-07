@@ -68,14 +68,13 @@ public class Debug implements Listener {
      * If adding a new channel, specify it here.
      */
     private void setupDefaultChannels() {
-        getOrCreateChannelPlayerSet("recipes", true);
         getOrCreateChannelPlayerSet("xp", true);
+        getOrCreateChannelPlayerSet("craft", true);
+        getOrCreateChannelPlayerSet("customitem", true);
         getOrCreateChannelPlayerSet("damage", true);
         getOrCreateChannelPlayerSet("armor", true);
         getOrCreateChannelPlayerSet("weight", true);
         getOrCreateChannelPlayerSet("chat", true);
-        getOrCreateChannelPlayerSet("levelup", true);
-        getOrCreateChannelPlayerSet("customitem", true);
     }
 
     /**

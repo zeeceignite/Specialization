@@ -149,8 +149,8 @@ public class GuardsmanDamage implements Listener {
 
 
 
-        String reduction_msg = extra_msg + YELLOW + " (" + GRAY + "⚔ " + YELLOW + Debug.formatDecimal(multiplier) + "x)"
-                + AQUA + " (" + GRAY + "⚔ +" + AQUA + Debug.formatDecimal(add) + ")"
+        String reduction_msg = extra_msg + "<yellow> (" + "<gray>⚔</gray> " + Debug.formatDecimal(multiplier) + "x)</yellow>"
+                + " <aqua>(" + "<gray>⚔</gray> +" + Debug.formatDecimal(add) + ")</aqua>"
                 + armor_msg;
 //                +GREEN+" ("+GRAY+"🟰:"+GREEN+Debug.formatDecimal(crit_multiplier*multiplier)+"x)";
 
@@ -180,9 +180,9 @@ public class GuardsmanDamage implements Listener {
             }
             Debug.broadcast(
                     "damage",
-                    DARK_RED + "Base Damage: "+RED+Debug.formatDecimal(original_damage) +
+                     "<dark_red>Base Damage: <red>"+Debug.formatDecimal(original_damage) +"</red>"+
                             (reduction_msg)
-                            + RED + " [❤ " + Debug.formatDecimal(event.getDamage(BASE)) + "]",
+                            + " <red>[❤ " + Debug.formatDecimal(event.getDamage(BASE)) + "]</red>",
                     "<gold>This output displays the calculated Guardsman Damage\nas if Vanilla Armor was being utilized</gold>\n"
                             +"[" + damager.getName() + " is GuardMan lvl " + lvl + "]" + "\n" +
                             "Attacker: " + damager.getName() + modifiers

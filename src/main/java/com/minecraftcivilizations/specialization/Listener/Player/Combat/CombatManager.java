@@ -23,6 +23,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.RegisteredListener;
 
 import java.util.*;
@@ -128,13 +129,20 @@ public class CombatManager implements Listener {
 //        CoreUtil.getPlayer(player.customPlayer.getUuid());
 //        custom
         if(event.isCritical()){
-            double crit_add = 1.5;
+            double bonus = 0.0;
+            if(event.getDamager() instanceof Player dmger){
+                ItemStack item = dmger.getEquipment().getItemInMainHand();
+                bonus = getCustomWeaponCrit(item);
+                Debug.broadcast("customitem", "bonus: "+bonus + " for "+item.getType());
+            }
+
+
             CustomPlayer customPlayer = CoreUtil.getPlayer(event.getDamager().getUniqueId());
             if(customPlayer!=null) {
                 int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
                 double base = event.getDamage(BASE);
 //                crit_add = Math.min(1.5, 0.2 + Math.pow(1.055, lvl)); //slight exponent boost to crit
-                crit_add = 0.5 + (0.125 * (double)lvl);
+                double crit_add = 0.25 + bonus + (0.125 * (double)lvl);
                 double new_base = base + crit_add;
                 extramsg += GREEN+" [✨+"+Debug.formatDecimal(crit_add)+"]";
 //            new_damage *= (crit_multiplier); //apply custom crit
@@ -168,10 +176,9 @@ public class CombatManager implements Listener {
             entity.getWorld().playSound(entity.getLocation(), Sound.BLOCK_HEAVY_CORE_PLACE, SoundCategory.PLAYERS, 0.75f,ThreadLocalRandom.current().nextFloat(0.1f)+0.75f);
         }
 
-
         //display player CHARGE
         if(charge_amount!=-1.0) {
-            extramsg += GOLD + " [⚡" + Debug.formatDecimal(charge_amount) + "]";
+            extramsg +=  "<gold> [⚡" + Debug.formatDecimal(charge_amount) + "]</gold>";
         }
 
         String modifiers = "";
@@ -182,7 +189,7 @@ public class CombatManager implements Listener {
         }
         Debug.broadcast(
                 "damage",
-                DARK_RED+ "Final Damage: "+RED+Debug.formatDecimal(calculateTotalDamage(event))+GRAY+extramsg,
+                "<dark_red>Final Damage: <red>"+Debug.formatDecimal(calculateTotalDamage(event))+extramsg,
                 modifiers
         );
 
@@ -426,6 +433,12 @@ public class CombatManager implements Listener {
 
 
 
+    public static double getCustomWeaponCrit(ItemStack weapon){
+        if(weapon.getItemMeta().getPersistentDataContainer().has(CRIT_BONUS_KEY)) {
+            return weapon.getItemMeta().getPersistentDataContainer().get(CRIT_BONUS_KEY, PersistentDataType.DOUBLE);
+        }
+        return 0;
+    }
 
 
 
