@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.CustomItem;
 
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -15,7 +16,7 @@ public class BlessedFood extends CustomItem{
     }
 
     @Override
-    public void onCreateItem(ItemStack itemStack, ItemMeta meta) {
+    public void onCreateItem(ItemStack itemStack, ItemMeta meta, Player player) {
 
     }
 }

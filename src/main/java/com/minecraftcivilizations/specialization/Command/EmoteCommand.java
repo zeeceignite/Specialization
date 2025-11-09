@@ -2,9 +2,14 @@ package com.minecraftcivilizations.specialization.Command;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
+import com.minecraftcivilizations.specialization.CustomItem.CustomItem;
+import com.minecraftcivilizations.specialization.CustomItem.CustomItemManager;
+import com.minecraftcivilizations.specialization.CustomItem.EmoteItem;
+import com.minecraftcivilizations.specialization.CustomItem.EmotePacketListener;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Stairs;
@@ -17,13 +22,10 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.CrossbowMeta;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @CommandAlias("emote|e")
 @CommandPermission("specialization.emote")
@@ -32,60 +34,62 @@ public class EmoteCommand extends BaseCommand implements Listener {
     private final Map<Player, Interaction> activeBase = new HashMap<>();
     private final Map<Player, BukkitTask> activePoint = new HashMap<>();
     private final JavaPlugin plugin;
+//    private final EmoteItem emotes;
 
-    public EmoteCommand(JavaPlugin plugin) {
+    ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
+
+    // --- NEW: Clap Crossbow ---
+    public EmoteItem clap_item = new EmoteItem("clap_crossbow", "§bClap", EmoteItem.EmoteType.CLAP, "clap", this);
+    // --- NEW: Point Crossbow ---
+    public EmoteItem point_item = new EmoteItem("point_crossbow", "§6Point", EmoteItem.EmoteType.POINT, "point", this);
+
+    public EmoteCommand(CustomItemManager customItemManager, JavaPlugin plugin) {
         this.plugin = plugin;
+
+
         Bukkit.getPluginManager().registerEvents(this, plugin);
+        protocolManager.addPacketListener(new EmotePacketListener(this));
+    }
+
+    Set<Player> silenced_players = new HashSet<>();
+
+    public Set<Player> getSilencedPlayers() {
+        return silenced_players;
+    }
+
+
+    private void giveEmote(Player player, CustomItem emoteItem, String successMsg) {
+        ItemStack hand = player.getInventory().getItemInMainHand();
+
+        if (hand.getType().isAir()) {
+            player.getInventory().setItemInMainHand(emoteItem.createItemStack(1, player));
+            player.sendMessage(successMsg);
+            return;
+        }
+
+        CustomItem current = CustomItemManager.getInstance().getCustomItem(hand);
+        if (current instanceof EmoteItem) {
+            player.getInventory().setItemInMainHand(emoteItem.createItemStack(1, player));
+            player.sendMessage(successMsg);
+            return;
+        }
+
+        player.sendMessage("§cMain hand must be empty to emote");
     }
 
     @Subcommand("point|p")
-    @Syntax("/emote point")
-    @CommandPermission("specialization.emote.point")
-    public void givePointCrossbow(Player player) {
-        if (!player.getInventory().getItemInMainHand().isEmpty()) {
-            player.sendMessage("§cYour main hand must be empty to use this command.");
-            return;
-        }
-
-        ItemStack crossbow = new ItemStack(Material.CROSSBOW);
-        CrossbowMeta meta = (CrossbowMeta) crossbow.getItemMeta();
-        if (meta != null) {
-            meta.setCustomModelData(420);
-            meta.setDisplayName("§6Point");
-
-            // Load it with a dummy projectile (can be arrow or spectral arrow)
-            meta.addChargedProjectile(new ItemStack(Material.ARROW));
-
-            crossbow.setItemMeta(meta);
-        }
-        player.getInventory().setItemInMainHand(crossbow);
-
-        player.sendMessage("§aYou received the Point Crossbow!");
+    public void givePoint(Player player) {
+        giveEmote(player, point_item, "§9You are now pointing");
     }
 
     @Subcommand("clap|c")
-    @Syntax("/emote clap")
-    @CommandPermission("specialization.emote.clap")
-    public void giveClapCrossbow(Player player) {
-        if (!player.getInventory().getItemInMainHand().isEmpty()) {
-            player.sendMessage("§cYour main hand must be empty to use this command.");
-            return;
-        }
-
-        ItemStack crossbow = new ItemStack(Material.CROSSBOW);
-        ItemMeta meta = crossbow.getItemMeta();
-        if (meta != null) {
-            meta.setCustomModelData(69); // custom clap crossbow ID
-            meta.setDisplayName("§6Clap");
-            crossbow.setItemMeta(meta);
-        }
-
-        player.getInventory().setItemInMainHand(crossbow);
-        player.sendMessage("§aYou received the Clap Crossbow!");
+    public void giveClap(Player player) {
+        giveEmote(player, clap_item, "§9You can now clap");
     }
 
 
-    // --- Right-click sit ---
+
+    // --- Right-click sit logic ---
     @EventHandler
     public void onPlayerRightClick(PlayerInteractEvent event) {
         if (event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) return;
@@ -117,10 +121,9 @@ public class EmoteCommand extends BaseCommand implements Listener {
         });
 
         activeBase.put(player, seat);
-
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            if (seat.isValid() && !player.isInsideVehicle()) seat.addPassenger(player);
-        });
+        if (seat.isValid() && !player.isInsideVehicle() && seat.getPassengers().isEmpty()) {
+            seat.addPassenger(player);
+        }
     }
 
     private boolean blockHasPassenger(Block block) {
@@ -134,9 +137,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
     @EventHandler
     public void onSneak(PlayerToggleSneakEvent e) {
         Player p = e.getPlayer();
-        if (e.isSneaking()) {
-            if (activeBase.containsKey(p)) cancelEmote(p);
-        }
+        if (e.isSneaking()) cancelEmote(p);
     }
 
     @EventHandler
