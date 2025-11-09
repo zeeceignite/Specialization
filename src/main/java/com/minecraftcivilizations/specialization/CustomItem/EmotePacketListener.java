@@ -33,7 +33,9 @@ public class EmotePacketListener extends PacketAdapter {
 
     @Override
     public void onPacketSending(PacketEvent event) {
-
+//if (event.getPlayer().isOp()){
+//    return;
+//}
         Set<Player> silenced_players = emoteCommand.getSilencedPlayers();
         if(silenced_players.isEmpty()){
             Debug.broadcast("packet", "<gold>No Silenced Players</gold>");

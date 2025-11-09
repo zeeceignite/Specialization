@@ -47,8 +47,6 @@ public class EmoteItem extends CustomItem implements Listener {
     }
 
 
-
-
     @Override
     public void onCreateItem(ItemStack itemStack, ItemMeta meta, Player player) {
         if (meta instanceof CrossbowMeta crossbowMeta) {
@@ -84,21 +82,19 @@ public class EmoteItem extends CustomItem implements Listener {
 
     public void playClapEffect(Player player){
         player.getInventory().setItem(arrowSlot, null);
-        if (player.isHandRaised()) {
-//            Debug.broadcast("emote", "playing fun sound");
-            player.getWorld().playSound(player.getLocation(), Sound.BLOCK_CHERRY_WOOD_PLACE, 0.62f, 0.62f);
-//                            playSound(Sound.BLOCK_CHERRY_WOOD_PLACE, 0.29f, 0.29f, 0.75f, 0.75f);
-//                            Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
-//                            //more sounds here
-//                        }, 1L);
-        }
+
+            playSoundWithSettings(player, Sound.BLOCK_GLASS_HIT, 0.28f, 0.35f, 1.51f, 1.7f);
+            playSoundWithSettings(player, Sound.ITEM_BUNDLE_INSERT, 0.01f, 0.03f, 0.53f, 0.72f);
+            playSoundWithSettings(player, Sound.BLOCK_GLASS_PLACE, 0.03f, 0.08f, 1.56f, 1.7f);
+            playSoundWithSettings(player, Sound.BLOCK_STONE_STEP, 0.33f, 0.53f, 1.63f, 1.83f);
+
+
     }
 
-    public void playSound (Player player, Sound sound, float minVolume, float maxVolume, float minPitch,  float maxPitch){
-        player.sendMessage("");
+    public void playSoundWithSettings (Player player, Sound sound, float minVolume, float maxVolume, float minPitch,  float maxPitch){
         float volume = minVolume + (float) Math.random() * (maxVolume - minVolume);
         float pitch = minPitch + (float) Math.random() * (maxPitch - minPitch);
-        player.playSound(player.getLocation(), sound, SoundCategory.PLAYERS, volume, pitch);
+        player.getWorld().playSound(player.getLocation(), sound, SoundCategory.PLAYERS, volume, pitch);
 
     }
 
