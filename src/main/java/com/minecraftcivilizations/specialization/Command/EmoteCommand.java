@@ -9,6 +9,7 @@ import com.minecraftcivilizations.specialization.CustomItem.CustomItemManager;
 import com.minecraftcivilizations.specialization.CustomItem.EmoteItem;
 import com.minecraftcivilizations.specialization.CustomItem.EmotePacketListener;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
+import lombok.RequiredArgsConstructor;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -27,7 +28,6 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 
-@CommandAlias("emote|e")
 @CommandPermission("specialization.emote")
 public class EmoteCommand extends BaseCommand implements Listener {
 
@@ -77,14 +77,38 @@ public class EmoteCommand extends BaseCommand implements Listener {
         player.sendMessage("§cMain hand must be empty to emote");
     }
 
-    @Subcommand("point|p")
-    public void givePoint(Player player) {
-        giveEmote(player, point_item, "§9You are now pointing");
+    @CommandAlias("emotes|e")
+    @Description("Lists all emote-type custom items")
+    @CommandPermission("civlabs.emotes")
+    public void onList(Player sender) {
+        sender.sendMessage("§7==== §eAvailable Emotes §7====");
+
+        for (CustomItem item : CustomItemManager.getInstance().getCustomItems()) {
+            if (!(item instanceof EmoteItem)) continue;
+
+            boolean enabled = item.isEnabled();
+            String icon = enabled ? "§9●" : "§8●"; // blue for enabled, gray for disabled
+            sender.sendMessage(icon + " §f" + " §7" + item.getDisplayName());
+        }
     }
 
-    @Subcommand("clap|c")
+    @CommandAlias("point|p")
+    public void givePoint(Player player) {
+        if (CustomItemManager.getInstance().getCustomItem("clap_crossbow").isEnabled()){
+        giveEmote(player, point_item, "§9You are now pointing...");
+    } else {
+            player.sendMessage("§cEmote is disabled");
+        }
+    }
+
+    @CommandAlias("clap|c")
     public void giveClap(Player player) {
-        giveEmote(player, clap_item, "§9You can now clap");
+        if (CustomItemManager.getInstance().getCustomItem("clap_crossbow").isEnabled())
+        {
+        giveEmote(player, clap_item, "§9You can now clap... (Tap Right Click)");
+        } else {
+            player.sendMessage("§cEmote is disabled");
+        }
     }
 
 
