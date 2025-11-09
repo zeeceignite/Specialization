@@ -115,25 +115,25 @@ public class CustomWeapon extends CustomItem{
             double craft_crit_chance = 0.0;
 
             boolean luck_enabled = player.hasPotionEffect(PotionEffectType.LUCK);
-            int luck_seconds_to_remove = 10;
 
             switch(lvl){
                 default:
-                    craft_crit_chance = luck_enabled?0.075:0.025;
+                    craft_crit_chance = luck_enabled?0.05:0.025;
                     break;
                 case 3:
-                    craft_crit_chance = luck_enabled?0.125:0.075;
+                    craft_crit_chance = luck_enabled?0.75:0.05;
                     break;
                 case 4:
-                    craft_crit_chance = luck_enabled?0.125:0.075;
+                    craft_crit_chance = luck_enabled?0.125:0.75;
                     break;
                 case 5:
+//                    craft_crit_chance = luck_enabled?0.175:0.125;
                     craft_crit_chance = luck_enabled?0.75:0.5;
                     break;
             }
             if(craft_crit_chance > rollDouble()){
 
-                double crit_bonus = quantize((rollDouble()* 0.25 *((double)lvl)) + (luck_enabled?0.25:0.0), 0.25);
+                double crit_bonus = quantize((rollDouble()* 0.25 *((double)lvl)) + 0.25, 0.25);
                 double crit_max = 1.5;
                 Sound craft_sound = Sound.BLOCK_SMITHING_TABLE_USE;
                 switch(itemStack.getType()){
@@ -152,7 +152,6 @@ public class CustomWeapon extends CustomItem{
 
                 if(crit_bonus >0.0){
                     ChatColor c = BLUE;
-                    luck_seconds_to_remove = 10 + (int)(crit_bonus*4);
                     if(crit_bonus>=crit_max){
                         crit_bonus = Math.min(crit_max, crit_bonus);
                         c = GOLD;
@@ -163,9 +162,9 @@ public class CustomWeapon extends CustomItem{
                         meta.displayName(recolored);
                         itemStack.setItemMeta(meta);
                         player.playSound(player, Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.5f, 1.2f);
-                        player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1.25f);
+                        player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 0.125f, 1.25f);
                     }else if (crit_bonus>=1.0){
-                        player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1.5f);
+                        player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 0.125f, 1.5f);
                         c = AQUA;
                     }
                     ItemStackUtils.setLoreLine(meta, 0, c+"+"+crit_bonus+" Crit Bonus");

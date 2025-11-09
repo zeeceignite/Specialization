@@ -19,13 +19,17 @@ import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.plugin.Plugin;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
 public class CraftingListener implements Listener {
+
     private static final Logger LOGGER = Logger.getLogger(CraftingListener.class.getName());
     private final Plugin plugin;
 
@@ -43,10 +47,22 @@ public class CraftingListener implements Listener {
             return;
         }
 
+        ItemStack crafted = event.getCurrentItem();
+
+        Pair<SkillType, Double> xp_gain_pair = SpecializationConfig.getXpGainFromCraftingConfig()
+                .get(crafted.getType(), new TypeToken<>() {});
+
+        int craftedAmount = getCraftedAmount(event);
+
+        String amtstring = "<gold>x"+craftedAmount+"</gold>";
+        if(craftedAmount==1)amtstring = "";
+
         Debug.broadcast("craft",
-                "<gray>🎬:</gray> "+event.getAction().name() + " <blue>📦: "+event.getCurrentItem().getType().name()+"</blue> <green>🖱:"+event.getCursor().getType().name(),
+                "<gray>🎬:</gray> "+event.getAction().name() + " "+amtstring+" <blue>📦: "+event.getCurrentItem().getType().name()+"</blue> <green>🖱:"+event.getCursor().getType().name(),
                 "<blue>Current Item: </blue>"+event.getCurrentItem().getType().name()+"\n"
                 +"<green>Cursor Item: </green>"+event.getCursor().getType().name());
+
+
         /**
          *
          * Currently, trying to drop an item while an Item is on your cursor
@@ -57,17 +73,20 @@ public class CraftingListener implements Listener {
          *
          */
 
-        CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance()
-                .getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
 
-        int craftedAmount = getCraftedAmount(event);
+        CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
 
-        int reduction = (int) ((5-customPlayer.getSkillLevel(SkillType.BLACKSMITH))/1.5) *  (int) (craftedAmount/ ((Math.random()+1) * 3 ));
-        reduction = Math.max(0, reduction - (int) (Math.random() * 3));
+
+        double xpGainBenefit = (5-((double)customPlayer.getSkillLevel(xp_gain_pair.firstValue()))/1.5);
+        // Reduction based on Skill Level and Amount Crafted
+        int totalReduction = (int) (xpGainBenefit *  (craftedAmount));
+        totalReduction = Math.max(1, totalReduction);//Math.max(0, totalReduction - (int) (Math.random() * 3));
 
         int foodLevel = player.getFoodLevel();
 
-        if(foodLevel < reduction || foodLevel < 1){
+        Debug.broadcast("craft", "<red>Food Level: </red>"+foodLevel+" <gold>Reduction:</gold> "+totalReduction);
+
+        if(foodLevel < totalReduction || foodLevel < 1){
             event.setResult(Event.Result.DENY);
             event.setCancelled(true);
             player.playSound(player.getLocation(), Sound.BLOCK_CHORUS_FLOWER_GROW, 0.5f, 1.25f);
@@ -75,26 +94,25 @@ public class CraftingListener implements Listener {
             return;
         }
 
-        ItemStack crafted = event.getCurrentItem();
+
         if (event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
             ItemStack testItem = crafted.clone();
             testItem.setAmount(craftedAmount * crafted.getAmount());
             if (!canFitInInventory(player, testItem)) {
+                event.setCancelled(true);
+                event.setResult(Event.Result.DENY);
                 return;
             }
         }
 
-        Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromCraftingConfig()
-                .get(crafted.getType(), new TypeToken<>() {});
+        if (xp_gain_pair != null && xp_gain_pair.firstValue() != null && xp_gain_pair.secondValue() != null) {
+            double xpToGive = xp_gain_pair.secondValue() * craftedAmount;
 
-        if (pair != null && pair.firstValue() != null && pair.secondValue() != null) {
-            double xpToGive = pair.secondValue() * craftedAmount;
-
-            int finalReduction = Math.max(reduction, 1);
+            int finalReduction = Math.max(totalReduction, 1);
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (player.isOnline()) {
                     player.setFoodLevel(player.getFoodLevel() - finalReduction);
-                    customPlayer.addSkillXp(pair.firstValue(), xpToGive);
+                    customPlayer.addSkillXp(xp_gain_pair.firstValue(), xpToGive);
                     LOGGER.fine("Gave " + xpToGive + " XP to " + player.getName() +
                             " for crafting " + craftedAmount + "x " + crafted.getType());
                 }
@@ -132,11 +150,13 @@ public class CraftingListener implements Listener {
      */
     private boolean isCraftingActionValid(CraftItemEvent event) {
         InventoryAction action = event.getAction();
+        if(action==InventoryAction.MOVE_TO_OTHER_INVENTORY)return true;
 
         return switch (action) {
-            case PICKUP_ALL, PICKUP_SOME, PICKUP_HALF, PICKUP_ONE, MOVE_TO_OTHER_INVENTORY, PLACE_ALL, PLACE_SOME,
-                 PLACE_ONE, SWAP_WITH_CURSOR, HOTBAR_SWAP, DROP_ALL_CURSOR, DROP_ALL_SLOT, DROP_ONE_CURSOR, DROP_ONE_SLOT -> true;
-            default -> false;
+            case PICKUP_ALL, PICKUP_SOME, PICKUP_HALF, PICKUP_ONE, PLACE_ALL, PLACE_SOME,
+                 PLACE_ONE, SWAP_WITH_CURSOR, HOTBAR_SWAP, DROP_ALL_CURSOR, DROP_ALL_SLOT, DROP_ONE_CURSOR -> true;
+            case DROP_ONE_SLOT -> (event.getCursor().getType().isAir());
+                 default -> false;
         };
     }
 
@@ -204,6 +224,49 @@ public class CraftingListener implements Listener {
         }
         
         return maxCrafts * event.getRecipe().getResult().getAmount();
+    }/**
+     * Returns the exact ItemStacks that will be added to the player's inventory
+     * when doing a bulk craft (shift+click / MOVE_TO_OTHER_INVENTORY).
+     * The returned stacks are clones (safe to mutate).
+     */
+    private List<ItemStack> getStacksAddedByBulkCraft(Player player, ItemStack result, int totalProduced) {
+        List<ItemStack> added = new ArrayList<>();
+        if (result == null || totalProduced <= 0) return added;
+
+        PlayerInventory inv = player.getInventory();
+        int maxStack = result.getMaxStackSize();
+        int remaining = totalProduced;
+
+        // First try to fill existing similar stacks
+        for (int i = 0; i < inv.getSize() && remaining > 0; i++) {
+            ItemStack slot = inv.getItem(i);
+            if (slot == null || slot.getType().isAir()) continue;
+            if (!slot.isSimilar(result)) continue;
+
+            int space = maxStack - slot.getAmount();
+            if (space <= 0) continue;
+
+            int toAdd = Math.min(space, remaining);
+            ItemStack addedStack = result.clone();
+            addedStack.setAmount(toAdd);
+            added.add(addedStack);
+            remaining -= toAdd;
+        }
+
+        // Then fill empty slots
+        for (int i = 0; i < inv.getSize() && remaining > 0; i++) {
+            ItemStack slot = inv.getItem(i);
+            if (slot != null && !slot.getType().isAir()) continue;
+
+            int toAdd = Math.min(maxStack, remaining);
+            ItemStack addedStack = result.clone();
+            addedStack.setAmount(toAdd);
+            added.add(addedStack);
+            remaining -= toAdd;
+        }
+
+        // remaining > 0 means not all produced items fit; those remain in grid.
+        return added;
     }
 
     @EventHandler(ignoreCancelled = true)

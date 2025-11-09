@@ -244,8 +244,8 @@ public abstract class CustomItem {
      */
     public void onInteract(PlayerInteractEvent event, ItemStack itemStack){}
     public void onInteractEntity(PlayerInteractEntityEvent event, ItemStack itemStack){}
-    public void onItemSwitchTo(PlayerItemHeldEvent event, ItemStack oldItem, ItemStack newItem) {}
-    public void onItemSwitchAway(PlayerItemHeldEvent event, ItemStack oldItem, ItemStack newItem) {}
+    public void onItemSwitchTo(PlayerItemHeldEvent event, ItemStack oldItem, ItemStack newCustomItem) {}
+    public void onItemSwitchAway(PlayerItemHeldEvent event, ItemStack oldCustomItem, ItemStack newItem) {}
 
     // Called when the player damages a block (e.g., mining)
     public void onBlockBreak(BlockBreakEvent event) {}
