@@ -4,6 +4,8 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import io.papermc.paper.event.entity.EntityLoadCrossbowEvent;
+import io.papermc.paper.event.player.PlayerItemCooldownEvent;
+import io.papermc.paper.event.player.PlayerItemGroupCooldownEvent;
 import lombok.Getter;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Material;
@@ -13,16 +15,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerItemHeldEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -191,7 +189,7 @@ public class CustomItemManager implements Listener {
     }
 
     @EventHandler
-    public void onItemCreation(CustomItemCreationEvent event){
+    public void DispatchOnItemCreation(CustomItemCreationEvent event){
         String by = "";
         Player player = event.getPlayer();
         if(player != null) {
@@ -207,7 +205,7 @@ public class CustomItemManager implements Listener {
     }
 
     @EventHandler
-    public void onInteract(PlayerInteractEvent event){
+    public void DispatchOnInteract(PlayerInteractEvent event){
         ItemStack itemstack = event.getItem();
         if(itemstack != null){
             CustomItem custom_item = getCustomItem(itemstack);
@@ -220,7 +218,7 @@ public class CustomItemManager implements Listener {
     }
 
     @EventHandler
-    public void onPlayerDeath(PlayerDeathEvent event) {
+    public void DipatchOnPlayerDeath(PlayerDeathEvent event) {
         for (ItemStack itemstack : event.getDrops()){
             CustomItem ci = getCustomItem(itemstack);
             if(ci!=null){
@@ -230,9 +228,43 @@ public class CustomItemManager implements Listener {
 
     }
 
+    @EventHandler
+    public void  DispatchOnItemConsume(PlayerItemConsumeEvent event) {
+        ItemStack itemstack = event.getItem();
+        CustomItem custom_item = getCustomItem(itemstack);
+        if(custom_item!=null) {
+            if (custom_item.isEnabled() || event.getPlayer().isOp()) {
+//                if(custom_item.usesCooldownComponent()) {
+//                    event.setCancelled(true);
+//                    itemstack.setAmount(itemstack.getAmount()-1);
+//                }
+                custom_item.onPlayerItemConsume(event);
+            }
+        }
+    }
+
+    // listen to the cooldown being applied (fired when an item would go on cooldown)
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerItemCooldown(PlayerItemCooldownEvent event) {
+        Player player = event.getPlayer();
+//        if(event.getCooldownGroup()){
+//
+//        }
+//        Material material = event.getType(); // the material receiving the cooldown
+//        if(event.setCancelled(true)){
+//
+//        }
+    }
+
+    // listen to the cooldown being applied (fired when an item would go on cooldown)
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerItemGroupCooldown(PlayerItemGroupCooldownEvent event) {
+        Player player = event.getPlayer();
+    }
+
 
     @EventHandler
-    public void onItemHeld(PlayerItemHeldEvent event) {
+    public void DispatchOnItemHeld(PlayerItemHeldEvent event) {
         ItemStack old_item = event.getPlayer().getInventory().getItem(event.getPreviousSlot());
         ItemStack new_item = event.getPlayer().getInventory().getItem(event.getNewSlot());
         if (new_item != null) {
@@ -250,7 +282,7 @@ public class CustomItemManager implements Listener {
     }
 
     @EventHandler
-    public void onInteractEntity(PlayerInteractEntityEvent event) {
+    public void DispatchOnInteractEntity(PlayerInteractEntityEvent event) {
         ItemStack is = event.getPlayer().getEquipment().getItem(event.getHand());
         CustomItem custom_item = getCustomItem(is);
         if (custom_item != null) {
@@ -263,7 +295,7 @@ public class CustomItemManager implements Listener {
 
 
     @EventHandler
-    public void onBlockBreak(BlockBreakEvent event) {
+    public void DispatchOnBlockBreak(BlockBreakEvent event) {
         ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
         CustomItem custom = getCustomItem(item);
         if (custom != null) {
@@ -272,7 +304,7 @@ public class CustomItemManager implements Listener {
     }
 
     @EventHandler
-    public void onItemDropPlayer(PlayerDropItemEvent event) {
+    public void DispatchOnItemDropPlayer(PlayerDropItemEvent event) {
         Item i = event.getItemDrop();
         ItemStack item_stack = event.getItemDrop().getItemStack();
         CustomItem custom = getCustomItem(item_stack);
@@ -290,7 +322,7 @@ public class CustomItemManager implements Listener {
 
 
     @EventHandler
-    public void onInventoryClick(InventoryClickEvent event) {
+    public void DispatchOnInventoryClick(InventoryClickEvent event) {
         ItemStack item_stack = event.getCurrentItem();
         CustomItem custom = getCustomItem(item_stack);
         if (custom != null) {
@@ -299,7 +331,7 @@ public class CustomItemManager implements Listener {
     }
 
     @EventHandler
-    public void onShootProjectile(EntityShootBowEvent event) {
+    public void DispatchOnShootProjectile(EntityShootBowEvent event) {
         ItemStack bow = event.getBow();
         CustomItem ci = getCustomItem(bow);
         if (ci != null) {
@@ -308,7 +340,7 @@ public class CustomItemManager implements Listener {
     }
 
     @EventHandler
-    public void onLoadCrossbow(EntityLoadCrossbowEvent event) {
+    public void DispatchOnLoadCrossbow(EntityLoadCrossbowEvent event) {
         ItemStack bow = event.getCrossbow();
         CustomItem ci = getCustomItem(bow);
         if (ci != null) {

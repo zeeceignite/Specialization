@@ -95,7 +95,7 @@ public class EmotePacketListener extends PacketAdapter {
                 }
             }
 
-            player.sendMessage("Sound packet: " + soundName + " | Location: " + x + ", " + y + ", " + z);
+//            player.sendMessage("Sound packet: " + soundName + " | Location: " + x + ", " + y + ", " + z);
 
         } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException | java.lang.reflect.InvocationTargetException e) {
             e.printStackTrace();

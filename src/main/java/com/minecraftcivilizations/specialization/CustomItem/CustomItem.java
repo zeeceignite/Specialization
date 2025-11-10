@@ -1,7 +1,7 @@
 package com.minecraftcivilizations.specialization.CustomItem;
 
-import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import io.papermc.paper.event.entity.EntityLoadCrossbowEvent;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,10 +13,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerItemHeldEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.components.CustomModelDataComponent;
@@ -39,7 +36,11 @@ public abstract class CustomItem {
     protected boolean enabled;
 
     @Setter
-    public NamespacedKey cooldownGroup;
+    public NamespacedKey cooldownKey;
+
+
+    boolean usesCooldownComponent;
+//    public UseCooldownComponent cooldownComponent;
 
     protected String permission;
 
@@ -57,14 +58,15 @@ public abstract class CustomItem {
                       Material material,
                       String customModelData,
                       int maxStackSize,
-                      boolean enabled) {
+                      boolean enabled, boolean uses_cooldown) {
         this.id = id;
         this.displayName = displayName;
         this.material = material;
         this.customModelData = customModelData;
         this.maxStackSize = maxStackSize;
         this.enabled = enabled;
-        this.cooldownGroup = new NamespacedKey("civlabs", "cooldown_"+id);
+        this.cooldownKey = new NamespacedKey("civlabs", "cooldown_" + id);
+        this.usesCooldownComponent = uses_cooldown;
         Specialization.getInstance().getCustomItemManager().registerItem(this);
     }
 
@@ -86,15 +88,20 @@ public abstract class CustomItem {
 
     // === Constructor variations ===
     public CustomItem(String id, String displayName, Material material) {
-        this(id, displayName, material, id, -1, true);
+        this(id, displayName, material, id, -1, true, false);
     }
 
-    public CustomItem(String id, String displayName, Material material, String customModelData) {
-        this(id, displayName, material, customModelData, -1, true);
+    // === Constructor variations ===
+    public CustomItem(String id, String displayName, Material material, boolean uses_cooldown) {
+        this(id, displayName, material, id, -1, true, uses_cooldown);
     }
 
-    public CustomItem(String id, String displayName, Material material, boolean enabled) {
-        this(id, displayName, material, id, -1, enabled);
+    public CustomItem(String id, String displayName, Material material, String customModelData, boolean uses_cooldown) {
+        this(id, displayName, material, customModelData, -1, true, uses_cooldown);
+    }
+
+    public CustomItem(String id, String displayName, Material material, boolean enabled, boolean uses_cooldown) {
+        this(id, displayName, material, id, -1, enabled, uses_cooldown);
     }
 
     // === Accessors ===
@@ -122,29 +129,7 @@ public abstract class CustomItem {
         return enabled;
     }
 
-//    public long getCooldownMillis() {
-//        return cooldownMillis;
-//    }
-
-    // === Cooldown Logic ===
-//    public boolean isOnCooldown(Player player) {
-//        if (cooldownMillis <= 0) return false;
-//        Long last = lastUse.get(player.getUniqueId());
-//        return last != null && System.currentTimeMillis() - last < cooldownMillis;
-//    }
-//
-//    public void startCooldown(Player player) {
-//        if (cooldownMillis > 0)
-//            lastUse.put(player.getUniqueId(), System.currentTimeMillis());
-//    }
-//
-//    public long getRemainingCooldown(Player player) {
-//        if (cooldownMillis <= 0) return 0;
-//        Long last = lastUse.get(player.getUniqueId());
-//        if (last == null) return 0;
-//        long remaining = cooldownMillis - (System.currentTimeMillis() - last);
-//        return Math.max(remaining, 0);
-//    }
+    public boolean usesCooldownComponent() { return usesCooldownComponent; }
 
     public final ItemStack createItemStack(){
         return createItemStack(1, null);
@@ -179,12 +164,14 @@ public abstract class CustomItem {
             meta.setCustomModelDataComponent(c);
         }
 
-        if(cooldownGroup!=null) {
-            UseCooldownComponent cd = meta.getUseCooldown();
-            cd.setCooldownGroup(cooldownGroup);
-            meta.setUseCooldown(cd);
+        if(usesCooldownComponent) {
+            if (cooldownKey != null) {
+//            Debug.broadcast("customitem", "cooldown created");
+                UseCooldownComponent cd = meta.getUseCooldown();
+                cd.setCooldownGroup(cooldownKey);
+                meta.setUseCooldown(cd);
+            }
         }
-
 
         item_stack.setItemMeta(meta);
         onCreateItem(item_stack, meta, player);
@@ -199,15 +186,15 @@ public abstract class CustomItem {
     };
 
     public void applyCooldown(Player player, int cooldown){
-        player.setCooldown(cooldownGroup, cooldown);
+        player.setCooldown(cooldownKey, cooldown);
     }
 
     public boolean isOnCooldown(Player player){
-        return player.getCooldown(cooldownGroup)>0;
+        return player.getCooldown(cooldownKey)>0;
     }
 
     public int getCooldown(Player player){
-        return player.getCooldown(cooldownGroup);
+        return player.getCooldown(cooldownKey);
     }
 
 
@@ -244,6 +231,7 @@ public abstract class CustomItem {
     // Called when the player right or left clicks with the item on an entity
 //    public void onInteractEntity(ItemStack item_stack, PlayerInteractEntityEvent event, boolean main_hand) {}
 
+    public void onPlayerItemConsume(PlayerItemConsumeEvent event) {}
 
 
     public final void setEnabled(boolean b) {
@@ -256,8 +244,17 @@ public abstract class CustomItem {
         return Specialization.getInstance().getCustomItemManager();
     }
 
+    protected void applyManualCooldownOverride(ItemStack item, int ticks) {
+        ItemMeta meta = item.getItemMeta();
+        UseCooldownComponent cd = meta.getUseCooldown();
 
+        float ftick = ((float)ticks)/20;
+        cd.setCooldownSeconds(ftick);
+        Debug.broadcast("customitem", "cooldown override: "+ftick);
+        meta.setUseCooldown(cd);
+        item.setItemMeta(meta);
 
+    }
 
 
 }

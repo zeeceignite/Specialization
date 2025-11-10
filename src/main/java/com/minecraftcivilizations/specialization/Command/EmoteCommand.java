@@ -188,7 +188,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
     private boolean isValidSeatBlock(Block block) {
         if (block == null) return false;
         Block above = block.getRelative(BlockFace.UP);
-        if (!above.isPassable()) return false;
+        if (!above.isPassable()) return false; // player must have space above
 
         Material type = block.getType();
         String name = type.name();
@@ -197,9 +197,10 @@ public class EmoteCommand extends BaseCommand implements Listener {
             Stairs stairs = (Stairs) block.getBlockData();
             return stairs.getHalf() == Stairs.Half.BOTTOM;
         }
-        if (name.endsWith("_SLAB")) return true;
-        return type.isSolid();
+
+        return name.endsWith("_SLAB");
     }
+
 
     private Location getSeatLocation(Block block) {
         Location loc = block.getLocation().clone().add(0.5, 0, 0.5);
