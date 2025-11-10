@@ -40,7 +40,7 @@ public class EmoteItem extends CustomItem implements Listener {
     EmoteCommand emoteCommand;
 
     public EmoteItem(String id, String display_name, EmoteType type, String model_data, EmoteCommand emoteCommand) {
-        super(id, display_name, org.bukkit.Material.CROSSBOW, model_data, -1, true);
+        super(id, display_name, org.bukkit.Material.CROSSBOW, model_data, -1, true, false);
         this.emoteCommand = emoteCommand;
         emote_type = type;
         plugin = Specialization.getInstance();
@@ -94,7 +94,7 @@ public class EmoteItem extends CustomItem implements Listener {
     public void playSoundWithSettings (Player player, Sound sound, float minVolume, float maxVolume, float minPitch,  float maxPitch){
         float volume = minVolume + (float) Math.random() * (maxVolume - minVolume);
         float pitch = minPitch + (float) Math.random() * (maxPitch - minPitch);
-        player.getWorld().playSound(player.getLocation(), sound, SoundCategory.PLAYERS, volume, pitch);
+        player.getWorld().playSound(player.getLocation(), sound, SoundCategory.PLAYERS, volume * 1.2f, pitch);
 
     }
 

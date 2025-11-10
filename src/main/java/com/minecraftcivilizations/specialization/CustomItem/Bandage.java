@@ -31,7 +31,7 @@ import static net.md_5.bungee.api.ChatColor.*;
 public class Bandage extends CustomItem {
 
     public Bandage(String id, String displayName) {
-        super(id, displayName, org.bukkit.Material.PAPER);
+        super(id, displayName, org.bukkit.Material.PAPER, true);
     }
 
     NamespacedKey RECIPE_KEY = new NamespacedKey(Specialization.getInstance(), "bandage_recipe");
