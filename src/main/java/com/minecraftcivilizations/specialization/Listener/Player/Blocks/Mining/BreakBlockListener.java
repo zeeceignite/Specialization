@@ -9,6 +9,7 @@ import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -84,7 +85,8 @@ public class BreakBlockListener implements Listener {
         SkillLevel skillRequired = SpecializationConfig.getCanMinerLvlBreakConfig().get(materialName.toString(), new TypeToken<>() {});
         if (skillRequired != null && player.getSkillLevel(SkillType.MINER) < skillRequired.getLevel()) {
             event.setDropItems(false);
-            event.getPlayer().sendMessage(org.bukkit.ChatColor.RED + "You are unable to mine this ore.");
+            if(event.getPlayer().getGameMode() == GameMode.SURVIVAL)
+            event.getPlayer().sendMessage("You are unable to mine this ore.");
         }
     }
 

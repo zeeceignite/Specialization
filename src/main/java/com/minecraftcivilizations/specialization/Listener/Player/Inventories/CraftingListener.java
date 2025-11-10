@@ -75,6 +75,9 @@ public class CraftingListener implements Listener {
         totalReduction = Math.max(1, totalReduction);//Math.max(0, totalReduction - (int) (Math.random() * 3));
 
         int foodLevel = player.getFoodLevel();
+        if(player.getGameMode()==GameMode.CREATIVE){
+            foodLevel=220;
+        }
 
         Debug.broadcast("craft", "<red>Food Level: </red>"+foodLevel+" <gold>Reduction:</gold> "+totalReduction);
 

@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Listener.Mobs;
+package com.minecraftcivilizations.specialization.Combat.Mobs;
 
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import org.bukkit.event.EventHandler;

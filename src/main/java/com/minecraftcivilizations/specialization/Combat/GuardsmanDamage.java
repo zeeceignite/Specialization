@@ -126,15 +126,15 @@ public class GuardsmanDamage implements Listener {
         /**
          * Guardsman Extra Mob Damage Bonus
          */
-//        if(victim instanceof Monster monster) {
-//
-//            double extra = Math.max(0, ((double) lvl - 2)) / 2.0;
-//            if (extra > 0) {
-//                new_damage += extra;
-////                w.spawnParticle(Particle.BLOCK, monster.getEyeLocation(), (int)(extra*2), 0.33,0.33,0.33,0);
-//                extra_msg = DARK_RED + " (" + DARK_RED + "+" + (Debug.formatDecimal(extra) + " 💀)");
-//            }
-//        }
+        if(victim instanceof Monster monster) {
+
+            double extra = Math.max(0, ((double) lvl - 1)) / 2.0;
+            if (extra > 0) {
+                new_damage += extra;
+//                w.spawnParticle(Particle.BLOCK, monster.getEyeLocation(), (int)(extra*2), 0.33,0.33,0.33,0);
+                extra_msg = "<dark_red> (+" + (Debug.formatDecimal(extra) + " 💀)</dark_red>");
+            }
+        }
 
 
 

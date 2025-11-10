@@ -2,7 +2,7 @@ package com.minecraftcivilizations.specialization.Combat;
 
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
-import com.minecraftcivilizations.specialization.Listener.Mobs.MobDamage;
+import com.minecraftcivilizations.specialization.Combat.Mobs.MobStatsManager;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
@@ -46,7 +46,7 @@ public class CombatManager implements Listener {
     private final GuardsmanDamage guardsmanDamage;
 //    private final DynamicArmor dynamicArmor; DLC feature by Alectriciti
     private final ArmorDamageReduction armorDamageReduction; // Handles MOB -> PLAYER damage
-    private final MobDamage mobDamage;
+    private final MobStatsManager mobDamage;
     private final ArmorEquipAttributes armorEquip;
     private final Berserk berserk; // Berserk Manager
     private final ExplosionDamage explosionDamage;
@@ -59,8 +59,9 @@ public class CombatManager implements Listener {
         specialization.getServer().getPluginManager().registerEvents(this, specialization);
         CRIT_BONUS_KEY = new NamespacedKey(specialization, "COMBAT_CRIT_BONUS");
         ARROW_DAMAGE_KEY = new NamespacedKey(specialization, "ARROW_DAMAGE");
+
         guardsmanDamage = new GuardsmanDamage(this);
-        mobDamage = new MobDamage(this);
+        mobDamage = new MobStatsManager(this);
 //        dynamicArmor = new DynamicArmor(this);
         armorEquip = new ArmorEquipAttributes(this);
         armorDamageReduction = new ArmorDamageReduction(this);
@@ -85,9 +86,12 @@ public class CombatManager implements Listener {
             ItemStack weapon = shooter.getEquipment().getItemInMainHand();
             switch(weapon.getType()){
                 case BOW:
-                    multiplier = 0.5;
                     if(shooter instanceof Player ps){
+                        multiplier = 0.5;
                         ps.setCooldown(Material.CROSSBOW, 16);
+                    }else{
+                        //skeleton or mob
+                        multiplier = 1.25;
                     }
                     break;
                 case CROSSBOW:
@@ -112,11 +116,10 @@ public class CombatManager implements Listener {
         double charge_amount = -1.0;
 
 
+        /*
+            CRIT SUPPRESSION (this allows us to override with our own crit system)
+         */
         if(event.isCritical()) {
-//            for(EntityDamageEvent.DamageModifier mod : EntityDamageEvent.DamageModifier.values()){
-//                if(event.isApplicable(mod))
-//                event.setDamage(mod, event.getDamage(mod)*0.6666);
-//            }
             double crit_suppression = event.getDamage()*0.6666; //inverse of 1.5x, extra 6 for safe measure <_<
             event.setDamage(crit_suppression);
             original_base = crit_suppression;

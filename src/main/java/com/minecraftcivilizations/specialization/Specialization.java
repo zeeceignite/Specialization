@@ -19,7 +19,7 @@ import com.minecraftcivilizations.specialization.Distance.TownManager;
 import com.minecraftcivilizations.specialization.Listener.Blocks.AutoCrafterListener;
 import com.minecraftcivilizations.specialization.Listener.BurnListener;
 import com.minecraftcivilizations.specialization.Listener.Blocks.ReinforcementProtectionListener;
-import com.minecraftcivilizations.specialization.Listener.Mobs.ExplodeListener;
+import com.minecraftcivilizations.specialization.Combat.Mobs.ExplodeListener;
 import com.minecraftcivilizations.specialization.Listener.Player.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.BreakBlockListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.PlayerMineListener;
