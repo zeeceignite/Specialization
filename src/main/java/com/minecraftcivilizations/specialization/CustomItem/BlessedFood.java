@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.CustomItem;
 
+import com.minecraftcivilizations.specialization.Listener.Player.Inventories.SpecializationCraftItemEvent;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
@@ -51,11 +52,11 @@ public class BlessedFood extends CustomItem {
         }
     }
 
-    @Override
-    public boolean canPlayerCraft(Player player) {
-        CustomPlayer cPlayer = CoreUtil.getPlayer(player.getUniqueId());
-        return cPlayer.getSkillLevel(SkillType.HEALER) > 0;
-    }
+//    @Override
+//    public boolean canPlayerCraft(Player player) {
+//        CustomPlayer cPlayer = CoreUtil.getPlayer(player.getUniqueId());
+//        return cPlayer.getSkillLevel(SkillType.HEALER) > 0;
+//    }
 
     @Override
     public void onCreateItem(ItemStack itemStack, ItemMeta meta, Player player) {
@@ -98,5 +99,14 @@ public class BlessedFood extends CustomItem {
 //            event.setReplacement(null);
         }
     }
+
+    @Override
+    public void onCustomCraft(SpecializationCraftItemEvent event, ItemStack itemstack) {
+        Player player = event.getPlayer();
+        CustomPlayer.getCustomPlayer(player).addSkillXp(SkillType.HEALER, xpReward);
+        event.setCancelXp(true); //we will handle custom xp ourselves
+    }
+
+
 
 }

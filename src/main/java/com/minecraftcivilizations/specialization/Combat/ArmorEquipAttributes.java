@@ -133,7 +133,7 @@ public class ArmorEquipAttributes implements Listener {
                     weight_modifier = 0.425;
                     best = true;
                 }else{
-                    weight_modifier = MathUtils.random(weight_mod_low,weight_mod_low);
+                    weight_modifier = MathUtils.random(weight_mod_low,weight_mod_high);
                 }
             }else if(current.getType().name().contains("DIAMOND_")){
                 if(ThreadLocalRandom.current().nextDouble()<rare_chance) {
@@ -141,7 +141,7 @@ public class ArmorEquipAttributes implements Listener {
                     weight_modifier = 0.5;
                     best = true;
                 }else{
-                    weight_modifier = MathUtils.random(weight_mod_low, 0.92);
+                    weight_modifier = MathUtils.random(weight_mod_low, weight_mod_high);
                 }
             }else if(current.getType().name().contains("GOLDEN_")){
                 if(ThreadLocalRandom.current().nextDouble()<rare_chance) {
@@ -149,7 +149,7 @@ public class ArmorEquipAttributes implements Listener {
                     weight_modifier = 0.25;
                     best = true;
                 }else{
-                    weight_modifier = 0.5 * weight_mod_low;
+                    weight_modifier = 0.5 * MathUtils.random(weight_mod_low, weight_mod_high);
                 }
             }
 

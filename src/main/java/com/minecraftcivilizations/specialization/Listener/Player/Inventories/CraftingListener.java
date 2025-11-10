@@ -107,20 +107,21 @@ public class CraftingListener implements Listener {
 
         SpecializationCraftItemEvent new_event = new SpecializationCraftItemEvent(event, player, craftedAmount, totalReduction, xp_gain_pair.firstValue(), lvl);
         Bukkit.getPluginManager().callEvent(new_event);
-        if(new_event.doesGrantXp()) {
-            if (xp_gain_pair.firstValue() != null && xp_gain_pair.secondValue() != null) {
-                double xpToGive = xp_gain_pair.secondValue() * craftedAmount;
+        if(new_event.isXpCancelled()) {
+            return;
+        }
+        if (xp_gain_pair.firstValue() != null && xp_gain_pair.secondValue() != null) {
+            double xpToGive = xp_gain_pair.secondValue() * craftedAmount;
 
-                int finalReduction = Math.max(totalReduction, 1);
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    if (player.isOnline()) {
-                        player.setFoodLevel(player.getFoodLevel() - finalReduction);
-                        customPlayer.addSkillXp(xp_gain_pair.firstValue(), xpToGive);
-                        LOGGER.fine("Gave " + xpToGive + " XP to " + player.getName() +
-                                " for crafting " + craftedAmount + "x " + crafted.getType());
-                    }
-                }, 1L);
-            }
+            int finalReduction = Math.max(totalReduction, 1);
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                if (player.isOnline()) {
+                    player.setFoodLevel(player.getFoodLevel() - finalReduction);
+                    customPlayer.addSkillXp(xp_gain_pair.firstValue(), xpToGive);
+                    LOGGER.fine("Gave " + xpToGive + " XP to " + player.getName() +
+                            " for crafting " + craftedAmount + "x " + crafted.getType());
+                }
+            }, 1L);
         }
 
     }

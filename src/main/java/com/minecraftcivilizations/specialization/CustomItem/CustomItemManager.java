@@ -1,6 +1,7 @@
 package com.minecraftcivilizations.specialization.CustomItem;
 
 import com.comphenix.protocol.events.PacketEvent;
+import com.minecraftcivilizations.specialization.Listener.Player.Inventories.SpecializationCraftItemEvent;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import io.papermc.paper.event.entity.EntityLoadCrossbowEvent;
@@ -348,6 +349,16 @@ public class CustomItemManager implements Listener {
         CustomItem ci = getCustomItem(bow);
         if (ci != null) {
             ci.onLoadCrossbow(event);
+        }
+    }
+
+
+    @EventHandler
+    public void onCustomCraft(SpecializationCraftItemEvent event){
+        ItemStack itemstack = event.getEvent().getCurrentItem();
+        CustomItem custom = getCustomItem(itemstack);
+        if (custom != null) {
+            custom.onCustomCraft(event, itemstack);
         }
     }
 

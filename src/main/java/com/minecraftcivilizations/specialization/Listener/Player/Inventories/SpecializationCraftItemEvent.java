@@ -10,7 +10,7 @@ import org.bukkit.event.inventory.CraftItemEvent;
 
 /**
  * Was going to use this for something, maybe not, yneverknow
- * - Alec
+ * @author Alectriciti
  */
 public class SpecializationCraftItemEvent extends Event {
 
@@ -29,8 +29,15 @@ public class SpecializationCraftItemEvent extends Event {
     @Getter
     private int skillLevel;
 
-    @Setter
-    private boolean grantXp = true;
+
+    private boolean cancel_xp = false;
+
+    /**
+     * Cancels Specialization's Crafting XP
+     */
+    public void setCancelXp(boolean cancel){
+        this.cancel_xp = cancel;
+    }
 
     public SpecializationCraftItemEvent(CraftItemEvent event, Player player, int craftedAmount, int totalReduction, SkillType skillType, int skillLevel) {
         this.event = event;
@@ -51,7 +58,11 @@ public class SpecializationCraftItemEvent extends Event {
     }
 
 
-    public boolean doesGrantXp() {
-        return grantXp;
+    /**
+     * Is Specialization's Crafting XP cancelled
+     */
+    public boolean isXpCancelled() {
+        return cancel_xp;
     }
+
 }

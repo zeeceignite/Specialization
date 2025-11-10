@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.CustomItem;
 
+import com.minecraftcivilizations.specialization.Listener.Player.Inventories.SpecializationCraftItemEvent;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import io.papermc.paper.event.entity.EntityLoadCrossbowEvent;
@@ -109,7 +110,7 @@ public abstract class CustomItem {
      * Creates a typless Custom Item, to allow for variants such as swords
      */
     public CustomItem(String id) {
-        this(id, null, null, id, 0, true);
+        this(id, null, null, id, 0, true, true);
     }
 
     // === Accessors ===
@@ -259,6 +260,11 @@ public abstract class CustomItem {
 
     public void onInventoryClick(InventoryClickEvent event, ItemStack itemStack) {}
 
+
+    public void onCustomCraft(SpecializationCraftItemEvent event, ItemStack itemstack) {}
+
+
+
     // Called when the player right or left clicks with the item on an entity
 //    public void onInteractEntity(ItemStack item_stack, PlayerInteractEntityEvent event, boolean main_hand) {}
 
@@ -286,6 +292,7 @@ public abstract class CustomItem {
         item.setItemMeta(meta);
 
     }
+
 
 
 }

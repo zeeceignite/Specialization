@@ -2,6 +2,7 @@ package com.minecraftcivilizations.specialization.CustomItem;
 
 import com.minecraftcivilizations.specialization.Combat.CombatManager;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import com.minecraftcivilizations.specialization.util.ItemStackUtils;
 import net.md_5.bungee.api.ChatColor;
@@ -26,7 +27,7 @@ public class CustomWeapon extends CustomItem{
 
     @Override
     public void init() {
-// remove existing sword recipes
+// remove existing sword recipess
 //        for (Iterator<Recipe> it = Bukkit.recipeIterator(); it.hasNext(); ) {
 //            Recipe r = it.next();
 //            if (r instanceof ShapedRecipe sr) {
@@ -96,6 +97,7 @@ public class CustomWeapon extends CustomItem{
     @Override
     public void onCreateItem(ItemStack itemStack, ItemMeta meta, Player player) {
         if(player!=null){
+            Debug.broadcast("customitem", "adding <gold>crit bonus</gold> to custom sword!!! ");
             int lvl = CoreUtil.getPlayer(player.getUniqueId()).getSkillLevel(SkillType.BLACKSMITH);
             double craft_crit_chance = 0.0;
 
@@ -178,6 +180,7 @@ public class CustomWeapon extends CustomItem{
                     ItemStackUtils.setLoreLine(meta, 0, c+"+"+crit_bonus+" Crit Bonus");
                     meta.getPersistentDataContainer().set(CombatManager.CRIT_BONUS_KEY, PersistentDataType.DOUBLE, crit_bonus);
                     player.playSound(player, craft_sound, 0.25f, 1.0f);
+
                 }
             }
 //            if(luck_enabled){
@@ -189,6 +192,7 @@ public class CustomWeapon extends CustomItem{
 //                Debug.broadcast("customitem", "luck removed");
 //            }
         }
+        itemStack.setItemMeta(meta);
     }
 
     @Override
@@ -236,13 +240,13 @@ public class CustomWeapon extends CustomItem{
 
         if(sound!=null){
             player.getWorld().playSound(player.getLocation(), sound, SoundCategory.PLAYERS,volume, random(0.9f,1.05f));
-                if (scrap) {
-                    player.getWorld().playSound(player.getLocation(), Sound.ITEM_AXE_SCRAPE, SoundCategory.PLAYERS, volume*1.2f, random(1.2f, 1.35f));
-                }
+            if (scrap) {
+                player.getWorld().playSound(player.getLocation(), Sound.ITEM_AXE_SCRAPE, SoundCategory.PLAYERS, volume*1.2f, random(1.2f, 1.35f));
+            }
 //            if(lvl>=lvl_req) {
-                if (metal) {
-                    player.getWorld().playSound(player.getLocation(), Sound.ITEM_TRIDENT_THROW, SoundCategory.PLAYERS, volume*0.35f, random(1.19f, 1.2f));
-                }
+            if (metal) {
+                player.getWorld().playSound(player.getLocation(), Sound.ITEM_TRIDENT_THROW, SoundCategory.PLAYERS, volume*0.35f, random(1.19f, 1.2f));
+            }
 //            }
 //            double crit = CombatManager.getCustomWeaponCrit(newItem);
 //                if(crit>=1.5){
@@ -276,4 +280,5 @@ public class CustomWeapon extends CustomItem{
             player.getWorld().playSound(player.getLocation(), Sound.ITEM_HORSE_ARMOR_UNEQUIP, SoundCategory.PLAYERS, 0.25f, random(1.4f, 1.5f));
         }
     }
+
 }
