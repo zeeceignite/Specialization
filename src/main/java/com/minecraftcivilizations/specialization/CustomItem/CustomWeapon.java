@@ -1,34 +1,19 @@
 package com.minecraftcivilizations.specialization.CustomItem;
 
-import com.minecraftcivilizations.specialization.Listener.Player.Combat.CombatManager;
+import com.minecraftcivilizations.specialization.Combat.CombatManager;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
-import com.minecraftcivilizations.specialization.Specialization;
-import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import com.minecraftcivilizations.specialization.util.ItemStackUtils;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import net.kyori.adventure.util.ARGBLike;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.*;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerItemHeldEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.Recipe;
-import org.bukkit.inventory.RecipeChoice;
-import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.Iterator;
+import java.awt.Color;
 
 import static com.minecraftcivilizations.specialization.util.MathUtils.*;
 import static net.md_5.bungee.api.ChatColor.*;
@@ -117,7 +102,13 @@ public class CustomWeapon extends CustomItem{
             boolean luck_enabled = player.hasPotionEffect(PotionEffectType.LUCK);
 
             switch(lvl){
-                default:
+                case 0:
+                    craft_crit_chance = luck_enabled?0.01:0.0;
+                    break;
+                case 1:
+                    craft_crit_chance = luck_enabled?0.025:0.01;
+                    break;
+                case 2:
                     craft_crit_chance = luck_enabled?0.05:0.025;
                     break;
                 case 3:
@@ -127,10 +118,10 @@ public class CustomWeapon extends CustomItem{
                     craft_crit_chance = luck_enabled?0.125:0.75;
                     break;
                 case 5:
-//                    craft_crit_chance = luck_enabled?0.175:0.125;
-                    craft_crit_chance = luck_enabled?0.75:0.5;
+                    craft_crit_chance = luck_enabled?0.175:0.125;
                     break;
             }
+
             if(craft_crit_chance > rollDouble()){
 
                 double crit_bonus = quantize((rollDouble()* 0.25 *((double)lvl)) + 0.25, 0.25);
@@ -144,29 +135,46 @@ public class CustomWeapon extends CustomItem{
                         craft_sound = Sound.UI_STONECUTTER_TAKE_RESULT;
                         break;
                     case GOLDEN_SWORD:
-                        crit_bonus *= 2;
-                        crit_max = 3;
+                        crit_bonus *= 4;
+                        crit_max = 5;
                         break;
                 }
-
 
                 if(crit_bonus >0.0){
                     ChatColor c = BLUE;
                     if(crit_bonus>=crit_max){
                         crit_bonus = Math.min(crit_max, crit_bonus);
-                        c = GOLD;
-                        Component original = itemStack.effectiveName().asComponent(); // or itemStack.asComponent()
-                        Component recolored = original
-                                .color(NamedTextColor.GOLD)
-                                .decoration(TextDecoration.ITALIC, false);
-                        meta.displayName(recolored);
-                        itemStack.setItemMeta(meta);
-                        player.playSound(player, Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.5f, 1.2f);
+                        switch(itemStack.getType()) {
+                            case WOODEN_SWORD:
+                                c = ChatColor.of(new Color(124, 62,44));
+                                break;
+                            case STONE_SWORD:
+                                c = DARK_GRAY;
+                                break;
+                            case IRON_SWORD:
+                                c = GRAY;
+                                break;
+                            case GOLDEN_SWORD:
+                                c = GOLD;
+                                break;
+                            case DIAMOND_SWORD:
+                                c = AQUA;
+                                break;
+                        }
+//                        Component original = itemStack.effectiveName().asComponent(); // or itemStack.asComponent()
+//                        Component recolored = original
+//                                .color(NamedTextColor.GOLD)
+//                                .decoration(TextDecoration.ITALIC, false);
+//                        meta.displayName(recolored);
+//                        itemStack.setItemMeta(meta);
+                        player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_RESONATE, 0.325f, 1.2f);
                         player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 0.125f, 1.25f);
                     }else if (crit_bonus>=1.0){
                         player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 0.125f, 1.5f);
-                        c = AQUA;
                     }
+//                    double speed = 0.2;
+//                    player.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, , 1, random(-speed, speed), random(-speed, speed), random(-speed, speed), 0);
+
                     ItemStackUtils.setLoreLine(meta, 0, c+"+"+crit_bonus+" Crit Bonus");
                     meta.getPersistentDataContainer().set(CombatManager.CRIT_BONUS_KEY, PersistentDataType.DOUBLE, crit_bonus);
                     player.playSound(player, craft_sound, 0.25f, 1.0f);
@@ -236,6 +244,24 @@ public class CustomWeapon extends CustomItem{
                     player.getWorld().playSound(player.getLocation(), Sound.ITEM_TRIDENT_THROW, SoundCategory.PLAYERS, volume*0.35f, random(1.19f, 1.2f));
                 }
 //            }
+//            double crit = CombatManager.getCustomWeaponCrit(newItem);
+//                if(crit>=1.5){
+//                    Location loc = player.getLocation();
+//                    MainHand hand = player.getMainHand();
+//                    double rad = Math.toRadians(player.getBodyYaw() + 90);
+//                    Vector right = new Vector(-Math.sin(rad), 0, Math.cos(rad)).normalize().multiply(0.25);
+//                    if(hand == MainHand.RIGHT) {
+//                        loc = loc.add(right);
+//                    }else{
+//                        loc = loc.subtract(right);
+//                    }
+//                    loc = loc.add(0, 1, 0);
+//                    Vector v = MathUtils.getDirectionVector(player.getBodyYaw(), 0).normalize().multiply(0.1);
+//                    double speed = 0.1;
+//                    for(double x = 0; x < 1; x += 0.1) {
+//                        player.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, loc.add(v), 1, random(-speed, speed), random(-speed, speed), random(-speed, speed), 0);
+//                    }
+//                }
             applyCooldown(player, 10);
         }
     }

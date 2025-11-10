@@ -63,21 +63,13 @@ public class CraftingListener implements Listener {
                 +"<green>Cursor Item: </green>"+event.getCursor().getType().name());
 
 
-        /**
-         *
-         * Currently, trying to drop an item while an Item is on your cursor
-         * will result in this event continuing on to other methods
-         * such as CustomWeapon.java
-         *
-         * - Alec
-         *
-         */
 
 
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
 
 
-        double xpGainBenefit = (5-((double)customPlayer.getSkillLevel(xp_gain_pair.firstValue()))/1.5);
+        int lvl = customPlayer.getSkillLevel(xp_gain_pair.firstValue());
+        double xpGainBenefit = (5-((double)lvl)/1.5);
         // Reduction based on Skill Level and Amount Crafted
         int totalReduction = (int) (xpGainBenefit *  (craftedAmount));
         totalReduction = Math.max(1, totalReduction);//Math.max(0, totalReduction - (int) (Math.random() * 3));
@@ -90,7 +82,11 @@ public class CraftingListener implements Listener {
             event.setResult(Event.Result.DENY);
             event.setCancelled(true);
             player.playSound(player.getLocation(), Sound.BLOCK_CHORUS_FLOWER_GROW, 0.5f, 1.25f);
-            player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>You're too hungry to craft</red>"));
+            if(craftedAmount>1){
+                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>You're too hungry to craft that many</red>"));
+            }else{
+                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>You're too hungry to craft</red>"));
+            }
             return;
         }
 
@@ -105,18 +101,23 @@ public class CraftingListener implements Listener {
             }
         }
 
-        if (xp_gain_pair != null && xp_gain_pair.firstValue() != null && xp_gain_pair.secondValue() != null) {
-            double xpToGive = xp_gain_pair.secondValue() * craftedAmount;
 
-            int finalReduction = Math.max(totalReduction, 1);
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                if (player.isOnline()) {
-                    player.setFoodLevel(player.getFoodLevel() - finalReduction);
-                    customPlayer.addSkillXp(xp_gain_pair.firstValue(), xpToGive);
-                    LOGGER.fine("Gave " + xpToGive + " XP to " + player.getName() +
-                            " for crafting " + craftedAmount + "x " + crafted.getType());
-                }
-            }, 1L);
+        SpecializationCraftItemEvent new_event = new SpecializationCraftItemEvent(event, player, craftedAmount, totalReduction, xp_gain_pair.firstValue(), lvl);
+        Bukkit.getPluginManager().callEvent(new_event);
+        if(new_event.doesGrantXp()) {
+            if (xp_gain_pair.firstValue() != null && xp_gain_pair.secondValue() != null) {
+                double xpToGive = xp_gain_pair.secondValue() * craftedAmount;
+
+                int finalReduction = Math.max(totalReduction, 1);
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    if (player.isOnline()) {
+                        player.setFoodLevel(player.getFoodLevel() - finalReduction);
+                        customPlayer.addSkillXp(xp_gain_pair.firstValue(), xpToGive);
+                        LOGGER.fine("Gave " + xpToGive + " XP to " + player.getName() +
+                                " for crafting " + craftedAmount + "x " + crafted.getType());
+                    }
+                }, 1L);
+            }
         }
 
     }

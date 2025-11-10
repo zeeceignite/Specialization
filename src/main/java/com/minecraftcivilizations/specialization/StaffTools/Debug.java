@@ -6,6 +6,7 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
@@ -33,7 +34,7 @@ public class Debug implements Listener {
      */
 
     // debug_channel -> List of Players registered to that channel
-    private Map<String, Set<Player>> debug_listening = new HashMap<String, Set<Player>>();
+    private Map<String, Set<UUID>> debug_listening = new HashMap<String, Set<UUID>>();
     private Map<UUID, List<String>> listening_channels = new HashMap<UUID, List<String>>(); //used specifically for tab completion
     private List<String> debug_channels = new ArrayList<String>(); //used by command suggestions
 
@@ -45,22 +46,23 @@ public class Debug implements Listener {
 
     @EventHandler
     public void onLogout(PlayerQuitEvent event){
-        unregisterPlayerToAllChannels(event.getPlayer());
+
+//        unregisterPlayerToAllChannels(event.getPlayer());
     }
 
 
     @EventHandler
     public void onLogin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
+//        Player player = event.getPlayer();
 
         // If we have a remembered list for this player (unlikely if we cleared on quit),
         // restore them to those channels first.
-        List<String> remembered = listening_channels.get(player.getUniqueId());
-        if (remembered != null && !remembered.isEmpty()) {
-            for (String ch : remembered) {
-                getOrCreateChannelPlayerSet(ch, false).add(player);
-            }
-        }
+//        List<String> remembered = listening_channels.get(player.getUniqueId());
+//        if (remembered != null && !remembered.isEmpty()) {
+//            for (String ch : remembered) {
+//                getOrCreateChannelPlayerSet(ch, false).add(player);
+//            }
+//        }
     }
 
     /**
@@ -111,7 +113,7 @@ public class Debug implements Listener {
 
     static void resetAllValues(CommandSender commander) {
         Debug debug = getInstance();
-        debug.debug_listening = new HashMap<String, Set<Player>>();
+        debug.debug_listening = new HashMap<String, Set<UUID>>();
         debug.listening_channels = new HashMap<UUID, List<String>>();
         debug.debug_channels = new ArrayList<String>();
         debug.setupDefaultChannels();
@@ -125,8 +127,8 @@ public class Debug implements Listener {
         if (!player.hasPermission("specialization.debug")) {
             return;
         }
-        Set<Player> player_set = getOrCreateChannelPlayerSet(debug_channel, false);
-        player_set.add(player);
+        Set<UUID> player_set = getOrCreateChannelPlayerSet(debug_channel, false);
+        player_set.add(player.getUniqueId());
         listening_channels.computeIfAbsent(player.getUniqueId(), p -> new ArrayList<String>()).add(debug_channel);
     }
 
@@ -135,8 +137,8 @@ public class Debug implements Listener {
      */
     public void unregisterPlayerChannel(Player player, String debug_channel){
         debug_channel = debug_channel.toLowerCase();
-        Set<Player> player_set = getOrCreateChannelPlayerSet(debug_channel, false);
-        player_set.remove(player);
+        Set<UUID> player_set = getOrCreateChannelPlayerSet(debug_channel, false);
+        player_set.remove(player.getUniqueId());
         listening_channels.computeIfAbsent(player.getUniqueId(), p -> new ArrayList<String>()).remove(debug_channel);
     }
 
@@ -152,16 +154,16 @@ public class Debug implements Listener {
         }
     }
 
-    private Set<Player> getOrCreateChannelPlayerSet(String debug_channel, boolean add_to_suggestions){
+    private Set<UUID> getOrCreateChannelPlayerSet(String debug_channel, boolean add_to_suggestions){
         debug_channel = debug_channel.toLowerCase();
-        Set<Player> player_set;
+        Set<UUID> player_set;
 
         //retrieve debug channel list
         if(debug_listening.containsKey(debug_channel)) {
             player_set = debug_listening.get(debug_channel);
             if(add_to_suggestions && !debug_channels.contains(debug_channel)) debug_channels.add(debug_channel); //add for command-suggest quick lookup
         }else{
-            player_set = new HashSet<Player>();
+            player_set = new HashSet<UUID>();
             debug_listening.put(debug_channel, player_set); //add for registry
             if(add_to_suggestions) debug_channels.add(debug_channel); //add for command-suggest quick lookup
         }
@@ -207,8 +209,11 @@ public class Debug implements Listener {
 
     private static void broadcastFinalize(String debug_channel, Component comp, boolean register_channel) {
         debug_channel = debug_channel.toLowerCase();
-        for(Player player : getInstance().getOrCreateChannelPlayerSet(debug_channel, register_channel)){
-            player.sendMessage(comp);
+        for(UUID playeruuid : getInstance().getOrCreateChannelPlayerSet(debug_channel, register_channel)){
+            Player player = Bukkit.getPlayer(playeruuid);
+            if(player!=null && player.isOnline()) {
+                player.sendMessage(comp);
+            }
         }
     }
 
@@ -296,7 +301,7 @@ public class Debug implements Listener {
      *
      */
     public static String formatLocation(Location location){
-        return "<gray>"+location.getWorld().getName()+"</gray>,"
+        return "<gray>"+location.getWorld().getName()+"</gray>, "
                 +"<red>"+(int)location.getX()+"</red>, "
                 +"<green>"+(int)location.getY()+"</green>, "
                 +"<blue>"+(int)location.getZ()+"</blue>";

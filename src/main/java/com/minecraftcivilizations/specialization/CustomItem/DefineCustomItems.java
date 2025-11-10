@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.CustomItem;
 
+import com.minecraftcivilizations.specialization.Combat.ArmorEquipAttributes;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import net.kyori.adventure.text.Component;
@@ -41,15 +42,15 @@ public class DefineCustomItems implements Listener {
         ItemStack current = event.getCurrentItem();
         if (current == null || current.getType() == Material.AIR) return;
 
-        if (!current.getType().name().contains("_SWORD")) return;
-
         ItemStack modified = current.clone();
         ItemMeta meta = modified.getItemMeta();
-        // final tweak applied when player actually takes the item
-        masterwork_sword.wrapItemStack(modified, (Player) event.getWhoClicked());
 
-        // setCurrentItem changes what the player receives from the result slot
-        event.setCurrentItem(modified);
+        if (current.getType().name().contains("_SWORD")) {
+            // final tweak applied when player actually takes the item
+            masterwork_sword.wrapItemStack(modified, (Player) event.getWhoClicked());
+            // setCurrentItem changes what the player receives from the result slot
+            event.setCurrentItem(modified);
+        }
     }
 
     /**

@@ -24,7 +24,7 @@ import com.minecraftcivilizations.specialization.Listener.Player.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.BreakBlockListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.PlayerMineListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.PlaceBlockListener;
-import com.minecraftcivilizations.specialization.Listener.Player.Combat.*;
+import com.minecraftcivilizations.specialization.Combat.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.FoodInteractionListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.PlayerInteractEntityListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.PlayerInteractListener;
@@ -48,6 +48,7 @@ import com.minecraftcivilizations.specialization.SmartEntity.SmartEntityManager;
 import com.minecraftcivilizations.specialization.StaffTools.DebugListenCommand;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.LocatorBarManager;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import com.mojang.authlib.GameProfile;
 import lombok.Getter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Component.ComponentUtils;
@@ -89,6 +90,9 @@ public final class Specialization extends JavaPlugin {
     private CustomItemManager customItemManager;
     private CombatManager combatManager;
 
+
+    //Holder for transient player data such as cooldowns
+    Map<UUID, PlayerUtil> playerUtilMap = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -201,6 +205,11 @@ public final class Specialization extends JavaPlugin {
                 Field ff = gameProfile.getClass().getDeclaredField("name");
                 ff.setAccessible(true);
                 ff.set(gameProfile, ComponentUtils.serializeComponentAsString(localName));
+
+                UUID uniqueId = playerJoinEvent.getUniqueId();
+                if(!playerUtilMap.containsKey(uniqueId)){
+                    playerUtilMap.put(uniqueId, new PlayerUtil(uniqueId));
+                }
 
                 Debug.broadcast("login", ChatColor.YELLOW+real_name+" has joined the server ("+localName+")");
 
@@ -412,4 +421,10 @@ public final class Specialization extends JavaPlugin {
     public Debug getDebugUtils() {
         return debug;
     }
+
+    public PlayerUtil getPlayerUtil(UUID uniqueId) {
+        return playerUtilMap.get(uniqueId);
+    }
+
+
 }

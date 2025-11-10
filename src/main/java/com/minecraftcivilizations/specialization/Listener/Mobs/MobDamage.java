@@ -1,25 +1,18 @@
 package com.minecraftcivilizations.specialization.Listener.Mobs;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
-import com.minecraftcivilizations.specialization.Listener.Player.Combat.CombatManager;
+import com.minecraftcivilizations.specialization.Combat.CombatManager;
 import com.minecraftcivilizations.specialization.MobGoals.BreakBlockMobGoal;
 import com.minecraftcivilizations.specialization.MobGoals.TargetPlayerMobGoal;
-import com.minecraftcivilizations.specialization.Skill.SkillType;
-import com.minecraftcivilizations.specialization.Specialization;
-import com.minecraftcivilizations.specialization.util.CoreUtil;
 import org.bukkit.Bukkit;
-import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
-import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.Enemy;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 
 public class MobDamage implements Listener {

@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Listener.Player.Combat;
+package com.minecraftcivilizations.specialization.Combat;
 
 import com.minecraftcivilizations.specialization.Events.SkillLevelChangeEvent;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
@@ -15,15 +15,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.inventory.EntityEquipment;
-import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffectType;
-
-import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
-
-import static org.bukkit.ChatColor.*;
 
 import static org.bukkit.event.entity.EntityDamageEvent.DamageModifier.*;
 
@@ -87,27 +78,27 @@ public class GuardsmanDamage implements Listener {
         switch(skill_level){
             case NOVICE -> {
                 multiplier = 0.25;
-                add = 0.75;
+                add = 0.25;
             }
             case APPRENTICE -> {
                 multiplier = 0.275;
-                add = 1.0;
+                add = 0.4;
             }
             case JOURNEYMAN -> {
                 multiplier = 0.3;
-                add = 1.0;
+                add = 0.5;
             }
             case EXPERT ->  {
-                multiplier = 0.35;
-                add = 1.5;
+                multiplier = 0.4;
+                add = 0.6;
             }
             case MASTER ->  {
-                multiplier = 0.375;
-                add = 2.0;
+                multiplier = 0.4;
+                add = 0.8;
             } //1.4
             case GRANDMASTER -> {
-                multiplier = 0.375;
-                add = 2.5;
+                multiplier = 0.4125;
+                add = 1.0;
             }
         }
 

@@ -1,16 +1,22 @@
-package com.minecraftcivilizations.specialization.Listener.Player.Combat;
+package com.minecraftcivilizations.specialization.Combat;
 
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import lombok.Getter;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Holds pairs of armor/toughness for later calculation
@@ -85,6 +91,33 @@ public final class ArmorStats {
             case OFF_HAND: return 1.1;
             default: return 1.0;
         }
+    }
+
+    public static Sound getArmorSound(Entity entity) {
+        if (!(entity instanceof LivingEntity living)) return null;
+        List<ItemStack> valid = new ArrayList<>();
+
+        for (ItemStack armor : living.getEquipment().getArmorContents()) {
+            if (armor != null && armor.getType() != Material.AIR) {
+                valid.add(armor);
+            }
+        }
+
+        if (valid.isEmpty()) return null;
+        ItemStack armor_to_check = valid.get(ThreadLocalRandom.current().nextInt(valid.size()));
+
+
+        Material mat = armor_to_check.getType();
+        Material base = getMaterialType(mat);
+        switch(base){
+            case LEATHER: return Sound.ITEM_WOLF_ARMOR_DAMAGE;
+            case CHAIN: return Sound.BLOCK_CHAIN_HIT;
+            case GOLD_INGOT: return Sound.BLOCK_HEAVY_CORE_HIT;
+            case IRON_INGOT: return Sound.BLOCK_HEAVY_CORE_PLACE;
+            case DIAMOND: return Sound.BLOCK_HEAVY_CORE_PLACE;
+            case NETHERITE_INGOT: return Sound.BLOCK_HEAVY_CORE_PLACE;
+        }
+        return null;
     }
 
     @Override
