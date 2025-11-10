@@ -2,6 +2,7 @@ package com.minecraftcivilizations.specialization.CustomItem;
 
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
+import io.papermc.paper.event.entity.EntityLoadCrossbowEvent;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
@@ -9,6 +10,10 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.entity.EntityShootBowEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
@@ -63,7 +68,12 @@ public abstract class CustomItem {
         Specialization.getInstance().getCustomItemManager().registerItem(this);
     }
 
-    public abstract void init();
+    /**
+     * A good place to declare custsom recipes and other class initialization
+     */
+    public void init(){
+
+    }
 
 
 
@@ -175,8 +185,9 @@ public abstract class CustomItem {
             meta.setUseCooldown(cd);
         }
 
-        onCreateItem(item_stack, meta);
+
         item_stack.setItemMeta(meta);
+        onCreateItem(item_stack, meta, player);
 
         CustomItemCreationEvent event = new CustomItemCreationEvent(this, item_stack, player);
         Bukkit.getPluginManager().callEvent(event);
@@ -202,8 +213,9 @@ public abstract class CustomItem {
 
     /**
      * Extra Logic provided by Custom Item Classes
+     * You must manually assign meta to item_stack if you wish to modify the meta
      */
-    public abstract void onCreateItem(ItemStack itemStack, ItemMeta meta);
+    public abstract void onCreateItem(ItemStack itemStack, ItemMeta meta, Player player);
 
 
     /*
@@ -212,11 +224,22 @@ public abstract class CustomItem {
      * and should remain empty bodies in this class
      */
     public void onInteract(PlayerInteractEvent event, ItemStack itemStack){}
-    public void onItemSwitchTo(PlayerItemHeldEvent event, ItemStack newItem) {}
     public void onInteractEntity(PlayerInteractEntityEvent event, ItemStack itemStack){}
+    public void onItemSwitchTo(PlayerItemHeldEvent event, ItemStack oldItem, ItemStack newCustomItem) {}
+    public void onItemSwitchAway(PlayerItemHeldEvent event, ItemStack oldCustomItem, ItemStack newItem) {}
+    // When a player dies and this item is dropped on the ground
+    public void onPlayerDeath(PlayerDeathEvent event, ItemStack item_stack) {}
+    // Called when the item is dropped
+    public void onDropItemByPlayer(PlayerDropItemEvent event) {}
 
+    public void onShootBow(EntityShootBowEvent event) {}
+    // Load Crossbow
+    public void onLoadCrossbow(EntityLoadCrossbowEvent event) {}
     // Called when the player damages a block (e.g., mining)
     public void onBlockBreak(BlockBreakEvent event) {}
+
+
+    public void onInventoryClick(InventoryClickEvent event, ItemStack itemStack) {}
 
     // Called when the player right or left clicks with the item on an entity
 //    public void onInteractEntity(ItemStack item_stack, PlayerInteractEntityEvent event, boolean main_hand) {}
@@ -227,6 +250,13 @@ public abstract class CustomItem {
         this.enabled = b;
         Specialization.getInstance().getLogger().info("Custom Item: "+id+ " has been "+ (b?"ENABLED":"DISABLED"));
     }
+
+
+    public static CustomItemManager getManager(){
+        return Specialization.getInstance().getCustomItemManager();
+    }
+
+
 
 
 

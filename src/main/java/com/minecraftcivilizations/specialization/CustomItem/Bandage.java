@@ -53,7 +53,7 @@ public class Bandage extends CustomItem {
 
 
     @Override
-    public void onCreateItem(ItemStack itemStack, ItemMeta meta) {
+    public void onCreateItem(ItemStack itemStack, ItemMeta meta, Player player) {
         meta.setEnchantmentGlintOverride(true);
         meta.lore(java.util.List.of(
                 Component.text("Shift + Right Click to heal yourself.").color(NamedTextColor.BLUE),
