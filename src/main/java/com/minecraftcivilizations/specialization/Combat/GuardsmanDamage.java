@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Listener.Player.Combat;
+package com.minecraftcivilizations.specialization.Combat;
 
 import com.minecraftcivilizations.specialization.Events.SkillLevelChangeEvent;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
@@ -15,15 +15,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.inventory.EntityEquipment;
-import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffectType;
-
-import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
-
-import static org.bukkit.ChatColor.*;
 
 import static org.bukkit.event.entity.EntityDamageEvent.DamageModifier.*;
 
@@ -87,27 +78,27 @@ public class GuardsmanDamage implements Listener {
         switch(skill_level){
             case NOVICE -> {
                 multiplier = 0.25;
-                add = 0.75;
+                add = 0.25;
             }
             case APPRENTICE -> {
                 multiplier = 0.275;
-                add = 1.0;
+                add = 0.4;
             }
             case JOURNEYMAN -> {
                 multiplier = 0.3;
-                add = 1.0;
+                add = 0.5;
             }
             case EXPERT ->  {
-                multiplier = 0.35;
-                add = 1.5;
+                multiplier = 0.4;
+                add = 0.6;
             }
             case MASTER ->  {
-                multiplier = 0.375;
-                add = 2.0;
+                multiplier = 0.4;
+                add = 0.8;
             } //1.4
             case GRANDMASTER -> {
-                multiplier = 0.375;
-                add = 2.5;
+                multiplier = 0.4125;
+                add = 1.0;
             }
         }
 
@@ -135,22 +126,22 @@ public class GuardsmanDamage implements Listener {
         /**
          * Guardsman Extra Mob Damage Bonus
          */
-//        if(victim instanceof Monster monster) {
-//
-//            double extra = Math.max(0, ((double) lvl - 2)) / 2.0;
-//            if (extra > 0) {
-//                new_damage += extra;
-////                w.spawnParticle(Particle.BLOCK, monster.getEyeLocation(), (int)(extra*2), 0.33,0.33,0.33,0);
-//                extra_msg = DARK_RED + " (" + DARK_RED + "+" + (Debug.formatDecimal(extra) + " 💀)");
-//            }
-//        }
+        if(victim instanceof Monster monster) {
+
+            double extra = Math.max(0, ((double) lvl - 1)) / 2.0;
+            if (extra > 0) {
+                new_damage += extra;
+//                w.spawnParticle(Particle.BLOCK, monster.getEyeLocation(), (int)(extra*2), 0.33,0.33,0.33,0);
+                extra_msg = "<dark_red> (+" + (Debug.formatDecimal(extra) + " 💀)</dark_red>");
+            }
+        }
 
 
 
 
 
-        String reduction_msg = extra_msg + YELLOW + " (" + GRAY + "⚔ " + YELLOW + Debug.formatDecimal(multiplier) + "x)"
-                + AQUA + " (" + GRAY + "⚔ +" + AQUA + Debug.formatDecimal(add) + ")"
+        String reduction_msg = extra_msg + "<yellow> (" + "<gray>⚔</gray> " + Debug.formatDecimal(multiplier) + "x)</yellow>"
+                + " <aqua>(" + "<gray>⚔</gray> +" + Debug.formatDecimal(add) + ")</aqua>"
                 + armor_msg;
 //                +GREEN+" ("+GRAY+"🟰:"+GREEN+Debug.formatDecimal(crit_multiplier*multiplier)+"x)";
 
@@ -180,9 +171,9 @@ public class GuardsmanDamage implements Listener {
             }
             Debug.broadcast(
                     "damage",
-                    DARK_RED + "Base Damage: "+RED+Debug.formatDecimal(original_damage) +
+                     "<dark_red>Base Damage: <red>"+Debug.formatDecimal(original_damage) +"</red>"+
                             (reduction_msg)
-                            + RED + " [❤ " + Debug.formatDecimal(event.getDamage(BASE)) + "]",
+                            + " <red>[❤ " + Debug.formatDecimal(event.getDamage(BASE)) + "]</red>",
                     "<gold>This output displays the calculated Guardsman Damage\nas if Vanilla Armor was being utilized</gold>\n"
                             +"[" + damager.getName() + " is GuardMan lvl " + lvl + "]" + "\n" +
                             "Attacker: " + damager.getName() + modifiers

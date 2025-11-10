@@ -1,23 +1,14 @@
-package com.minecraftcivilizations.specialization.Listener.Player.Combat;
+package com.minecraftcivilizations.specialization.Combat;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
-import com.minecraftcivilizations.specialization.Player.CustomPlayer;
-import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Config.ConfigFile;
-import org.bukkit.ChatColor;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Zombie;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 
 import static org.bukkit.event.entity.EntityDamageEvent.DamageModifier.*;
-import static org.bukkit.ChatColor.*;
 
 public class ArmorDamageReduction {
 
@@ -65,12 +56,13 @@ public class ArmorDamageReduction {
         double toughness = stats.getToughness();
 
 
-        double ARMOR_REDUCTION = original_base * (armor / armor_ceiling) / 2;
-        double TOUGHNESS_REDUCTION = Math.max (0, toughness / 16);
-//        double TOUGHNESS_REDUCTION = 0; //(HARD SUBTRACT)
+        // SCALING REDUCTION
+        double ARMOR_REDUCTION = (armor / armor_ceiling) / 2;
+        // LINEAR REDUCTION
+        double TOUGHNESS_REDUCTION = Math.max (0, toughness / 8);
 
         double TOTAL_REDUCTION;
-        TOTAL_REDUCTION = Math.min(original_base, (ARMOR_REDUCTION) + (TOUGHNESS_REDUCTION));
+        TOTAL_REDUCTION = Math.min(original_base, (original_base * ARMOR_REDUCTION) + (TOUGHNESS_REDUCTION));
 
 
         //inverse finally
@@ -90,13 +82,13 @@ public class ArmorDamageReduction {
             Debug.broadcast(
                     "armor",
                     //WHITE+victim.getName()+" "+*
-                    RED+ Debug.formatDecimal(event.getDamage(BASE))+
+                    "<red>" + Debug.formatDecimal(event.getDamage(BASE))+
 //                            (WHITE+" ["+BLUE+"🅱: "+Debug.formatDecimal(original_armor)+"]")+
-                            WHITE+" ["+BLUE+"👕: "+Debug.formatDecimal(ARMOR_REDUCTION)+"x"+WHITE+"]"+
-                            ((stats.getToughness()>0)?(WHITE+" ["+GRAY+"🪨: -"+Debug.formatDecimal(TOUGHNESS_REDUCTION)+WHITE+"]"):"")+
-                            (WHITE+" ["+GREEN+"🚫: "+Debug.formatDecimal(TOTAL_REDUCTION)+"]")+
+                            " <blue>[👕: "+Debug.formatDecimal(ARMOR_REDUCTION)+"x]</blue>"+
+                            ((stats.getToughness()>0)?(" <gray>[🪨: -"+Debug.formatDecimal(TOUGHNESS_REDUCTION)+"]</gray>"):"")+
+                            (" <green>[🚫: "+Debug.formatDecimal(TOTAL_REDUCTION)+"]</green>")+
 //                            (event.isCritical()? GREEN+" (CRIT!)":"")+
-                            RED+" [❤ "+Debug.formatDecimal(CombatManager.calculateTotalDamage(event))+"]"
+                            " [❤ "+Debug.formatDecimal(CombatManager.calculateTotalDamage(event))+"]</red>"
                     ,
                     "<blue>The <red>input</red> displays base damage.\nThe output displays the new calculated damage\nwith Custom Armor Reduction\n</blue>\n"
                             +"<blue>ARMOR REDUCTION:</blue> "+Debug.formatDecimal(ARMOR_REDUCTION)+"\n"

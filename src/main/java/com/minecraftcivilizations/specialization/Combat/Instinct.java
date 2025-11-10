@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Listener.Player.Combat;
+package com.minecraftcivilizations.specialization.Combat;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
@@ -6,11 +6,9 @@ import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.util.LocatorBarManager;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 
 import java.util.HashMap;

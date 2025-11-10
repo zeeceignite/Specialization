@@ -3,11 +3,70 @@ package com.minecraftcivilizations.specialization.util;
 import com.minecraftcivilizations.specialization.Specialization;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Utilities related to player management
+ * Instances of this class can hold transient player data
+ * Player Cooldowns
  */
 public class PlayerUtil {
+
+
+
+
+    public PlayerUtil(UUID player){
+
+    }
+
+    public static PlayerUtil getPlayerUtil(Player player){
+        return Specialization.getInstance().getPlayerUtil(player.getUniqueId());
+    }
+
+    private Map<String, Long> cooldowns = new HashMap<String, Long>();
+
+
+    /**
+     * Set cooldown for this key for [durationMillis] milliseconds
+     * @param key
+     * @param ticks
+     */
+    public void setCooldown(String key, long ticks) {
+        cooldowns.put(key, System.currentTimeMillis() + (ticks*50));
+    }
+
+    /**
+     * Returns true if still on cooldown
+     */
+    public boolean isOnCooldown(String key) {
+        if(!cooldowns.containsKey(key)) {
+//    		cooldowns.put(key, System.currentTimeMillis());
+            return false;
+        }
+        Long expireTime = cooldowns.get(key);
+        return expireTime != null && System.currentTimeMillis() < expireTime;
+    }
+
+    /**
+     * Returns remaining milliseconds, or 0 if expired
+     * @return
+     */
+    public long getRemainingCooldown(String key) {
+//    	if(cooldowns.)
+        if(!cooldowns.containsKey(key)) {
+            cooldowns.put(key, 0L);
+            return 0L;
+        }
+        Long expireTime = cooldowns.get(key);
+        if (expireTime == null) return 0;
+        return Math.max(0, expireTime - System.currentTimeMillis());
+    }
+
+
 
 
 //    /**

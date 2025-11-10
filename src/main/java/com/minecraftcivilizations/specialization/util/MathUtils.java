@@ -9,15 +9,34 @@ import java.util.concurrent.ThreadLocalRandom;
 public class MathUtils {
 
 
-    public static float random(float min, float max){
-        return ThreadLocalRandom.current().nextFloat(max-min)+min;
+    public static float random(float min, float max) {
+        if (!Float.isFinite(min) || !Float.isFinite(max) || max <= min) return min;
+        return ThreadLocalRandom.current().nextFloat() * (max - min) + min;
     }
-    public static double random(double min, double max){
-        return ThreadLocalRandom.current().nextDouble(max-min)+min;
+
+    public static double random(double min, double max) {
+        if (!Double.isFinite(min) || !Double.isFinite(max) || max <= min) return min;
+        return ThreadLocalRandom.current().nextDouble() * (max - min) + min;
     }
-    public static double random(int min, int max){
-        return ThreadLocalRandom.current().nextInt(max-min)+min;
+
+    public static double random(int min, int max) {
+        if (max <= min) return min;
+        return ThreadLocalRandom.current().nextDouble(max - min) + min;
     }
+    /**
+     * Rolls 0.0 to 1.0
+     */
+    public static double rollDouble(){
+        return ThreadLocalRandom.current().nextDouble();
+    }
+    public static boolean rollBoolean(){
+        return ThreadLocalRandom.current().nextBoolean();
+    }
+
+    public static double quantize(double value, double amount) {
+        return Math.round(value / amount) * amount;
+    }
+
     public static Vector randomDirection(){
         return new Vector(
                 random(-1f,1f),

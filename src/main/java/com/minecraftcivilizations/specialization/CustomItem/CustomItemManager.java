@@ -11,6 +11,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
@@ -50,18 +51,20 @@ public class CustomItemManager implements Listener {
     @Getter
     private List<String> customItemIds = new ArrayList<String>();
 
+    Specialization plugin;
     // items are defined and referenced here
     @Getter
     public DefineCustomItems definitions;
 
     public CustomItemManager(Specialization plugin){
+        this.plugin = plugin;
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
     public void initializeCustomItems(){
         custom_items_loaded = new HashMap<String, CustomItem>();
         customItemIds = new ArrayList<String>();
-        definitions = new DefineCustomItems();
+        definitions = new DefineCustomItems(plugin);
         for(CustomItem customItem : custom_items_loaded.values()){
             customItem.init();
         }
@@ -98,7 +101,7 @@ public class CustomItemManager implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOW)
     public void onCraftItem(CraftItemEvent event) {
         CustomItem ci = getCustomItem(event.getCurrentItem());
         if (ci != null) {

@@ -124,6 +124,15 @@ public class BedListener implements Listener {
         Block headBlock = getBedHeadBlock(block);
         if (headBlock == null) return;
 
+        /*
+            ADDED specifically for debugging CombatSystem
+         */
+        if(event.getPlayer().getGameMode()==GameMode.CREATIVE){
+            if(event.getPlayer().getEquipment().getItemInMainHand().getType().name().contains("SWORD")){
+                return;
+            }
+        }
+
         String bedOwnerUUIDStr = getBedId(headBlock);
         if (bedOwnerUUIDStr != null) {
             clearBedId(headBlock);

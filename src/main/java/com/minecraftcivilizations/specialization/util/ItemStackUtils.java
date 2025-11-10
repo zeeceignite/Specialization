@@ -48,6 +48,24 @@ public class ItemStackUtils {
     }
 
     /**
+     * Sets/overwrites a single lore line on the item.
+     * Preserves other existing lines. Expands the lore list with empty strings if necessary.
+     */
+    public static void setLoreLine(ItemMeta meta, int line, String loreText) {
+        List<String> lore_list = meta.hasLore()
+                ? new ArrayList<>(Objects.requireNonNull(meta.getLore()))
+                : new ArrayList<>();
+
+        // Ensure list is large enough
+        while (lore_list.size() <= line) {
+            lore_list.add("");
+        }
+
+        lore_list.set(line, loreText == null ? "" : loreText);
+        meta.setLore(lore_list);
+    }
+
+    /**
      * Returns true if the item has the given namespaced key flag in its ItemMeta PDC.
      */
     public static boolean hasLoreTag(ItemStack item_stack, NamespacedKey key) {

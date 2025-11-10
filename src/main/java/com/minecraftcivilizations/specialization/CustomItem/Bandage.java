@@ -53,20 +53,15 @@ public class Bandage extends CustomItem {
 
 
     @Override
-    public void onCreateItem(ItemStack itemStack, ItemMeta meta, Player player) {
+    public void onCreateItem(ItemStack itemStack, ItemMeta meta, Player player_who_crafted) {
         meta.setEnchantmentGlintOverride(true);
         meta.lore(java.util.List.of(
                 Component.text("Shift + Right Click to heal yourself.").color(NamedTextColor.BLUE),
                 Component.text("Right Click a player/passive mob to heal them.").color(NamedTextColor.BLUE),
                 Component.empty(),
-                Component.text("Amount Healed and XP gained scale with Healer level.").color(NamedTextColor.GRAY)
+                Component.text("Amount Healed and XP gained scale with Healer level.").color(NamedTextColor.GRAY),
+                Component.text("Crafted by "+(player_who_crafted!=null?player_who_crafted.getName():"nobody")).color(NamedTextColor.GRAY)
         ));
-//        meta.getUseCooldown().setCooldownGroup();
-//        itemStack.getItemMeta().getUseCooldown().setCooldownGroup();
-//        UseCooldownComponent cd = meta.getUseCooldown();
-//        cd.setCooldownSeconds(10);
-//        meta.setUseCooldown(cd);
-
         itemStack.setItemMeta(meta);
     }
 
@@ -80,7 +75,6 @@ public class Bandage extends CustomItem {
     @Override
     public void onInteractEntity(PlayerInteractEntityEvent event, ItemStack itemStack) {
         if (itemStack == null) return;
-
 
         Player healer = event.getPlayer();
         LivingEntity target = (LivingEntity) event.getRightClicked();

@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Listener.Player.Combat;
+package com.minecraftcivilizations.specialization.Combat;
 
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import org.bukkit.enchantments.Enchantment;
@@ -33,7 +33,7 @@ public class CrossBowListener implements Listener {
         if (!(projectile instanceof Arrow)) {
             return;
         }
-        Debug.broadcast("damage", "hi");
+        Debug.broadcast("damage", "CrossbowListener for Enchantments");
         
         Arrow arrow = (Arrow) projectile;
 

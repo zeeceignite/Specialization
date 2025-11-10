@@ -1,4 +1,4 @@
-package com.minecraftcivilizations.specialization.Listener.Player.Combat;
+package com.minecraftcivilizations.specialization.Combat;
 
 import com.minecraftcivilizations.specialization.GUI.PatDownGUI;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
