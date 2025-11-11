@@ -8,23 +8,23 @@
 {Velour|Feathered|Cottony} [Soft]
 {Cozy|Blossomed} [Soft]
 {Fuzzy|Plush} [Soft]
-{Satin|Silken|Smooth} [Soft]
+{Slippery|Silken|Smooth} [Soft]
 {Billowy|Padded|Cushioned} [Soft]
 {Lambent|Murmuring|Gossamer} [Soft]
 {Padded|Fluffy|Supple} [Soft]
 {Velour|Feathered|Cottony} [Soft]
-{Petled|Cozy|Blossomed} [Soft]
-{Satin|Silken|Smooth} [Soft]
+{Petaled|Cozy|Blossomed} [Soft]
+{Soft|Silken|Smooth} [Soft]
 {Billowy|Padded|Cushioned} [Soft]
 {Lambent|Murmuring|Gossamer} [Soft]
 {Fluffy|Supple|Tender} [Soft]
 {Blushing|Gentle|Delicate} [Soft]
-{Velvetine|Rosy|Lustrous} [Soft]
+{Velvety|Rosy|Lustrous} [Soft]
 {Honeyed|Lulling|Pale} [Soft]
 {Glossy|Misty|Meek} [Soft]
 {Caressing|Dusky|Sweetened} [Soft]
 {Silvery|Warmed|Floral} [Soft]
-{Coy|Graceful|Scented} [Soft]
+{Light|Graceful|Scented} [Soft]
 {Dainty|Willowy|Softened} [Soft]
 {Sugared|Pearled|Murmured} [Soft]
 {Seraphic|Glistened|Kindly} [Soft]
@@ -71,12 +71,13 @@
 {Frosted|Iced|Biting} [Cold]
 
 # Motion
-{Sinuous|Twisting|Meandering} [Motion]
+{Falling|Twisting|Meandering} [Motion]
+{Stumbling|Tripping|Collapsing} [Motion]
 {Wave|Roll|Current} [Motion]
 {Spiraling|Drifting|Undulating} [Motion]
 {Flowing|Surging|Rippling} [Motion]
 {Tumbling|Skimming|Gliding} [Motion]
-{Oscillating|Shifting|Fluttering} [Motion]
+{Jumping|Shifting|Fluttering} [Motion]
 {Rolling|Swaying|Turning} [Motion]
 {Vibration|Sonorous|Harmonic} [Motion]
 
@@ -90,7 +91,7 @@
 {Dimming|Waning|Brief} [Time]
 {Eon|Perpetual|Endless} [Time]
 {Passing|Transient|Fading} [Time]
-{Cycle|Rotation|Span} [Time]
+{Cycling|Rotating|Spanning} [Time]
 {Epoch|Chronos|Continuum} [Time]
 
 # Air
@@ -119,14 +120,41 @@
 {Flickering|Glinting|Glistening} [Visual]
 {Veiled|Hazy|Obscured} [Visual]
 
-# Happy
-
 # Mellow
-
 {lowercased} [Mellow]
 
+# Meadow
+{Suspicious|Calming} [Plains]
+{Golden|Endless|Rolling} [Plains]
+{Windswept|Vast|Silent} [Plains]
+{Gentle|Wide|Open} [Plains]
+{Whispering|Sunlit|Tranquil} [Plains]
+{Flowery|Soft|Peaceful} [Plains]
+{Calming|Rustling|Humming} [Plains]
+{Buzzing|Warm|Idling} [Plains]
+{Verdant|Lush|Fertile} [Plains]
+{Still|Lonely|Quiet} [Plains]
+{Misty|Dewy|Morning} [Plains]
+{Hazy|Distant|Shimmering} [Plains]
+{Drowsy|Lazy|Dreaming} [Plains]
+{Pastoral|Blooming|Idyllic} [Plains]
+{Boundless|Serene|Gentle} [Plains]
+{Drifting|Waving|Breezy} [Plains]
+
+# numbers
+{One|Two|Three|Four|Five|Six|Seven|Eight|Nine|Ten|} [Number]
+
+# References
+{Walter|Mr} [BreakingBad]
+{Half|Withered} [NickNames]
+{Chill|Nice} [Terrorist}
+{404|500|Unknown|Expected|Null|Syntax} [Error]
+{Pepe|Keyboard|Rick|Grumpy|Nyan} [Internet]
+{Barbaric|Lawful} [Funny]
 
 #defualts -
+Foggy
+Windy
 Ancient
 Mystic
 Infernal
@@ -206,5 +234,6 @@ Wonky
 Whispered
 Witherborn
 Goofy
+Final
 
 Shot

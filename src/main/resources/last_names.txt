@@ -6,23 +6,24 @@
 
 #groups -
 # Soft
-{Fiber|Weave|Padding} [Soft]
-{Tangle|Knots|Scruff} [Soft]
-{Cushion|Linen|Down} [Soft]
+{Meadow|Weave|Padding} [Soft]
+{Hug|Cloud|Jello|Bed} [Soft]
+{Pillow|Linen|Down} [Soft]
 {Petal|Bud|Blossom} [Soft]
 {Velvet|Moss|Fur} [Soft]
-{Silk|Satin|Thread} [Soft]
+{Silk|Satin|Thread} [Soft] [Sound]
 
 # Dark
 {Ebon|Obscura|Murk} [Dark] [Light]
 {Shroud|Gloom|Dusk} [Dark] [Light]
-{Chasm|Void|Shadow} [Dark] [Light] [Visual] [Time] [Soft]
+{Chasm|Void|Shadow} [Dark] [Light] [Visual] [Time] [Soft] [Sound]
 {Dimness|Twilight|Nightfall} [Dark]
 {Coal} [Dark] [Light]
 {Gloaming|Hollow|Shade} [Dark] [Light] [Soft]
+{Grim|Clown|Jester} [Dark] [Light] [Soft]
 
 # Light
-{Sunbeam|Aurora|Halo} [Light] [Dark] [Time] [Soft]
+{Sunbeam|Aurora|Halo} [Light] [Dark] [Time] [Soft] [Sound]
 {Spark|Flash|Radiance} [Light] [Dark]
 {Glow|Twinkle|Glint} [Light] [Dark] [Soft]
 {Illume|Flicker|Beam} [Light] [Dark]
@@ -74,9 +75,8 @@
 {Wind|Current} [Air]
 {Mist|Fog|Wisp} [Air]
 {Whirl|Vortex} [Air] [Visual]
-{Cyclone|Twist|Swirl} [Air]
+{Cyclone|Twist|Swirl} [Air] [Time]
 {Float|Billow|Lift} [Air]
-
 
 # Space
 {Orbit|Sky|Void} [Space] [Dark]
@@ -92,11 +92,36 @@
 {Radiance|Glint|Sparkle} [Visual] [Soft]
 {Twinkle|Flicker|Lumina} [Visual] [Light]
 
-# Happy
-{sunshine} [Mellow]
+# Meadow
+{Cat|Bee|Breeze|Flower} [Plains]
+{Bug|Cricket|Frog|Turtle} [Plains]
+{Deer|Hare|Lark|Finch} [Plains]
+{Butterfly|Fox|Moth|Sparrow} [Plains]
+{Mouse|Ant|Snake|Hedgehog} [Plains]
+{Grasshopper|Beetle|Wasp|Firefly} [Plains]
+{Wind|Petal|Willow|Seed} [Plains]
+{Thistle|Clover|Fern|Reed} [Plains]
+{Pebble|Stream|Pond|Burrow} [Plains]
+{Sun|Mist|Shadow|Light} [Plains]
+{Cloud|Rain|Dew|Storm} [Plains]
+{Echo|Song|Whisper|Drift} [Plains]
+{Trail|Hill|Nest|Burrow} [Plains]
+{Stone|Feather|Root|Twig} [Plains]
+{Glow|Dust|Shade|Horizon} [Plains]
 
+# Mellow
+{Sunshine|name} [Mellow]
 
+# Numbers
+{One|Two|Three|Four|Five|Six|Seven|Eight|Nine|Ten|} [Number]
 
+# Referances
+{White} [BreakingBad]
+{Heart|Face} [NickNames]
+{Guy|Dude} [Terrorist}
+{NotFound|Unknown|Error|Unexpected} [Error]
+{Frog|Cat|Roll|Cat} [Internet]
+{Baby|Devil} [Funny]
 
 #defualt -
 Echo
@@ -156,5 +181,8 @@ Goober
 Coffee
 Path
 Arrow
+Eye
+World
+Storm
 
 Rush
