@@ -42,7 +42,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
     public EmoteItem clap_item = new EmoteItem("clap_crossbow", "§bClap", EmoteItem.EmoteType.CLAP, "clap", this);
     // --- NEW: Point Crossbow ---
     public EmoteItem point_item = new EmoteItem("point_crossbow", "§6Point", EmoteItem.EmoteType.POINT, "point", this);
-
+//test
     public EmoteCommand(CustomItemManager customItemManager, JavaPlugin plugin) {
         this.plugin = plugin;
 
