@@ -8,8 +8,6 @@ import com.minecraftcivilizations.specialization.CustomItem.CustomItem;
 import com.minecraftcivilizations.specialization.CustomItem.CustomItemManager;
 import com.minecraftcivilizations.specialization.CustomItem.EmoteItem;
 import com.minecraftcivilizations.specialization.CustomItem.EmotePacketListener;
-import com.minecraftcivilizations.specialization.StaffTools.Debug;
-import lombok.RequiredArgsConstructor;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -24,39 +22,30 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 
 @CommandPermission("specialization.emote")
 public class EmoteCommand extends BaseCommand implements Listener {
 
-    private final Map<Player, Interaction> activeBase = new HashMap<>();
-    private final Map<Player, BukkitTask> activePoint = new HashMap<>();
+    private final Map<Block, Interaction> seatBlocks = new HashMap<>();
     private final JavaPlugin plugin;
-//    private final EmoteItem emotes;
+    private final ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
 
-    ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
-
-    // --- NEW: Clap Crossbow ---
     public EmoteItem clap_item = new EmoteItem("clap_crossbow", "§bClap", EmoteItem.EmoteType.CLAP, "clap", this);
-    // --- NEW: Point Crossbow ---
-    public EmoteItem point_item = new EmoteItem("point_crossbow", "§6Point", EmoteItem.EmoteType.POINT, "point", this);
+    public EmoteItem point_item = new EmoteItem("point_crossbow", "§bPoint", EmoteItem.EmoteType.POINT, "point", this);
+
+    private final Set<Player> silenced_players = new HashSet<>();
 
     public EmoteCommand(CustomItemManager customItemManager, JavaPlugin plugin) {
         this.plugin = plugin;
-
-
         Bukkit.getPluginManager().registerEvents(this, plugin);
         protocolManager.addPacketListener(new EmotePacketListener(this));
     }
 
-    Set<Player> silenced_players = new HashSet<>();
-
     public Set<Player> getSilencedPlayers() {
         return silenced_players;
     }
-
 
     private void giveEmote(Player player, CustomItem emoteItem, String successMsg) {
         ItemStack hand = player.getInventory().getItemInMainHand();
@@ -82,36 +71,31 @@ public class EmoteCommand extends BaseCommand implements Listener {
     @CommandPermission("civlabs.emotes")
     public void onList(Player sender) {
         sender.sendMessage("§7==== §eAvailable Emotes §7====");
-
         for (CustomItem item : CustomItemManager.getInstance().getCustomItems()) {
             if (!(item instanceof EmoteItem)) continue;
-
             boolean enabled = item.isEnabled();
-            String icon = enabled ? "§9●" : "§8●"; // blue for enabled, gray for disabled
+            String icon = enabled ? "§9●" : "§8●";
             sender.sendMessage(icon + " §f" + " §7" + item.getDisplayName());
         }
     }
 
     @CommandAlias("point|p")
     public void givePoint(Player player) {
-        if (CustomItemManager.getInstance().getCustomItem("clap_crossbow").isEnabled()){
-        giveEmote(player, point_item, "§9You are now pointing...");
-    } else {
+        if (CustomItemManager.getInstance().getCustomItem("point_crossbow").isEnabled()) {
+            giveEmote(player, point_item, "§9You are now pointing...");
+        } else {
             player.sendMessage("§cEmote is disabled");
         }
     }
 
     @CommandAlias("clap|c")
     public void giveClap(Player player) {
-        if (CustomItemManager.getInstance().getCustomItem("clap_crossbow").isEnabled())
-        {
-        giveEmote(player, clap_item, "§9You can now clap... (Tap Right Click)");
+        if (CustomItemManager.getInstance().getCustomItem("clap_crossbow").isEnabled()) {
+            giveEmote(player, clap_item, "§9You can now clap... (Tap Right Click)");
         } else {
             player.sendMessage("§cEmote is disabled");
         }
     }
-
-
 
     // --- Right-click sit logic ---
     @EventHandler
@@ -122,9 +106,9 @@ public class EmoteCommand extends BaseCommand implements Listener {
 
         Player player = event.getPlayer();
         if (!player.getInventory().getItemInMainHand().getType().isAir()) return;
-        if (player.isSneaking() || activeBase.containsKey(player)) return;
+        if (player.isSneaking() || isPlayerSitting(player)) return;
         if (block.getLocation().distanceSquared(player.getLocation()) > 2.25) return;
-        if (blockHasPassenger(block)) {
+        if (seatBlocks.containsKey(block)) {
             player.sendMessage("§cSomeone is already sitting here.");
             return;
         }
@@ -135,7 +119,6 @@ public class EmoteCommand extends BaseCommand implements Listener {
 
     private void sit(Player player, Block block) {
         Location loc = getSeatLocation(block);
-
         Interaction seat = block.getWorld().spawn(loc, Interaction.class, i -> {
             i.setResponsive(false);
             i.setInteractionWidth(0);
@@ -144,44 +127,54 @@ public class EmoteCommand extends BaseCommand implements Listener {
             i.setGravity(false);
         });
 
-        activeBase.put(player, seat);
-        if (seat.isValid() && !player.isInsideVehicle() && seat.getPassengers().isEmpty()) {
+        seatBlocks.put(block, seat);
+        if (seat.isValid() && seat.getPassengers().isEmpty() && !player.isInsideVehicle()) {
             seat.addPassenger(player);
         }
     }
 
-    private boolean blockHasPassenger(Block block) {
-        Location loc = getSeatLocation(block);
-        for (Interaction seat : activeBase.values()) {
-            if (seat.getLocation().distanceSquared(loc) < 0.01) return true;
+    private boolean isPlayerSitting(Player player) {
+        for (Interaction seat : seatBlocks.values()) {
+            if (seat.getPassengers().contains(player)) return true;
         }
         return false;
     }
 
     @EventHandler
     public void onSneak(PlayerToggleSneakEvent e) {
-        Player p = e.getPlayer();
-        if (e.isSneaking()) cancelEmote(p);
+        if (e.isSneaking()) cancelSeat(e.getPlayer());
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
-        cancelEmote(e.getPlayer());
-        BukkitTask t = activePoint.remove(e.getPlayer());
-        if (t != null) t.cancel();
+        cancelSeat(e.getPlayer());
     }
 
     @EventHandler
     public void onBlockPhysics(BlockPhysicsEvent e) {
-        activeBase.forEach((player, seat) -> {
-            Block below = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
-            if (seat.getLocation().getBlock().equals(e.getBlock()) || below.getType().isAir()) cancelEmote(player);
-        });
+        Block changed = e.getBlock();
+
+        // Ignore if this block isn't being used as a seat
+        if (!seatBlocks.containsKey(changed)) return;
+
+        // If the seat block itself has turned into something non-solid (e.g. broken)
+        if (!changed.getType().isSolid()) {
+            Interaction seat = seatBlocks.remove(changed);
+            if (seat != null && seat.isValid()) seat.remove();
+        }
     }
 
-    private void cancelEmote(Player player) {
-        Interaction seat = activeBase.remove(player);
-        if (seat != null && !seat.isDead()) seat.remove();
+    private void cancelSeat(Player player) {
+        Block toRemove = null;
+        for (Map.Entry<Block, Interaction> entry : seatBlocks.entrySet()) {
+            Interaction seat = entry.getValue();
+            if (seat.getPassengers().contains(player)) {
+                toRemove = entry.getKey();
+                seat.remove();
+                break;
+            }
+        }
+        if (toRemove != null) seatBlocks.remove(toRemove);
         if (player.isInsideVehicle()) player.leaveVehicle();
     }
 
@@ -203,27 +196,53 @@ public class EmoteCommand extends BaseCommand implements Listener {
 
 
     private Location getSeatLocation(Block block) {
-        Location loc = block.getLocation().clone().add(0.5, 0, 0.5);
+        Location loc = block.getLocation().clone().add(0.5, 0, 0.5); // center of block
         Material type = block.getType();
         String name = type.name();
 
-        if (name.endsWith("_STAIRS") || name.endsWith("_SLAB")) loc.add(0, 0.5, 0);
+        double yOffset = 0;
+        double xOffset = 0;
+        double zOffset = 0;
 
-        if (block.getBlockData() instanceof org.bukkit.block.data.Directional dir) {
-            switch (dir.getFacing()) {
-                case NORTH -> loc.add(0, 0, 0.25);
-                case SOUTH -> loc.add(0, 0, -0.25);
-                case WEST -> loc.add(0.25, 0, 0);
-                case EAST -> loc.add(-0.25, 0, 0);
+        if (name.endsWith("_STAIRS")) {
+            yOffset = 0.55; // vertical height for stairs
+            // Directional offsets
+            if (block.getBlockData() instanceof org.bukkit.block.data.Directional dir) {
+                switch (dir.getFacing()) {
+                    case NORTH -> zOffset = 0.02;
+                    case SOUTH -> zOffset = -0.02;
+                    case WEST  -> xOffset = 0.02;
+                    case EAST  -> xOffset = -0.02;
+                }
+                loc.setYaw(switch (dir.getFacing()) {
+                    case NORTH -> 180f;
+                    case SOUTH -> 0f;
+                    case WEST  -> 90f;
+                    case EAST  -> -90f;
+                    default -> 0f;
+                });
             }
-            loc.setYaw(switch (dir.getFacing()) {
-                case NORTH -> 0f;
-                case SOUTH -> 180f;
-                case WEST -> -90f;
-                case EAST -> 90f;
-                default -> 0f;
-            });
+        } else if (name.endsWith("_SLAB")) {
+            yOffset = 0.55; // vertical height for slabs
+            if (block.getBlockData() instanceof org.bukkit.block.data.Directional dir) {
+                switch (dir.getFacing()) {
+                    case NORTH -> zOffset = -0.25;
+                    case SOUTH -> zOffset = 0.25;
+                    case WEST  -> xOffset = -0.25;
+                    case EAST  -> xOffset = 0.25;
+                }
+                loc.setYaw(switch (dir.getFacing()) {
+                    case NORTH -> 180f;
+                    case SOUTH -> 0f;
+                    case WEST  -> 90f;
+                    case EAST  -> -90f;
+                    default -> 0f;
+                });
+            }
         }
+
+        loc.add(xOffset, yOffset, zOffset);
         return loc;
     }
+
 }
