@@ -112,7 +112,6 @@ public class EmoteCommand extends BaseCommand implements Listener {
             player.sendMessage("§cSomeone is already sitting here.");
             return;
         }
-
         sit(player, block);
         event.setCancelled(true);
     }
