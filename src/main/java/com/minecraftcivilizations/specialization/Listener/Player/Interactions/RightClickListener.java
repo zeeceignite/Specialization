@@ -37,7 +37,7 @@ public class RightClickListener implements Listener {
         if(event.getClickedBlock().getType().equals(Material.SWEET_BERRY_BUSH) && cPlayer.getSkillLevel(SkillType.FARMER) < 2){
             if(Math.random() < 0.2){
                 player.damage(1);
-                player.sendRichMessage("<#d16060>Ouch! You pricked your finger on the berry bush.");
+                player.chat("Ouch!");
             }
         }
 
