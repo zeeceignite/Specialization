@@ -277,7 +277,7 @@ public class CustomWeapon extends CustomItem{
                     player.sendActionBar(MiniMessage.miniMessage().deserialize(msg));
             }
             // TODO add level up listener for guardsman to reset this cooldown
-            playerUtil.setCooldown("guardsman_feeling", 100);
+            playerUtil.setCooldown("guardsman_feeling", 1200*5);
         }
     }
 

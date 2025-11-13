@@ -7,10 +7,12 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Boat;
+import org.bukkit.entity.Interaction;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -83,14 +85,18 @@ public class PlayerInteractEntityListener implements Listener {
                     if (customDownedPlayer != null && customDownedPlayer.isDowned()) {
                         downedPlayer.leaveVehicle();
 
+                        Debug.broadcast("downed", "Player sneak downed PlayerInteractEntityListener");
                         org.bukkit.Location playerLoc = downedPlayer.getLocation();
                         org.bukkit.Location armorStandLoc = playerLoc.clone().subtract(0, 2, 0);
 
-                        ArmorStand armorStand = downedPlayer.getWorld().spawn(armorStandLoc, ArmorStand.class);
-                        armorStand.setVisible(false);
+                        Interaction armorStand = downedPlayer.getWorld().spawn(armorStandLoc, Interaction.class);
+//                        armorStand.setVisible(false);
+                        armorStand.setResponsive(false);
+                        armorStand.setInteractionWidth(0);
+                        armorStand.setInteractionHeight(0);
                         armorStand.setInvulnerable(true);
                         armorStand.setGravity(false);
-                        armorStand.setCanPickupItems(false);
+//                        armorStand.setCanPickupItems(false);
                         armorStand.setCustomNameVisible(false);
                         armorStand.setSilent(true);
                         armorStand.setCustomName("downed_" + downedPlayer.getUniqueId());

@@ -2,7 +2,7 @@ package com.minecraftcivilizations.specialization.Combat;
 
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
-import com.minecraftcivilizations.specialization.Combat.Mobs.MobStatsManager;
+import com.minecraftcivilizations.specialization.Combat.Mobs.MobManager;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
@@ -14,14 +14,12 @@ import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.RegisteredListener;
 import org.bukkit.projectiles.ProjectileSource;
 
 import java.util.*;
@@ -43,12 +41,23 @@ public class CombatManager implements Listener {
     public static NamespacedKey ARROW_DAMAGE_KEY;
     public static NamespacedKey CRIT_BONUS_KEY;
 
+    @Getter
     private final GuardsmanDamage guardsmanDamage;
 //    private final DynamicArmor dynamicArmor; DLC feature by Alectriciti
+
+    @Getter
     private final ArmorDamageReduction armorDamageReduction; // Handles MOB -> PLAYER damage
-    private final MobStatsManager mobDamage;
+
+    @Getter
+    private final MobManager mobManager;
+
+    @Getter
     private final ArmorEquipAttributes armorEquip;
+
+    @Getter
     private final Berserk berserk; // Berserk Manager
+
+    @Getter
     private final ExplosionDamage explosionDamage;
 
     @Getter
@@ -61,7 +70,7 @@ public class CombatManager implements Listener {
         ARROW_DAMAGE_KEY = new NamespacedKey(specialization, "ARROW_DAMAGE");
 
         guardsmanDamage = new GuardsmanDamage(this);
-        mobDamage = new MobStatsManager(this);
+        mobManager = new MobManager(this);
 //        dynamicArmor = new DynamicArmor(this);
         armorEquip = new ArmorEquipAttributes(this);
         armorDamageReduction = new ArmorDamageReduction(this);
@@ -122,7 +131,7 @@ public class CombatManager implements Listener {
         return 0;
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     public void GlobalDamageListener(EntityDamageByEntityEvent event) {
         double original_base = event.getDamage(BASE);
         boolean fully_charged = false;
@@ -169,15 +178,17 @@ public class CombatManager implements Listener {
             CustomPlayer customPlayer = CoreUtil.getPlayer(player);
             guardsmanDamage.applyGuardsmanDamage(customPlayer, event);
 //            dynamicArmor.applyRaytracedArmorHit(event);
+//            Debug.broadcast("mob", "animal took damage :(");
             if(event.getEntity() instanceof LivingEntity victim) {
-                mobDamage.applyExp(event, customPlayer, victim); //Exp is acquired only after calculating final damage
+                if(!event.isCancelled())
+                    mobManager.applyExp(event, customPlayer, victim); //Exp is acquired only after calculating final damage
             }
         } else {
             //Attacker is a Mob
             // This should ONLY apply to mob damage, not PVP damage
             if(event.getEntity() instanceof Player player) {
                 //increase damage of mobs to players
-                mobDamage.onMobAttack(player, event);
+                mobManager.onMobAttack(player, event);
 
             }
         }

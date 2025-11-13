@@ -119,12 +119,12 @@ public class GuardsmanDamage implements Listener {
 //        double damageReduction = SpecializationConfig.getGuardsmanConfig().get("NON_GUARDSMAN_DAMAGE_REDUCTION", Double.class);
         double original_damage = event.getDamage(BASE);
 
-        if(victim instanceof Enemy enemy){
-            multiplier = 1.0;
+        if(victim instanceof LivingEntity le){
+            if(victim instanceof Enemy || combatManager.getMobManager().isOverrideEntity(victim))
+            multiplier *= 2;
         }
 
         double new_damage = new_damage = ((original_damage) * multiplier)+add;
-
 
 
 //        event.setDamage(ABSORPTION, 0);

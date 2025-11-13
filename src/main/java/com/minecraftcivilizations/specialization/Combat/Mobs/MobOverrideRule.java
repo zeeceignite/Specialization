@@ -7,12 +7,17 @@ import org.bukkit.entity.EntityType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MobOverride {
+/**
+ * a light-weight random selector for overriding vanilla mobs to sprinkle in some variety
+ * @author Alectriciti
+ */
+public class MobOverrideRule {
 
 
     @Getter
     private final int baseChance;
 
+    //Map to chance
     private Map<EntityType, Integer> overrides = new HashMap<>();
 
     @Getter
@@ -20,24 +25,36 @@ public class MobOverride {
 
     private int total_roll = -1;
 
+    private boolean spawn_in_packs = false;
+
     /**
      * Establishes a base chance of no override taking place
      * Build upon this with override(entity_type, chance)
      */
-    public MobOverride(int base_chance){
+    public MobOverrideRule(int base_chance){
         baseChance = base_chance;
     }
 
-    public MobOverride add(EntityType override, int chance){
+    public MobOverrideRule add(EntityType override, int chance){
         overrides.put(override, chance);
         return this;
+    }
+
+
+    public MobOverrideRule spawnInPacks(){
+        this.spawn_in_packs = true;
+        return this;
+    }
+
+    public boolean doesSpawnInPacks(){
+        return spawn_in_packs;
     }
 
 
     /**
      * Sets the biome for this ruleset
      */
-    public MobOverride biome(){
+    public MobOverrideRule biome(){
         this.biome = biome;
         return this;
     }

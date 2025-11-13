@@ -7,16 +7,14 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -56,26 +54,32 @@ public class PlayerDeathListener implements Listener {
         event.setCancelled(true);
 
         Location playerLoc = event.getPlayer().getLocation();
-        Location armorStandLoc = playerLoc.clone().subtract(0, SpecializationConfig.getDownedConfig()
-                .get("OFFSET_TO_GROUND", Double.class), 0);
+        Location armorStandLoc = playerLoc.clone();//.subtract(0, SpecializationConfig.getDownedConfig()
+//                .get("OFFSET_TO_GROUND", Double.class), 0);
 
-        ArmorStand armorStand = event.getPlayer().getWorld().spawn(armorStandLoc, ArmorStand.class);
-        armorStand.setVisible(false);
-        armorStand.setInvulnerable(true);
-        armorStand.setGravity(false);
-        armorStand.setCanPickupItems(false);
-        armorStand.setCustomNameVisible(false);
-        armorStand.setSilent(true);
-        armorStand.setCustomName("downed_" + event.getPlayer().getUniqueId());
-        armorStand.addPassenger(event.getPlayer());
+//        Display marker = event.getPlayer().getWorld().spawn(armorStandLoc, Display.class);
+        Interaction marker = event.getPlayer().getWorld().spawn(armorStandLoc, Interaction.class);
+
+        marker.setResponsive(false);
+        marker.setInteractionWidth(0);
+        marker.setInteractionHeight(0);
+        Debug.broadcast("downed", "INTERACTION spawned: 61");
+//        armorStand.setVisible(false);
+        marker.setInvulnerable(true);
+        marker.setGravity(false);
+//        armorStand.setCanPickupItems(false);
+        marker.setCustomNameVisible(false);
+        marker.setSilent(true);
+        marker.setCustomName("downed_" + event.getPlayer().getUniqueId());
+        marker.addPassenger(event.getPlayer());
     }
 
     public static void removeDownedArmorStand(Player player) {
-        if (player.getVehicle() instanceof ArmorStand armorStand) {
+        if (player.getVehicle() instanceof Marker marker) {
             String expectedName = "downed_" + player.getUniqueId();
-            if (expectedName.equals(armorStand.getCustomName())) {
+            if (expectedName.equals(marker.getCustomName())) {
                 player.leaveVehicle();
-                armorStand.remove();
+                marker.remove();
             }
         }
     }
@@ -99,15 +103,19 @@ public class PlayerDeathListener implements Listener {
         Location armorStandLoc = playerLoc.clone().subtract(0,
                 SpecializationConfig.getDownedConfig().get("OFFSET_TO_GROUND", Double.class), 0);
 
-        ArmorStand armorStand = player.getWorld().spawn(armorStandLoc, ArmorStand.class);
-        armorStand.setVisible(false);
-        armorStand.setInvulnerable(true);
-        armorStand.setGravity(false);
-        armorStand.setCanPickupItems(false);
-        armorStand.setCustomNameVisible(false);
-        armorStand.setSilent(true);
-        armorStand.setCustomName("downed_" + player.getUniqueId());
-        armorStand.addPassenger(player);
+        Interaction marker = player.getWorld().spawn(armorStandLoc, Interaction.class);
+        marker.setResponsive(false);
+        marker.setInteractionWidth(0);
+        marker.setInteractionHeight(0);
+        Debug.broadcast("downed", "marker spawned line 102");
+//        armorStand.setVisible(false);
+        marker.setInvulnerable(true);
+        marker.setGravity(false);
+//        armorStand.setCanPickupItems(false);
+        marker.setCustomNameVisible(false);
+        marker.setSilent(true);
+        marker.setCustomName("downed_" + player.getUniqueId());
+        marker.addPassenger(player);
     }
 
     public void playerActuallyDied(Player player) {

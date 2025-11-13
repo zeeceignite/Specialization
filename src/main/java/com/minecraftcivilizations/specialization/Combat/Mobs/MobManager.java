@@ -7,45 +7,52 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
-import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
+import com.minecraftcivilizations.specialization.util.CoreUtil;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.world.ChunkPopulateEvent;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import static org.bukkit.event.entity.EntityDamageEvent.DamageModifier.*;
 import static org.bukkit.entity.EntityType.*;
+import static com.minecraftcivilizations.specialization.util.MathUtils.*;
 
 /**
  * Allows for customization of mob spawning rules and stats
  * @author alectriciti ⚡
  */
-public class MobStatsManager implements Listener {
+public class MobManager implements Listener {
 
     CombatManager combatManager;
     private final NamespacedKey SPAWN_OVERRIDE_KEY; //this determines if the mob was overrided
 
-    public MobStatsManager(CombatManager combatManager) {
+    public MobManager(CombatManager combatManager) {
         this.combatManager = combatManager;
         this.SPAWN_OVERRIDE_KEY = new NamespacedKey(combatManager.getPlugin(), "mob_spawn_override");
         this.combatManager.getPlugin().getServer().getPluginManager().registerEvents(this, combatManager.getPlugin());
         this.populateEntityMappings();
     }
 
-    EnumMap<EntityType, MobOverride> mob_overrides = new EnumMap<>(EntityType.class);
+    EnumMap<EntityType, MobOverrideRule> mob_overrides = new EnumMap<>(EntityType.class);
     EnumMap<EntityType, MobStats> vanilla_stat_mappings = new EnumMap<>(EntityType.class);
     EnumMap<EntityType, MobStats> override_stat_mappings = new EnumMap<>(EntityType.class);
 
@@ -61,20 +68,24 @@ public class MobStatsManager implements Listener {
         override_stat_mappings = new EnumMap<>(EntityType.class);
         mob_overrides = new EnumMap<>(EntityType.class);
 
-        mob_overrides.put(SHEEP, new MobOverride(10).add(BEE, 10));
-        mob_overrides.put(COW, new MobOverride(90).add(RAVAGER, 10));
-        mob_overrides.put(PIG, new MobOverride(10).add(WOLF, 10));
-        mob_overrides.put(SQUID, new MobOverride(10).add(DROWNED, 2).add(PUFFERFISH, 3));
-        mob_overrides.put(GLOW_SQUID, new MobOverride(10).add(DROWNED, 2).add(PUFFERFISH, 3));
-        mob_overrides.put(DOLPHIN, new MobOverride(10).add(GUARDIAN, 2));
-        mob_overrides.put(WITCH, new MobOverride(10).add(ILLUSIONER, 1).add(VINDICATOR, 1));
-        mob_overrides.put(TURTLE, new MobOverride(10).add(SLIME, 2).add(CREEPER, 1));
-        mob_overrides.put(ENDERMAN, new MobOverride(10).add(CREAKING, 100));
+        mob_overrides.put(HORSE, new MobOverrideRule(10).add(BEE, 3).spawnInPacks());
+        mob_overrides.put(COW, new MobOverrideRule(10).add(BEE, 2));
+//        mob_overrides.put(COW, new MobOverride(90).add(RAVAGER, 10));
+        mob_overrides.put(PIG, new MobOverrideRule(10).add(WOLF, 10));
+        mob_overrides.put(SQUID, new MobOverrideRule(10).add(DOLPHIN, 8));
+        mob_overrides.put(GLOW_SQUID, new MobOverrideRule(10).add(DROWNED, 2).add(DOLPHIN, 8));
+        mob_overrides.put(DOLPHIN, new MobOverrideRule(10).add(GUARDIAN, 2));
+        mob_overrides.put(WITCH, new MobOverrideRule(10).add(ILLUSIONER, 1).add(VINDICATOR, 1));
+        mob_overrides.put(TURTLE, new MobOverrideRule(10).add(CREEPER, 1));
+        mob_overrides.put(ENDERMAN, new MobOverrideRule(10).add(CREAKING, 100));
 
-        override_stat_mappings.put(BEE, new MobStats().health(0.125).size(0.3,0.33).hunts().anger(true));
-        override_stat_mappings.put(WOLF, new MobStats().anger(true).hunts().size(1.225f,1.225f).waterspeed(1.5f,1.5f).speed(1.25f,1.25f));
+
+        override_stat_mappings.put(BEE, new MobStats().health(0.125).size(0.3,0.33).hunts().anger(true).allowXpGainForNonEnemy().xp(2));
+        override_stat_mappings.put(WOLF, new MobStats().anger(true).hunts().size(1.125f,1.225f).waterspeed(1.5f,1.5f).speed(1.25f,1.25f).allowXpGainForNonEnemy().xp(2));
+        override_stat_mappings.put(DOLPHIN, new MobStats().anger(true).damage(1).speed(1.5f,1.5f).xp(2).allowXpGainForNonEnemy());
         override_stat_mappings.put(GUARDIAN, new MobStats().health(1.0f));
-//        override_stat_mappings.put(CREAKING, new MobStats().health(1.0f));
+        override_stat_mappings.put(CREAKING, new MobStats().damage(2).invisible().xp(10));
+//      override_stat_mappings.put(CREAKING, new MobStats().health(1.0f));
 
 
         vanilla_stat_mappings.put(SKELETON, skeleton_stats);
@@ -84,6 +95,8 @@ public class MobStatsManager implements Listener {
         vanilla_stat_mappings.put(DROWNED, zombie_stats);
         vanilla_stat_mappings.put(HUSK, zombie_stats);
 
+
+//        vanilla_stat_mappings.put(GHAST, new MobStats().hunts().health(2));
 
         vanilla_stat_mappings.put(CREEPER, new MobStats().damage(1.0).speed(2.0, 1.5));
         vanilla_stat_mappings.put(SPIDER, new MobStats().damage(1.5).speed(1.5, 1.5).waterspeed(1.5,2).size(0.9, 1.0));
@@ -106,93 +119,6 @@ public class MobStatsManager implements Listener {
     }
 
     @EventHandler
-    public void onCreatureSpawn(EntitySpawnEvent event) {
-//        if(event.getEntity() instanceof LivingEntity)
-//        Debug.broadcast("mob", "entityspawnevent: "+event.getEntity().getType().name());
-    }
-
-
-    @EventHandler
-    public void onChunkGen(PlayerChunkLoadEvent event){
-//        event.
-    }
-
-    @EventHandler(ignoreCancelled = true)
-    public void onChunkPopulate(ChunkPopulateEvent event) {
-        List<LivingEntity> list = new ArrayList<LivingEntity>();
-        for(Entity e : event.getChunk().getEntities()){
-            if(e instanceof LivingEntity livingEntity){
-                list.add(livingEntity);
-            }
-        }
-        Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> overrideMobs(list));
-        // chunk might not be fully safe to inspect right now — run next tick on main thread
-//        Chunk chunk = event.getChunk();
-//        Bukkit.getScheduler().runTask(plugin, () -> scanChunkForMobs(chunk));
-    }
-
-    private void overrideMobs(List<LivingEntity> list) {
-        // pre-determine which categories will be overridden (and to what)
-        Map<EntityType, Boolean> does_override = new HashMap<>();
-        Map<EntityType, EntityType> replacement_map = new HashMap<>();
-
-        // gather unique entity types present in this chunk/list
-        Set<EntityType> present_types = list.stream()
-                .map(LivingEntity::getType)
-                .collect(Collectors.toSet());
-
-        for (EntityType original : present_types) {
-            MobOverride override = mob_overrides.get(original);
-            if (override != null) {
-                EntityType rolled = override.rollType(); // roll once per category
-                boolean will_override = rolled != null;
-                does_override.put(original, will_override);
-                if (will_override) replacement_map.put(original, rolled);
-            } else {
-                does_override.put(original, false);
-            }
-        }
-
-        // apply the pre-determined results to every mob in the list
-        for (LivingEntity living : list) {
-            EntityType original = living.getType();
-            if (Boolean.TRUE.equals(does_override.get(original))) {
-                EntityType to_spawn = replacement_map.get(original);
-                if (to_spawn != null) {
-                    //OVERRIDE MOB
-                    Location loc = living.getLocation();
-                    Entity e = loc.getWorld().spawnEntity(loc, to_spawn, CreatureSpawnEvent.SpawnReason.CUSTOM);
-                    e.getPersistentDataContainer().set(SPAWN_OVERRIDE_KEY, PersistentDataType.BOOLEAN, true); // this is applied, but not detected in onCreatureSpawn
-                    e.setPersistent(true);
-                    living.remove();
-                    Debug.broadcast("mob", "Chunk Gen Override:<light_purple>" + original.name() +
-                            "</light_purple> -> <green>" + to_spawn.name() + "</green>");
-                }
-            }
-        }
-    }
-
-
-    @EventHandler
-    public void onDamage(EntityDamageByEntityEvent event){
-        if(event.getDamager().getType()==BEE){
-            Bee bee = (Bee) event.getDamager();
-            bee.setHasStung(false);
-            bee.getServer().getScheduler().scheduleSyncDelayedTask(Specialization.getInstance(), new Runnable() {
-                @Override
-                public void run() {
-                    unsetBee(bee);
-                }
-            });
-        }
-    }
-
-    private void unsetBee(Bee bee) {
-        Debug.broadcast("mob", "Be has stung = false");
-        bee.setHasStung(false);
-    }
-
-    @EventHandler
     public void onCreatureSpawn(CreatureSpawnEvent event) {
         LivingEntity entity = event.getEntity();
         EntityType type = entity.getType();
@@ -201,7 +127,7 @@ public class MobStatsManager implements Listener {
         //        Debug.broadcast("mob",+Debug.formatLocation(event.getLocation()));
         if(event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.CUSTOM) {
             if (mob_overrides.containsKey(entity.getType())) {
-                MobOverride override = mob_overrides.get(entity.getType());
+                MobOverrideRule override = mob_overrides.get(entity.getType());
                 EntityType new_type = override.rollType();
                 if (new_type != null) {
                     //MOB OVERRIDE BEING MADE
@@ -255,7 +181,6 @@ public class MobStatsManager implements Listener {
     }
 
     private static void applyStatsToEntity(LivingEntity entity, MobStats stats) {
-
         AttributeInstance attribute = entity.getAttribute(Attribute.MAX_HEALTH);
         double max_health = attribute.getBaseValue() * stats.getHealthMultiplier();
         attribute.setBaseValue(max_health);
@@ -280,15 +205,16 @@ public class MobStatsManager implements Listener {
         if (water_attribute != null) {
             water_attribute.setBaseValue(water_attribute.getBaseValue() * applyspeed_modifier*(entity.getWorld().isDayTime() ? stats.getWaterSpeedMultiplierDay() : stats.getWaterSpeedMultiplierNight()));
         }
-
-
-
+        if(stats.isInvisible()){
+            entity.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false, false));
+        }
         if(stats.isAngry()) {
             if (entity instanceof Bee bee) {
                 bee.setAnger(1000000);
-            }else if(entity instanceof Wolf wolf){
+            }else if(entity instanceof Wolf wolf) {
                 wolf.setAngry(true);
             }
+
             if(entity instanceof Mob mob){
                 //includes dolphins etc
                 Debug.broadcast("mob", mob.getType().name()+" is <dark_red>AGGRESSIVE</dark_red>");
@@ -311,8 +237,120 @@ public class MobStatsManager implements Listener {
 
     }
 
+
+
+    @EventHandler(ignoreCancelled = true)
+    public void onChunkPopulate(ChunkPopulateEvent event) {
+        List<LivingEntity> list = new ArrayList<LivingEntity>();
+        for(Entity e : event.getChunk().getEntities()){
+            if(e instanceof LivingEntity livingEntity){
+                list.add(livingEntity);
+            }
+        }
+        Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> overrideMobs(list));
+        // chunk might not be fully safe to inspect right now — run next tick on main thread
+//        Chunk chunk = event.getChunk();
+//        Bukkit.getScheduler().runTask(plugin, () -> scanChunkForMobs(chunk));
+    }
+
+    /**
+     * This allows mob overrides to be spawned in clusters using natural chunk generation
+     * note: this is essentially tagging along existing mob spawns
+     */
+    private void overrideMobs(List<LivingEntity> list) {
+        // pre-determine which categories will be overridden (and to what)
+        Map<EntityType, Boolean> does_override = new HashMap<>();
+        Map<EntityType, EntityType> replacement_map = new HashMap<>();
+
+        // gather unique entity types present in this chunk/list
+        Set<EntityType> present_types = list.stream()
+                .map(LivingEntity::getType)
+                .collect(Collectors.toSet());
+
+        //assemble
+        for (EntityType original : present_types) {
+            MobOverrideRule override = mob_overrides.get(original);
+            if (override != null) {
+                EntityType rolled = override.rollType(); // roll once per category
+                boolean will_override = rolled != null;
+                does_override.put(original, will_override);
+                if (will_override) replacement_map.put(original, rolled);
+            } else {
+                does_override.put(original, false);
+            }
+        }
+
+        // apply the pre-determined results to every mob in the list
+        for (LivingEntity living : list) {
+            EntityType type_original = living.getType();
+            if (Boolean.TRUE.equals(does_override.get(type_original))) {
+                EntityType type_replacement = replacement_map.get(type_original);
+                if (type_replacement != null) {
+                    //OVERRIDE MOB
+                    Location loc = living.getLocation();
+                    Entity e = loc.getWorld().spawnEntity(loc, type_replacement, CreatureSpawnEvent.SpawnReason.CUSTOM);
+                    e.getPersistentDataContainer().set(SPAWN_OVERRIDE_KEY, PersistentDataType.BOOLEAN, true); // this is applied, but not detected in onCreatureSpawn
+                    e.setPersistent(true);
+                    living.remove();
+                    Debug.broadcast("mob", "Chunk Gen Override:<light_purple>" + type_original.name() +
+                            "</light_purple> -> <green>" + type_replacement.name() + "</green>");
+                }
+            }
+        }
+    }
+
+
+    @EventHandler
+    public void onDamage(EntityDamageByEntityEvent event){
+        Entity damager = event.getDamager();
+        Entity victim = event.getEntity();
+        if(victim.getType() == CREAKING){
+            if(isOverrideEntity(victim)){
+                double takedown_chance=0.25;
+                CustomPlayer player = CoreUtil.getPlayer(event.getDamager().getUniqueId());
+                if(player!=null){
+                    takedown_chance = 0.25 + (((double)player.getSkillLevel(SkillType.GUARDSMAN))/10);
+                }
+                Debug.broadcast("mob", "takedown chance: "+takedown_chance);
+                if(ThreadLocalRandom.current().nextDouble() > takedown_chance){
+                    event.setCancelled(true);
+                    Location teleport;
+                    Vector v = getDirectionVector(victim.getYaw(), victim.getPitch()).normalize();
+                    v = v.add(randomVectorCentered(1));
+                    teleport = victim.getLocation().add(v.multiply(random(10, 20)));
+                    Block block = teleport.getBlock();
+                    while(block.isSolid()){
+                        block = block.getRelative(BlockFace.UP);
+                    }
+                    teleport = block.getRelative(BlockFace.UP).getLocation().add(0.5,0.5,0.5);
+                        victim.teleport(teleport);
+                        victim.setFallDistance(-100);
+                        victim.getWorld().playSound(teleport, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
+
+                    }
+            }
+        }
+
+        if(event.getDamager().getType()==BEE){
+            Bee bee = (Bee) event.getDamager();
+            bee.setHasStung(false);
+            bee.getServer().getScheduler().scheduleSyncDelayedTask(Specialization.getInstance(), new Runnable() {
+                @Override
+                public void run() {
+                    unsetBee(bee);
+                }
+            });
+        }
+    }
+
+    private void unsetBee(Bee bee) {
+        Debug.broadcast("mob", "Be has stung = false");
+        bee.setHasStung(false);
+    }
+
     /**
      * Amplifies mob damage
+     * called from CombatManger
      */
     public void onMobAttack(Player player, EntityDamageByEntityEvent event){
         if(!(event.getDamager() instanceof LivingEntity entity)) return;
@@ -347,9 +385,17 @@ public class MobStatsManager implements Listener {
     }
 
     public void applyExp(EntityDamageByEntityEvent event, CustomPlayer customPlayer, LivingEntity victim) {
-        if(event.getDamage()<1)return;
+        if(event.getDamage()<0.1)return;
+
 
         MobStats mobStats = getApplicableMobStats(victim);
+        if(!(victim instanceof Enemy)){
+//            Debug.broadcast("mob", "not enemy :D");
+            if(!mobStats.doesAllowXpGainForNonEnemy()) {
+                return;
+            }
+        }
+
         double xp_multiplier = mobStats.getXpMultiplier();
         if (xp_multiplier>0) {
             LivingEntity le = (LivingEntity) victim;

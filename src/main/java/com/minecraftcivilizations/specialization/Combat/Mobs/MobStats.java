@@ -34,6 +34,11 @@ public class MobStats {
 
     private boolean does_hunting = false;
     private boolean does_breaking = false;
+    private boolean invisible = false;
+
+    private boolean allow_xp = false;
+
+    private boolean replace_original_mob = false;
 
     public MobStats(){}
 
@@ -124,4 +129,34 @@ public class MobStats {
     public boolean doesBreaking() {
         return does_breaking;
     }
+
+    public MobStats invisible() {
+        invisible = true;
+        return this;
+    }
+
+    public boolean isInvisible(){
+        return invisible;
+    }
+
+    public MobStats allowXpGainForNonEnemy(){
+        this.allow_xp = true;
+        return this;
+    }
+
+    public boolean doesAllowXpGainForNonEnemy(){
+        return allow_xp;
+    }
+
+
+    public MobStats replaceOriginalMob(){
+        this.replace_original_mob = true;
+        return this;
+    }
+
+    public boolean doesReplaceOriginalMob(){
+        return replace_original_mob;
+    }
+
+
 }
