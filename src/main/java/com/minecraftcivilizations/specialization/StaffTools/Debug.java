@@ -192,6 +192,11 @@ public class Debug implements Listener {
         broadcastFinalize(debug_channel, comp, register_channel);
     }
 
+    public static void broadcast(String debug_channel, Component msg){
+        Component comp;
+        broadcastFinalize(debug_channel, getPrefix(debug_channel).append(msg), false);
+    }
+
     public static void broadcast(String debug_channel, Component msg, Component hover){
         Component comp;
         if(hover!=null){
@@ -327,7 +332,7 @@ public class Debug implements Listener {
         }else{
             c = formatLocationColored(location);
         }
-        return c.clickEvent(ClickEvent.suggestCommand("/tp "+location.getBlockX()+" "+location.getBlockY()+" "+location.getBlockZ()));
+        return c.clickEvent(ClickEvent.runCommand("/tp "+location.getBlockX()+" "+location.getBlockY()+" "+location.getBlockZ()));
     }
 
 

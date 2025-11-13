@@ -85,8 +85,6 @@ public class Bandage extends CustomItem {
         applyHeal(healer, target, itemStack);
     }
 
-
-
     // Handles self-heal if sneak + right click air/block
     @Override
     public void onInteract(PlayerInteractEvent event, ItemStack itemStack) {
@@ -132,9 +130,9 @@ public class Bandage extends CustomItem {
         healer.setFoodLevel(healer.getFoodLevel() - 3);
 
         if(target.equals(healer)){
-            applyCooldown(healer, 500);
+            applyCooldown(healer, 1200);
         }else{
-            applyCooldown(healer, 50);
+            applyCooldown(healer, 60);
         }
         if (!(target instanceof Enemy)) {
             cHealer.addSkillXp(SkillType.HEALER, xp);

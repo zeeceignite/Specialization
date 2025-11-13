@@ -33,6 +33,7 @@ public class DefineCustomItems implements Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
+
     // intercept the take from the result slot and replace with your modified item
     @EventHandler(priority = EventPriority.HIGHEST) //Highest will run AFTER the Xp is given
     public void onInventoryClick(InventoryClickEvent event) {
@@ -53,14 +54,6 @@ public class DefineCustomItems implements Listener {
             event.setCurrentItem(modified);
         }
     }
-
-    /**
-     * Vanilla Overrides
-     */
-    @EventHandler(ignoreCancelled = true)
-    public void onCraftModifyName(CraftItemEvent event) {
-    }
-
 
     CustomItem bandage = new Bandage("bandage", "Bandage");
 

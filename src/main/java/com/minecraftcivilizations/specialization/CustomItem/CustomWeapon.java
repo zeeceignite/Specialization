@@ -5,7 +5,10 @@ import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import com.minecraftcivilizations.specialization.util.ItemStackUtils;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.ChatMessageType;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerItemHeldEvent;
@@ -97,7 +100,6 @@ public class CustomWeapon extends CustomItem{
     @Override
     public void onCreateItem(ItemStack itemStack, ItemMeta meta, Player player) {
         if(player!=null){
-            Debug.broadcast("customitem", "adding <gold>crit bonus</gold> to custom sword!!! ");
             int lvl = CoreUtil.getPlayer(player.getUniqueId()).getSkillLevel(SkillType.BLACKSMITH);
             double craft_crit_chance = 0.0;
 
@@ -106,7 +108,7 @@ public class CustomWeapon extends CustomItem{
             switch(lvl){
                 case 0:
                     craft_crit_chance = luck_enabled?0.01:0.0;
-                    break;
+                    return;
                 case 1:
                     craft_crit_chance = luck_enabled?0.025:0.01;
                     break;
@@ -124,63 +126,55 @@ public class CustomWeapon extends CustomItem{
                     break;
             }
 
-            if(craft_crit_chance > rollDouble()){
+            if(craft_crit_chance > rollDouble()){ // Crit Bonus Rolled Successful, still chance of 0 though
+                double crit_bonus = quantize((rollDouble()* 0.25 *((double)lvl+2)) + 0.25, 0.25);
+                double crit_max = 2.0;
 
-                double crit_bonus = quantize((rollDouble()* 0.25 *((double)lvl)) + 0.25, 0.25);
-                double crit_max = 1.5;
-                Sound craft_sound = Sound.BLOCK_SMITHING_TABLE_USE;
-                switch(itemStack.getType()){
-                    case WOODEN_SWORD:
-                        craft_sound = Sound.BLOCK_BAMBOO_WOOD_HANGING_SIGN_PLACE;
-                        break;
-                    case STONE_SWORD:
-                        craft_sound = Sound.UI_STONECUTTER_TAKE_RESULT;
-                        break;
-                    case GOLDEN_SWORD:
-                        crit_bonus *= 4;
-                        crit_max = 5;
-                        break;
-                }
 
-                if(crit_bonus >0.0){
+                if(crit_bonus >0.0){ // The weapon will have a crit
+                    Sound craft_sound = Sound.BLOCK_SMITHING_TABLE_USE;
                     ChatColor c = BLUE;
+
+                    // Determine Sword Type Modification
+                    switch(itemStack.getType()){
+                        case WOODEN_SWORD:
+                            c = ChatColor.of(new Color(124, 62,44));
+                            craft_sound = Sound.BLOCK_BAMBOO_WOOD_HANGING_SIGN_PLACE;
+                            crit_max = 1.0;
+                            break;
+                        case STONE_SWORD:
+                            c = DARK_GRAY;
+                            craft_sound = Sound.UI_STONECUTTER_TAKE_RESULT;
+                            crit_max = 1.5;
+                            break;
+                        case GOLDEN_SWORD:
+                            c = GOLD;
+                            crit_bonus *= 4;
+                            crit_max = 5;
+                            break;
+                        case IRON_SWORD:
+                            c = GRAY;
+                            break;
+                        case DIAMOND_SWORD:
+                            c = AQUA;
+                            break;
+                    }
+
+                    ChatColor crit_bonus_color = BLUE;
                     if(crit_bonus>=crit_max){
                         crit_bonus = Math.min(crit_max, crit_bonus);
-                        switch(itemStack.getType()) {
-                            case WOODEN_SWORD:
-                                c = ChatColor.of(new Color(124, 62,44));
-                                break;
-                            case STONE_SWORD:
-                                c = DARK_GRAY;
-                                break;
-                            case IRON_SWORD:
-                                c = GRAY;
-                                break;
-                            case GOLDEN_SWORD:
-                                c = GOLD;
-                                break;
-                            case DIAMOND_SWORD:
-                                c = AQUA;
-                                break;
-                        }
-//                        Component original = itemStack.effectiveName().asComponent(); // or itemStack.asComponent()
-//                        Component recolored = original
-//                                .color(NamedTextColor.GOLD)
-//                                .decoration(TextDecoration.ITALIC, false);
-//                        meta.displayName(recolored);
-//                        itemStack.setItemMeta(meta);
+                        crit_bonus_color = c;
                         player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_RESONATE, 0.325f, 1.2f);
                         player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 0.125f, 1.25f);
+                        ItemStackUtils.setLoreLine(meta, 2, DARK_GRAY+"Crafted by "+GRAY+player.getName());
+                        player.sendMessage(c+"You've crafted a perfect Masterwork Sword!");
                     }else if (crit_bonus>=1.0){
                         player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 0.125f, 1.5f);
                     }
-//                    double speed = 0.2;
-//                    player.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, , 1, random(-speed, speed), random(-speed, speed), random(-speed, speed), 0);
-
-                    ItemStackUtils.setLoreLine(meta, 0, c+"+"+crit_bonus+" Crit Bonus");
+                    
+                    ItemStackUtils.setLoreLine(meta, 0, crit_bonus_color+"+"+crit_bonus+" Opening Crit Bonus");
                     meta.getPersistentDataContainer().set(CombatManager.CRIT_BONUS_KEY, PersistentDataType.DOUBLE, crit_bonus);
                     player.playSound(player, craft_sound, 0.25f, 1.0f);
-
                 }
             }
 //            if(luck_enabled){
@@ -200,6 +194,7 @@ public class CustomWeapon extends CustomItem{
         Player player = event.getPlayer();
         int lvl = CoreUtil.getPlayer(player).getSkillLevel(SkillType.GUARDSMAN);
         if(isOnCooldown(player))return;
+        PlayerUtil playerUtil = PlayerUtil.getPlayerUtil(player);
 
         boolean metal = false;
         boolean scrap = false;
@@ -246,27 +241,43 @@ public class CustomWeapon extends CustomItem{
 //            if(lvl>=lvl_req) {
             if (metal) {
                 player.getWorld().playSound(player.getLocation(), Sound.ITEM_TRIDENT_THROW, SoundCategory.PLAYERS, volume*0.35f, random(1.19f, 1.2f));
+
+
+                if(lvl>=4) {
+                    if (!playerUtil.isOnCooldown("unsheathe_sound")) {
+                        player.getWorld().playSound(player.getLocation(), "unsheathe", 0.35f, random(0.98f, 1.05f));
+                    }
+                    playerUtil.setCooldown("unsheathe_sound", 400);
+                }
             }
-//            }
-//            double crit = CombatManager.getCustomWeaponCrit(newItem);
-//                if(crit>=1.5){
-//                    Location loc = player.getLocation();
-//                    MainHand hand = player.getMainHand();
-//                    double rad = Math.toRadians(player.getBodyYaw() + 90);
-//                    Vector right = new Vector(-Math.sin(rad), 0, Math.cos(rad)).normalize().multiply(0.25);
-//                    if(hand == MainHand.RIGHT) {
-//                        loc = loc.add(right);
-//                    }else{
-//                        loc = loc.subtract(right);
-//                    }
-//                    loc = loc.add(0, 1, 0);
-//                    Vector v = MathUtils.getDirectionVector(player.getBodyYaw(), 0).normalize().multiply(0.1);
-//                    double speed = 0.1;
-//                    for(double x = 0; x < 1; x += 0.1) {
-//                        player.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, loc.add(v), 1, random(-speed, speed), random(-speed, speed), random(-speed, speed), 0);
-//                    }
-//                }
             applyCooldown(player, 10);
+        }
+        if(lvl>=1){
+            if (!playerUtil.isOnCooldown("guardsman_feeling")) {
+                String msg = null;
+                switch(lvl){
+                    case 1: //Apprentice
+                        msg = "<green>You hold the sword awkwardly, but it feels right</green>";
+                        break;
+                    case 2: //Journeyman
+                        msg = "<green>You hold the sword with determination</green>";
+                        break;
+                    case 3: //Expert
+                        msg = "<green>The sword feels like an extension of you</green>";
+                        break;
+                    case 4: //Master
+                        msg = "<green>The sword is yours to command</green>";
+                        break;
+                    case 5: //Grandmaster
+                        msg = "<green>You are one with the sword</green>";
+                        break;
+                }
+
+                if(msg!=null)
+                    player.sendActionBar(MiniMessage.miniMessage().deserialize(msg));
+            }
+            // TODO add level up listener for guardsman to reset this cooldown
+            playerUtil.setCooldown("guardsman_feeling", 100);
         }
     }
 

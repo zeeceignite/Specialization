@@ -39,6 +39,18 @@ public class PlayerUtil {
         cooldowns.put(key, System.currentTimeMillis() + (ticks*50));
     }
 
+    public static void setCooldown(Player player, String key, long ticks){
+        getPlayerUtil(player).setCooldown(key, ticks);
+    }
+
+    public static boolean isOnCooldown(Player player, String key){
+        return getPlayerUtil(player).isOnCooldown(key);
+    }
+
+    public static long getRemainingCooldown(Player player, String key  ){
+        return getPlayerUtil(player).getRemainingCooldown(key);
+    }
+
     /**
      * Returns true if still on cooldown
      */

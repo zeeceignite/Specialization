@@ -92,6 +92,9 @@ public class LocalChat implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onChat(AsyncPlayerChatEvent e) {
         Player p = e.getPlayer();
+        if(p!=null){
+            return; //TEMPORARY OVERRIDE
+        }
         String raw = MiniMessage.miniMessage().stripTags(e.getMessage().trim());
 
         if (handleGlobalChat(p, raw)) {

@@ -118,7 +118,15 @@ public class GuardsmanDamage implements Listener {
         // Apply damage reduction for non-Guardsman players attacking mobs
 //        double damageReduction = SpecializationConfig.getGuardsmanConfig().get("NON_GUARDSMAN_DAMAGE_REDUCTION", Double.class);
         double original_damage = event.getDamage(BASE);
-        double new_damage = ((original_damage) * multiplier)+add;
+
+        if(victim instanceof Enemy enemy){
+            multiplier = 1.0;
+        }
+
+        double new_damage = new_damage = ((original_damage) * multiplier)+add;
+
+
+
 //        event.setDamage(ABSORPTION, 0);
 
 //        event.setDamage(ABSORPTION, event.getDamage(ABSORPTION)/2);
@@ -127,8 +135,10 @@ public class GuardsmanDamage implements Listener {
          * Guardsman Extra Mob Damage Bonus
          */
         if(victim instanceof Monster monster) {
-
             double extra = Math.max(0, ((double) lvl - 1)) / 2.0;
+            if (event.isCritical()) {
+                extra *= 1.5;
+            }
             if (extra > 0) {
                 new_damage += extra;
 //                w.spawnParticle(Particle.BLOCK, monster.getEyeLocation(), (int)(extra*2), 0.33,0.33,0.33,0);
