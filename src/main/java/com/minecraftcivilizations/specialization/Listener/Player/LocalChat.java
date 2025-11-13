@@ -118,7 +118,7 @@ public class LocalChat implements Listener {
     }
 
     // ---- SPAWNING ----
-    private void spawnBubble(Player p, String msg) {
+    public void spawnBubble(Player p, String msg) {
 
         msg = truncate(msg);
         int msgLen = msg.length();

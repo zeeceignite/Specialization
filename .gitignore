@@ -31,3 +31,4 @@ replay_pid*
 /run
 /libs
 /run
+/out/production/resources

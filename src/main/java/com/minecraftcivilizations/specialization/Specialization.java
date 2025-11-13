@@ -84,6 +84,7 @@ public final class Specialization extends JavaPlugin {
     private Debug debug;
     private PhantomRideListener phantomRideListener;
 //    private EmoteListener emoteListener;
+    private LocalChat localChat;
 
     //follow this pattern from now on
     @Getter
@@ -105,7 +106,7 @@ public final class Specialization extends JavaPlugin {
 
 
 
-
+    localChat = new LocalChat();
     smart_entity_manager = new SmartEntityManager(this);
     customItemManager = new CustomItemManager(this);
     customItemManager.initializeCustomItems();
@@ -338,6 +339,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new XPLeaderboardCommand());
         commandManager.registerCommand(new EmoteCommand(customItemManager, this));
         commandManager.registerCommand(new CustomItemCommand(customItemManager));
+        commandManager.registerCommand(new SudoChatCommand(localChat));
         new DebugListenCommand(commandManager);
 
 
