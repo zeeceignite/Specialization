@@ -11,9 +11,8 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.entity.Enemy;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.entity.*;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -77,13 +76,22 @@ public class Bandage extends CustomItem {
         if (itemStack == null) return;
 
         Player healer = event.getPlayer();
-        LivingEntity target = (LivingEntity) event.getRightClicked();
-        if (target.getHealth() >= target.getAttribute(Attribute.MAX_HEALTH).getValue()) return; // only heal if not full health
+        Entity clicked = event.getRightClicked();
 
-        if (isOnCooldown(healer))return;
+        // Only heal non-hostile living entities
+        if (clicked instanceof Monster) return;
+
+        if (!(clicked instanceof LivingEntity target)) return;
+
+        // Only heal if not full health
+        AttributeInstance maxHealth = target.getAttribute(Attribute.MAX_HEALTH);
+        if (maxHealth == null || target.getHealth() >= maxHealth.getValue()) return;
+
+        if (isOnCooldown(healer)) return;
 
         applyHeal(healer, target, itemStack);
     }
+
 
 
 
@@ -134,7 +142,7 @@ public class Bandage extends CustomItem {
         if(target.equals(healer)){
             applyCooldown(healer, 500);
         }else{
-            applyCooldown(healer, 50);
+            applyCooldown(healer, 150);
         }
         if (!(target instanceof Enemy)) {
             cHealer.addSkillXp(SkillType.HEALER, xp);

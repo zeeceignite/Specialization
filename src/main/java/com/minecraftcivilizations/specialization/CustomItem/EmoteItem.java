@@ -132,12 +132,21 @@ public class EmoteItem extends CustomItem implements Listener {
 
     @Override
     public void onInventoryClick(InventoryClickEvent event, ItemStack itemStack) {
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null) return;
+
+        // Delete only THIS stack
+        event.setCurrentItem(null);
+
+        // Prevent it from going anywhere
         event.setCancelled(true);
     }
+
 
 
     @Override
     public void onDropItemByPlayer(PlayerDropItemEvent event) {
-        event.setCancelled(true);
+        event.getItemDrop().remove(); // deletes the dropped item entity
     }
+
 }
