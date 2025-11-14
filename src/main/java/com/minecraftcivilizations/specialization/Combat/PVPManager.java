@@ -8,6 +8,7 @@ import org.bukkit.event.*;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -61,6 +62,8 @@ public class PVPManager implements Listener, CommandExecutor {
         combatMap.put(victim.getUniqueId(), now);
         combatMap.put(damager.getUniqueId(), now);
 
+        damager.sendMessage("You are tagged for combat.");
+        victim.sendMessage("You have been tagged for combat by:" + damager.getName());
         plugin.getLogger().info("[Combat] " + damager.getName() + " hit " + victim.getName());
 
         // Reset zombie timer if hit
@@ -147,51 +150,26 @@ public class PVPManager implements Listener, CommandExecutor {
         zombieTimers.put(playerId, timer);
     }
 
-    private ArmorStand getMarkerByPlayer(UUID playerId) {
-        for (World w : Bukkit.getWorlds()) {
-            for (Entity e : w.getEntities()) {
-                if (e instanceof ArmorStand as && as.isMarker()) {
-                    String owner = as.getPersistentDataContainer().get(MARKER_KEY, PersistentDataType.STRING);
-                    if (owner != null && owner.equals(playerId.toString())) return as;
-                }
+    private ArmorStand getMarkerByPlayer(UUID playerId, Chunk chunk) {
+        for (Entity e : chunk.getEntities()) {
+            if (e instanceof ArmorStand as && as.isMarker()) {
+                String owner = as.getPersistentDataContainer().get(MARKER_KEY, PersistentDataType.STRING);
+                if (owner != null && owner.equals(playerId.toString())) return as;
             }
         }
         return null;
     }
 
-// --- Player join ---
+
+    // --- Player join ---
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         UUID id = player.getUniqueId();
 
-        // First try to get zombie from map
-        UUID zombieId = zombieMap.remove(id);
-        Entity zombie = (zombieId != null) ? Bukkit.getEntity(zombieId) : null;
-        BukkitRunnable timer = zombieTimers.remove(id);
-        if (timer != null) timer.cancel();
-
-        // If no zombie in map, search only the player's spawn chunk for a zombie with OWNER_KEY = player UUID
-        if (zombie == null) {
-            Chunk chunk = player.getLocation().getChunk();
-            for (Entity e : chunk.getEntities()) {
-                if (e instanceof Zombie z) {
-                    String ownerStr = z.getPersistentDataContainer().get(OWNER_KEY, PersistentDataType.STRING);
-                    if (ownerStr != null && ownerStr.equals(id.toString())) {
-                        zombie = z;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (zombie != null && zombie.isValid()) {
-            zombie.remove();
-            plugin.getLogger().info("[Login] Removed leftover zombie for " + player.getName());
-        }
-
-        // Handle marker
-        ArmorStand marker = getMarkerByPlayer(id);
+        // --- Handle marker first ---
+        Chunk spawnChunk = player.getLocation().getChunk();
+        ArmorStand marker = getMarkerByPlayer(id, spawnChunk);
         if (marker == null) {
             plugin.getLogger().info("[Login] No marker found for " + player.getName());
             return;
@@ -222,8 +200,35 @@ public class PVPManager implements Listener, CommandExecutor {
             plugin.getLogger().info("[Login] Restored inventory and health(" + health + ") for " + player.getName());
         }
 
+        // --- Remove zombie ---
+        UUID zombieId = zombieMap.remove(id);
+        Entity zombie = (zombieId != null) ? Bukkit.getEntity(zombieId) : null;
+        BukkitRunnable timer = zombieTimers.remove(id);
+        if (timer != null) timer.cancel();
+
+        if (zombie == null && marker.isValid()) {
+            // Only scan the chunk where the marker is
+            Chunk chunk = marker.getLocation().getChunk();
+            for (Entity e : chunk.getEntities()) {
+                if (e instanceof Zombie z) {
+                    String ownerStr = z.getPersistentDataContainer().get(OWNER_KEY, PersistentDataType.STRING);
+                    if (ownerStr != null && ownerStr.equals(id.toString())) {
+                        zombie = z;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (zombie != null && zombie.isValid()) {
+            zombie.remove();
+            plugin.getLogger().info("[Login] Removed leftover zombie for " + player.getName());
+        }
+
+        // --- Remove marker ---
         marker.remove();
     }
+
 
 
     // --- Zombie damage updates marker ---
@@ -235,7 +240,7 @@ public class PVPManager implements Listener, CommandExecutor {
         String playerUUIDStr = zombie.getPersistentDataContainer().get(MARKER_KEY, PersistentDataType.STRING);
         if (playerUUIDStr == null) return;
 
-        ArmorStand marker = getMarkerByPlayer(UUID.fromString(playerUUIDStr));
+        ArmorStand marker = getMarkerByPlayer(UUID.fromString(playerUUIDStr), zombie.getChunk());
         if (marker == null) return;
 
         double currentHealth = zombie.getHealth();
@@ -253,16 +258,44 @@ public class PVPManager implements Listener, CommandExecutor {
     public void onZombieDeath(EntityDeathEvent event) {
         if (!(event.getEntity() instanceof Zombie zombie)) return;
 
-        UUID ownerId = UUID.fromString(zombie.getPersistentDataContainer().get(OWNER_KEY, PersistentDataType.STRING));
-        ArmorStand marker = getMarkerByPlayer(ownerId);
-        if (marker == null) return;
+        PersistentDataContainer pdc = zombie.getPersistentDataContainer();
 
-        event.getDrops().clear(); // no vanilla drops
-        zombie.getEquipment().clear(); // remove equipped items to prevent duplication
+        // Early exit: zombie has no owner => clear drops and return
+        if (!pdc.has(OWNER_KEY, PersistentDataType.STRING)) {
+            event.getDrops().clear();
+            zombie.getEquipment().clear();
+            return;
+        }
+
+        String raw = pdc.get(OWNER_KEY, PersistentDataType.STRING);
+        UUID ownerId;
+
+        // PDC contains invalid UUID => treat as unbound zombie (no drops)
+        try {
+            ownerId = UUID.fromString(raw);
+        } catch (IllegalArgumentException ex) {
+            event.getDrops().clear();
+            zombie.getEquipment().clear();
+            return;
+        }
+
+        ArmorStand marker = getMarkerByPlayer(ownerId, zombie.getChunk());
+
+        // If no marker exists => NO DROPS
+        if (marker == null) {
+            event.getDrops().clear();
+            zombie.getEquipment().clear();
+            return;
+        }
+
+        // --- VALID MARKER FOUND: handle full logic ---
+
+        event.getDrops().clear();
+        zombie.getEquipment().clear();
 
         marker.getPersistentDataContainer().set(DEAD_KEY, PersistentDataType.INTEGER, 1);
 
-        // drop inventory from marker
+        // Drop inventory
         byte[] invBytes = marker.getPersistentDataContainer().get(INVENTORY_KEY, PersistentDataType.BYTE_ARRAY);
         if (invBytes != null) {
             for (ItemStack item : ItemSerialization.fromBytes(invBytes)) {
@@ -271,7 +304,7 @@ public class PVPManager implements Listener, CommandExecutor {
             marker.getPersistentDataContainer().remove(INVENTORY_KEY);
         }
 
-        // drop armor from marker
+        // Drop armor
         byte[] armorBytes = marker.getPersistentDataContainer().get(ARMOR_KEY, PersistentDataType.BYTE_ARRAY);
         if (armorBytes != null) {
             for (ItemStack item : ItemSerialization.fromBytes(armorBytes)) {
@@ -286,6 +319,7 @@ public class PVPManager implements Listener, CommandExecutor {
 
         zombie.getWorld().playSound(zombie.getLocation(), Sound.ENTITY_ZOMBIE_DEATH, 1f, 1f);
     }
+
 
     // --- Spawn combat zombie ---
     private Zombie spawnCombatZombie(Player player, ArmorStand marker) {
@@ -335,6 +369,7 @@ public class PVPManager implements Listener, CommandExecutor {
         if (!(sender instanceof Player p)) return true;
         combatMap.put(p.getUniqueId(), System.currentTimeMillis());
         plugin.getLogger().info("[Command] /simulatehit executed for " + p.getName());
+        p.sendMessage("You are tagged for combat.");
         return true;
     }
 
