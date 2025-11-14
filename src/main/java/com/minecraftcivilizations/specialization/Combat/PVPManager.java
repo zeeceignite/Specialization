@@ -59,11 +59,23 @@ public class PVPManager implements Listener, CommandExecutor {
         if (damager == null || damager.equals(victim)) return;
 
         long now = System.currentTimeMillis();
+
+        // Check global combat state for both players
+        boolean victimAlreadyTagged = combatMap.containsKey(victim.getUniqueId());
+        boolean damagerAlreadyTagged = combatMap.containsKey(damager.getUniqueId());
+
+        // Tag both
         combatMap.put(victim.getUniqueId(), now);
         combatMap.put(damager.getUniqueId(), now);
 
-        damager.sendMessage("You are tagged for combat.");
-        victim.sendMessage("You have been tagged for combat by:" + damager.getName());
+        // Only send messages if BOTH were NOT tagged before
+        if (!victimAlreadyTagged)
+            victim.sendMessage("§0[§0§6CivLabs§0]§8 » §7You have been tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds by: §c" + damager.getName());
+
+        if (!damagerAlreadyTagged)
+            damager.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds");
+
+
         plugin.getLogger().info("[Combat] " + damager.getName() + " hit " + victim.getName());
 
         // Reset zombie timer if hit
@@ -74,7 +86,6 @@ public class PVPManager implements Listener, CommandExecutor {
             if (timer != null) {
                 timer.cancel();
                 startZombieTimer(victimId, Bukkit.getEntity(zombieId));
-                plugin.getLogger().info("[Combat] Reset zombie timer for " + victim.getName());
             }
         }
     }
@@ -369,7 +380,7 @@ public class PVPManager implements Listener, CommandExecutor {
         if (!(sender instanceof Player p)) return true;
         combatMap.put(p.getUniqueId(), System.currentTimeMillis());
         plugin.getLogger().info("[Command] /simulatehit executed for " + p.getName());
-        p.sendMessage("You are tagged for combat.");
+        p.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds");
         return true;
     }
 
