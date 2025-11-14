@@ -66,14 +66,20 @@ public class BreakBlockListener implements Listener {
     private void handleReinforcedDrop(Block block, org.bukkit.entity.Player player) {
         Location dropLocation = block.getLocation().add(0.5, 0.5, 0.5);
 
-        if (isHeavilyReinforced(block)) {
-            block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT));
-            player.sendMessage("You have received 1 iron ingot for breaking heavily reinforced blocks!");
+        // 50% chance to give the reward item
+        if (Math.random() < 0.5) {
+            if (isHeavilyReinforced(block)) {
+                block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT));
+                player.sendMessage("§7Iron Reinforcement Broke");
+            }
+             if (isLightlyReinforced(block)) {
+                block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT));
+                player.sendMessage("§7Copper Reinforcement Broke");
+
+            }
         }
-        if (isLightlyReinforced(block)) {
-            block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT));
-            player.sendMessage("You have received 1 copper ingot for breaking lightly reinforced blocks!");
-        }
+
+        // Always remove reinforcement
         for (Block b : getMultiBlocks(block)) {
             removeReinforcement(b);
         }
