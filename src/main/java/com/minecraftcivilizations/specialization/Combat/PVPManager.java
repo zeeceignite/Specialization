@@ -173,6 +173,9 @@ public class PVPManager implements Listener, CommandExecutor {
     }
 
 
+
+
+
     // --- Player join ---
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -220,6 +223,7 @@ public class PVPManager implements Listener, CommandExecutor {
         BukkitRunnable timer = zombieTimers.remove(id);
         if (timer != null) timer.cancel();
 
+        //only scans if zombie cant be found in map (crash/servershutdown or some sort of weird issue)
         if (zombie == null && marker.isValid()) {
             // Only scan the chunk where the marker is
             Chunk chunk = marker.getLocation().getChunk();
@@ -251,6 +255,21 @@ public class PVPManager implements Listener, CommandExecutor {
 
         if (!(event.getEntity() instanceof Zombie zombie)) return;
 
+        // Check if zombie is tracked
+        String ownerStr = zombie.getPersistentDataContainer().get(OWNER_KEY, PersistentDataType.STRING);
+        if (ownerStr == null) return; // Not a combat zombie
+
+        UUID ownerId = UUID.fromString(ownerStr);
+
+        // If zombie is not in map, remove it immediately
+        if (!zombieMap.containsKey(ownerId)) {
+            plugin.getLogger().info("[ZombieDamage] Untracked zombie detected for player " + ownerId + ", removing it");
+            event.setCancelled(true);
+            zombie.remove();
+            return;
+        }
+
+        // Otherwise, update marker
         String playerUUIDStr = zombie.getPersistentDataContainer().get(MARKER_KEY, PersistentDataType.STRING);
         if (playerUUIDStr == null) return;
 
@@ -260,19 +279,21 @@ public class PVPManager implements Listener, CommandExecutor {
         double currentHealth = zombie.getHealth();
         marker.getPersistentDataContainer().set(HEALTH_KEY, PersistentDataType.DOUBLE, currentHealth);
 
-        if (zombie.getEquipment() != null) {
-            marker.getPersistentDataContainer().set(ARMOR_KEY, PersistentDataType.BYTE_ARRAY, ItemSerialization.toBytes(zombie.getEquipment().getArmorContents()));
-        }
+        zombie.getEquipment();
+        marker.getPersistentDataContainer().set(ARMOR_KEY, PersistentDataType.BYTE_ARRAY,
+                ItemSerialization.toBytes(zombie.getEquipment().getArmorContents()));
 
         plugin.getLogger().info("[ZombieDamage] Zombie " + zombie.getCustomName() +
                 " took damage, health updated to " + currentHealth + " in marker");
     }
+
 
     @EventHandler
     public void onZombieDeath(EntityDeathEvent event) {
         if (!(event.getEntity() instanceof Zombie zombie)) return;
 
         PersistentDataContainer pdc = zombie.getPersistentDataContainer();
+        if (!pdc.has(OWNER_KEY)) return;
 
         // Early exit: zombie has no owner => clear drops and return
         if (!pdc.has(OWNER_KEY, PersistentDataType.STRING)) {
@@ -297,8 +318,6 @@ public class PVPManager implements Listener, CommandExecutor {
 
         // If no marker exists => NO DROPS
         if (marker == null) {
-            event.getDrops().clear();
-            zombie.getEquipment().clear();
             return;
         }
 
@@ -306,7 +325,7 @@ public class PVPManager implements Listener, CommandExecutor {
 
         event.getDrops().clear();
         zombie.getEquipment().clear();
-
+        event.setDroppedExp(0);
         marker.getPersistentDataContainer().set(DEAD_KEY, PersistentDataType.INTEGER, 1);
 
         // Drop inventory
