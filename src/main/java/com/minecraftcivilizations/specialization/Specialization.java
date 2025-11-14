@@ -91,6 +91,7 @@ public final class Specialization extends JavaPlugin {
     @Getter
     private CustomItemManager customItemManager;
     private CombatManager combatManager;
+    private PVPManager pvpManager;
 
 
     //Holder for transient player data such as cooldowns
@@ -116,6 +117,7 @@ public final class Specialization extends JavaPlugin {
     customItemManager = new CustomItemManager(this);
     customItemManager.initializeCustomItems();
     phantomRideListener = new PhantomRideListener(this);
+    pvpManager = new PVPManager(this);
 //    emoteListener = new EmoteListener(this);
 
 

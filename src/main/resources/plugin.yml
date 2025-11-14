@@ -8,3 +8,8 @@ depend:
 authors: [ DNFneca ]
 description: Lyphea
 
+commands:
+  simulatehit:
+    description: Simulate a combat hit for testing.
+    usage: /simulatehit
+    permission: specialization.simulatehit
