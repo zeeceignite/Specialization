@@ -445,11 +445,11 @@ public class SpecializationConfig {
 
         xpMonitorConfig = new ConfigFile(Specialization.getInstance(), "XpMonitorAlertThresholds", null, fields -> {
             // FARMER
-            fields.add(new Pair<>("FARMER.threshold", 400.0));
+            fields.add(new Pair<>("FARMER.threshold", 600.0));
             fields.add(new Pair<>("FARMER.cooldown-seconds", 30));
 
             // BUILDER
-            fields.add(new Pair<>("BUILDER.threshold", 500.0));
+            fields.add(new Pair<>("BUILDER.threshold", 600.0));
             fields.add(new Pair<>("BUILDER.cooldown-seconds", 30));
 
             // MINER
@@ -457,11 +457,11 @@ public class SpecializationConfig {
             fields.add(new Pair<>("MINER.cooldown-seconds", 30));
 
             // HEALER
-            fields.add(new Pair<>("HEALER.threshold", 500.0));
+            fields.add(new Pair<>("HEALER.threshold", 600.0));
             fields.add(new Pair<>("HEALER.cooldown-seconds", 30));
 
             // LIBRARIAN
-            fields.add(new Pair<>("LIBRARIAN.threshold", 450.0));
+            fields.add(new Pair<>("LIBRARIAN.threshold", 550.0));
             fields.add(new Pair<>("LIBRARIAN.cooldown-seconds", 30));
 
             // GUARDSMAN
@@ -469,7 +469,7 @@ public class SpecializationConfig {
             fields.add(new Pair<>("GUARDSMAN.cooldown-seconds", 30));
 
             // BLACKSMITH
-            fields.add(new Pair<>("BLACKSMITH.threshold", 500.0));
+            fields.add(new Pair<>("BLACKSMITH.threshold", 600.0));
             fields.add(new Pair<>("BLACKSMITH.cooldown-seconds", 30));
         });
 

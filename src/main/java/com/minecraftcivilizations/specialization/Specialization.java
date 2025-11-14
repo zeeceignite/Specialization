@@ -92,6 +92,7 @@ public final class Specialization extends JavaPlugin {
     private CustomItemManager customItemManager;
     private CombatManager combatManager;
     private PVPManager pvpManager;
+    private XPMonitoringCommand xpMonitoringCommand;
 
 
     //Holder for transient player data such as cooldowns
@@ -118,6 +119,7 @@ public final class Specialization extends JavaPlugin {
     customItemManager.initializeCustomItems();
     phantomRideListener = new PhantomRideListener(this);
     pvpManager = new PVPManager(this);
+    xpMonitoringCommand = new XPMonitoringCommand();
 //    emoteListener = new EmoteListener(this);
 
 
@@ -299,6 +301,7 @@ public final class Specialization extends JavaPlugin {
         smart_entity_manager.shutdown();
         DataManager.getScheduler().shutdown();
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().saveAll();
+        XpGainMonitor.saveConfigToDisk();
     }
 
     public static Specialization getInstance() {
@@ -331,6 +334,12 @@ public final class Specialization extends JavaPlugin {
                         .collect(Collectors.toList())
         );
 
+        // somewhere during plugin init
+        commandManager.getCommandCompletions().registerCompletion("monitorTypes", c ->
+                Arrays.asList("threshold", "cooldown")
+        );
+
+
         // Register tab completion for all custom items
         commandManager.getCommandCompletions().registerCompletion("customitems", c ->
                 new ArrayList<>(customItemManager.getCustomItemIds())
@@ -353,6 +362,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new EmoteCommand(customItemManager, this));
         commandManager.registerCommand(new CustomItemCommand(customItemManager));
         commandManager.registerCommand(new SudoChatCommand(localChat));
+        commandManager.registerCommand(new XPMonitoringCommand());
         new DebugListenCommand(commandManager);
 
 

@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.Combat;
 
+import com.minecraftcivilizations.specialization.Listener.Player.PlayerDeathListener;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.command.*;
@@ -31,6 +32,7 @@ public class PVPManager implements Listener, CommandExecutor {
     private static final long COMBAT_COOLDOWN = 10_000L;
     private static final long ZOMBIE_LIFETIME = 15_000L; // 15s
 
+    PlayerDeathListener deathListener = new PlayerDeathListener();
     private final NamespacedKey OWNER_KEY;
     private final NamespacedKey MARKER_KEY;
     private final NamespacedKey INVENTORY_KEY;
@@ -148,7 +150,6 @@ public class PVPManager implements Listener, CommandExecutor {
         BukkitRunnable timer = new BukkitRunnable() {
             @Override
             public void run() {
-                if (!zombie.isValid()) return;
 
                 zombie.remove();
                 zombieMap.remove(playerId);
@@ -201,7 +202,9 @@ public class PVPManager implements Listener, CommandExecutor {
             if (armorBytes != null)
                 for (ItemStack item : ItemSerialization.fromBytes(armorBytes))
                     if (item != null) player.getWorld().dropItemNaturally(player.getLocation(), item);
+
             player.setHealth(0);
+            deathListener.playerActuallyDied(player);
             player.sendMessage("§cYou died while logged out in combat!");
         } else {
             if (invBytes != null) player.getInventory().setContents(ItemSerialization.fromBytes(invBytes));
@@ -384,11 +387,6 @@ public class PVPManager implements Listener, CommandExecutor {
         return true;
     }
 
-    private boolean isArmor(ItemStack item) {
-        Material type = item.getType();
-        return type.name().endsWith("_HELMET") || type.name().endsWith("_CHESTPLATE") ||
-                type.name().endsWith("_LEGGINGS") || type.name().endsWith("_BOOTS");
-    }
 
     // --- Item serialization helper ---
     public static class ItemSerialization {

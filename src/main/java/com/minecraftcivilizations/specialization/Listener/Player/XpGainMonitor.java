@@ -28,6 +28,7 @@ public final class XpGainMonitor {
     private static final Map<String, Double> thresholds = new HashMap<>();
     private static final Map<String, Long> cooldowns = new HashMap<>();
 
+
     private static class XpRecord {
         final double xp;
         final long time;
@@ -98,13 +99,21 @@ public final class XpGainMonitor {
                 case "§6WARNING" -> "has been gaining " + type.name().toLowerCase() + " XP very rapidly§f";
                 default -> "has been gaining " + type.name().toLowerCase() + " XP rapidly§f.";
             };
-            playerBatch.put(type.name(), rapidLevel + " - " + readable + " (max " + maxPerBucket + " / " + BUCKET_MS + "ms)");
+            String dot = dotRapid(rapidLevel);
+            String msg = dot + " rapid " +
+                    type.name().toLowerCase() +
+                    " (" + maxPerBucket + "/" + BUCKET_MS + "ms)";
+            playerBatch.put(type.name(), msg);
+
             addedToBatch = true;
         }
 
         if (thresholdExceeded) {
-            playerBatch.put(type.name(),
-                    "§fThreshold Exceeded: §c" + Math.round(totalXp) + " xp in 30s §f(limit: " + Math.round(threshold) + ")");
+            String msg = DOT_THRESHOLD + " threshold " +
+                    type.name().toLowerCase() +
+                    " (" + Math.round(totalXp) + "/" + Math.round(threshold) + ")";
+            playerBatch.put(type.name(), msg);
+
             addedToBatch = true;
         }
 
@@ -156,15 +165,19 @@ public final class XpGainMonitor {
     }
 
     private static String buildSummary(Map<String, String> batch) {
-        List<String> parts = new ArrayList<>();
-        for (String key : batch.keySet()) {
-            if (key.endsWith("_THRESHOLD"))
-                parts.add("§cExtreme §7XP Gains Exceeded Threshold (" + key.replace("_THRESHOLD", "").toLowerCase() + ")");
-            else
-                parts.add(key.toLowerCase());
+        List<String> out = new ArrayList<>();
+
+        for (String v : batch.values()) {
+            String color = v.substring(0, 2); // preserves "§c", "§6", "§e", "§b"
+            String type = v.contains("rapid") ? "rapid" : "threshold";
+            out.add(color + type);
         }
-        return String.join(", ", parts);
+
+        return String.join("+", out);
     }
+
+
+
 
     private static Component buildHover(Map<String, String> batch, int[] counts, int sustainingBuckets, int totalBuckets, int maxPerBucket, double ratio) {
         Component hover = Component.text("Details:\n", NamedTextColor.GRAY);
@@ -184,6 +197,53 @@ public final class XpGainMonitor {
                 + "\nBuckets: " + Arrays.toString(counts), NamedTextColor.DARK_GRAY));
         return hover;
     }
+
+    private static String dotRapid(String level) {
+        return switch (level) {
+            case "§cCRITICAL" -> "§c●";
+            case "§6WARNING"  -> "§6●";
+            case "§eNOTICE"   -> "§e●";
+            default -> "§7●";
+        };
+    }
+
+    public static void saveConfigToDisk() {
+        var cfg = SpecializationConfig.getXpMonitorConfig();
+
+        for (String key : thresholds.keySet()) {
+            cfg.set(key + ".threshold", thresholds.get(key));
+        }
+
+        for (String key : cooldowns.keySet()) {
+            cfg.set(key + ".cooldown-seconds", cooldowns.get(key));
+        }
+
+        cfg.save(); // whatever your config wrapper uses
+    }
+
+
+    public static boolean setThreshold(SkillType type, double value) {
+        thresholds.put(type.name(), value);
+        return true;
+    }
+
+    public static boolean setCooldown(SkillType type, long value) {
+        cooldowns.put(type.name(), value);
+        return true;
+    }
+
+    public static double getThreshold(SkillType type) {
+        return thresholds.getOrDefault(type.name(), 500.0);
+    }
+
+    public static long getCooldown(SkillType type) {
+        return cooldowns.getOrDefault(type.name(), 30L);
+    }
+
+
+
+    private static final String DOT_THRESHOLD = "§b●";
+
 
     private static void recordAlert(UUID uuid, long now) {
         lastAlertTimes.put(uuid, now);
