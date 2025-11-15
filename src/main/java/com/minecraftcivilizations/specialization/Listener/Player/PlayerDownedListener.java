@@ -16,6 +16,7 @@ import org.bukkit.entity.Interaction;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -176,8 +177,6 @@ public class PlayerDownedListener implements Listener {
                 return;
             }
             event.setCancelled(true);
-            //finaldamage is inaccurate now that the dmg system was overhualed so final health is off from sword/axes.
-            // TODO: ask alec what finaldmg actually is for overdamage to actually apply
             setDowned(player, true, 10 + finalHealth);
         }
     }
