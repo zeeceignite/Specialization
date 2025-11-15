@@ -1,8 +1,15 @@
 package com.minecraftcivilizations.specialization.Combat;
 
 import com.minecraftcivilizations.specialization.Listener.Player.PlayerDeathListener;
+
+import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
+
+
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.command.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.*;
@@ -29,8 +36,13 @@ public class PVPManager implements Listener, CommandExecutor {
     private final Map<UUID, Long> combatMap = new ConcurrentHashMap<>();
     private final Map<UUID, UUID> zombieMap = new ConcurrentHashMap<>();
     private final Map<UUID, BukkitRunnable> zombieTimers = new ConcurrentHashMap<>();
-    private static final long COMBAT_COOLDOWN = 10_000L;
+    private static final long COMBAT_COOLDOWN = 20_000L;
     private static final long ZOMBIE_LIFETIME = 15_000L; // 15s
+    private final Map<UUID, org.bukkit.boss.BossBar> combatBars = new HashMap<>();
+
+    private boolean combatTaskRunning = false;
+    private int combatTaskId = -1;
+
 
     PlayerDeathListener deathListener = new PlayerDeathListener();
     private final NamespacedKey OWNER_KEY;
@@ -69,13 +81,18 @@ public class PVPManager implements Listener, CommandExecutor {
         // Tag both
         combatMap.put(victim.getUniqueId(), now);
         combatMap.put(damager.getUniqueId(), now);
+            addCombatBar(victim);
+            addCombatBar(damager);
+            startCombatTaskIfNeeded();
 
         // Only send messages if BOTH were NOT tagged before
-        if (!victimAlreadyTagged)
-            victim.sendMessage("§0[§0§6CivLabs§0]§8 » §7You have been tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds by: §c" + damager.getName());
-
-        if (!damagerAlreadyTagged)
+        if (!victimAlreadyTagged){
+            victim.sendMessage("§0[§0§6CivLabs§0]§8 » §7You have been tagged for §ccombat §7for §b"
+                    + (COMBAT_COOLDOWN / 1000) + " §7seconds by: §c" + damager.getName());
+}
+        if (!damagerAlreadyTagged) {
             damager.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds");
+        }
 
 
         plugin.getLogger().info("[Combat] " + damager.getName() + " hit " + victim.getName());
@@ -91,6 +108,63 @@ public class PVPManager implements Listener, CommandExecutor {
             }
         }
     }
+
+    private void addCombatBar(Player p) {
+        BossBar bar = combatBars.get(p.getUniqueId());
+        if (bar == null) {
+            bar = Bukkit.createBossBar("§8Marked for Combat", BarColor.RED, BarStyle.SEGMENTED_20);
+            bar.addPlayer(p);
+            combatBars.put(p.getUniqueId(), bar);
+        }
+        bar.setVisible(true);
+    }
+
+    private void startCombatTaskIfNeeded() {
+        if (combatTaskRunning) return;
+        if (combatMap.isEmpty()) return;
+
+        combatTaskRunning = true;
+
+        combatTaskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+            long now = System.currentTimeMillis();
+
+            Iterator<Map.Entry<UUID, Long>> it = combatMap.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<UUID, Long> entry = it.next();
+                UUID uuid = entry.getKey();
+                long start = entry.getValue();
+                Player p = Bukkit.getPlayer(uuid);
+                if (p == null) continue;
+
+                long elapsed = now - start;
+                long remaining = COMBAT_COOLDOWN - elapsed;
+
+                if (remaining <= 0) {
+                    it.remove();
+
+                    BossBar bar = combatBars.remove(uuid);
+                    if (bar != null) bar.removeAll();
+
+                    continue;
+                }
+
+                BossBar bar = combatBars.get(uuid);
+                if (bar != null) {
+                    double progress = Math.max(0, (double) remaining / COMBAT_COOLDOWN);
+                    bar.setProgress(progress);
+                }
+            }
+
+            // Stop if empty
+            if (combatMap.isEmpty()) {
+                Bukkit.getScheduler().cancelTask(combatTaskId);
+                combatTaskRunning = false;
+            }
+
+        }, 1L, 1L);
+    }
+
+
 
     private Player getDamager(Entity source) {
         if (source instanceof Player p) return p;
@@ -207,13 +281,16 @@ public class PVPManager implements Listener, CommandExecutor {
                     if (item != null) player.getWorld().dropItemNaturally(player.getLocation(), item);
 
             player.setHealth(0);
-            deathListener.playerActuallyDied(player);
-            player.sendMessage("§cYou died while logged out in combat!");
+            //remove this once the downsystem/revive system is fixed
+            Bukkit.getScheduler().runTaskLater(plugin, () -> player.setHealth(0), 10L);
+//            deathListener.playerActuallyDied(player.getPlayer());
+            player.sendMessage("§0[§0§6CivLabs§0]§8 » §7You §ccombat logged§7, and your §cmannequin§7 was §ckilled§7 before it could safely logout");
         } else {
             if (invBytes != null) player.getInventory().setContents(ItemSerialization.fromBytes(invBytes));
             if (armorBytes != null) player.getInventory().setArmorContents(ItemSerialization.fromBytes(armorBytes));
             double health = marker.getPersistentDataContainer().getOrDefault(HEALTH_KEY, PersistentDataType.DOUBLE, player.getMaxHealth());
             player.setHealth(Math.min(health, player.getAttribute(Attribute.MAX_HEALTH).getValue()));
+            player.sendMessage("§0[§0§6CivLabs§0]§8 » §7You §ccombat-logged§7, but your mannequin §asurvived");
             plugin.getLogger().info("[Login] Restored inventory and health(" + health + ") for " + player.getName());
         }
 
@@ -372,15 +449,15 @@ public class PVPManager implements Listener, CommandExecutor {
         zombie.setCanPickupItems(false);
         zombie.setRemoveWhenFarAway(false);
         zombie.setShouldBurnInDay(false);
-
+        zombie.setBaby(false);
         zombie.getAttribute(Attribute.MAX_HEALTH).setBaseValue(player.getMaxHealth());
         zombie.setHealth(Math.min(storedHealth, zombie.getAttribute(Attribute.MAX_HEALTH).getValue()));
 
         // Set main-hand and off-hand from marker inventory
         if (invBytes != null) {
             ItemStack[] inv = ItemSerialization.fromBytes(invBytes);
-            zombie.getEquipment().setItemInMainHand(inv.length > 0 ? inv[0] : null);
-            zombie.getEquipment().setItemInOffHand(inv.length > 1 ? inv[1] : null);
+            zombie.getEquipment().setItemInMainHand(player.getEquipment().getItemInMainHand());
+            zombie.getEquipment().setItemInOffHand(player.getEquipment().getItemInOffHand());
         }
 
         // Set armor accurately from stored armor
@@ -403,6 +480,8 @@ public class PVPManager implements Listener, CommandExecutor {
         combatMap.put(p.getUniqueId(), System.currentTimeMillis());
         plugin.getLogger().info("[Command] /simulatehit executed for " + p.getName());
         p.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds");
+        addCombatBar(p);
+        startCombatTaskIfNeeded();
         return true;
     }
 

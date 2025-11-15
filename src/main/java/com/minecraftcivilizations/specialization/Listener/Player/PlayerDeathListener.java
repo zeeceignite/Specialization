@@ -128,9 +128,12 @@ public class PlayerDeathListener implements Listener {
             }
         }
 
-        if (player.getLastDamageCause() == null) return;
+//        if (player.getLastDamageCause() == null) return;
 
-        EntityDamageEvent.DamageCause cause = player.getLastDamageCause().getCause();
+        EntityDamageEvent.DamageCause cause = player.getLastDamageCause() != null
+                ? player.getLastDamageCause().getCause()
+                : EntityDamageEvent.DamageCause.CUSTOM;
+
         AnalyticsData.deaths.putIfAbsent(cause, 0);
         AnalyticsData.deaths.put(cause, AnalyticsData.deaths.get(cause) + 1);
 
