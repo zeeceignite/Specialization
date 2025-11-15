@@ -119,9 +119,10 @@ public final class Specialization extends JavaPlugin {
     customItemManager = new CustomItemManager(this);
     customItemManager.initializeCustomItems();
     phantomRideListener = new PhantomRideListener(this);
-    pvpManager = new PVPManager(this);
     xpMonitoringCommand = new XPMonitoringCommand();
     playerDownedListener = new PlayerDownedListener(this);
+    pvpManager = new PVPManager(playerDownedListener, this);
+
 //    emoteListener = new EmoteListener(this);
 
 
@@ -158,6 +159,8 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new RepairingListener(), this);
         getServer().getPluginManager().registerEvents(new RepairingListener(), this);
         getServer().getPluginManager().registerEvents(phantomRideListener, this);
+        getServer().getPluginManager().registerEvents(playerDownedListener, this);
+
 
         //town data does not need to wait anymore
         TownManager.scanAllPlayersForTownsAsync();
@@ -350,7 +353,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new SetXpCommand());
         commandManager.registerCommand(new SetLoreCommand());
         commandManager.registerCommand(new TownsCommand());
-        commandManager.registerCommand(new SuicideCommand());
+        commandManager.registerCommand(new SuicideCommand(playerDownedListener));
         commandManager.registerCommand(new AnalyticsCommand());
         commandManager.registerCommand(new RestoreHealthCommand());
         commandManager.registerCommand(new NotifyRestartCommand());

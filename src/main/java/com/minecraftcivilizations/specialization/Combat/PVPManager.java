@@ -2,7 +2,6 @@ package com.minecraftcivilizations.specialization.Combat;
 
 import com.minecraftcivilizations.specialization.Listener.Player.PlayerDownedListener;
 
-import com.minecraftcivilizations.specialization.Specialization;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 
@@ -38,13 +37,12 @@ public class PVPManager implements Listener, CommandExecutor {
     private final Map<UUID, BukkitRunnable> zombieTimers = new ConcurrentHashMap<>();
     private static final long COMBAT_COOLDOWN = 20_000L;
     private static final long ZOMBIE_LIFETIME = 15_000L; // 15s
-    private final Map<UUID, org.bukkit.boss.BossBar> combatBars = new HashMap<>();
+    private final Map<UUID, BossBar> combatBars = new HashMap<>();
 
     private boolean combatTaskRunning = false;
     private int combatTaskId = -1;
 
 
-    PlayerDownedListener deathListener = new PlayerDownedListener(Specialization.getInstance());
     private final NamespacedKey OWNER_KEY;
     private final NamespacedKey MARKER_KEY;
     private final NamespacedKey INVENTORY_KEY;
@@ -52,8 +50,12 @@ public class PVPManager implements Listener, CommandExecutor {
     private final NamespacedKey HEALTH_KEY;
     private final NamespacedKey DEAD_KEY;
 
-    public PVPManager(JavaPlugin plugin) {
+
+    private final PlayerDownedListener playerDownedListener;
+
+    public PVPManager(PlayerDownedListener playerDownedListener, JavaPlugin plugin) {
         this.plugin = plugin;
+        this.playerDownedListener = playerDownedListener;
         this.OWNER_KEY = new NamespacedKey(plugin, "owner");
         this.MARKER_KEY = new NamespacedKey(plugin, "pvp_marker");
         this.INVENTORY_KEY = new NamespacedKey(plugin, "inv");
@@ -182,16 +184,17 @@ public class PVPManager implements Listener, CommandExecutor {
         if (lastHit == null || System.currentTimeMillis() - lastHit > COMBAT_COOLDOWN) return;
 
         plugin.getLogger().info("[Logout] " + player.getName() + " logged out in combat!");
-
+        Location loc = player.getLocation().clone().add(0, 2, 0);
         // Create marker armor stand
-        ArmorStand marker = player.getWorld().spawn(player.getLocation(), ArmorStand.class, as -> {
+        ArmorStand marker = player.getWorld().spawn(loc, ArmorStand.class, as -> {
             as.setVisible(false);
-            as.setMarker(true);
-            as.setGravity(false);
+            as.setMarker(false);
+            as.setGravity(true);
             as.setPersistent(true);
             as.setInvulnerable(true);
             as.getPersistentDataContainer().set(MARKER_KEY, PersistentDataType.STRING, id.toString());
             as.getPersistentDataContainer().set(DEAD_KEY, PersistentDataType.INTEGER, 0);
+            as.getAttribute(Attribute.SCALE).setBaseValue(0.01);
 
             // Serialize only main inventory (slots 0-35)
             ItemStack[] mainInv = new ItemStack[36];
@@ -216,6 +219,9 @@ public class PVPManager implements Listener, CommandExecutor {
 
         player.getInventory().clear();
         startZombieTimer(id, zombie);
+        if (playerDownedListener.isDowned(player)) {
+        marker.addPassenger(zombie);
+        }
     }
 
     private void startZombieTimer(UUID playerId, Entity zombie) {
@@ -238,7 +244,7 @@ public class PVPManager implements Listener, CommandExecutor {
 
     private ArmorStand getMarkerByPlayer(UUID playerId, Chunk chunk) {
         for (Entity e : chunk.getEntities()) {
-            if (e instanceof ArmorStand as && as.isMarker()) {
+            if (e instanceof ArmorStand as) {
                 String owner = as.getPersistentDataContainer().get(MARKER_KEY, PersistentDataType.STRING);
                 if (owner != null && owner.equals(playerId.toString())) return as;
             }
@@ -356,7 +362,7 @@ public class PVPManager implements Listener, CommandExecutor {
         zombie.getEquipment();
         marker.getPersistentDataContainer().set(ARMOR_KEY, PersistentDataType.BYTE_ARRAY,
                 ItemSerialization.toBytes(zombie.getEquipment().getArmorContents()));
-
+        zombie.getWorld().playSound(zombie.getLocation(), Sound.ENTITY_PLAYER_HURT, SoundCategory.PLAYERS, 1f, 1f);
         plugin.getLogger().info("[ZombieDamage] Zombie " + zombie.getCustomName() +
                 " took damage, health updated to " + currentHealth + " in marker");
     }
@@ -424,7 +430,7 @@ public class PVPManager implements Listener, CommandExecutor {
         BukkitRunnable timer = zombieTimers.remove(ownerId);
         if (timer != null) timer.cancel();
 
-        zombie.getWorld().playSound(zombie.getLocation(), Sound.ENTITY_ZOMBIE_DEATH, 1f, 1f);
+        zombie.getWorld().playSound(zombie.getLocation(), Sound.ENTITY_PLAYER_DEATH, SoundCategory.PLAYERS, 1f, 1f);
     }
 
 
