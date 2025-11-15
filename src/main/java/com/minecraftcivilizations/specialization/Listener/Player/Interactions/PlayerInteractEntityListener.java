@@ -2,7 +2,7 @@ package com.minecraftcivilizations.specialization.Listener.Player.Interactions;
 
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
-import com.minecraftcivilizations.specialization.Listener.Player.PlayerDeathListener;
+import com.minecraftcivilizations.specialization.Listener.Player.PlayerDownedListener;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -32,6 +32,10 @@ import java.util.UUID;
 public class PlayerInteractEntityListener implements Listener {
 
     private static final Map<UUID, UUID> downedPlayerToHealer = new HashMap<>();
+    private final PlayerDownedListener deathListener;
+    public PlayerInteractEntityListener(PlayerDownedListener playerDownedListener) {
+        this.deathListener = playerDownedListener;
+    }
 
     @EventHandler
     public void onPlayerInteractEntity(PlayerInteractEntityEvent e) {
@@ -47,9 +51,11 @@ public class PlayerInteractEntityListener implements Listener {
         if (e.getRightClicked() instanceof Player clickedPlayer) {
             if (customPlayer == null) return;
             if (customPlayer.getSkillLevel(SkillType.HEALER) > SkillLevel.JOURNEYMAN.getLevel()) {
-                CustomPlayer downedPlayer = CoreUtil.getPlayer(clickedPlayer.getUniqueId());
-                if (downedPlayer != null && downedPlayer.isDowned()) {
-                    PlayerDeathListener.removeDownedArmorStand(clickedPlayer);
+
+                //havnt been able to test this. should work?? this class needs a rework for the reviving anyway.
+                // no idea why armor stands are needed for ts lol
+                if (deathListener.isDowned(clickedPlayer)) {
+                    deathListener.setDowned(clickedPlayer, false, clickedPlayer.getHealth());
                     p.addPassenger(clickedPlayer);
                     downedPlayerToHealer.put(clickedPlayer.getUniqueId(), p.getUniqueId());
 

@@ -1,8 +1,8 @@
 package com.minecraftcivilizations.specialization.Combat;
 
-import com.minecraftcivilizations.specialization.Listener.Player.PlayerDeathListener;
+import com.minecraftcivilizations.specialization.Listener.Player.PlayerDownedListener;
 
-import com.minecraftcivilizations.specialization.Player.CustomPlayer;
+import com.minecraftcivilizations.specialization.Specialization;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 
@@ -44,7 +44,7 @@ public class PVPManager implements Listener, CommandExecutor {
     private int combatTaskId = -1;
 
 
-    PlayerDeathListener deathListener = new PlayerDeathListener();
+    PlayerDownedListener deathListener = new PlayerDownedListener(Specialization.getInstance());
     private final NamespacedKey OWNER_KEY;
     private final NamespacedKey MARKER_KEY;
     private final NamespacedKey INVENTORY_KEY;
@@ -247,9 +247,6 @@ public class PVPManager implements Listener, CommandExecutor {
     }
 
 
-
-
-
     // --- Player join ---
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -449,7 +446,7 @@ public class PVPManager implements Listener, CommandExecutor {
         zombie.setCanPickupItems(false);
         zombie.setRemoveWhenFarAway(false);
         zombie.setShouldBurnInDay(false);
-        zombie.setBaby(false);
+        zombie.setAge(0); //0 = adult | -100 = ticks until adult
         zombie.getAttribute(Attribute.MAX_HEALTH).setBaseValue(player.getMaxHealth());
         zombie.setHealth(Math.min(storedHealth, zombie.getAttribute(Attribute.MAX_HEALTH).getValue()));
 

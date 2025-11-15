@@ -79,7 +79,7 @@ public class LeashListener implements Listener {
 
         // Remove target from downed state and clean up armor stand
         targetCustomPlayer.setDowned(false);
-        PlayerDeathListener.removeDownedArmorStand(target);
+//        PlayerDeathListener.removeDownedArmorStand(target);
 
         // Prevent duplicate zombies - check if player already has a zombie
         if(playerToZombie.containsKey(target)) {
@@ -435,8 +435,8 @@ public class LeashListener implements Listener {
 
     private void restoreDownedArmorStand(Player player) {
         // Apply downed effects
-        PlayerDeathListener playerDeathListener = new PlayerDeathListener();
-        playerDeathListener.applyDownedEffects(player);
+        PlayerDownedListener playerDownedListener = new PlayerDownedListener(Specialization.getInstance());
+        playerDownedListener.setDowned(player, false, player.getHealth());
 
         // Create armor stand for downed player
         Location playerLoc = player.getLocation();

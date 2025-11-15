@@ -26,7 +26,7 @@ import org.bukkit.inventory.ShapelessRecipe;
 
 import java.util.List;
 
-import static com.minecraftcivilizations.specialization.Listener.Player.PlayerDeathListener.removeDownedArmorStand;
+//import static com.minecraftcivilizations.specialization.Listener.Player.PlayerDeathListener.removeDownedArmorStand;
 
 public class Recipes {
 

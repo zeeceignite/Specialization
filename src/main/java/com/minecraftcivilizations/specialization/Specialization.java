@@ -93,6 +93,7 @@ public final class Specialization extends JavaPlugin {
     private CombatManager combatManager;
     private PVPManager pvpManager;
     private XPMonitoringCommand xpMonitoringCommand;
+    private PlayerDownedListener playerDownedListener;
 
 
     //Holder for transient player data such as cooldowns
@@ -120,6 +121,7 @@ public final class Specialization extends JavaPlugin {
     phantomRideListener = new PhantomRideListener(this);
     pvpManager = new PVPManager(this);
     xpMonitoringCommand = new XPMonitoringCommand();
+    playerDownedListener = new PlayerDownedListener(this);
 //    emoteListener = new EmoteListener(this);
 
 
@@ -132,8 +134,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BurnListener(), this);
         getServer().getPluginManager().registerEvents(new ExplodeListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
-        getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
-        getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(playerDownedListener), this);
         getServer().getPluginManager().registerEvents(new FishingListener(), this);
         combatManager = new CombatManager(this); // Guardsman Damage Output
         new FoodInteractionListener(this);
@@ -251,7 +252,7 @@ public final class Specialization extends JavaPlugin {
                     Player player = playerJoinEvent.getPlayer();
                     if (player != null && player.isOnline()) {
                         // Restore downed state without starting the death timer
-                        PlayerDeathListener.restoreDownedState(player, customPlayer);
+//                        playerDeathListener.setDowned(player, true);
                         // Clear the flag since we've restored the state
                         customPlayer.setWasDownedOnLogout(false);
                     }
@@ -268,7 +269,7 @@ public final class Specialization extends JavaPlugin {
                     customPlayer.setWasDownedOnLogout(true);
                     // Clean up current session state to prevent infinite death loop
                     customPlayer.setDowned(false);
-                    PlayerDeathListener.removeDownedArmorStand(playerQuitEvent.getPlayer());
+//                    playerDeathListener.setDowned(playerQuitEvent.getPlayer(), true);
                 } else {
                     // They weren't downed, so clear the flag
                     customPlayer.setWasDownedOnLogout(false);
