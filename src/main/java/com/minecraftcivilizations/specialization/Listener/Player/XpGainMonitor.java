@@ -2,12 +2,15 @@ package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.Specialization;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
 
@@ -28,7 +31,6 @@ public final class XpGainMonitor {
     private static final Map<String, Double> thresholds = new HashMap<>();
     private static final Map<String, Long> cooldowns = new HashMap<>();
 
-
     private static class XpRecord {
         final double xp;
         final long time;
@@ -36,6 +38,7 @@ public final class XpGainMonitor {
     }
 
     private XpGainMonitor() {}
+    public static NamespacedKey XP_MONITOR_KEY = new NamespacedKey(Specialization.getInstance(), "xpmonitor");
 
     public static void init() {
         var cfg = SpecializationConfig.getXpMonitorConfig();
@@ -144,10 +147,15 @@ public final class XpGainMonitor {
                         .append(Component.text("[Teleport]", NamedTextColor.BLUE)
                                 .clickEvent(ClickEvent.runCommand("/tp " + player.getName())));
 
-                for (Player op : Bukkit.getOnlinePlayers())
-                    if (op.isOp()) op.sendMessage(msg);
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (!(p.isOp() || p.hasPermission("civlabs.xpmonitor"))) continue;
 
-                clearPlayerData(uuid);
+                    Byte xpMonitorValue = p.getPersistentDataContainer().get(XpGainMonitor.XP_MONITOR_KEY, PersistentDataType.BYTE);
+                    if (xpMonitorValue == null || xpMonitorValue == 1) {
+
+                        p.sendMessage(msg);
+                    }
+                }
             }
         }
     }

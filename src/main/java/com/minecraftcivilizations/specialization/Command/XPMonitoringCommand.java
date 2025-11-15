@@ -4,12 +4,14 @@ import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
 import com.minecraftcivilizations.specialization.Listener.Player.XpGainMonitor;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.Specialization;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataType;
 
 @CommandAlias("xpmonitor|xpm")
 @Description("Manage XP gain thresholds and alert cooldowns")
 public class XPMonitoringCommand extends BaseCommand {
-
     // --- GET ---
     @Subcommand("get|g")
     @Syntax("<skill>")
@@ -20,16 +22,32 @@ public class XPMonitoringCommand extends BaseCommand {
         if (type == null) {
             double threshold = XpGainMonitor.getThreshold(skill);
             long cooldown = XpGainMonitor.getCooldown(skill);
-            sender.sendMessage(skill.name() + " Threshold: " + threshold + ", Cooldown: " + cooldown + "s");
+            sender.sendMessage(skill.name() + "§7Threshold: " + threshold + ", Cooldown: " + cooldown + "s");
             return;
         }
 
         switch (type.toLowerCase()) {
             case "threshold" -> sender.sendMessage(skill.name() + " Threshold: " + XpGainMonitor.getThreshold(skill));
             case "cooldown"  -> sender.sendMessage(skill.name() + " Cooldown: " + XpGainMonitor.getCooldown(skill) + "s");
-            default -> sender.sendMessage("Invalid type: must be 'threshold' or 'cooldown'");
+            default -> sender.sendMessage("§7Invalid type: must be 'threshold' or 'cooldown'");
         }
     }
+
+    // --- TOGGLE XP MONITOR ---
+    @Subcommand("toggle|t")
+    @Description("Toggle XP monitor alerts on or off for yourself")
+    @CommandPermission("civlabs.xpmonitor")
+    public void onToggle(Player sender) {
+        Byte current = sender.getPersistentDataContainer().get(XpGainMonitor.XP_MONITOR_KEY, PersistentDataType.BYTE);
+        boolean enabled = current != null && current == 1;
+
+        // flip the value
+        byte newValue = (byte) (enabled ? 0 : 1);
+        sender.getPersistentDataContainer().set(XpGainMonitor.XP_MONITOR_KEY, PersistentDataType.BYTE, newValue);
+
+        sender.sendMessage("§7XP monitor alerts are now " + (newValue == 0 ? "§aenabled" : "§cdisabled") + ".");
+    }
+
 
 
     // --- SET ---
@@ -48,7 +66,7 @@ public class XPMonitoringCommand extends BaseCommand {
                 XpGainMonitor.setCooldown(skill, (long) value);
                 sender.sendMessage("Set " + skill.name() + " cooldown to " + (long) value + "s");
             }
-            default -> sender.sendMessage("Invalid type: must be 'threshold' or 'cooldown'");
+            default -> sender.sendMessage("§7Invalid type: must be 'threshold' or 'cooldown'");
         }
     }
 
@@ -60,7 +78,7 @@ public class XPMonitoringCommand extends BaseCommand {
     @CommandCompletion("@classes")
     public void onReset(Player sender, SkillType skill) {
         XpGainMonitor.init(); // reloads defaults from config
-        sender.sendMessage(skill.name() + " threshold and cooldown reset to defaults.");
+        sender.sendMessage(skill.name() + "§7threshold and cooldown reset to defaults.");
     }
 
     // --- SAVE ---
@@ -69,7 +87,7 @@ public class XPMonitoringCommand extends BaseCommand {
     @CommandPermission("civlabs.xpmonitor")
     public void onSave(Player sender) {
         XpGainMonitor.saveConfigToDisk();
-        sender.sendMessage("XP monitor config saved to disk.");
+        sender.sendMessage("§7XP monitor config saved to disk.");
     }
 
     // --- DEFAULT / HELP ---

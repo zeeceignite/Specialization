@@ -90,8 +90,16 @@ public class RerollNameCommand extends BaseCommand {
         Player target = resolveTarget(sender, targetName);
         if (target == null) return;
 
+        // Replace spaces with underscores and remove invalid characters
+        desiredName = desiredName.replace(" ", "_").replaceAll("[^a-zA-Z0-9_]", "");
+
         if (desiredName.length() > 16) {
             sender.sendMessage("§cThe name cannot exceed 16 characters.");
+            return;
+        }
+
+        if (desiredName.isEmpty()) {
+            sender.sendMessage("§cThe name must contain at least one valid character.");
             return;
         }
 
@@ -103,6 +111,8 @@ public class RerollNameCommand extends BaseCommand {
             target.sendMessage("§aYour name has been set to: §f" + desiredName);
         }
     }
+
+
 
 
 
