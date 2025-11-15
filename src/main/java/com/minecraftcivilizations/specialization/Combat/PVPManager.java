@@ -166,8 +166,6 @@ public class PVPManager implements Listener, CommandExecutor {
         }, 1L, 1L);
     }
 
-
-
     private Player getDamager(Entity source) {
         if (source instanceof Player p) return p;
         if (source instanceof Projectile proj && proj.getShooter() instanceof Player p) return p;
@@ -184,7 +182,7 @@ public class PVPManager implements Listener, CommandExecutor {
         if (lastHit == null || System.currentTimeMillis() - lastHit > COMBAT_COOLDOWN) return;
 
         plugin.getLogger().info("[Logout] " + player.getName() + " logged out in combat!");
-        Location loc = player.getLocation().clone().add(0, 2, 0);
+        Location loc = player.getLocation().clone().add(0, 1, 0);
         // Create marker armor stand
         ArmorStand marker = player.getWorld().spawn(loc, ArmorStand.class, as -> {
             as.setVisible(false);
@@ -322,8 +320,7 @@ public class PVPManager implements Listener, CommandExecutor {
             zombie.remove();
             plugin.getLogger().info("[Login] Removed leftover zombie for " + player.getName());
         }
-
-        // --- Remove marker ---
+        
         marker.remove();
     }
 
