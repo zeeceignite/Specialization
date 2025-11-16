@@ -18,10 +18,13 @@ import java.util.function.Predicate;
 
 public class TargetPlayerMobGoal implements Goal<Mob> {
     public static final GoalKey<Mob> KEY = GoalKey.of(Mob.class, new NamespacedKey(Specialization.getInstance(),"monster_target_player"));
-    private Mob mob; //the mob of this goal
 
-    public TargetPlayerMobGoal(Mob mob){
+    private Mob mob; //the mob of this goal
+    private double follow_range;
+
+    public TargetPlayerMobGoal(Mob mob, double follow_range){
         this.mob = mob;
+        this.follow_range = follow_range;
     }
 
     @Override
@@ -36,12 +39,11 @@ public class TargetPlayerMobGoal implements Goal<Mob> {
     }
 
     public void calculateNewTarget(){
-        int targetRange = SpecializationConfig.getMobConfig().get("MOB_RULE_TARGET_RANGE", Integer.class);
         Predicate<Player> validGamemode = p ->
                 p.getGameMode() == GameMode.SURVIVAL ||
                         p.getGameMode() == GameMode.ADVENTURE;
 
-        mob.getLocation().getNearbyPlayers(targetRange).stream()
+        mob.getLocation().getNearbyPlayers(follow_range).stream()
                 .filter(validGamemode)
                 .filter(p -> p.getLocation().distance(mob.getLocation())<64)
                 .min((p1, p2) -> {
@@ -62,18 +64,22 @@ public class TargetPlayerMobGoal implements Goal<Mob> {
                 })
                 .ifPresent(player -> mob.setTarget(player));
 
-
         if(mob.getTarget()!=null) {
-            Debug.broadcast("mobgoal", mob.getType().name().toLowerCase() + ": <red>targeting player" + mob.getTarget().getName());
+            Debug.broadcast("mobgoal", mob.getType().name().toLowerCase() + ": <red>targeting player</red> " + mob.getTarget().getName());
         }
     }
 
     @Override
     public void tick() {
-        Goal.super.tick();
         if(mob.getTarget() == null){
             calculateNewTarget(); //ensures the mob always has a new target
         }
+    }
+
+    @Override
+    public void stop() {
+        this.mob.setTarget(null);
+        Goal.super.stop();
     }
 
     @Override

@@ -120,8 +120,9 @@ public class GuardsmanDamage implements Listener {
         double original_damage = event.getDamage(BASE);
 
         if(victim instanceof LivingEntity le){
-            if(victim instanceof Enemy || combatManager.getMobManager().isOverrideEntity(victim))
-            multiplier *= 2;
+            if(victim instanceof Enemy || combatManager.getMobManager().isMobVariation(victim)) {
+                multiplier *= 2;
+            }
         }
 
         double new_damage = new_damage = ((original_damage) * multiplier)+add;

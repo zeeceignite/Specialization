@@ -44,6 +44,14 @@ public class Debug implements Listener {
         setupDefaultChannels();
     }
 
+    public static String formatBoolean(boolean b) {
+        if(b){
+            return "<green>true</green>";
+        }else{
+            return "<red>false</red>";
+        }
+    }
+
     @EventHandler
     public void onLogout(PlayerQuitEvent event){
 
@@ -152,6 +160,7 @@ public class Debug implements Listener {
         for(String channel : debug_channels){
             unregisterPlayerChannel(player, channel);
         }
+        listening_channels.put(player.getUniqueId(), new ArrayList<String>());
     }
 
     private Set<UUID> getOrCreateChannelPlayerSet(String debug_channel, boolean add_to_suggestions){

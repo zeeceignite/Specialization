@@ -78,6 +78,14 @@ public class CombatManager implements Listener {
         explosionDamage = new ExplosionDamage(this);
     }
 
+    public void initialize(){
+        mobManager.populateEntityMappings();
+    }
+
+    public static CombatManager getInstance() {
+        return Specialization.getInstance().getCombatManager();
+    }
+
     @EventHandler
     public void ShootBowListener(ProjectileLaunchEvent event){
         Projectile projectile = event.getEntity();
@@ -131,12 +139,22 @@ public class CombatManager implements Listener {
         return 0;
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
+
+//    @EventHandler(priority = EventPriority.HIGHEST)
+//    public void onasdfjkl(EntityDamageEvent event){
+//
+//        if(event instanceof  EntityDamageByEntityEvent entity_event){
+//
+//            entity_event.getFina
+//        }
+//
+//    }
+
+    @EventHandler(priority = EventPriority.LOW)
     public void GlobalDamageListener(EntityDamageByEntityEvent event) {
         double original_base = event.getDamage(BASE);
         boolean fully_charged = false;
         double charge_amount = -1.0;
-
 
         /*
             CRIT SUPPRESSION (this allows us to override with our own crit system)
@@ -180,8 +198,9 @@ public class CombatManager implements Listener {
 //            dynamicArmor.applyRaytracedArmorHit(event);
 //            Debug.broadcast("mob", "animal took damage :(");
             if(event.getEntity() instanceof LivingEntity victim) {
-                if(!event.isCancelled())
+                if(!event.isCancelled()) {
                     mobManager.applyExp(event, customPlayer, victim); //Exp is acquired only after calculating final damage
+                }
             }
         } else {
             //Attacker is a Mob
@@ -265,27 +284,30 @@ public class CombatManager implements Listener {
 //        Debug.broadcast("armor", "");
 
 
-        double DAMAGE_MINIMUM = 0.125 * original_base;
-        double total_final = calculateTotalDamage(event);
+        double DAMAGE_MINIMUM = 0;
+        if(damager instanceof Player) {
+            DAMAGE_MINIMUM = 0.125 * original_base;
+            double total_final = calculateTotalDamage(event);
 //        Debug.broadcast("damage", "Pre-Minimu calculation: "+total_final);
-        if(total_final <= DAMAGE_MINIMUM) {
+            if (total_final <= DAMAGE_MINIMUM) {
 //            event.setCancelled(true);
-            Entity entity = event.getEntity();
+                Entity entity = event.getEntity();
 
 
-            for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
-                if (event.isApplicable(m)) {
-                    if(m!=BLOCKING)
-                    event.setDamage(m, 0);
+                for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
+                    if (event.isApplicable(m)) {
+                        if (m != BLOCKING)
+                            event.setDamage(m, 0);
+                    }
                 }
-            }
-            event.setDamage(BASE, DAMAGE_MINIMUM);
-            extramsg += " <dark_gray>[Minimum]</dark_gray>";
+                event.setDamage(BASE, DAMAGE_MINIMUM);
+                extramsg += " <dark_gray>[Minimum]</dark_gray>";
 
-            Sound sound = ArmorStats.getArmorSound(entity);
-            if (sound != null) {
+                Sound sound = ArmorStats.getArmorSound(entity);
+                if (sound != null) {
 //                extramsg += " <dark_gray>[Sound]</dark_gray>";
-                entity.getWorld().playSound(entity.getLocation(), sound, SoundCategory.PLAYERS, 0.75f, ThreadLocalRandom.current().nextFloat(0.1f) + 0.75f);
+                    entity.getWorld().playSound(entity.getLocation(), sound, SoundCategory.PLAYERS, 0.75f, ThreadLocalRandom.current().nextFloat(0.1f) + 0.75f);
+                }
             }
         }
 
