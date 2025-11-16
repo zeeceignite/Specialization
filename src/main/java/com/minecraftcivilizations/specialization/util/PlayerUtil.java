@@ -38,6 +38,13 @@ public class PlayerUtil {
     public void setCooldown(String key, long ticks) {
         cooldowns.put(key, System.currentTimeMillis() + (ticks*50));
     }
+    public void addCooldown(String key, long ticks) {
+        if(isOnCooldown(key)){
+            cooldowns.put(key, getRemainingCooldown(key) + (ticks*50));
+        }else {
+            cooldowns.put(key, System.currentTimeMillis() + (ticks * 50));
+        }
+    }
 
     public static void setCooldown(Player player, String key, long ticks){
         getPlayerUtil(player).setCooldown(key, ticks);

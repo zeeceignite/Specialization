@@ -397,19 +397,39 @@ public class ArmorEquipAttributes implements Listener {
 //            return;
 //        }
         if(!player.isSprinting())return;
+
+
         Vector v = player.getVelocity();
         double y = v.getY();
 
         PlayerUtil util = PlayerUtil.getPlayerUtil(player);
-        util.setCooldown("jumpweight", 1000);
+
+        //extend jump buffer
+
+//        util.setCooldown("jumpweight", 1500);
 
 
         double weight = calculateWeight(player);
 
         if(weight>0) {
-            int level = (int) ( weight / 50);
-//            Debug.broadcast("jump", player.getName() + " weight: " + weight + " slowness: " + (level + 1));
-            player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 15 + (5 * level), level, false, false, false));
+
+
+            long cooldown = util.getRemainingCooldown("jumpweight")/50;
+            long new_cooldown = Math.min(120, cooldown + 20 + (int)(weight/10));
+            util.setCooldown("jumpweight", new_cooldown);
+
+            Debug.broadcast("weight", "old cd: "+cooldown+" <gray>new cd: "+new_cooldown);
+
+            int threshold = 110 - ((int)(weight/1.5));
+            if(threshold < cooldown) {
+                int level = (int) (weight / 50);
+                int extra_ticks = (int)(cooldown-threshold)/4;
+                if(cooldown<80){
+                    level = Math.max(0, level-1);
+                }
+                //level
+                player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 15 +(5 * level)+extra_ticks, level, false, false, false));
+            }
         }else{
 //            Debug.broadcast("jump", player.getName() + " weight: " + weight + GRAY+" nothing applied");
         }
