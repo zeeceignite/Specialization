@@ -39,14 +39,22 @@ public class XPMonitoringCommand extends BaseCommand {
     @CommandPermission("civlabs.xpmonitor")
     public void onToggle(Player sender) {
         Byte current = sender.getPersistentDataContainer().get(XpGainMonitor.XP_MONITOR_KEY, PersistentDataType.BYTE);
+
+        // default: off (0)
         boolean enabled = current != null && current == 1;
 
-        // flip the value
+        // flip
         byte newValue = (byte) (enabled ? 0 : 1);
-        sender.getPersistentDataContainer().set(XpGainMonitor.XP_MONITOR_KEY, PersistentDataType.BYTE, newValue);
 
-        sender.sendMessage("§7XP monitor alerts are now " + (newValue == 0 ? "§aenabled" : "§cdisabled") + ".");
+        sender.getPersistentDataContainer().set(
+                XpGainMonitor.XP_MONITOR_KEY,
+                PersistentDataType.BYTE,
+                newValue
+        );
+
+        sender.sendMessage("§7XP monitor alerts are now " + (newValue == 1 ? "§aenabled" : "§cdisabled") + ".");
     }
+
 
 
 

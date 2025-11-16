@@ -2,6 +2,7 @@ package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.bukkit.*;
@@ -63,13 +64,13 @@ public class PlayerDownedListener implements Listener {
 
     //Call this to handle state changes. It can handle everything else.
     public void setDowned(Player player, boolean downed, double health) {
-        Bukkit.getLogger().info("[DOWNED-DEBUG] setDowned(" + player.getName() + ") = " + downed);
+        Debug.broadcast("down","[DOWNED-DEBUG] setDowned(" + player.getName() + ") = " + downed);
 
         PersistentDataContainer pdc = player.getPersistentDataContainer();
         pdc.set(downedKey, PersistentDataType.BYTE, (byte) (downed ? 1 : 0));
 
         if (!downed) {
-            Bukkit.getLogger().info("[DOWNED-DEBUG] setDowned=false → clearDowned called");
+            Debug.broadcast("down","[DOWNED-DEBUG] setDowned=false → clearDowned called");
             clearDowned(player);
         } else {
             startDowned(player, health, DOWNED_DURATION_TICKS);
@@ -95,25 +96,25 @@ public class PlayerDownedListener implements Listener {
 
     // --- Clear downed state ---
     private void clearDowned(Player player) {
-        Bukkit.getLogger().info("[DOWNED-DEBUG] clearDowned(" + player.getName() + ")");
+        Debug.broadcast("down","[DOWNED-DEBUG] clearDowned(" + player.getName() + ")");
 
         UUID uuid = player.getUniqueId();
 
         BossBar bar = bossBars.remove(uuid);
         if (bar != null) {
-            Bukkit.getLogger().info("[DOWNED-DEBUG] Removed boss bar");
+            Debug.broadcast("down","[DOWNED-DEBUG] Removed boss bar");
             bar.removePlayer(player);
         }
 
         BukkitTask task = downTimers.remove(uuid);
         if (task != null) {
-            Bukkit.getLogger().info("[DOWNED-DEBUG] Cancelled bleedout timer");
+            Debug.broadcast("down","[DOWNED-DEBUG] Cancelled bleedout timer");
             task.cancel();
         }
 
         Entity e = downStands.remove(uuid);
         if (e != null) {
-            Bukkit.getLogger().info("[DOWNED-DEBUG] Removing downed stand entity");
+            Debug.broadcast("down","[DOWNED-DEBUG] Removing downed stand entity");
             e.remove();
         }
 
@@ -130,14 +131,14 @@ public class PlayerDownedListener implements Listener {
 
         Integer ticksLeft = pdc.get(downedTicksKey, PersistentDataType.INTEGER);
 
-        Bukkit.getLogger().info("[DOWNED-DEBUG] onPlayerJoin called " + joinEventCounter + " times for player " + player.getName());
+        Debug.broadcast("down","[DOWNED-DEBUG] onPlayerJoin called " + joinEventCounter + " times for player " + player.getName());
 
         // --- CASE 1: Player was downed AND ticksLeft exists (normal restore) ---
         if (ticksLeft != null && isDowned(player)) {
             pdc.remove(downedTicksKey);
             clearDowned(player);
             startDowned(player, player.getHealth(), ticksLeft);
-            Bukkit.getLogger().info("[DOWNED-DEBUG] CASE 1 - Ticks:" + ticksLeft + " is downed:" + isDowned(player));
+            Debug.broadcast("down","[DOWNED-DEBUG] CASE 1 - Ticks:" + ticksLeft + " is downed:" + isDowned(player));
             return;
         }
 
@@ -146,11 +147,11 @@ public class PlayerDownedListener implements Listener {
             pdc.remove(downedTicksKey);
             clearDowned(player);
             startDowned(player, player.getHealth(), DOWNED_DURATION_TICKS);
-            Bukkit.getLogger().info("[DOWNED-DEBUG] CASE 2 - Is downed:" + player.getName());
+            Debug.broadcast("down","[DOWNED-DEBUG] CASE 2 - Is downed:" + player.getName());
             return;
         }
 
-        Bukkit.getLogger().info("[DOWNED-DEBUG] NO CASE - No downed or ticks for: " + player.getName());
+        Debug.broadcast("down","[DOWNED-DEBUG] NO CASE - No downed or ticks for: " + player.getName());
     }
 
 
@@ -160,19 +161,19 @@ public class PlayerDownedListener implements Listener {
     public void onPlayerDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
 
-        Bukkit.getLogger().info("[DOWNED-DEBUG] DamageEvent: " + player.getName() +
+        Debug.broadcast("down","[DOWNED-DEBUG] DamageEvent: " + player.getName() +
                 " dmg=" + event.getFinalDamage() + " hp=" + player.getHealth());
 
         if (isDowned(player)) {
-            Bukkit.getLogger().info("[DOWNED-DEBUG] " + player.getName() + " is already downed → letting damage occur");
+            Debug.broadcast("down","[DOWNED-DEBUG] " + player.getName() + " is already downed → letting damage occur");
             return; // already downed, let them die
         }
 
         double finalHealth = player.getHealth() - event.getFinalDamage();
-        Bukkit.getLogger().info("[DOWNED-DEBUG] finalHealth=" + finalHealth);
+        Debug.broadcast("down","[DOWNED-DEBUG] finalHealth=" + finalHealth);
 
         if (finalHealth <= 0) {
-            Bukkit.getLogger().info("[DOWNED-DEBUG] Cancelling lethal dmg → triggering downed state.");
+            Debug.broadcast("down","[DOWNED-DEBUG] Cancelling lethal dmg → triggering downed state.");
             if (finalHealth <= -10) {
                 return;
             }

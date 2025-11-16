@@ -150,9 +150,8 @@ public final class XpGainMonitor {
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     if (!(p.isOp() || p.hasPermission("civlabs.xpmonitor"))) continue;
 
-                    Byte xpMonitorValue = p.getPersistentDataContainer().get(XpGainMonitor.XP_MONITOR_KEY, PersistentDataType.BYTE);
-                    if (xpMonitorValue == null || xpMonitorValue == 1) {
-
+                    Byte visibility = p.getPersistentDataContainer().get(XpGainMonitor.XP_MONITOR_KEY, PersistentDataType.BYTE);
+                    if (visibility != null && visibility == 1) {
                         p.sendMessage(msg);
                     }
                 }

@@ -2,6 +2,7 @@ package com.minecraftcivilizations.specialization.Combat;
 
 import com.minecraftcivilizations.specialization.Listener.Player.PlayerDownedListener;
 
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 
@@ -114,7 +115,7 @@ public class PVPManager implements Listener, CommandExecutor {
     private void addCombatBar(Player p) {
         BossBar bar = combatBars.get(p.getUniqueId());
         if (bar == null) {
-            bar = Bukkit.createBossBar("§8Marked for Combat", BarColor.RED, BarStyle.SEGMENTED_20);
+            bar = Bukkit.createBossBar("§7Marked for Combat", BarColor.RED, BarStyle.SEGMENTED_20);
             bar.addPlayer(p);
             combatBars.put(p.getUniqueId(), bar);
         }
@@ -181,7 +182,7 @@ public class PVPManager implements Listener, CommandExecutor {
         Long lastHit = combatMap.get(id);
         if (lastHit == null || System.currentTimeMillis() - lastHit > COMBAT_COOLDOWN) return;
 
-        plugin.getLogger().info("[Logout] " + player.getName() + " logged out in combat!");
+        Debug.broadcast("combatlog", "[Logout] " + player.getName() + " logged out in combat!");
         Location loc = player.getLocation().clone().add(0, 1, 0);
         // Create marker armor stand
         ArmorStand marker = player.getWorld().spawn(loc, ArmorStand.class, as -> {
@@ -213,7 +214,7 @@ public class PVPManager implements Listener, CommandExecutor {
         zombie.getPersistentDataContainer().set(OWNER_KEY, PersistentDataType.STRING, id.toString());
         zombie.getPersistentDataContainer().set(MARKER_KEY, PersistentDataType.STRING, player.getUniqueId().toString());
 
-        plugin.getLogger().info("[Logout] Spawned zombie for " + player.getName());
+        Debug.broadcast("combatlog","[Logout] Spawned zombie for " + player.getName());
 
         player.getInventory().clear();
         startZombieTimer(id, zombie);
@@ -233,7 +234,7 @@ public class PVPManager implements Listener, CommandExecutor {
                 zombieMap.remove(playerId);
                 zombieTimers.remove(playerId);
 
-                plugin.getLogger().info("[ZombieTimer] Zombie despawned for player " + playerId);
+                Debug.broadcast("combatlog","[ZombieTimer] Zombie despawned for player " + playerId);
             }
         };
         timer.runTaskLater(plugin, ZOMBIE_LIFETIME / 50L);
@@ -261,18 +262,18 @@ public class PVPManager implements Listener, CommandExecutor {
         Chunk spawnChunk = player.getLocation().getChunk();
         ArmorStand marker = getMarkerByPlayer(id, spawnChunk);
         if (marker == null) {
-            plugin.getLogger().info("[Login] No marker found for " + player.getName());
+            Debug.broadcast("combatlog","[Login] No marker found for " + player.getName());
             return;
         }
 
-        plugin.getLogger().info("[Login] Marker found: " + marker + " for " + player.getName());
+        Debug.broadcast("combatlog","[Login] Marker found: " + marker + " for " + player.getName());
 
         int deadFlag = marker.getPersistentDataContainer().getOrDefault(DEAD_KEY, PersistentDataType.INTEGER, 0);
         byte[] invBytes = marker.getPersistentDataContainer().get(INVENTORY_KEY, PersistentDataType.BYTE_ARRAY);
         byte[] armorBytes = marker.getPersistentDataContainer().get(ARMOR_KEY, PersistentDataType.BYTE_ARRAY);
 
         if (deadFlag == 1) {
-            plugin.getLogger().info("[Login] Player " + player.getName() + " died while logged out in combat!");
+            Debug.broadcast("combatlog","[Login] Player " + player.getName() + " died while logged out in combat!");
             player.getInventory().clear();
             if (invBytes != null)
                 for (ItemStack item : ItemSerialization.fromBytes(invBytes))
@@ -292,7 +293,7 @@ public class PVPManager implements Listener, CommandExecutor {
             double health = marker.getPersistentDataContainer().getOrDefault(HEALTH_KEY, PersistentDataType.DOUBLE, player.getMaxHealth());
             player.setHealth(Math.min(health, player.getAttribute(Attribute.MAX_HEALTH).getValue()));
             player.sendMessage("§0[§0§6CivLabs§0]§8 » §7You §ccombat-logged§7, but your mannequin §asurvived");
-            plugin.getLogger().info("[Login] Restored inventory and health(" + health + ") for " + player.getName());
+            Debug.broadcast("combatlog","[Login] Restored inventory and health(" + health + ") for " + player.getName());
         }
 
         // --- Remove zombie ---
@@ -318,7 +319,7 @@ public class PVPManager implements Listener, CommandExecutor {
 
         if (zombie != null && zombie.isValid()) {
             zombie.remove();
-            plugin.getLogger().info("[Login] Removed leftover zombie for " + player.getName());
+            Debug.broadcast("combatlog", ("[Login] Removed leftover zombie for " + player.getName()));
         }
         
         marker.remove();
@@ -340,7 +341,7 @@ public class PVPManager implements Listener, CommandExecutor {
 
         // If zombie is not in map, remove it immediately
         if (!zombieMap.containsKey(ownerId)) {
-            plugin.getLogger().info("[ZombieDamage] Untracked zombie detected for player " + ownerId + ", removing it");
+            Debug.broadcast("combatlog", "[ZombieDamage] Untracked zombie detected for player " + ownerId + ", removing it");
             event.setCancelled(true);
             zombie.remove();
             return;
@@ -360,7 +361,7 @@ public class PVPManager implements Listener, CommandExecutor {
         marker.getPersistentDataContainer().set(ARMOR_KEY, PersistentDataType.BYTE_ARRAY,
                 ItemSerialization.toBytes(zombie.getEquipment().getArmorContents()));
         zombie.getWorld().playSound(zombie.getLocation(), Sound.ENTITY_PLAYER_HURT, SoundCategory.PLAYERS, 1f, 1f);
-        plugin.getLogger().info("[ZombieDamage] Zombie " + zombie.getCustomName() +
+        Debug.broadcast("combatlog","[ZombieDamage] Zombie " + zombie.getCustomName() +
                 " took damage, health updated to " + currentHealth + " in marker");
     }
 
@@ -468,7 +469,7 @@ public class PVPManager implements Listener, CommandExecutor {
             zombie.getEquipment().setArmorContents(player.getInventory().getArmorContents());
         }
 
-        plugin.getLogger().info("[SpawnZombie] Spawned zombie for " + player.getName() +
+        Debug.broadcast("combatlog", "[SpawnZombie] Spawned zombie for " + player.getName() +
                 " | Health: " + zombie.getHealth() + "/" + zombie.getAttribute(Attribute.MAX_HEALTH).getValue());
 
         return zombie;
@@ -478,7 +479,7 @@ public class PVPManager implements Listener, CommandExecutor {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!(sender instanceof Player p)) return true;
         combatMap.put(p.getUniqueId(), System.currentTimeMillis());
-        plugin.getLogger().info("[Command] /simulatehit executed for " + p.getName());
+        Debug.broadcast("combatlog","[Command] /simulatehit executed for " + p.getName());
         p.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds");
         addCombatBar(p);
         startCombatTaskIfNeeded();

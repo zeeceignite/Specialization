@@ -2,6 +2,7 @@ package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.mojang.datafixers.DataFixerBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -101,7 +102,7 @@ public class LocalChat implements Listener {
 
         // Always spawn bubble (UI) for everyone — schedule to main thread
         Bukkit.getScheduler().runTask(Specialization.getInstance(), () -> spawnBubble(p, raw));
-
+        Debug.broadcast("globalchat", "<gray>"+p.getName()+" » </gray>" + e.getMessage());
         if (p.getGameMode() == GameMode.SPECTATOR || p.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
             e.setCancelled(true);
             return;
