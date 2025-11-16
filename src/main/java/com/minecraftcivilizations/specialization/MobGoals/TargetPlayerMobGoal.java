@@ -29,8 +29,7 @@ public class TargetPlayerMobGoal implements Goal<Mob> {
 
     @Override
     public boolean shouldActivate() {
-        return true;
-//        return monster.getTargecull && !m**World().isDayTime() && !(monster instanceof Enderman) && !(monster instanceof Piglin);
+        return mob.getTarget() == null && !mob.getWorld().isDayTime();
     }
 
     @Override

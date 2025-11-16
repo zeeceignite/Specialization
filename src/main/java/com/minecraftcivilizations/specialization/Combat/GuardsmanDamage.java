@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.Combat;
 
+import com.minecraftcivilizations.specialization.Combat.Mobs.MobVariation;
 import com.minecraftcivilizations.specialization.Events.SkillLevelChangeEvent;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
@@ -102,36 +103,29 @@ public class GuardsmanDamage implements Listener {
             }
         }
 
-//        double multiplier = Math.pow(1.084, lvl) - 0.5; //1.0 + ((double)lvl/10);
-//        double multiplier = 0.5 + Math.sqrt(lvl / 5.0) * 0.654;
-//        if(multiplier>1.0){
-//            multiplier = 1.0;
-//        }
-
-
         //debugging
-        String crit_msg = "";
-        String extra_msg = "";
-        String armor_msg = "";
-
+        String crit_msg = ""; String extra_msg = ""; String armor_msg = "";
 
         // Apply damage reduction for non-Guardsman players attacking mobs
 //        double damageReduction = SpecializationConfig.getGuardsmanConfig().get("NON_GUARDSMAN_DAMAGE_REDUCTION", Double.class);
         double original_damage = event.getDamage(BASE);
 
+        /**
+         * This determines how a player deals damage to a mob
+         * This allows for players to deal extra damage to friendly mobs if they're hostile
+         */
         if(victim instanceof LivingEntity le){
-            if(victim instanceof Enemy || combatManager.getMobManager().isMobVariation(victim)) {
-                multiplier *= 2;
+            if(victim instanceof Enemy) {
+                multiplier *= 2; //Scales appropriate damage to most hostile mobs
+            }else if(combatManager.getMobManager().isMobVariation(victim)){
+                MobVariation variation = combatManager.getMobManager().getMobVariation(victim);
+                if(variation.isAngry() || variation.doesHunting()){
+                    multiplier *= 2;
+                }
             }
         }
 
         double new_damage = new_damage = ((original_damage) * multiplier)+add;
-
-
-//        event.setDamage(ABSORPTION, 0);
-
-//        event.setDamage(ABSORPTION, event.getDamage(ABSORPTION)/2);
-
         /**
          * Guardsman Extra Mob Damage Bonus
          */

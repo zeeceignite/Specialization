@@ -75,7 +75,9 @@ public class MobVariation {
 
     //defaults for all hostile mobs
     @Getter
-    private double damageMultiplier = 1.0;
+    private double damageMultiplierDay = 1.0;
+    @Getter
+    private double damageMultiplierNight = 1.0;
     @Getter
     private double healthMultiplier = 1.0;
     @Getter
@@ -134,7 +136,13 @@ public class MobVariation {
     }
 
     public MobVariation damage(double multiplier){
-        this.damageMultiplier = multiplier;
+        this.damageMultiplierDay = multiplier;
+        return this;
+    }
+
+    public MobVariation damage(double multiplier_day, double multiplier_night){
+        this.damageMultiplierDay = multiplier_day;
+        this.damageMultiplierNight = multiplier_night;
         return this;
     }
 

@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.bukkit.entity.EntityType;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * a light-weight random selector for overriding vanilla mobs to sprinkle in some variety
@@ -13,12 +14,11 @@ import java.util.*;
  */
 public class MobOverrideRule {
 
-    @Setter
-    @Getter //this is the UNIVERSAL base chance for all MobOverrideRules. Raising this value makes Vanilla spawning logic more common
+    //this is the UNIVERSAL chance for all MobOverrideRules.
     private static int defaultBaseChance = 100;
 
     @Getter
-    private final int chance;
+    private final int chance; //This should ONLY communicate to MobOverrideRuleSet, do not use internally. Only assign here in this class.
 
     @Getter
     private final EnumSet<EntityType> replaceTypes;
@@ -45,7 +45,6 @@ public class MobOverrideRule {
         return this;
     }
 
-
     /**
      * Adds a variation using the global base chance
      */
@@ -54,50 +53,35 @@ public class MobOverrideRule {
         return this;
     }
 
-//    Set<Biome> biomes = new HashSet<Biome>();
-//    private boolean restricted_to_biomes = false;
-//
-//    public MobOverrideRule whitelistOnlyBiomes(Biome...biomes){
-//        restricted_to_biomes = Collections.addAll(this.biomes, biomes);
-//        return this;
-//    }
-
-//    public boolean supportsBiome(Biome biome){
-//        if(!restricted_to_biomes) return true;
-//        return this.biomes.contains(biome);
-//    }
-
-
 
     public MobVariation rollVariation() {
-        calculateTotalRoll();
-//        if (total_roll == -1) {
-//            calculateTotalRoll();
-//        }
-
-        int roll = (int) (Math.random() * total_roll);
-        int current = chance;
-
-        if (roll < chance) {
-            return null; // no override triggered
+        calculateTotalRoll(); // now total_roll == sum(variations) only
+        if (total_roll <= 0) {
+            Debug.broadcast("mobrule", "<blue>rollVariation</blue> total_roll <= 0 -> null");
+            return null;
         }
 
+        int roll = ThreadLocalRandom.current().nextInt(total_roll); // 0..total_roll-1
+        int accum = 0;
+
         for (Map.Entry<MobVariation, Integer> entry : variation_mapping.entrySet()) {
-            current += entry.getValue();
-            if (roll < current) {
+            accum += entry.getValue();
+            if (roll < accum) {
+                Debug.broadcast("mobrule", "<blue>rollVariation</blue> returns " + entry.getKey().getId());
                 return entry.getKey();
             }
         }
 
-        return null; // fallback
+        Debug.broadcast("mobrule", "<blue>rollVariation</blue> returns null as fallback");
+        return null;
     }
 
+
     private void calculateTotalRoll() {
-        total_roll = chance;
-        for(int i : variation_mapping.values()){
-            total_roll += i;
-        }
-        Debug.broadcast("mobrule", "<green>calculated total roll:</green> "+total_roll);
+        int sum = 0;
+        for (int i : variation_mapping.values()) sum += Math.max(0, i);
+        total_roll = chance + sum;
+        Debug.broadcast("mobrule", "<green>calculated total roll:</green> " + total_roll);
     }
 
     private boolean does_spawn_in_packs = false;

@@ -149,13 +149,28 @@ public class MobManager implements Listener {
 
 
         new MobOverrideRule(100, ZOMBIE, HUSK, DROWNED)
-                .addVariation(new MobVariation("zombie_variation").damage(1.5).speed(1.5, 2.0).hunts(64).breaks()
+                .addVariation(new MobVariation("zombie_variation")
+                                .damage(1.5, 2.0)
+                                .speed(1.5, 2.0)
+                                .hunts(64)
+                                .breaks()
                         );
         new MobOverrideRule(100, CREEPER)
-                .addVariation(new MobVariation("creeper").damage(1.0).speed(1.5, 2.0).hunts()
+                .addVariation(new MobVariation("creeper")
+                                .xpScale(1.25)
+                                .damage(1.0)
+                                .speed(1.5, 2.0)
+                                .hunts()
                         , 10000);
         new MobOverrideRule(100, SPIDER)
-                .addVariation(new MobVariation("spider_small").health(0.5).damage(1.5).speed(1.5, 1.5).size(0.5,0.5).spawnExtra(4).hunts().drops(0)
+                .addVariation(new MobVariation("spider_small")
+                                .health(0.5)
+                                .damage(1.5)
+                                .speed(1.5, 1.5)
+                                .size(0.5,0.5)
+                                .spawnExtra(4)
+                                .hunts()
+                                .drops(0)
                         , 100)
                 .addVariation(new MobVariation("spider").damage(1.5).speed(1.5, 1.5).hunts().drops(0.5, 0.5)
                         , 100);
@@ -214,16 +229,16 @@ public class MobManager implements Listener {
 //                .setGainsXpOverride(false)
 //                .setPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 100000000, 2, false, false, false));
 
-        new MobOverrideRule(10, DOLPHIN)
+        new MobOverrideRule(50, DOLPHIN)
                 .spawnInPacks()
                 .addVariation(new MobVariation("evil_dolphin", DOLPHIN)
                         .anger(true)
-                        .hunts()
+                        .hunts(64)
                         .damage(0.5)
                         .health(4.0)
                         .size(1.25,1.5)
-                        .speed(0.75, 0.75)
-                        , 10000);
+                        .speed(0.75, 1.25)
+                        );
 
 //        mob_overrides.put(HORSE, new MobOverrideRule(10).add(BEE, 3).spawnInPacks());
 //        mob_overrides.put(COW, new MobOverrideRule(10).add(BEE, 2));
@@ -420,41 +435,12 @@ public class MobManager implements Listener {
          * TESTING ZONE
          */
 
-//        MobVariation stats;// = getApplicableMobStats(entity);
-//        //THESE ARE OVERRIDES
-//        if(event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.CUSTOM) {
-//            stats = getOverrideMobStats(type);
-//        }else{
-//            stats = getVanillaMobStats(type);
-//        }
-
-//        applyStatsToEntity(entity, stats);
-//            monster.registerAttribute(Attribute.MAX_HEALTH);
-//            AttributeInstance attribute = monster.getAttribute(Attribute.MAX_HEALTH);
-//            AttributeModifier modifier = attribute.getModifier(new NamespacedKey(Specialization.getInstance(), "max_health"));
-//            attribute.addModifier(modifier);
-
-//                double new_value = attr.getBaseValue() * 2.0;
-//                attr.setBaseValue(new_value);
-//                attr.addModifier(AttributeModifier);
-//        if(event.getEntity() instanceof LivingEntity){
-//            return; //temporary logic disable
-//        }
-
-//            if(monster.getWorld().isDayTime()) speedAddition = SpecializationConfig.getMobConfig().get("DAYTIME_SPEED_BUFF", Double.class);
-//            else speedAddition = SpecializationConfig.getMobConfig().get("NIGHTTIME_SPEED_BUFF", Double.class);
-//            switch(monster.getType()){
-//                case SKELETON -> {
-//
-//                    monster.getEquipment().getItemInMainHand().setType(Material.STONE_SWORD);
-//                }
-//            }
-
     /**
      * Explicitly adds the stats to an entity
      */
     public static void applyStatsToEntity(LivingEntity entity, MobVariation stats) {
         entity.setPersistent(true);
+        boolean is_day_time = entity.getWorld().isDayTime();
 
         AttributeInstance attribute = entity.getAttribute(Attribute.MAX_HEALTH);
         double max_health = attribute.getBaseValue() * stats.getHealthMultiplier();
@@ -463,21 +449,27 @@ public class MobManager implements Listener {
 
         double applyspeed_modifier = 1.0;
         if(entity instanceof Ageable ageable){
+            //TODO set baby override
             if(!ageable.isAdult()){
                 applyspeed_modifier = 0.75;
             }
         }
+        //DO NOT USE THIS. USE ENTITY DAMAGE EVNET INSTEAD
+//        AttributeInstance damage_attribute = entity.getAttribute(Attribute.ATTACK_DAMAGE);
+//        if(damage_attribute != null) {
+//            damage_attribute.setBaseValue(damage_attribute.getBaseValue() * (is_day_time?stats.getDamageMultiplierDay():stats.getDamageMultiplierNight()));
+//        }
         AttributeInstance scale_attribute = entity.getAttribute(Attribute.SCALE);
         if(scale_attribute != null) {
             scale_attribute.setBaseValue(scale_attribute.getBaseValue() * stats.getScale());
         }
         AttributeInstance speed_attribute = entity.getAttribute(Attribute.MOVEMENT_SPEED);
         if (speed_attribute != null) {
-            speed_attribute.setBaseValue(speed_attribute.getBaseValue() * applyspeed_modifier*(entity.getWorld().isDayTime() ? stats.getSpeedMultiplierDay() : stats.getSpeedMultiplierNight()));
+            speed_attribute.setBaseValue(speed_attribute.getBaseValue() * applyspeed_modifier*(is_day_time ? stats.getSpeedMultiplierDay() : stats.getSpeedMultiplierNight()));
         }
         AttributeInstance water_attribute = entity.getAttribute(Attribute.WATER_MOVEMENT_EFFICIENCY);
         if (water_attribute != null) {
-            water_attribute.setBaseValue(water_attribute.getBaseValue() * applyspeed_modifier*(entity.getWorld().isDayTime() ? stats.getWaterSpeedMultiplierDay() : stats.getWaterSpeedMultiplierNight()));
+            water_attribute.setBaseValue(water_attribute.getBaseValue() * applyspeed_modifier*(is_day_time ? stats.getWaterSpeedMultiplierDay() : stats.getWaterSpeedMultiplierNight()));
         }
         if(stats.isInvisible()){
             entity.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false, false));
@@ -607,8 +599,13 @@ public class MobManager implements Listener {
         MobVariation stats = getMobVariation(entity);
         if(stats == default_mob_variation) return;
 
+
+        /**
+         * Scales mob damage based on their day/night settings
+         */
         double newDamage = event.getDamage(BASE);
-        event.setDamage(BASE, newDamage*stats.getDamageMultiplier());
+        double mob_damage = entity.getWorld().isDayTime()?stats.getDamageMultiplierDay():stats.getDamageMultiplierNight();
+        event.setDamage(BASE, newDamage * mob_damage);
 
 //      BACKUP PLAN FOR MOB DAMAGE:
 //        Ensure this method is called after CombatManager's ArmorReduction.
