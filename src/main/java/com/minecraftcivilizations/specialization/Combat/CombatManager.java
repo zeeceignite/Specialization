@@ -2,7 +2,7 @@ package com.minecraftcivilizations.specialization.Combat;
 
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
-import com.minecraftcivilizations.specialization.Combat.Mobs.MobStatsManager;
+import com.minecraftcivilizations.specialization.Combat.Mobs.MobManager;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
@@ -14,14 +14,12 @@ import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.RegisteredListener;
 import org.bukkit.projectiles.ProjectileSource;
 
 import java.util.*;
@@ -43,12 +41,23 @@ public class CombatManager implements Listener {
     public static NamespacedKey ARROW_DAMAGE_KEY;
     public static NamespacedKey CRIT_BONUS_KEY;
 
+    @Getter
     private final GuardsmanDamage guardsmanDamage;
 //    private final DynamicArmor dynamicArmor; DLC feature by Alectriciti
+
+    @Getter
     private final ArmorDamageReduction armorDamageReduction; // Handles MOB -> PLAYER damage
-    private final MobStatsManager mobDamage;
+
+    @Getter
+    private final MobManager mobManager;
+
+    @Getter
     private final ArmorEquipAttributes armorEquip;
+
+    @Getter
     private final Berserk berserk; // Berserk Manager
+
+    @Getter
     private final ExplosionDamage explosionDamage;
 
     @Getter
@@ -61,13 +70,20 @@ public class CombatManager implements Listener {
         ARROW_DAMAGE_KEY = new NamespacedKey(specialization, "ARROW_DAMAGE");
 
         guardsmanDamage = new GuardsmanDamage(this);
-        mobDamage = new MobStatsManager(this);
+        mobManager = new MobManager(this);
 //        dynamicArmor = new DynamicArmor(this);
         armorEquip = new ArmorEquipAttributes(this);
         armorDamageReduction = new ArmorDamageReduction(this);
         berserk = new Berserk(this);
         explosionDamage = new ExplosionDamage(this);
-        initializeMobXpMappings();
+    }
+
+    public void initialize(){
+        mobManager.populateEntityMappings();
+    }
+
+    public static CombatManager getInstance() {
+        return Specialization.getInstance().getCombatManager();
     }
 
     @EventHandler
@@ -109,12 +125,36 @@ public class CombatManager implements Listener {
         projectile.getPersistentDataContainer().set(ARROW_DAMAGE_KEY, PersistentDataType.DOUBLE, multiplier);
     }
 
-    @EventHandler
+    public static final double bonus_crit_baseline = 0.5;
+
+    /**
+     * Use this to get the crit bonus on any item*
+     */
+    public static double getCustomWeaponCrit(ItemStack weapon){
+        if(weapon.hasItemMeta()) {
+            if (weapon.getItemMeta().getPersistentDataContainer().has(CRIT_BONUS_KEY)) {
+                return weapon.getItemMeta().getPersistentDataContainer().get(CRIT_BONUS_KEY, PersistentDataType.DOUBLE);
+            }
+        }
+        return 0;
+    }
+
+
+//    @EventHandler(priority = EventPriority.HIGHEST)
+//    public void onasdfjkl(EntityDamageEvent event){
+//
+//        if(event instanceof  EntityDamageByEntityEvent entity_event){
+//
+//            entity_event.getFina
+//        }
+//
+//    }
+
+    @EventHandler(priority = EventPriority.LOW)
     public void GlobalDamageListener(EntityDamageByEntityEvent event) {
         double original_base = event.getDamage(BASE);
         boolean fully_charged = false;
         double charge_amount = -1.0;
-
 
         /*
             CRIT SUPPRESSION (this allows us to override with our own crit system)
@@ -156,15 +196,18 @@ public class CombatManager implements Listener {
             CustomPlayer customPlayer = CoreUtil.getPlayer(player);
             guardsmanDamage.applyGuardsmanDamage(customPlayer, event);
 //            dynamicArmor.applyRaytracedArmorHit(event);
+//            Debug.broadcast("mob", "animal took damage :(");
             if(event.getEntity() instanceof LivingEntity victim) {
-                applyExp(event, customPlayer, victim); //Exp is acquired only after calculating final damage
+                if(!event.isCancelled()) {
+                    mobManager.applyExp(event, customPlayer, victim); //Exp is acquired only after calculating final damage
+                }
             }
         } else {
             //Attacker is a Mob
             // This should ONLY apply to mob damage, not PVP damage
             if(event.getEntity() instanceof Player player) {
                 //increase damage of mobs to players
-                mobDamage.onMobAttack(player, event);
+                mobManager.onMobAttack(player, event);
 
             }
         }
@@ -194,27 +237,30 @@ public class CombatManager implements Listener {
         String extramsg = "";
 //        CoreUtil.getPlayer(player.customPlayer.getUuid());
 //        custom
-        double bonus_crit = 0.0;
+        double weapon_bonus_crit = 0.0;
         if(event.isCritical()){
             if(customPlayer!=null) {
                 if(damager instanceof Player dmger) {
                     ItemStack item = dmger.getEquipment().getItemInMainHand();
                     PlayerUtil u = PlayerUtil.getPlayerUtil(dmger);
-                    if (!u.isOnCooldown("crit_bonus") && dmger.getCooldown(item)==0) {
-                        bonus_crit = getCustomWeaponCrit(item);
-                    }
-
-
                     int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
+                    weapon_bonus_crit = getCustomWeaponCrit(item) + bonus_crit_baseline;
+                        if (u.isOnCooldown("crit_bonus") || dmger.getCooldown(item)>0) {
+                            weapon_bonus_crit = 0;
+                        }
+                        int cd = 120 - (lvl*10);
+                        PlayerUtil.getPlayerUtil(dmger).setCooldown("crit_bonus", cd);
+                        dmger.setCooldown(item, cd);
+
+
                     double base = event.getDamage(BASE);
     //                crit_add = Math.min(1.5, 0.2 + Math.pow(1.055, lvl)); //slight exponent boost to crit
-                    double crit_add = 0.25 + bonus_crit + (0.125 * (double)lvl);
+                    double crit_add = 0.75 + (0.25 * (double)lvl) + weapon_bonus_crit ;
                     double new_base = base + crit_add;
                     extramsg += "<green> [✨+"+Debug.formatDecimal(crit_add)+"]</green>";
     //            new_damage *= (crit_multiplier); //apply custom crit
     //            crit_msg = GOLD+" ("+GRAY+"✨ "+GOLD+(Debug.formatDecimal(crit_multiplier) +"x)");
                     event.setDamage(BASE, new_base);
-                    PlayerUtil.getPlayerUtil(dmger).setCooldown("crit_bonus", 60);
                 }
             }
         }
@@ -225,43 +271,43 @@ public class CombatManager implements Listener {
                 armorDamageReduction.applyArmorReduction(le, event);
             }
             extramsg += " <light_purple>"+breakArmorWithItem(le, event)+"</light_purple>";
-            if(bonus_crit>0){
+            if(weapon_bonus_crit>0){
                 le.getWorld().playSound(le.getLocation(), Sound.ITEM_WOLF_ARMOR_DAMAGE, 0.25f, 1);
             }
-//            double blocking_damage = event.getDamage(BLOCKING);
-//            if(blocking_damage!=0){
-//
-////                le.setShieldBlockingDelay(60);
-////                if(le instanceof Player pls){
-////                    pls.setCooldown(Material.SHIELD, 100);
-////                }
-//                //TODO blocking stuff
-//            }
+            if(event.isApplicable(BLOCKING)) {
+                double blocking_damage = event.getDamage(BLOCKING);
+                if (blocking_damage != 0) {
+                    event.setDamage(BLOCKING, -event.getDamage(BASE));
+                }
+            }
         }
 //        Debug.broadcast("armor", "");
 
 
-        double DAMAGE_MINIMUM = 0.125 * original_base;
-        double total_final = calculateTotalDamage(event);
+        double DAMAGE_MINIMUM = 0;
+        if(damager instanceof Player) {
+            DAMAGE_MINIMUM = 0.125 * original_base;
+            double total_final = calculateTotalDamage(event);
 //        Debug.broadcast("damage", "Pre-Minimu calculation: "+total_final);
-        if(total_final <= DAMAGE_MINIMUM) {
+            if (total_final <= DAMAGE_MINIMUM) {
 //            event.setCancelled(true);
-            Entity entity = event.getEntity();
+                Entity entity = event.getEntity();
 
 
-            for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
-                if (event.isApplicable(m)) {
-                    if(m!=BLOCKING)
-                    event.setDamage(m, 0);
+                for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
+                    if (event.isApplicable(m)) {
+                        if (m != BLOCKING)
+                            event.setDamage(m, 0);
+                    }
                 }
-            }
-            event.setDamage(BASE, DAMAGE_MINIMUM);
-            extramsg += " <dark_gray>[Minimum]</dark_gray>";
+                event.setDamage(BASE, DAMAGE_MINIMUM);
+                extramsg += " <dark_gray>[Minimum]</dark_gray>";
 
-            Sound sound = ArmorStats.getArmorSound(entity);
-            if (sound != null) {
+                Sound sound = ArmorStats.getArmorSound(entity);
+                if (sound != null) {
 //                extramsg += " <dark_gray>[Sound]</dark_gray>";
-                entity.getWorld().playSound(entity.getLocation(), sound, SoundCategory.PLAYERS, 0.75f, ThreadLocalRandom.current().nextFloat(0.1f) + 0.75f);
+                    entity.getWorld().playSound(entity.getLocation(), sound, SoundCategory.PLAYERS, 0.75f, ThreadLocalRandom.current().nextFloat(0.1f) + 0.75f);
+                }
             }
         }
 
@@ -294,6 +340,9 @@ public class CombatManager implements Listener {
         if(attacker.getAttackCooldown()<0.425)return "not ready";
         ItemStack itemInMainHand = attacker.getEquipment().getItemInMainHand();
         if(itemInMainHand==null)return "";
+        if(itemInMainHand.getType().name().contains("_PICKAXE")){
+            event.setDamage(BASE, event.getDamage(BASE)*0.5);
+        }
 
         int armor_rolls = 1+ThreadLocalRandom.current().nextInt(3);
         ArmorBreakStats break_stats = getItemArmorBreakStats(itemInMainHand.getType());
@@ -311,8 +360,7 @@ public class CombatManager implements Listener {
                         if (equipment.getItemInOffHand().getType() == Material.SHIELD) {
                             equipment.getItemInOffHand().damage(break_stats.shield, attacker);
                             shield_break = true;
-                        }
-                        if (equipment.getItemInMainHand().getType() == Material.SHIELD) {
+                        }else if (equipment.getItemInMainHand().getType() == Material.SHIELD) {
                             equipment.getItemInMainHand().damage(break_stats.shield, attacker);
                             shield_break = true;
                         }
@@ -434,6 +482,12 @@ public class CombatManager implements Listener {
             case DIAMOND_SWORD: case NETHERITE_SWORD: return new ArmorBreakStats(4, 2);
             case DIAMOND_AXE: case NETHERITE_AXE: return new ArmorBreakStats(4, 12);
 
+            case STONE_SHOVEL:
+            case GOLDEN_SHOVEL:
+            case IRON_SHOVEL:
+            case DIAMOND_SHOVEL:
+            case NETHERITE_SHOVEL: return new ArmorBreakStats(1, 1);
+
             case STONE_HOE:
             case GOLDEN_HOE:
             case IRON_HOE:
@@ -447,65 +501,6 @@ public class CombatManager implements Listener {
             case NETHERITE_PICKAXE: return new ArmorBreakStats(10, 6);
         }
         return new ArmorBreakStats(0,0);
-    }
-
-
-    @EventHandler(priority = EventPriority.MONITOR)
-            public void monitorEvents(EntityDamageByEntityEvent event){
-        HandlerList handlers = event.getHandlers();
-        int i = 0;
-        for(RegisteredListener l : handlers.getRegisteredListeners()){
-//            Specialization.getInstance().getLogger().info(i+":"+l.getPlugin().getName());
-            i++;
-
-        }
-
-    }
-    private double safeGet(EntityDamageByEntityEvent event, EntityDamageEvent.DamageModifier mod) {
-        try {
-            return event.getDamage(mod);
-        } catch (IllegalArgumentException ex) {
-            return 0.0;
-        }
-    }
-
-    EnumMap<EntityType, Double> mob_xp_mappings = new EnumMap<>(EntityType.class);
-
-    /**
-     * Multipliers for Exp gained from Mob HP
-     * might port over to config values later...
-     * who knows
-     */
-    private void initializeMobXpMappings() {
-        putXpFor(2, RAVAGER, WITHER, ENDER_DRAGON);
-        putXpFor(1.5, PILLAGER, ILLUSIONER, VINDICATOR, EVOKER, ELDER_GUARDIAN, WITCH);
-        putXpFor(1.25, CREEPER);
-        putXpFor(1.0, ENDERMAN,
-                ZOMBIE, HUSK, DROWNED, ZOMBIE_VILLAGER,
-                SKELETON, STRAY, BOGGED, WITHER_SKELETON,
-                SPIDER, CAVE_SPIDER,
-                PHANTOM, BLAZE, BREEZE, GHAST, SHULKER);
-        putXpFor(0.5, SLIME, MAGMA_CUBE, SILVERFISH, ENDERMITE, CREAKING, GUARDIAN);
-        putXpFor(0.25, PIGLIN_BRUTE, HOGLIN);
-    }
-
-    //just a quick init helper
-    private void putXpFor(double xp, EntityType...entities){
-        for(EntityType e : entities){
-            mob_xp_mappings.put(e, xp);
-        }
-    }
-
-    private void applyExp(EntityDamageByEntityEvent event, CustomPlayer customPlayer, LivingEntity victim) {
-        if(event.getDamage()<1)return;
-        if (mob_xp_mappings.containsKey(victim.getType())) {
-            LivingEntity le = (LivingEntity) victim;
-            double xp = event.getDamage();
-            if (xp > le.getHealth()) {
-                xp = le.getHealth();
-            }
-            customPlayer.addSkillXp(SkillType.GUARDSMAN, (int) (xp * mob_xp_mappings.get(victim.getType())), true);
-        }
     }
 
     /**
@@ -549,18 +544,6 @@ public class CombatManager implements Listener {
             }
         }
         return total;
-    }
-
-
-
-
-    public static double getCustomWeaponCrit(ItemStack weapon){
-        if(weapon.hasItemMeta()) {
-            if (weapon.getItemMeta().getPersistentDataContainer().has(CRIT_BONUS_KEY)) {
-                return weapon.getItemMeta().getPersistentDataContainer().get(CRIT_BONUS_KEY, PersistentDataType.DOUBLE);
-            }
-        }
-        return 0;
     }
 
 

@@ -60,15 +60,14 @@ public class ExplosionDamage implements Listener {
     public void onBlockBreak(BlockPlaceEvent event){
         Material mat = event.getBlockPlaced().getType();
         if(mat == Material.RESPAWN_ANCHOR){
-            event.getPlayer().setCooldown(Material.GLOWSTONE, 20);
+            event.getPlayer().setCooldown(Material.GLOWSTONE, 30);
             event.getPlayer().getWorld().playSound(event.getPlayer().getLocation(), Sound.BLOCK_END_PORTAL_FRAME_FILL, 1, 1);
-        }
-        if(mat.name().contains("_BED")){
+        }else if(mat.name().contains("_BED")){
             Player player = event.getPlayer();
             if(player.getWorld().getEnvironment() != World.Environment.NORMAL){
-            PlayerUtil u = PlayerUtil.getPlayerUtil(player);
-            u.setCooldown("bed_place", 20);
-            player.setCooldown(mat, 20);
+                PlayerUtil u = PlayerUtil.getPlayerUtil(player);
+                u.setCooldown("bed_place", 30);
+                player.setCooldown(mat, 30);
             }
         }
     }
@@ -86,7 +85,7 @@ public class ExplosionDamage implements Listener {
                 if(u.isOnCooldown("respawn_anchor")) {
                     event.setCancelled(true);
                 }else{
-                    u.setCooldown("respawn_anchor", 5);
+                    u.setCooldown("respawn_anchor", 3);
                 }
             }else if(type.name().contains("_BED")){
 
@@ -157,7 +156,7 @@ public class ExplosionDamage implements Listener {
                 if(event.isApplicable(m))
                 modifiers += "\n<gray>"+m.name()+"</gray>: "+Debug.formatDecimal(event.getDamage(m));
             }
-            Debug.broadcast("damage", "<gold>Explosion at "+   ": "+event.getDamage()+"</gold>", modifiers);
+//            Debug.broadcast("damage", "<gold>Explosion at "+   ": "+event.getDamage()+"</gold>", modifiers);
 
 
 

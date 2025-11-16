@@ -27,6 +27,7 @@ import java.util.*;
 /**
  *
  * @author  alectriciti, jfrogy
+ *
  */
 public abstract class CustomItem {
 
@@ -292,7 +293,5 @@ public abstract class CustomItem {
         item.setItemMeta(meta);
 
     }
-
-
 
 }

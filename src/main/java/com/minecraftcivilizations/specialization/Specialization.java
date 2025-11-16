@@ -19,7 +19,7 @@ import com.minecraftcivilizations.specialization.Distance.TownManager;
 import com.minecraftcivilizations.specialization.Listener.Blocks.AutoCrafterListener;
 import com.minecraftcivilizations.specialization.Listener.BurnListener;
 import com.minecraftcivilizations.specialization.Listener.Blocks.ReinforcementProtectionListener;
-import com.minecraftcivilizations.specialization.Combat.Mobs.ExplodeListener;
+import com.minecraftcivilizations.specialization.Combat.ExplodeListener;
 import com.minecraftcivilizations.specialization.Listener.Player.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.BreakBlockListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.PlayerMineListener;
@@ -90,6 +90,8 @@ public final class Specialization extends JavaPlugin {
 
     @Getter
     private CustomItemManager customItemManager;
+
+    @Getter
     private CombatManager combatManager;
     private PVPManager pvpManager;
     private XPMonitoringCommand xpMonitoringCommand;
@@ -287,6 +289,8 @@ public final class Specialization extends JavaPlugin {
                 MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().addCustomPlayer(loadedPlayer);
             }
         }
+
+        combatManager.initialize();
 
         DataManager.startSaver(this);
         ReinforcementManager.startReinforcement();

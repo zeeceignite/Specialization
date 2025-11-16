@@ -44,6 +44,14 @@ public class Debug implements Listener {
         setupDefaultChannels();
     }
 
+    public static String formatBoolean(boolean b) {
+        if(b){
+            return "<green>true</green>";
+        }else{
+            return "<red>false</red>";
+        }
+    }
+
     @EventHandler
     public void onLogout(PlayerQuitEvent event){
 
@@ -154,6 +162,7 @@ public class Debug implements Listener {
         for(String channel : debug_channels){
             unregisterPlayerChannel(player, channel);
         }
+        listening_channels.put(player.getUniqueId(), new ArrayList<String>());
     }
 
     private Set<UUID> getOrCreateChannelPlayerSet(String debug_channel, boolean add_to_suggestions){
@@ -192,6 +201,11 @@ public class Debug implements Listener {
     public static void broadcast(String debug_channel, String msg, String hover_event, boolean register_channel){
         Component comp = getInstance().formatDebugMessageDefault(debug_channel, msg, hover_event);
         broadcastFinalize(debug_channel, comp, register_channel);
+    }
+
+    public static void broadcast(String debug_channel, Component msg){
+        Component comp;
+        broadcastFinalize(debug_channel, getPrefix(debug_channel).append(msg), false);
     }
 
     public static void broadcast(String debug_channel, Component msg, Component hover){
@@ -329,7 +343,7 @@ public class Debug implements Listener {
         }else{
             c = formatLocationColored(location);
         }
-        return c.clickEvent(ClickEvent.suggestCommand("/tp "+location.getBlockX()+" "+location.getBlockY()+" "+location.getBlockZ()));
+        return c.clickEvent(ClickEvent.runCommand("/tp "+location.getBlockX()+" "+location.getBlockY()+" "+location.getBlockZ()));
     }
 
 

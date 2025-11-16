@@ -1,6 +1,7 @@
 package com.minecraftcivilizations.specialization.Listener.Player.Inventories;
 
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.entity.Player;
@@ -46,6 +47,7 @@ public class SpecializationCraftItemEvent extends Event {
         this.totalReduction = totalReduction;
         this.skillType = skillType;
         this.skillLevel = skillLevel;
+        Debug.broadcast("event", "CraftItemEvent created by "+player.getName()+" crafting "+event.getRecipe().getResult().getType().name());
     }
 
     @Override

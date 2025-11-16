@@ -69,16 +69,35 @@ public final class ArmorStats {
     @Getter
     private final double knockback_resist;
 
+    private double water_movement = 0;
+
+
+    public double getWaterMovement() {
+        return water_movement;
+    }
+
     public ArmorStats(double armor, double toughness) {
         this.armor = armor;
         this.toughness = toughness;
         this.knockback_resist = 0;
     }
 
+    public ArmorStats(double armor, double toughness, double knockback_resist, double water_movement) {
+        this.armor = armor;
+        this.toughness = toughness;
+        this.knockback_resist = knockback_resist;
+        this.water_movement = water_movement;
+    }
+
     public ArmorStats(double armor, double toughness, double knockback_resist) {
         this.armor = armor;
         this.toughness = toughness;
         this.knockback_resist = knockback_resist;
+    }
+
+    public ArmorStats setWaterMovement(double watermovement){
+        this.water_movement = watermovement;
+        return this;
     }
 
     public static double getArmorHeight(EquipmentSlot slot) {
@@ -109,6 +128,7 @@ public final class ArmorStats {
 
         Material mat = armor_to_check.getType();
         Material base = getMaterialType(mat);
+        if(base==null)return null;
         switch(base){
             case LEATHER: return Sound.ITEM_WOLF_ARMOR_DAMAGE;
             case CHAIN: return Sound.BLOCK_CHAIN_HIT;
@@ -142,45 +162,45 @@ public final class ArmorStats {
 
             case GOLDEN_HELMET:
             case GOLDEN_BOOTS:
-                return new ArmorStats(2, 0);
+                return new ArmorStats(2, 0,0,1);
             case GOLDEN_LEGGINGS:
-                return new ArmorStats(3, 0);
+                return new ArmorStats(3, 0,0,1);
             case GOLDEN_CHESTPLATE:
-                return new ArmorStats(5, 0);
+                return new ArmorStats(5, 0,0,1);
 
             case CHAINMAIL_HELMET:
-                return new ArmorStats(1, 0);
+                return new ArmorStats(1, 0,0,1);
             case CHAINMAIL_BOOTS:
-                return new ArmorStats(2, 0);
+                return new ArmorStats(2, 0,0,1);
             case CHAINMAIL_LEGGINGS:
-                return new ArmorStats(4, 0);
+                return new ArmorStats(4, 0,0,1);
             case CHAINMAIL_CHESTPLATE:
-                return new ArmorStats(5, 0);
+                return new ArmorStats(5, 0,0,1);
 
             case IRON_HELMET:
-                return new ArmorStats(2, 0);
+                return new ArmorStats(2, 1, 0, 1);
             case IRON_BOOTS:
-                return new ArmorStats(2, 0);
+                return new ArmorStats(2, 1,0, 1);
             case IRON_LEGGINGS:
-                return new ArmorStats(5, 0);
+                return new ArmorStats(5, 1,0, 1);
             case IRON_CHESTPLATE:
-                return new ArmorStats(6, 0);
+                return new ArmorStats(6, 1,0, 1);
 
             case DIAMOND_HELMET:
             case DIAMOND_BOOTS:
-                return new ArmorStats(3, 2);
+                return new ArmorStats(3, 2,0, 2);
             case DIAMOND_LEGGINGS:
-                return new ArmorStats(6, 2);
+                return new ArmorStats(6, 2,0, 2);
             case DIAMOND_CHESTPLATE:
-                return new ArmorStats(8, 2);
+                return new ArmorStats(8, 2,0, 2);
 
             case NETHERITE_HELMET:
             case NETHERITE_BOOTS:
-                return new ArmorStats(3, 3, 1);
+                return new ArmorStats(3, 3,0, 2);
             case NETHERITE_LEGGINGS:
-                return new ArmorStats(6, 3, 1);
+                return new ArmorStats(6, 3, 0, 2);
             case NETHERITE_CHESTPLATE:
-                return new ArmorStats(8, 3, 1);
+                return new ArmorStats(8, 3, 0, 2);
 
             case TURTLE_HELMET:
                 return new ArmorStats(2, 0);
@@ -383,6 +403,4 @@ public final class ArmorStats {
         }
         return new ArmorStats(total_armor, total_toughness);
     }
-
-
 }

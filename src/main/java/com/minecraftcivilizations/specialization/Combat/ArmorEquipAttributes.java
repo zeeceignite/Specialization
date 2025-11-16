@@ -7,6 +7,7 @@ import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.ItemStackUtils;
 import com.minecraftcivilizations.specialization.util.MathUtils;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import io.papermc.paper.event.entity.EntityEquipmentChangedEvent;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Material;
@@ -19,8 +20,6 @@ import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.CraftItemEvent;
-import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.event.player.PlayerItemBreakEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.EquipmentSlotGroup;
@@ -48,7 +47,6 @@ public class ArmorEquipAttributes implements Listener {
 
 
     public static NamespacedKey WEIGHT_KEY;
-    public static NamespacedKey ARROW_RESIST_KEY;
 
     public ArmorEquipAttributes(CombatManager manager){
         this.manager = manager;
@@ -153,17 +151,20 @@ public class ArmorEquipAttributes implements Listener {
                 }
             }
 
-            current = ArmorEquipAttributes.applyWeight(modified, (int) (weight * weight_modifier), color);
+            current = ArmorEquipAttributes.applyArmorStats(modified, (int) (weight * weight_modifier), color);
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_WORK_TOOLSMITH, 0.2f, 0.9f);
             if(best){
                 player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.22f, 1.1f);
+                meta = current.getItemMeta();
+//                ItemStackUtils.setLoreLine(meta, 2, DARK_GRAY+"Crafted by "+GRAY+player.getName());
+                current.setItemMeta(meta);
+                player.sendMessage("You've crafted extra light-weight armor!");
             }
         }else{
-            current = ArmorEquipAttributes.applyWeight(modified, -1, BLUE);
+            current = ArmorEquipAttributes.applyArmorStats(modified, -1, BLUE);
         }
         event.setCurrentItem(current);
     }
-
 
     /**
      * This displays Armor Weight to the player
@@ -218,8 +219,9 @@ public class ArmorEquipAttributes implements Listener {
 //        Debug.broadcast("weight", "New Weight: "+weightColor(weight)+weight);
             player.sendActionBar("Armor Weight: " + weightColor(weight) + weight);
             ArmorStats stats = ArmorStats.getArmorStats(player.getEquipment());
-            Debug.broadcast("armorstats", BLUE+"Armor: "+WHITE+stats.getArmor()+BLUE+" Toughness: "+WHITE+stats.getToughness());
+//            Debug.broadcast("armorstats", "<blue>Armor:</blue> "+stats.getArmor()+" <blue>Toughness:</blue> "+stats.getToughness());
 //        player.updateInventory();
+//            Debug.broadcast("armorstats", "Player's Water Move: "+player.getAttribute(Attribute.WATER_MOVEMENT_EFFICIENCY).getValue());
 //            }
 //            player_weight_history.put(uuid, weight);
         }
@@ -258,52 +260,33 @@ public class ArmorEquipAttributes implements Listener {
      * Used for default armor
      */
     public ItemStack applyStats(ItemStack item){
-        item = applyWeight(item, -1, ChatColor.BLUE);
-//        item = applyArrowResist(item);
+        item = applyArmorStats(item, -1, BLUE);
         return item;
     }
-//    public ItemStack applyArrowResist(ItemStack item) {
-//        ItemMeta meta = item.getItemMeta();
-//        if (meta.getPersistentDataContainer().has(ARROW_RESIST_KEY)) return null; //returning null skips applying
-//
-//        double resist_value = 0;
-//        switch (item.getType()) {
-//            case CHAINMAIL_HELMET -> resist_value = 2;
-//            case CHAINMAIL_CHESTPLATE -> resist_value = 4;
-//            case CHAINMAIL_LEGGINGS -> resist_value = 3;
-//            case CHAINMAIL_BOOTS -> resist_value = 2;
-//        }
-//
-//        if(resist_value>0) {
-//            meta.getPersistentDataContainer().set(ARROW_RESIST_KEY, PersistentDataType.DOUBLE, resist_value);
-//            item.setItemMeta(meta);
-//            ItemStackUtils.setLoreLine(item, 0, ChatColor.BLUE + "+" + resist_value+ " Arrow Protection");
-//        }
-//        return item;
-//    }
 
     /**
      * Applies weight to an armor piece with a custom weight override
      * Used for custom blacksmith armor
      */
-    public static ItemStack applyWeight(ItemStack item, double custom_weight, ChatColor color){
+    public static ItemStack applyArmorStats(ItemStack item, double custom_weight, ChatColor color){
         ItemMeta meta = item.getItemMeta();
         if(meta.getPersistentDataContainer().has(WEIGHT_KEY))return null; //returning null skips applying
 
 
-        // IRON TOUGHNESS OVERRIDE
-        if(item.getType().name().contains("IRON_")){
+        ArmorStats vanillaStats = ArmorStats.getVanillaStats(item.getType());
+        // VANILLA ARMOR OVERRIDE
+//        if(item.getType().name().contains("IRON_")){
             AttributeModifier mod_armor = new AttributeModifier(
                     new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase()+"_armor"),
-                    ArmorStats.getVanillaStats(item.getType()).getArmor(),
+                    vanillaStats.getArmor(),
                     AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR);
             meta.addAttributeModifier(Attribute.ARMOR, mod_armor);
-            AttributeModifier mod_tough = new AttributeModifier(
-                    new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase()+"_toughness"),
-                    1,
-                    AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR);
-            meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, mod_tough);
-        }
+        AttributeModifier mod_tough = new AttributeModifier(
+                new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase()+"_toughness"),
+                vanillaStats.getToughness(),
+                AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR);
+        meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, mod_tough);
+        ArmorStats stats = ArmorStats.getVanillaStats(item.getType());
 
         double weight; //weight to apply to the item
         if(custom_weight!=-1) {
@@ -323,6 +306,16 @@ public class ArmorEquipAttributes implements Listener {
 
         //apply weight
         meta.getPersistentDataContainer().set(WEIGHT_KEY, PersistentDataType.DOUBLE, weight);
+
+
+        double slowness_debuff = -weight / 1000;
+
+        AttributeModifier mod_water_weight = new AttributeModifier(
+                new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase() + "_weight_slowness"),
+                slowness_debuff,
+                AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.ARMOR);
+        meta.addAttributeModifier(Attribute.MOVEMENT_SPEED, mod_water_weight);
+
         item.setItemMeta(meta);
         ItemStackUtils.setLoreLine(item, 0, color+"+"+weight+" Weight");
 //        Debug.broadcast("weight", "weight applied! "+BLUE+"MAT: "+material_weight+" "+GREEN+"SLOT: "+slot_weight);
@@ -335,10 +328,10 @@ public class ArmorEquipAttributes implements Listener {
             case LEATHER:
                 material_weight = 1.0;
                 break;
-            case CHAIN:
-                material_weight = 2.0;
-                break;
             case TURTLE_SCUTE:
+                material_weight = 1.5;
+                break;
+            case CHAIN:
                 material_weight = 2.0;
                 break;
             case GOLD_INGOT:
@@ -376,10 +369,6 @@ public class ArmorEquipAttributes implements Listener {
         return slot_weight;
     }
 
-    public static ChatColor weight_color = ChatColor.of(new Color(172,172,122));
-
-    private Map<UUID, Double> player_weight_history = new HashMap<UUID, Double>();
-
 
     private static final double BASE_WALK_SPEED = 0.1; // vanilla default
     private static final double MAX_ADDITIVE_BOOST = 0.6; // safety cap
@@ -404,9 +393,15 @@ public class ArmorEquipAttributes implements Listener {
     @EventHandler
     public void onPlayerJump(PlayerJumpEvent event) {
         Player player = event.getPlayer();
+//        if(player instanceof Player){
+//            return;
+//        }
         if(!player.isSprinting())return;
         Vector v = player.getVelocity();
         double y = v.getY();
+
+        PlayerUtil util = PlayerUtil.getPlayerUtil(player);
+        util.setCooldown("jumpweight", 1000);
 
 
         double weight = calculateWeight(player);
