@@ -5,13 +5,14 @@ import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
-import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.entity.*;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -19,8 +20,11 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.components.UseCooldownComponent;
 import org.bukkit.persistence.PersistentDataType;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import static net.md_5.bungee.api.ChatColor.*;
 
@@ -32,8 +36,11 @@ public class Bandage extends CustomItem {
     public Bandage(String id, String displayName) {
         super(id, displayName, org.bukkit.Material.PAPER, true);
     }
-
+    private static final NamespacedKey IS_DOWNED = new NamespacedKey(Specialization.getInstance(), "is_downed");
+    private final Map<UUID, Integer> reviveTasks = new HashMap<>();
     NamespacedKey RECIPE_KEY = new NamespacedKey(Specialization.getInstance(), "bandage_recipe");
+    private final Map<UUID, BossBar> reviveBars = new HashMap<>();
+
     /**
      * Called when loading/reloading
      */
@@ -65,32 +72,40 @@ public class Bandage extends CustomItem {
     }
 
     @Override
-    public boolean canPlayerCraft(Player player) {
-        return CoreUtil.getPlayer(player.getUniqueId()).getSkillLevel(SkillType.HEALER) > 0;
-    }
-
-    // Handles entity interaction (healing target)
-
-    @Override
     public void onInteractEntity(PlayerInteractEntityEvent event, ItemStack itemStack) {
         if (itemStack == null) return;
 
         Player healer = event.getPlayer();
         Entity clicked = event.getRightClicked();
 
-        // Only heal non-hostile living entities
-        if (clicked instanceof Monster) return;
+        // --- PLAYER TARGET ---
+        if (clicked instanceof Player pTarget) {
 
-        if (!(clicked instanceof LivingEntity target)) return;
+            Byte downed = pTarget.getPersistentDataContainer()
+                    .get(IS_DOWNED, PersistentDataType.BYTE);
 
-        // Only heal if not full health
-        AttributeInstance maxHealth = target.getAttribute(Attribute.MAX_HEALTH);
-        if (maxHealth == null || target.getHealth() >= maxHealth.getValue()) return;
+            if (downed != null && downed == 1) {
+                tryRevive(healer, pTarget, itemStack);
+                return;
+            }
 
-        if (isOnCooldown(healer)) return;
+            if (isOnCooldown(healer)) return;
+            applyHeal(healer, pTarget, itemStack);
+            return;
+        }
 
-        applyHeal(healer, target, itemStack);
+        // --- PASSIVE MOB TARGET ---
+        if (clicked instanceof Mob mob) {
+            if (mob.getSpawnCategory() == SpawnCategory.ANIMAL) {
+                if (isOnCooldown(healer)) return;
+                applyHeal(healer, mob, itemStack);
+            }
+        }
+
+        // all other entity types ignored
     }
+
+
 
     // Handles self-heal if sneak + right click air/block
     @Override
@@ -130,7 +145,7 @@ public class Bandage extends CustomItem {
         }
 
         int level = Math.min(lvl, 5);
-        double heal_amount = 2 + ((level - 1) * (8.0 / 4.0));
+        double heal_amount = 3 + ((level - 1) * (8.0 / 4.0));
         int xp = 15 + (int) ((level - 1) * (35.0 / 4.0));
         double new_health = Math.min(current_health + heal_amount, max_health);
         target.setHealth(new_health);
@@ -145,14 +160,15 @@ public class Bandage extends CustomItem {
             cHealer.addSkillXp(SkillType.HEALER, xp);
         }
         if (target instanceof Player pTarget) {
-            CoreUtil.getPlayer(pTarget.getUniqueId()).setDowned(false);
+            pTarget.getPersistentDataContainer().set(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE, (byte) 0);
+            applyCooldown(healer, 1200);
         }
 
         // Heart particles
         int particleCount = (int) Math.ceil(heal_amount / 2.0);
         World w = target.getWorld();
         w.spawnParticle(Particle.HEART, target.getLocation().add(0, 0.75, 0),
-                particleCount, 0.3, 0.3, 0.3, 0.05);
+                particleCount, 0.3, 1, 0.3, 0.5);
         w.playSound(target.getEyeLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1, 1);
         w.playSound(target.getEyeLocation(), Sound.ITEM_ARMOR_EQUIP_LEATHER, 0.85f, 1.2f);
 
@@ -172,4 +188,74 @@ public class Bandage extends CustomItem {
         Debug.broadcast("customitem_"+healer.getName().toLowerCase(), "message of "+healer.getName());
         Debug.message(healer,"customitem",("<green>Used " + getDisplayName() + " on " + target.getName() + " for " + heal_amount + " HP. " + heartsMsg));
     }
+
+    private void tryRevive(Player healer, Player pTarget, ItemStack bandage) {
+        Debug.broadcast("revive", "<gray>trying to revive");
+        Byte downed = pTarget.getPersistentDataContainer().get(IS_DOWNED, PersistentDataType.BYTE);
+        if (downed == null || downed == 0) {
+            applyHeal(healer, pTarget, bandage);
+            return;
+        }
+
+        if (reviveTasks.containsKey(healer.getUniqueId()))
+            return;
+
+        BossBar bar = reviveBars.get(pTarget.getUniqueId());
+
+        if (bar == null) {
+            bar = Bukkit.createBossBar(("Reviving " + pTarget.getName()+"..."), BarColor.GREEN, BarStyle.SOLID);
+            bar.addPlayer(healer);
+            bar.addPlayer(pTarget);
+            reviveBars.put(pTarget.getUniqueId(), bar);
+        }
+
+        bar.setProgress(0);
+        bar.setVisible(true);
+
+
+        BossBar finalBar = bar;
+        int taskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(
+                Specialization.getInstance(),
+                new Runnable() {
+                    double progress = 0;
+                    final double increment = 1 / 60.0; // 3 seconds @ 20 TPS
+
+                    @Override
+                    public void run() {
+                        Debug.broadcast("revive", "<gray>Revive running...");
+                        // cancellation checks
+                        if (!healer.isValid() || !pTarget.isValid()
+                                || healer.getLocation().distanceSquared(pTarget.getLocation()) > 4
+                                || healer.isDead() || pTarget.isDead()
+                                || !healer.isHandRaised()) {
+                            Debug.broadcast("revive", "<orange>Revive cancelled");
+                            finalBar.removeAll();
+                            Bukkit.getScheduler().cancelTask(reviveTasks.remove(healer.getUniqueId()));
+                            return;
+                        }
+
+                        progress += increment;
+                        finalBar.setProgress(Math.min(progress, 1.0));
+
+                        if (progress >= 1.0) {
+                            pTarget.getPersistentDataContainer().set(
+                                    IS_DOWNED,
+                                    PersistentDataType.BYTE,
+                                    (byte) 0
+                            );
+
+                            bandage.setAmount(bandage.getAmount() - 1);
+
+                            applyCooldown(healer, 1200);
+                            finalBar.removeAll();
+                            Bukkit.getScheduler().cancelTask(reviveTasks.remove(healer.getUniqueId()));
+                        }
+                    }
+                },
+                0L, 1L
+        );
+
+        reviveTasks.put(healer.getUniqueId(), taskId);
+    }
+
 }
