@@ -1,7 +1,7 @@
 package com.minecraftcivilizations.specialization.CustomItem;
 
-import com.comphenix.protocol.events.PacketEvent;
 import com.minecraftcivilizations.specialization.Listener.Player.Inventories.SpecializationCraftItemEvent;
+import com.minecraftcivilizations.specialization.Listener.Player.ReviveListener;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import io.papermc.paper.event.entity.EntityLoadCrossbowEvent;
@@ -51,19 +51,22 @@ public class CustomItemManager implements Listener {
     private List<String> customItemIds = new ArrayList<String>();
 
     Specialization plugin;
+
     // items are defined and referenced here
     @Getter
     public DefineCustomItems definitions;
-
-    public CustomItemManager(Specialization plugin){
+    private final ReviveListener reviveListener;
+    public CustomItemManager(Specialization plugin, ReviveListener reviveListener){
         this.plugin = plugin;
+        this.reviveListener = reviveListener;
+
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
     public void initializeCustomItems(){
         custom_items_loaded = new HashMap<String, CustomItem>();
         customItemIds = new ArrayList<String>();
-        definitions = new DefineCustomItems(plugin);
+        definitions = new DefineCustomItems(plugin, reviveListener);
         for(CustomItem customItem : custom_items_loaded.values()){
             customItem.init();
         }

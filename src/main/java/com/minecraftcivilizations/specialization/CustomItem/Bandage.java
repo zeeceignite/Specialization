@@ -11,17 +11,11 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.*;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -36,7 +30,6 @@ import java.util.UUID;
  * @author jfrogy, alectriciti
  */
 public class Bandage extends CustomItem {
-
     private final ReviveListener reviveListener;
     public Bandage(String id, String displayName, ReviveListener reviveListener) {
         super(id, displayName, org.bukkit.Material.PAPER, true);
@@ -44,7 +37,6 @@ public class Bandage extends CustomItem {
     }
     private static final NamespacedKey IS_DOWNED = new NamespacedKey(Specialization.getInstance(), "is_downed");
     private final Map<UUID, Player> healerToDownedPlayer = new HashMap<>();
-
     NamespacedKey RECIPE_KEY = new NamespacedKey(Specialization.getInstance(), "bandage_recipe");
     private final Map<UUID, BossBar> reviveBars = new HashMap<>();
 

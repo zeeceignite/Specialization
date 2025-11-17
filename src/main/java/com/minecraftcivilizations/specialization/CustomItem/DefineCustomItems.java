@@ -30,11 +30,12 @@ import java.util.List;
 public class DefineCustomItems implements Listener {
 
 
-    public DefineCustomItems(Specialization plugin) {
+    private final ReviveListener reviveListener;
+    private Bandage bandage;
+    public DefineCustomItems(Specialization plugin, ReviveListener reviveListener) {
+        this.reviveListener = reviveListener;
+        this.bandage = new Bandage("bandage", "Bandage", reviveListener);
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        ReviveListener reviveListener = plugin.getReviveListener();
-        Bandage bandage = new Bandage("bandage", "Bandage", reviveListener);
-
     }
 
 
@@ -58,8 +59,6 @@ public class DefineCustomItems implements Listener {
             event.setCurrentItem(modified);
         }
     }
-
-
 
     CustomItem masterwork_sword = new CustomWeapon("masterwork_sword");
 
