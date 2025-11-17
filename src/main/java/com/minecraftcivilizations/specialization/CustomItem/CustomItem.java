@@ -266,6 +266,7 @@ public abstract class CustomItem {
 
 
 
+
     // Called when the player right or left clicks with the item on an entity
 //    public void onInteractEntity(ItemStack item_stack, PlayerInteractEntityEvent event, boolean main_hand) {}
 

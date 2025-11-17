@@ -96,6 +96,8 @@ public final class Specialization extends JavaPlugin {
     private PVPManager pvpManager;
     private XPMonitoringCommand xpMonitoringCommand;
     private PlayerDownedListener playerDownedListener;
+    @Getter
+    private ReviveListener reviveListener;
 
 
     //Holder for transient player data such as cooldowns
@@ -124,7 +126,7 @@ public final class Specialization extends JavaPlugin {
     xpMonitoringCommand = new XPMonitoringCommand();
     playerDownedListener = new PlayerDownedListener(this);
     pvpManager = new PVPManager(playerDownedListener, this);
-
+    reviveListener = new ReviveListener();
 //    emoteListener = new EmoteListener(this);
 
 
@@ -162,6 +164,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new RepairingListener(), this);
         getServer().getPluginManager().registerEvents(phantomRideListener, this);
         getServer().getPluginManager().registerEvents(playerDownedListener, this);
+        getServer().getPluginManager().registerEvents(reviveListener, this);
 
 
         //town data does not need to wait anymore
@@ -450,6 +453,7 @@ public final class Specialization extends JavaPlugin {
     public PlayerUtil getPlayerUtil(UUID uniqueId) {
         return playerUtilMap.get(uniqueId);
     }
+
 
 
 }

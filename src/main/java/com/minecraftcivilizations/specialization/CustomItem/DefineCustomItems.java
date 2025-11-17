@@ -1,6 +1,7 @@
 package com.minecraftcivilizations.specialization.CustomItem;
 
 import com.minecraftcivilizations.specialization.Combat.ArmorEquipAttributes;
+import com.minecraftcivilizations.specialization.Listener.Player.ReviveListener;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import net.kyori.adventure.text.Component;
@@ -31,6 +32,9 @@ public class DefineCustomItems implements Listener {
 
     public DefineCustomItems(Specialization plugin) {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        ReviveListener reviveListener = plugin.getReviveListener();
+        Bandage bandage = new Bandage("bandage", "Bandage", reviveListener);
+
     }
 
 
@@ -55,7 +59,7 @@ public class DefineCustomItems implements Listener {
         }
     }
 
-    CustomItem bandage = new Bandage("bandage", "Bandage");
+
 
     CustomItem masterwork_sword = new CustomWeapon("masterwork_sword");
 

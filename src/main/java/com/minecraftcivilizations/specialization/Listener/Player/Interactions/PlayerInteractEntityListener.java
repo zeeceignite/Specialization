@@ -38,43 +38,43 @@ public class PlayerInteractEntityListener implements Listener {
     public PlayerInteractEntityListener(PlayerDownedListener playerDownedListener) {
         this.deathListener = playerDownedListener;
     }
-
-    @EventHandler
-    public void onPlayerInteractEntity(PlayerInteractEntityEvent e) {
-        Player p = e.getPlayer();
-        if (p.isSneaking()) return;
-        CustomPlayer customPlayer = CoreUtil.getPlayer(p.getUniqueId());
-
-        if(e.getRightClicked() instanceof Boat){
-            if(customPlayer.isDowned()) e.setCancelled(true);
-            return;
-        }
-
-        if (e.getRightClicked() instanceof Player clickedPlayer) {
-            if (customPlayer == null) return;
-            if (customPlayer.getSkillLevel(SkillType.HEALER) > SkillLevel.JOURNEYMAN.getLevel()) {
-
-                //havnt been able to test this. should work?? this class needs a rework for the reviving anyway.
-                // no idea why armor stands are needed for ts lol
-                if (deathListener.isDowned(clickedPlayer)) {
-                    deathListener.setDowned(clickedPlayer, false, clickedPlayer.getHealth());
-                    p.addPassenger(clickedPlayer);
-                    downedPlayerToHealer.put(clickedPlayer.getUniqueId(), p.getUniqueId());
-
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            if (p.getPassengers().isEmpty()) {
-                                p.removePotionEffect(PotionEffectType.SLOWNESS);
-                                return;
-                            }
-                            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, Integer.MAX_VALUE, 2));
-                        }
-                    }.runTaskTimer(Specialization.getInstance(), 0, 1);
-                }
-            }
-        }
-    }
+//
+//    @EventHandler
+//    public void onPlayerInteractEntity(PlayerInteractEntityEvent e) {
+//        Player p = e.getPlayer();
+//        if (p.isSneaking()) return;
+//        CustomPlayer customPlayer = CoreUtil.getPlayer(p.getUniqueId());
+//
+//        if(e.getRightClicked() instanceof Boat){
+//            if(customPlayer.isDowned()) e.setCancelled(true);
+//            return;
+//        }
+//
+//        if (e.getRightClicked() instanceof Player clickedPlayer) {
+//            if (customPlayer == null) return;
+//            if (customPlayer.getSkillLevel(SkillType.HEALER) > SkillLevel.JOURNEYMAN.getLevel()) {
+//
+//                //havnt been able to test this. should work?? this class needs a rework for the reviving anyway.
+//                // no idea why armor stands are needed for ts lol
+//                if (deathListener.isDowned(clickedPlayer)) {
+//                    deathListener.setDowned(clickedPlayer, false, clickedPlayer.getHealth());
+//                    p.addPassenger(clickedPlayer);
+//                    downedPlayerToHealer.put(clickedPlayer.getUniqueId(), p.getUniqueId());
+//
+//                    new BukkitRunnable() {
+//                        @Override
+//                        public void run() {
+//                            if (p.getPassengers().isEmpty()) {
+//                                p.removePotionEffect(PotionEffectType.SLOWNESS);
+//                                return;
+//                            }
+//                            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, Integer.MAX_VALUE, 2));
+//                        }
+//                    }.runTaskTimer(Specialization.getInstance(), 0, 1);
+//                }
+//            }
+//        }
+//    }
 
     @EventHandler
     public void onPlayerToggleSneak(PlayerToggleSneakEvent event) {

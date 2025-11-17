@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.CustomItem;
 
+import com.minecraftcivilizations.specialization.Listener.Player.ReviveListener;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
@@ -14,9 +15,13 @@ import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.*;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -26,18 +31,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static net.md_5.bungee.api.ChatColor.*;
 
 /**
  * @author jfrogy, alectriciti
  */
 public class Bandage extends CustomItem {
 
-    public Bandage(String id, String displayName) {
+    private final ReviveListener reviveListener;
+    public Bandage(String id, String displayName, ReviveListener reviveListener) {
         super(id, displayName, org.bukkit.Material.PAPER, true);
+        this.reviveListener = reviveListener;
     }
     private static final NamespacedKey IS_DOWNED = new NamespacedKey(Specialization.getInstance(), "is_downed");
-    private final Map<UUID, Integer> reviveTasks = new HashMap<>();
+    private final Map<UUID, Player> healerToDownedPlayer = new HashMap<>();
+
     NamespacedKey RECIPE_KEY = new NamespacedKey(Specialization.getInstance(), "bandage_recipe");
     private final Map<UUID, BossBar> reviveBars = new HashMap<>();
 
@@ -85,9 +92,16 @@ public class Bandage extends CustomItem {
                     .get(IS_DOWNED, PersistentDataType.BYTE);
 
             if (downed != null && downed == 1) {
-                tryRevive(healer, pTarget, itemStack);
+                reviveListener.startRevive(healer, pTarget, reviveListener.createReviveInventory(pTarget));
+                event.getPlayer().sendMessage("revive started attempt");
+
+                applyHeal(healer, pTarget, itemStack);
+                // Optionally create a boss bar to show revive progress
+//                createReviveBossBar(healer, pTarget);
+
                 return;
             }
+
 
             if (isOnCooldown(healer)) return;
             applyHeal(healer, pTarget, itemStack);
@@ -104,6 +118,7 @@ public class Bandage extends CustomItem {
 
         // all other entity types ignored
     }
+
 
 
 
@@ -152,16 +167,16 @@ public class Bandage extends CustomItem {
         healer.setFoodLevel(healer.getFoodLevel() - 3);
 
         if(target.equals(healer)){
-            applyCooldown(healer, 1200);
+            applyCooldown(healer, 2);
         }else{
-            applyCooldown(healer, 150);
+            applyCooldown(healer, 1);
         }
         if (!(target instanceof Enemy)) {
             cHealer.addSkillXp(SkillType.HEALER, xp);
         }
         if (target instanceof Player pTarget) {
             pTarget.getPersistentDataContainer().set(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE, (byte) 0);
-            applyCooldown(healer, 1200);
+            applyCooldown(healer, 2);
         }
 
         // Heart particles
@@ -189,73 +204,6 @@ public class Bandage extends CustomItem {
         Debug.message(healer,"customitem",("<green>Used " + getDisplayName() + " on " + target.getName() + " for " + heal_amount + " HP. " + heartsMsg));
     }
 
-    private void tryRevive(Player healer, Player pTarget, ItemStack bandage) {
-        Debug.broadcast("revive", "<gray>trying to revive");
-        Byte downed = pTarget.getPersistentDataContainer().get(IS_DOWNED, PersistentDataType.BYTE);
-        if (downed == null || downed == 0) {
-            applyHeal(healer, pTarget, bandage);
-            return;
-        }
 
-        if (reviveTasks.containsKey(healer.getUniqueId()))
-            return;
-
-        BossBar bar = reviveBars.get(pTarget.getUniqueId());
-
-        if (bar == null) {
-            bar = Bukkit.createBossBar(("Reviving " + pTarget.getName()+"..."), BarColor.GREEN, BarStyle.SOLID);
-            bar.addPlayer(healer);
-            bar.addPlayer(pTarget);
-            reviveBars.put(pTarget.getUniqueId(), bar);
-        }
-
-        bar.setProgress(0);
-        bar.setVisible(true);
-
-
-        BossBar finalBar = bar;
-        int taskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(
-                Specialization.getInstance(),
-                new Runnable() {
-                    double progress = 0;
-                    final double increment = 1 / 60.0; // 3 seconds @ 20 TPS
-
-                    @Override
-                    public void run() {
-                        Debug.broadcast("revive", "<gray>Revive running...");
-                        // cancellation checks
-                        if (!healer.isValid() || !pTarget.isValid()
-                                || healer.getLocation().distanceSquared(pTarget.getLocation()) > 4
-                                || healer.isDead() || pTarget.isDead()
-                                || !healer.isHandRaised()) {
-                            Debug.broadcast("revive", "<orange>Revive cancelled");
-                            finalBar.removeAll();
-                            Bukkit.getScheduler().cancelTask(reviveTasks.remove(healer.getUniqueId()));
-                            return;
-                        }
-
-                        progress += increment;
-                        finalBar.setProgress(Math.min(progress, 1.0));
-
-                        if (progress >= 1.0) {
-                            pTarget.getPersistentDataContainer().set(
-                                    IS_DOWNED,
-                                    PersistentDataType.BYTE,
-                                    (byte) 0
-                            );
-
-                            bandage.setAmount(bandage.getAmount() - 1);
-
-                            applyCooldown(healer, 1200);
-                            finalBar.removeAll();
-                            Bukkit.getScheduler().cancelTask(reviveTasks.remove(healer.getUniqueId()));
-                        }
-                    }
-                },
-                0L, 1L
-        );
-
-        reviveTasks.put(healer.getUniqueId(), taskId);
-    }
 
 }

@@ -87,6 +87,7 @@ public class Debug implements Listener {
         getOrCreateChannelPlayerSet("globalchat", true);
         getOrCreateChannelPlayerSet("down", true);
         getOrCreateChannelPlayerSet("combatlog", true);
+        getOrCreateChannelPlayerSet("revive", true);
     }
 
     /**
