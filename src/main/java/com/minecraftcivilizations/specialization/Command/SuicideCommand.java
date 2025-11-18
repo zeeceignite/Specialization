@@ -48,7 +48,7 @@ public class SuicideCommand extends BaseCommand {
 
         // Down the player using PlayerDownedListener
         downedListener.setDowned(player, true, 10); // 10 = default health when downed
-        player.sendMessage(Component.text("You are now downed.").color(NamedTextColor.YELLOW));
+//        player.sendMessage(Component.text("You are now downed.").color(NamedTextColor.YELLOW));
     }
 
     // -------------------------

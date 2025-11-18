@@ -4,6 +4,10 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -26,6 +30,8 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -42,11 +48,11 @@ public class PlayerDownedListener implements Listener {
     private final Map<UUID, BukkitTask> downTimers = new HashMap<>();
     private final Map<UUID, Entity> downStands = new HashMap<>();
     private final Map<UUID, BossBar> bossBars = new HashMap<>();
-    private static final int DOWNED_DURATION_TICKS = 20 * 20; // 20 seconds
+    private static final int DOWNED_DURATION_TICKS = 60 * 20; // 60 seconds
     // --- Add NamespacedKey for remaining ticks ---
     private final NamespacedKey downedTicksKey;
     private final Map<UUID, Integer> downTicksRemaining = new HashMap<>();
-    private static int joinEventCounter = 0; // counter for join events
+    private final Map<UUID, BukkitTask> darknessTasks = new HashMap<>();
 
     public PlayerDownedListener(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -74,6 +80,8 @@ public class PlayerDownedListener implements Listener {
             clearDowned(player);
         } else {
             startDowned(player, health, DOWNED_DURATION_TICKS);
+            sendDownedMessage(player);
+            player.sendMessage(Component.text("You're knocked out").color(NamedTextColor.YELLOW));
         }
     }
 
@@ -118,6 +126,13 @@ public class PlayerDownedListener implements Listener {
             e.remove();
         }
 
+        BukkitTask darknessTask = darknessTasks.remove(uuid);
+        if (darknessTask != null) {
+            darknessTask.cancel();
+        }
+        player.removePotionEffect(PotionEffectType.DARKNESS);
+
+
         player.leaveVehicle();
 
     }
@@ -125,13 +140,11 @@ public class PlayerDownedListener implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        joinEventCounter++; // increment each time event is called
         Player player = event.getPlayer();
         var pdc = player.getPersistentDataContainer();
 
         Integer ticksLeft = pdc.get(downedTicksKey, PersistentDataType.INTEGER);
 
-        Debug.broadcast("down","[DOWNED-DEBUG] onPlayerJoin called " + joinEventCounter + " times for player " + player.getName());
 
         // --- CASE 1: Player was downed AND ticksLeft exists (normal restore) ---
         if (ticksLeft != null && isDowned(player)) {
@@ -250,7 +263,10 @@ public class PlayerDownedListener implements Listener {
 
             @Override
             public void run() {
-                if (!player.isOnline() || !isDowned(player)) return;
+                if (!isDowned(player)){
+                    clearDowned(player);
+                    return;
+                }
 
                 ticksLeft--;
                 downTicksRemaining.put(id, ticksLeft);
@@ -263,6 +279,16 @@ public class PlayerDownedListener implements Listener {
                 }
             }
         }, 1L, 1L);
+
+        // Darkness effect every 5 seconds for 3 seconds
+        BukkitTask darknessTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (!isDowned(player)) {
+                return;
+            }
+            player.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 50, 0, true, false, false));
+        }, 200L, 100L); // 200 ticks = 10 seconds
+        darknessTasks.put(id, darknessTask);
+
 
         downTimers.put(id, task);
     }
@@ -348,6 +374,31 @@ public class PlayerDownedListener implements Listener {
     }
 
 
+    private void sendDownedMessage(Player player) {
+        // [Give Up] button
+        Component giveUp = Component.text("[Give Up]", NamedTextColor.RED)
+                .clickEvent(ClickEvent.runCommand("/giveup"))
+                .hoverEvent(HoverEvent.showText(Component.text("Click to give up and respawn!")));
+
+        Component msg = Component.text("Press Here to ", NamedTextColor.GRAY)
+                .append(giveUp)
+                .append(Component.text(" & Respawn", NamedTextColor.GRAY));
+
+        // Send main message
+        player.sendMessage(msg);
+
+        // If player is allowed to self revive
+        if (player.hasPermission("civlabs.selfrevive")) {
+            Component revive = Component.text("[Revive]", NamedTextColor.GREEN)
+                    .clickEvent(ClickEvent.runCommand("/revive"))
+                    .hoverEvent(HoverEvent.showText(Component.text("Click to instantly revive yourself!")));
+
+            player.sendMessage(revive);
+        }
+
+    }
+
+
 
     @EventHandler
     public void onPickup(EntityPickupItemEvent event) {
@@ -366,7 +417,7 @@ public class PlayerDownedListener implements Listener {
     @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player p && cancelIfDowned(p, event)) {
-            p.sendMessage("§cYou are downed and cannot attack!");
+            p.sendMessage("§7You are knocked out and cannot attack");
         }
     }
 }

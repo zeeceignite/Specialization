@@ -104,6 +104,9 @@ public class Bandage extends CustomItem {
         if (clicked instanceof Mob mob) {
             if (mob.getSpawnCategory() == SpawnCategory.ANIMAL) {
                 if (isOnCooldown(healer)) return;
+
+                // ------ For *TESTING*
+                reviveListener.startRevive(healer, healer, reviveListener.createReviveInventory(healer));
                 applyHeal(healer, mob, itemStack);
             }
         }
