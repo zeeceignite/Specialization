@@ -36,9 +36,7 @@ public class Bandage extends CustomItem {
         this.reviveListener = reviveListener;
     }
     private static final NamespacedKey IS_DOWNED = new NamespacedKey(Specialization.getInstance(), "is_downed");
-    private final Map<UUID, Player> healerToDownedPlayer = new HashMap<>();
     NamespacedKey RECIPE_KEY = new NamespacedKey(Specialization.getInstance(), "bandage_recipe");
-    private final Map<UUID, BossBar> reviveBars = new HashMap<>();
 
     /**
      * Called when loading/reloading
@@ -61,8 +59,8 @@ public class Bandage extends CustomItem {
     public void onCreateItem(ItemStack itemStack, ItemMeta meta, Player player_who_crafted) {
         meta.setEnchantmentGlintOverride(true);
         meta.lore(java.util.List.of(
-                Component.text("Shift + Right Click to heal yourself.").color(NamedTextColor.BLUE),
-                Component.text("Right Click a player/passive mob to heal them.").color(NamedTextColor.BLUE),
+                Component.text("As a Healer Shift + Right Click to heal yourself.").color(NamedTextColor.BLUE),
+                Component.text("Right Click a player to heal them or revive.").color(NamedTextColor.BLUE),
                 Component.empty(),
                 Component.text("Amount Healed and XP gained scale with Healer level.").color(NamedTextColor.GRAY),
                 Component.text("Crafted by "+(player_who_crafted!=null?player_who_crafted.getName():"nobody")).color(NamedTextColor.GRAY)
@@ -75,6 +73,10 @@ public class Bandage extends CustomItem {
         if (itemStack == null) return;
 
         Player healer = event.getPlayer();
+        CustomPlayer cHealer = CoreUtil.getPlayer(healer.getUniqueId());
+        int lvl = cHealer.getSkillLevel(SkillType.HEALER);
+        if (lvl == 0) return;
+
         Entity clicked = event.getRightClicked();
 
         // --- PLAYER TARGET ---
@@ -84,16 +86,12 @@ public class Bandage extends CustomItem {
                     .get(IS_DOWNED, PersistentDataType.BYTE);
 
             if (downed != null && downed == 1) {
-                reviveListener.startRevive(healer, pTarget, reviveListener.createReviveInventory(pTarget));
-                event.getPlayer().sendMessage("revive started attempt");
 
+                reviveListener.startRevive(healer, pTarget, reviveListener.createReviveInventory(pTarget));
                 applyHeal(healer, pTarget, itemStack);
-                // Optionally create a boss bar to show revive progress
-//                createReviveBossBar(healer, pTarget);
 
                 return;
             }
-
 
             if (isOnCooldown(healer)) return;
             applyHeal(healer, pTarget, itemStack);
@@ -140,7 +138,6 @@ public class Bandage extends CustomItem {
         Debug.broadcast("customitem", "<green>applying heal");
         CustomPlayer cHealer = CoreUtil.getPlayer(healer.getUniqueId());
         int lvl = cHealer.getSkillLevel(SkillType.HEALER);
-        if (lvl == 0) return;
 
         double current_health = target.getHealth();
         double max_health = target.getAttribute(Attribute.MAX_HEALTH).getValue();
