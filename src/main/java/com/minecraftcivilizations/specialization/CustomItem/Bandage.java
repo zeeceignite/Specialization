@@ -6,12 +6,11 @@ import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.boss.BossBar;
 import org.bukkit.entity.*;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -21,29 +20,25 @@ import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
 
 /**
  * @author jfrogy, alectriciti
  */
 public class Bandage extends CustomItem {
+    private static final NamespacedKey IS_DOWNED = new NamespacedKey(Specialization.getInstance(), "is_downed");
     private final ReviveListener reviveListener;
+    NamespacedKey RECIPE_KEY = new NamespacedKey(Specialization.getInstance(), "bandage_recipe");
     public Bandage(String id, String displayName, ReviveListener reviveListener) {
         super(id, displayName, org.bukkit.Material.PAPER, true);
         this.reviveListener = reviveListener;
     }
-    private static final NamespacedKey IS_DOWNED = new NamespacedKey(Specialization.getInstance(), "is_downed");
-    NamespacedKey RECIPE_KEY = new NamespacedKey(Specialization.getInstance(), "bandage_recipe");
 
     /**
      * Called when loading/reloading
      */
-    public void init(){
+    public void init() {
 //        Bukkit.getRecipe()
-        if(Bukkit.getRecipe(RECIPE_KEY)!=null) {
+        if (Bukkit.getRecipe(RECIPE_KEY) != null) {
             Bukkit.removeRecipe(RECIPE_KEY);
         }
 
@@ -63,7 +58,7 @@ public class Bandage extends CustomItem {
                 Component.text("Right Click a player to heal them or revive.").color(NamedTextColor.BLUE),
                 Component.empty(),
                 Component.text("Amount Healed and XP gained scale with Healer level.").color(NamedTextColor.GRAY),
-                Component.text("Crafted by "+(player_who_crafted!=null?player_who_crafted.getName():"nobody")).color(NamedTextColor.GRAY)
+                Component.text("Crafted by " + (player_who_crafted != null ? player_who_crafted.getName() : "nobody")).color(NamedTextColor.GRAY)
         ));
         itemStack.setItemMeta(meta);
     }
@@ -113,8 +108,6 @@ public class Bandage extends CustomItem {
     }
 
 
-
-
     // Handles self-heal if sneak + right click air/block
     @Override
     public void onInteract(PlayerInteractEvent event, ItemStack itemStack) {
@@ -126,7 +119,7 @@ public class Bandage extends CustomItem {
 
         if (!healer.isSneaking()) return; // only handle sneak self-heal here
 
-        if (isOnCooldown(healer))return;
+        if (isOnCooldown(healer)) return;
 
         applyHeal(healer, healer, itemStack);
     }
@@ -139,9 +132,11 @@ public class Bandage extends CustomItem {
         CustomPlayer cHealer = CoreUtil.getPlayer(healer.getUniqueId());
         int lvl = cHealer.getSkillLevel(SkillType.HEALER);
 
+        if (lvl<=0) return;
+
         double current_health = target.getHealth();
         double max_health = target.getAttribute(Attribute.MAX_HEALTH).getValue();
-        if(current_health >= max_health){
+        if (current_health >= max_health) {
             Debug.broadcast("customitem", "<red>returned in maxheal");
             return;
         }
@@ -158,16 +153,21 @@ public class Bandage extends CustomItem {
         target.setHealth(new_health);
         healer.setFoodLevel(healer.getFoodLevel() - 3);
 
-        if(target.equals(healer)){
+        //healing themselves
+        if (target.equals(healer)) {
             applyCooldown(healer, 2);
-        }else{
+        } else {
+            //healing another player?
             applyCooldown(healer, 1);
         }
+        //healing a friendly mob
         if (!(target instanceof Enemy)) {
             cHealer.addSkillXp(SkillType.HEALER, xp);
         }
+        //healing another player again?
         if (target instanceof Player pTarget) {
-            pTarget.getPersistentDataContainer().set(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE, (byte) 0);
+            //old revive system
+//            pTarget.getPersistentDataContainer().set(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE, (byte) 0);
             applyCooldown(healer, 2);
         }
 
@@ -192,10 +192,9 @@ public class Bandage extends CustomItem {
                 "<gray>❤</gray>".repeat(Math.max(0, grayHearts));
         healer.sendMessage(MiniMessage.miniMessage().deserialize(heartsMsg));
         //debug msg
-        Debug.broadcast("customitem_"+healer.getName().toLowerCase(), "message of "+healer.getName());
-        Debug.message(healer,"customitem",("<green>Used " + getDisplayName() + " on " + target.getName() + " for " + heal_amount + " HP. " + heartsMsg));
+        Debug.broadcast("customitem_" + healer.getName().toLowerCase(), "message of " + healer.getName());
+        Debug.message(healer, "customitem", ("<green>Used " + getDisplayName() + " on " + target.getName() + " for " + heal_amount + " HP. " + heartsMsg));
     }
-
 
 
 }

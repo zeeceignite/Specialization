@@ -2,6 +2,7 @@ package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
@@ -23,10 +24,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityPickupItemEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.player.*;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -254,7 +252,10 @@ public class PlayerDownedListener implements Listener {
         }
 
         // BossBar & bleedout timer
-        BossBar bar = Bukkit.createBossBar("§8Bleeding out", BarColor.RED, BarStyle.SOLID);
+        BossBar bar = bossBars.computeIfAbsent(id,
+                k -> Bukkit.createBossBar("§8Bleeding out", BarColor.RED, BarStyle.SOLID));
+
+
         bar.addPlayer(player);
         bossBars.put(id, bar);
 
@@ -281,13 +282,15 @@ public class PlayerDownedListener implements Listener {
         }, 1L, 1L);
 
         // Darkness effect every 5 seconds for 3 seconds
-        BukkitTask darknessTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            if (!isDowned(player)) {
-                return;
-            }
-            player.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 50, 0, true, false, false));
-        }, 200L, 100L); // 200 ticks = 10 seconds
-        darknessTasks.put(id, darknessTask);
+        if (!darknessTasks.containsKey(id)) {
+            BukkitTask darknessTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+                if (!isDowned(player)) return;
+                player.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 50, 0, true, false, false));
+            }, 200L, 100L);
+
+            darknessTasks.put(id, darknessTask);
+        }
+
 
 
         downTimers.put(id, task);
@@ -354,8 +357,6 @@ public class PlayerDownedListener implements Listener {
     }
 
 
-
-
     private Block findBlockBelow(Location loc) {
         World world = loc.getWorld();
         int y = loc.getBlockY();
@@ -376,9 +377,9 @@ public class PlayerDownedListener implements Listener {
 
     private void sendDownedMessage(Player player) {
         // [Give Up] button
-        Component giveUp = Component.text("[Give Up]", NamedTextColor.RED)
+        Component giveUp = Component.text("/GiveUp", NamedTextColor.RED)
                 .clickEvent(ClickEvent.runCommand("/giveup"))
-                .hoverEvent(HoverEvent.showText(Component.text("Click to give up and respawn!")));
+                .hoverEvent(HoverEvent.showText(Component.text("Click to give up and respawn")));
 
         Component msg = Component.text("Press Here to ", NamedTextColor.GRAY)
                 .append(giveUp)
@@ -398,6 +399,21 @@ public class PlayerDownedListener implements Listener {
 
     }
 
+
+//    @EventHandler
+//    public void onMounted(EntityMountEvent event) {
+//        if (event.getEntity()instanceof Player player){
+//            Byte downed = player.getPersistentDataContainer().get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE);
+//            if (!(downed == null || downed == 0)) return;
+//            player.leaveVehicle();
+//            UUID uuid = player.getUniqueId();
+//        Entity e = downStands.remove(uuid);
+//        if (e != null) {
+//            Debug.broadcast("down", "[DOWNED-DEBUG] Removing downed stand entity");
+//            e.remove();
+//        }
+//        }
+//    }
 
 
     @EventHandler

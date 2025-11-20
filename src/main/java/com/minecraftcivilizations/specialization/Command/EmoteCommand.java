@@ -120,9 +120,9 @@ public class EmoteCommand extends BaseCommand implements Listener {
     private void sit(Player player, Block block) {
         Location loc = getSeatLocation(block);
         Interaction seat = block.getWorld().spawn(loc, Interaction.class, i -> {
+            i.setInteractionWidth(0.6f);
+            i.setInteractionHeight(0f);
             i.setResponsive(false);
-            i.setInteractionWidth(0);
-            i.setInteractionHeight(0);
             i.setInvulnerable(true);
             i.setGravity(false);
         });
@@ -191,26 +191,34 @@ public class EmoteCommand extends BaseCommand implements Listener {
             return stairs.getHalf() == Stairs.Half.BOTTOM;
         }
 
-        return name.endsWith("_SLAB");
+        if (name.endsWith("_SLAB")) {
+            return true;
+        }
+
+        // Carpet support
+        if (name.endsWith("_CARPET")) {
+            return true;
+        }
+
+        return false;
     }
-    
+
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
         cancelSeat(event.getPlayer());
+        if (event.getPlayer().isInsideVehicle()) event.getPlayer().leaveVehicle();
     }
-
     private Location getSeatLocation(Block block) {
-        Location loc = block.getLocation().clone().add(0.5, 0, 0.5); // center of block
-        Material type = block.getType();
-        String name = type.name();
+        Location loc = block.getLocation().clone().add(0.5, 0, 0.5);
+        String name = block.getType().name();
 
         double yOffset = 0;
         double xOffset = 0;
         double zOffset = 0;
 
         if (name.endsWith("_STAIRS")) {
-            yOffset = 0.55; // vertical height for stairs
-            // Directional offsets
+            yOffset = 0.55;
+
             if (block.getBlockData() instanceof org.bukkit.block.data.Directional dir) {
                 switch (dir.getFacing()) {
                     case NORTH -> zOffset = 0.02;
@@ -218,6 +226,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
                     case WEST  -> xOffset = 0.02;
                     case EAST  -> xOffset = -0.02;
                 }
+
                 loc.setYaw(switch (dir.getFacing()) {
                     case NORTH -> 180f;
                     case SOUTH -> 0f;
@@ -226,27 +235,19 @@ public class EmoteCommand extends BaseCommand implements Listener {
                     default -> 0f;
                 });
             }
+
         } else if (name.endsWith("_SLAB")) {
-            yOffset = 0.55; // vertical height for slabs
-            if (block.getBlockData() instanceof org.bukkit.block.data.Directional dir) {
-                switch (dir.getFacing()) {
-                    case NORTH -> zOffset = -0.25;
-                    case SOUTH -> zOffset = 0.25;
-                    case WEST  -> xOffset = -0.25;
-                    case EAST  -> xOffset = 0.25;
-                }
-                loc.setYaw(switch (dir.getFacing()) {
-                    case NORTH -> 180f;
-                    case SOUTH -> 0f;
-                    case WEST  -> 90f;
-                    case EAST  -> -90f;
-                    default -> 0f;
-                });
-            }
+            yOffset = 0.55;
+
+
+        } else if (name.endsWith("_CARPET")) {
+            // Carpet is not directional
+            yOffset = 0.03;
         }
 
         loc.add(xOffset, yOffset, zOffset);
         return loc;
     }
+
 
 }

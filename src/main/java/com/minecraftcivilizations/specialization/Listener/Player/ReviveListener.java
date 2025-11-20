@@ -17,10 +17,13 @@ import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDismountEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -59,9 +62,17 @@ public class ReviveListener implements Listener {
             new HealthyItem("Healthy Brain", Material.RED_GLAZED_TERRACOTTA),
             new HealthyItem("Healthy Bone", Material.BONE)
     );
+
+    private final PlayerDownedListener playerDownedListener;
+
     private final Map<UUID, AttributeModifier> healerSlowModifiers = new ConcurrentHashMap<>();
     private final Map<UUID, Player> healerToDownedPlayer = new HashMap<>();
     private final Map<UUID, BossBar> downedBossBars = new HashMap<>();
+
+    public ReviveListener(PlayerDownedListener playerDownedListener) {
+        this.playerDownedListener = playerDownedListener;
+    }
+
 
     // -------------------------------
     // START REVIVE
@@ -260,6 +271,12 @@ public class ReviveListener implements Listener {
         updateBossBarProgress(downed, inv);
 
         if (allInjuriesCleared(inv)) {
+            CustomPlayer cHealer = CoreUtil.getPlayer(healer.getUniqueId());
+            int skillLevel = cHealer.getSkillLevel(SkillType.HEALER);
+            int hearts = skillLevel * 2;
+
+            healer.setHealth (Math.round(hearts));
+
             downed.getPersistentDataContainer().set(
                     new NamespacedKey(Specialization.getInstance(), "is_downed"),
                     PersistentDataType.BYTE,
@@ -312,6 +329,10 @@ public class ReviveListener implements Listener {
     public void onPickupPassenger(PlayerInteractAtEntityEvent e) {
         Player healer = e.getPlayer();
         Entity target = e.getRightClicked();
+        if (!(target instanceof LivingEntity)) return; //must be a living entity
+        Byte downed = healer.getPersistentDataContainer().get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE);
+
+        if (!(downed == null || downed == 0)) return; //must not be already down
         if (!isHealer(healer)) return; //must be healer or op
         if (!healer.getPassengers().isEmpty()) return; // must not have any passangers already
         if (!healer.getInventory().getItemInMainHand().getType().isAir()) return; // must be empty hand
@@ -342,13 +363,28 @@ public class ReviveListener implements Listener {
     @EventHandler
     public void onDismountSneak(PlayerToggleSneakEvent e) {
         Player healer = e.getPlayer();
+        if (e.getPlayer().getVehicle() instanceof Player){
+            e.setCancelled(true);
+        }
         if (!healer.isSneaking()) return;
 
         for (Entity passenger : new ArrayList<>(healer.getPassengers())) {
             healer.removePassenger(passenger);
+            if (passenger instanceof Player downedguy) {
+                playerDownedListener.setDowned(downedguy,true, downedguy.getHealth());
+            }
         }
 
         removeSlowIfNoPassengers(healer);
+    }
+
+    @EventHandler
+    public void onDismountEvent(EntityDismountEvent e) {
+        if (e.getDismounted() instanceof Player) {
+            if (!e.getDismounted().isSneaking()){
+                e.setCancelled(true);
+            }
+        }
     }
 
 
@@ -371,6 +407,10 @@ public class ReviveListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent e) {
         Player p = e.getPlayer();
         removeSlowIfNoPassengers(p);
+        if (p.getVehicle() instanceof Player vehicle){
+            p.sendMessage("quitter");
+            vehicle.removePassenger(p);
+    }
 
         BossBar bar = downedBossBars.remove(p.getUniqueId());
         if (bar != null) bar.removeAll();

@@ -118,13 +118,13 @@ public final class Specialization extends JavaPlugin {
 
 
     localChat = new LocalChat();
-    reviveListener = new ReviveListener();
+    playerDownedListener = new PlayerDownedListener(this);
+    reviveListener = new ReviveListener(playerDownedListener);
     smart_entity_manager = new SmartEntityManager(this);
         customItemManager = new CustomItemManager(this, reviveListener);
         customItemManager.initializeCustomItems();
     phantomRideListener = new PhantomRideListener(this);
     xpMonitoringCommand = new XPMonitoringCommand();
-    playerDownedListener = new PlayerDownedListener(this);
     pvpManager = new PVPManager(playerDownedListener, this);
 //    emoteListener = new EmoteListener(this);
 
