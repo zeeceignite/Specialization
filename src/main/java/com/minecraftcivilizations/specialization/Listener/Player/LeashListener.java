@@ -1,6 +1,5 @@
 package com.minecraftcivilizations.specialization.Listener.Player;
 
-import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -9,7 +8,10 @@ import com.minecraftcivilizations.specialization.util.CoreUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.entity.*;
+import org.bukkit.entity.LeashHitch;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Zombie;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
@@ -33,14 +35,15 @@ public class LeashListener implements Listener {
     private final HashMap<Player, LivingEntity> playerToZombie = new HashMap<>();
     // Map to track players leashed to fence posts
     private final HashMap<Player, LeashHitch> playerToFence = new HashMap<>();
+    PlayerDownedListener playerDownedListener = new PlayerDownedListener(Specialization.getInstance());
 
     @EventHandler
     public void onUnleash(EntityUnleashEvent e) {
-        if(e.getReason() == EntityUnleashEvent.UnleashReason.PLAYER_UNLEASH) return;
-        if(leashEntities.contains(e.getEntity())) {
+        if (e.getReason() == EntityUnleashEvent.UnleashReason.PLAYER_UNLEASH) return;
+        if (leashEntities.contains(e.getEntity())) {
             // Find and unleash the player associated with this zombie
             Player targetPlayer = findPlayerByZombie((LivingEntity) e.getEntity());
-            if(targetPlayer != null) {
+            if (targetPlayer != null) {
                 unleashPlayer(targetPlayer);
             }
         }
@@ -48,44 +51,40 @@ public class LeashListener implements Listener {
 
     @EventHandler
     public void onLeash(PlayerInteractAtEntityEvent e) {
-        if(!(e.getRightClicked() instanceof Player)) return;
-        if(!e.getHand().equals(EquipmentSlot.HAND)) return;
+        if (!(e.getRightClicked() instanceof Player)) return;
+        if (!e.getHand().equals(EquipmentSlot.HAND)) return;
 
         Player player = e.getPlayer();
         Player target = (Player) e.getRightClicked();
 
         // Check if player has lead
-        if(!player.getInventory().getItemInMainHand().getType().equals(Material.LEAD)) return;
-
+        if (!player.getInventory().getItemInMainHand().getType().equals(Material.LEAD)) return;
         // Check if player is grandmaster guardsman
         CustomPlayer leashHolder = CoreUtil.getPlayer(player);
-        if(leashHolder.getSkillLevel(SkillType.GUARDSMAN) < SkillLevel.GRANDMASTER.getLevel()) {
+        if (leashHolder.getSkillLevel(SkillType.GUARDSMAN) < SkillLevel.GRANDMASTER.getLevel()) {
             player.sendMessage("Only grandmaster guardsmen can leash players.");
             return;
         }
 
         // If target is already leashed, unleash them
-        if(leashedPlayers.contains(target)) {
+        if (leashedPlayers.contains(target)) {
             unleashPlayer(target);
             return;
         }
 
         // Check if target is downed
-        CustomPlayer targetCustomPlayer = CoreUtil.getPlayer(target);
-        if(!targetCustomPlayer.isDowned()) {
+        if (!playerDownedListener.isDowned(player)) {
             player.sendMessage("You can only leash downed players.");
             return;
         }
+        playerDownedListener.clearMount(player);
 
-        // Remove target from downed state and clean up armor stand
-        targetCustomPlayer.setDowned(false);
-//        PlayerDeathListener.removeDownedArmorStand(target);
 
         // Prevent duplicate zombies - check if player already has a zombie
-        if(playerToZombie.containsKey(target)) {
+        if (playerToZombie.containsKey(target)) {
             // Clean up existing zombie first
             LivingEntity existingZombie = playerToZombie.get(target);
-            if(existingZombie != null && existingZombie.isValid()) {
+            if (existingZombie != null && existingZombie.isValid()) {
                 existingZombie.remove();
             }
             playerToZombie.remove(target);
@@ -128,7 +127,7 @@ public class LeashListener implements Listener {
 
         // Safely add to leashed other players list
         CustomPlayer customPlayer = CoreUtil.getPlayer(player);
-        if(customPlayer.getLeashedOtherPlayers() != null) {
+        if (customPlayer.getLeashedOtherPlayers() != null) {
             customPlayer.getLeashedOtherPlayers().add(target.getUniqueId());
         }
 
@@ -145,14 +144,14 @@ public class LeashListener implements Listener {
             @Override
             public void run() {
                 // Check if leash should be removed
-                if(!target.isOnline() || !zombie.isValid() || !zombie.isLeashed() || !leashedPlayers.contains(target)) {
+                if (!target.isOnline() || !zombie.isValid() || !zombie.isLeashed() || !leashedPlayers.contains(target)) {
                     unleashPlayer(target);
                     cancel();
                     return;
                 }
 
                 // Check if zombie is leashed to a fence post
-                if(zombie.getLeashHolder() instanceof LeashHitch) {
+                if (zombie.getLeashHolder() instanceof LeashHitch) {
                     // Player is now leashed to a fence, handle differently
                     handleFenceLeash(target, zombie, (LeashHitch) zombie.getLeashHolder());
                     cancel();
@@ -167,7 +166,7 @@ public class LeashListener implements Listener {
                 double zombieMovement = lastZombieLocation.distanceSquared(zombieLoc);
                 double playerZombieDistance = playerLoc.distanceSquared(zombieLoc);
 
-                if(zombieMovement > 0.0025 || playerZombieDistance > 0.001) { // Much smaller thresholds for smoother movement
+                if (zombieMovement > 0.0025 || playerZombieDistance > 0.001) { // Much smaller thresholds for smoother movement
                     // Create new location using zombie's position but DON'T specify rotation
                     // This preserves the player's current clientside head rotation
                     Location newPlayerLocation = new Location(
@@ -191,12 +190,12 @@ public class LeashListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent e) {
         CustomPlayer player = CoreUtil.getPlayer(e);
-        if(player.getLeashedTo() != null){
+        if (player.getLeashedTo() != null) {
             Player leashHolder = Bukkit.getPlayer(player.getLeashedTo());
-            if(leashHolder != null && leashHolder.isOnline()){
+            if (leashHolder != null && leashHolder.isOnline()) {
                 // Check if leash holder is still grandmaster guardsman
                 CustomPlayer leashHolderCustomPlayer = CoreUtil.getPlayer(leashHolder);
-                if(leashHolderCustomPlayer.getSkillLevel(SkillType.GUARDSMAN) >= SkillLevel.GRANDMASTER.getLevel()) {
+                if (leashHolderCustomPlayer.getSkillLevel(SkillType.GUARDSMAN) >= SkillLevel.GRANDMASTER.getLevel()) {
                     // Recreate leash on login - target was leashed so they shouldn't be downed
                     recreateLeash(leashHolder, e.getPlayer());
                 } else {
@@ -212,10 +211,10 @@ public class LeashListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
         // Clean up zombie and lead on logout but preserve leashed state
-        if(leashedPlayers.contains(e.getPlayer())) {
+        if (leashedPlayers.contains(e.getPlayer())) {
             // Find and remove the zombie entity (but keep leashed state in CustomPlayer)
             LivingEntity zombieToRemove = playerToZombie.remove(e.getPlayer());
-            if(zombieToRemove != null) {
+            if (zombieToRemove != null) {
                 leashEntities.remove(zombieToRemove);
                 // Remove the zombie entity (lead will be deleted with it)
                 zombieToRemove.remove();
@@ -229,18 +228,18 @@ public class LeashListener implements Listener {
 
             // Cancel sync task
             BukkitRunnable runnable = activeRunnables.remove(e.getPlayer());
-            if(runnable != null) {
+            if (runnable != null) {
                 runnable.cancel();
             }
         }
 
         // Clean up if this player was leashing others
         CustomPlayer player = CoreUtil.getPlayer(e);
-        if(player != null && player.getLeashedOtherPlayers() != null && !player.getLeashedOtherPlayers().isEmpty()) {
+        if (player != null && player.getLeashedOtherPlayers() != null && !player.getLeashedOtherPlayers().isEmpty()) {
             List<UUID> toRemove = new ArrayList<>(player.getLeashedOtherPlayers());
-            for(UUID uuid : toRemove) {
+            for (UUID uuid : toRemove) {
                 Player leashedPlayer = Bukkit.getPlayer(uuid);
-                if(leashedPlayer != null) {
+                if (leashedPlayer != null) {
                     unleashPlayer(leashedPlayer);
                 }
             }
@@ -250,15 +249,15 @@ public class LeashListener implements Listener {
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
         // Clean up leash on death
-        if(leashedPlayers.contains(e.getPlayer())) {
+        if (leashedPlayers.contains(e.getPlayer())) {
             unleashPlayer(e.getPlayer());
         }
     }
 
     @EventHandler
-    public void onUnLeash(PlayerUnleashEntityEvent e){
-        if(e.getEntity() instanceof LivingEntity living) {
-            if(leashEntities.contains(living)) {
+    public void onUnLeash(PlayerUnleashEntityEvent e) {
+        if (e.getEntity() instanceof LivingEntity living) {
+            if (leashEntities.contains(living)) {
                 leashEntities.remove(living);
                 living.remove();
             }
@@ -268,22 +267,22 @@ public class LeashListener implements Listener {
 
     @EventHandler
     public void onEntityCombust(EntityCombustEvent e) {
-        if(leashEntities.contains(e.getEntity())) {
+        if (leashEntities.contains(e.getEntity())) {
             e.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onEntityDamage(EntityDamageByEntityEvent e) {
-        if(leashEntities.contains(e.getDamager()) || leashEntities.contains(e.getEntity())) {
+        if (leashEntities.contains(e.getDamager()) || leashEntities.contains(e.getEntity())) {
             e.setCancelled(true);
         }
     }
 
     @EventHandler
-    public void onTryLeashToBlock(PlayerLeashEntityEvent e){
+    public void onTryLeashToBlock(PlayerLeashEntityEvent e) {
         // Allow leashing to fence posts for leashed players
-        if(e.getLeashHolder() instanceof LeashHitch && leashEntities.contains(e.getEntity())){
+        if (e.getLeashHolder() instanceof LeashHitch && leashEntities.contains(e.getEntity())) {
             // Don't cancel - allow the leash to attach to fence
             return;
         }
@@ -298,14 +297,14 @@ public class LeashListener implements Listener {
             @Override
             public void run() {
                 // Check if leash should be removed
-                if(!target.isOnline() || !zombie.isValid() || !zombie.isLeashed() || !leashedPlayers.contains(target)) {
+                if (!target.isOnline() || !zombie.isValid() || !zombie.isLeashed() || !leashedPlayers.contains(target)) {
                     unleashPlayer(target);
                     cancel();
                     return;
                 }
 
                 // Check if still leashed to fence
-                if(!(zombie.getLeashHolder() instanceof LeashHitch)) {
+                if (!(zombie.getLeashHolder() instanceof LeashHitch)) {
                     // No longer leashed to fence, player can move freely within leash range
                     playerToFence.remove(target);
                     // Resume normal leash behavior
@@ -321,7 +320,7 @@ public class LeashListener implements Listener {
                 double distance = fenceLocation.distance(playerLocation);
                 double maxDistance = 10.0; // Maximum leash distance
 
-                if(distance > maxDistance) {
+                if (distance > maxDistance) {
                     // Pull player back towards fence
                     Location newLocation = fenceLocation.clone();
                     newLocation.setDirection(playerLocation.clone().subtract(fenceLocation).toVector().normalize().multiply(maxDistance));
@@ -344,14 +343,14 @@ public class LeashListener implements Listener {
             @Override
             public void run() {
                 // Check if leash should be removed
-                if(!target.isOnline() || !zombie.isValid() || !zombie.isLeashed() || !leashedPlayers.contains(target)) {
+                if (!target.isOnline() || !zombie.isValid() || !zombie.isLeashed() || !leashedPlayers.contains(target)) {
                     unleashPlayer(target);
                     cancel();
                     return;
                 }
 
                 // Check if zombie is leashed to a fence post again
-                if(zombie.getLeashHolder() instanceof LeashHitch) {
+                if (zombie.getLeashHolder() instanceof LeashHitch) {
                     // Player is now leashed to a fence, handle differently
                     handleFenceLeash(target, zombie, (LeashHitch) zombie.getLeashHolder());
                     cancel();
@@ -366,7 +365,7 @@ public class LeashListener implements Listener {
                 double zombieMovement = lastZombieLocation.distanceSquared(zombieLoc);
                 double playerZombieDistance = playerLoc.distanceSquared(zombieLoc);
 
-                if(zombieMovement > 0.0025 || playerZombieDistance > 0.001) {
+                if (zombieMovement > 0.0025 || playerZombieDistance > 0.001) {
                     Location newPlayerLocation = new Location(
                             target.getWorld(),
                             zombieLoc.getX(),
@@ -385,14 +384,14 @@ public class LeashListener implements Listener {
     }
 
     private void unleashPlayer(Player target) {
-        if(!leashedPlayers.contains(target)) return;
+        if (!leashedPlayers.contains(target)) return;
 
         // Remove from tracking lists
         leashedPlayers.remove(target);
 
         // Find and remove the zombie using the player-zombie mapping
         LivingEntity zombieToRemove = playerToZombie.remove(target);
-        if(zombieToRemove != null) {
+        if (zombieToRemove != null) {
             leashEntities.remove(zombieToRemove);
 
             // Remove the zombie entity
@@ -407,7 +406,7 @@ public class LeashListener implements Listener {
 
         // Cancel sync task
         BukkitRunnable runnable = activeRunnables.remove(target);
-        if(runnable != null) {
+        if (runnable != null) {
             runnable.cancel();
         }
 
@@ -417,11 +416,11 @@ public class LeashListener implements Listener {
 
         // Update custom player data
         CustomPlayer customTarget = CoreUtil.getPlayer(target);
-        if(customTarget.getLeashedTo() != null) {
+        if (customTarget.getLeashedTo() != null) {
             Player leashHolder = Bukkit.getPlayer(customTarget.getLeashedTo());
-            if(leashHolder != null) {
+            if (leashHolder != null) {
                 CustomPlayer customLeashHolder = CoreUtil.getPlayer(leashHolder);
-                if(customLeashHolder.getLeashedOtherPlayers() != null) {
+                if (customLeashHolder.getLeashedOtherPlayers() != null) {
                     customLeashHolder.getLeashedOtherPlayers().remove(target.getUniqueId());
                 }
             }
@@ -429,35 +428,14 @@ public class LeashListener implements Listener {
         }
 
         // Put target back into downed state
-        customTarget.setDowned(true);
-        restoreDownedArmorStand(target);
-    }
-
-    private void restoreDownedArmorStand(Player player) {
-        // Apply downed effects
-        PlayerDownedListener playerDownedListener = new PlayerDownedListener(Specialization.getInstance());
-        playerDownedListener.setDowned(player, false, player.getHealth());
-
-        // Create armor stand for downed player
-        Location playerLoc = player.getLocation();
-        Location armorStandLoc = playerLoc.clone().subtract(0, SpecializationConfig.getDownedConfig().get("OFFSET_TO_GROUND", Double.class), 0);
-
-        ArmorStand armorStand = player.getWorld().spawn(armorStandLoc, ArmorStand.class);
-        armorStand.setVisible(false);
-        armorStand.setInvulnerable(true);
-        armorStand.setGravity(false);
-        armorStand.setCanPickupItems(false);
-        armorStand.setCustomNameVisible(false);
-        armorStand.setSilent(true);
-        armorStand.setCustomName("downed_" + player.getUniqueId());
-
-        armorStand.addPassenger(player);
+        playerDownedListener.clearMount(target);
+        playerDownedListener.setSit(target);
     }
 
     // Helper method to find which player is associated with a zombie
     private Player findPlayerByZombie(LivingEntity zombie) {
-        for(HashMap.Entry<Player, LivingEntity> entry : playerToZombie.entrySet()) {
-            if(entry.getValue().equals(zombie)) {
+        for (HashMap.Entry<Player, LivingEntity> entry : playerToZombie.entrySet()) {
+            if (entry.getValue().equals(zombie)) {
                 return entry.getKey();
             }
         }
@@ -467,11 +445,11 @@ public class LeashListener implements Listener {
     // Cleanup method to remove any orphaned zombies for a player
     private void cleanupOrphanedZombies(Player target) {
         List<LivingEntity> toRemove = new ArrayList<>();
-        for(LivingEntity entity : leashEntities) {
-            if(entity instanceof Zombie && entity.getLeashHolder() != null) {
+        for (LivingEntity entity : leashEntities) {
+            if (entity instanceof Zombie && entity.getLeashHolder() != null) {
                 // Check if this zombie was meant for this target player
                 CustomPlayer customTarget = CoreUtil.getPlayer(target);
-                if(customTarget.getLeashedTo() != null &&
+                if (customTarget.getLeashedTo() != null &&
                         entity.getLeashHolder().getUniqueId().equals(customTarget.getLeashedTo())) {
                     toRemove.add(entity);
                 }
@@ -479,7 +457,7 @@ public class LeashListener implements Listener {
         }
 
         // Remove orphaned zombies
-        for(LivingEntity zombie : toRemove) {
+        for (LivingEntity zombie : toRemove) {
             leashEntities.remove(zombie);
             zombie.remove();
         }
@@ -487,9 +465,9 @@ public class LeashListener implements Listener {
 
     private void recreateLeash(Player leashHolder, Player target) {
         // Prevent duplicate zombies - check if player already has a zombie
-        if(playerToZombie.containsKey(target)) {
+        if (playerToZombie.containsKey(target)) {
             LivingEntity existingZombie = playerToZombie.get(target);
-            if(existingZombie != null && existingZombie.isValid()) {
+            if (existingZombie != null && existingZombie.isValid()) {
                 existingZombie.remove();
             }
             playerToZombie.remove(target);
@@ -544,14 +522,14 @@ public class LeashListener implements Listener {
 
             @Override
             public void run() {
-                if(!target.isOnline() || !zombie.isValid() || !zombie.isLeashed() || !leashedPlayers.contains(target)) {
+                if (!target.isOnline() || !zombie.isValid() || !zombie.isLeashed() || !leashedPlayers.contains(target)) {
                     unleashPlayer(target);
                     cancel();
                     return;
                 }
 
                 // Check if zombie is leashed to a fence post
-                if(zombie.getLeashHolder() instanceof LeashHitch) {
+                if (zombie.getLeashHolder() instanceof LeashHitch) {
                     // Player is now leashed to a fence, handle differently
                     handleFenceLeash(target, zombie, (LeashHitch) zombie.getLeashHolder());
                     cancel();
@@ -566,7 +544,7 @@ public class LeashListener implements Listener {
                 double zombieMovement = lastZombieLocation.distanceSquared(zombieLoc);
                 double playerZombieDistance = playerLoc.distanceSquared(zombieLoc);
 
-                if(zombieMovement > 0.0025 || playerZombieDistance > 0.001) { // Much smaller thresholds for smoother movement
+                if (zombieMovement > 0.0025 || playerZombieDistance > 0.001) { // Much smaller thresholds for smoother movement
                     // Create new location using zombie's position but DON'T specify rotation
                     // This preserves the player's current clientside head rotation
                     Location newPlayerLocation = new Location(

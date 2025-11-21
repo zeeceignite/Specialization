@@ -98,10 +98,11 @@ public class PlayerDownedListener implements Listener {
     }
 
     public void clearMount(Player player) {
+        player.leaveVehicle();
         UUID uuid = player.getUniqueId();
         Entity e = downStands.remove(uuid);
         if (e != null) {
-            Debug.broadcast("down", "[DOWNED-DEBUG] Removing downed stand entity");
+            Debug.broadcast("down", "[DOWNED-DEBUG] Clearing Mount");
             e.remove();
         }
     }
@@ -373,7 +374,8 @@ public class PlayerDownedListener implements Listener {
 
     }
 
-
+//needs a case for if the player is leashed to allow movement
+    // use this from leashlistener    private final List<Player> leashedPlayers = new ArrayList<>();
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();

@@ -225,10 +225,18 @@ public class ReviveListener implements Listener {
     private void endRevive(Player healer, Player downed) {
         healer.closeInventory();
 
+        //indirectly revives the player lol
+        downed.getPersistentDataContainer().set(
+                new NamespacedKey(Specialization.getInstance(), "is_downed"),
+                PersistentDataType.BYTE,
+                (byte) 0
+        );
+
         BossBar bar = downedBossBars.remove(downed.getUniqueId());
         if (bar != null) bar.removeAll();
 
         healerToDownedPlayer.remove(healer.getUniqueId());
+
     }
 
     // -------------------------------
@@ -278,11 +286,6 @@ public class ReviveListener implements Listener {
 
             healer.setHealth (Math.round(hearts));
 
-            downed.getPersistentDataContainer().set(
-                    new NamespacedKey(Specialization.getInstance(), "is_downed"),
-                    PersistentDataType.BYTE,
-                    (byte) 0
-            );
             endRevive(healer, downed);
         }
     }
