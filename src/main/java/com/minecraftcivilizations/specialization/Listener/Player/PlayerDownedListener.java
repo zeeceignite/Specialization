@@ -30,6 +30,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -50,6 +52,7 @@ public class PlayerDownedListener implements Listener {
     private final Map<UUID, Integer> downTicksRemaining = new HashMap<>();
     private final Map<UUID, BukkitTask> darknessTasks = new HashMap<>();
 
+    private final Map<UUID, Long> downedLogoutTime = new HashMap<>();
     public PlayerDownedListener(JavaPlugin plugin) {
         this.plugin = plugin;
         this.downedKey = new NamespacedKey(plugin, "is_downed");
@@ -147,10 +150,25 @@ public class PlayerDownedListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        UUID id = player.getUniqueId();
         var pdc = player.getPersistentDataContainer();
 
         Integer ticksLeft = pdc.get(downedTicksKey, PersistentDataType.INTEGER);
 
+        // If player was offline while downed, subtract offline ticks
+        if (downedLogoutTime.containsKey(id)) {
+            long offlineMillis = System.currentTimeMillis() - downedLogoutTime.remove(id);
+            int offlineTicks = (int) (offlineMillis / 50L); // 1 tick = 50ms
+            if (ticksLeft != null) {
+                ticksLeft -= offlineTicks;
+            } else {
+                ticksLeft = DOWNED_DURATION_TICKS - offlineTicks;
+            }
+            if (ticksLeft < 0) {
+                ticksLeft = 0;
+                player.sendMessage("§0[§0§6CivLabs§0]§8 » §7You have §cbled §7out while offline!");
+            }
+        }
 
         // --- CASE 1: Player was downed AND ticksLeft exists (normal restore) ---
         if (ticksLeft != null && isDowned(player)) {
@@ -210,6 +228,7 @@ public class PlayerDownedListener implements Listener {
         Integer ticksLeft = downTicksRemaining.get(id);
         if (ticksLeft != null) {
             player.getPersistentDataContainer().set(downedTicksKey, PersistentDataType.INTEGER, ticksLeft);
+            downedLogoutTime.put(id, System.currentTimeMillis());
         }
 
         BukkitTask task = downTimers.remove(id);
@@ -223,14 +242,26 @@ public class PlayerDownedListener implements Listener {
         downTicksRemaining.put(id, remainingTicks);
         player.setHealth(Math.max(0, health));
 
-        Location loc = player.getLocation().clone();
-        Block blockBelow = findBlockBelow(loc);
-        double distance = blockBelow.getY() + 1.0 - loc.getY();
+        Location headLoc = player.getLocation().clone().add(0, player.getEyeHeight(), 0);
 
-        if (distance * -1 > 1.0) {
+        // Ray trace downwards to find the first solid block
+        RayTraceResult ray = player.getWorld().rayTraceBlocks(headLoc, new Vector(0, -1, 0), 5,
+                FluidCollisionMode.ALWAYS, true); // 5 blocks max distance, stop at liquids
+
+        Location targetLoc;
+        if (ray != null && ray.getHitBlock() != null) {
+            targetLoc = ray.getHitPosition().toLocation(player.getWorld());
+        } else {
+            // fallback to ground at y=0
+            targetLoc = new Location(player.getWorld(), player.getLocation().getX(), 0, player.getLocation().getZ());
+        }
+
+        double distance = player.getLocation().getY() - targetLoc.getY() - 0.1; // distance from head to hit block minus small offset
+
+        if (distance > 0.3) {
             // Use ArmorStand for falling
             player.sendMessage("armorstand");
-            ArmorStand stand = player.getWorld().spawn(loc, ArmorStand.class, a -> {
+            ArmorStand stand = player.getWorld().spawn(player.getLocation(), ArmorStand.class, a -> {
                 a.setGravity(true);
                 a.setInvulnerable(true);
                 a.setVisible(false);
@@ -239,13 +270,12 @@ public class PlayerDownedListener implements Listener {
                 a.setArms(false);
                 a.addPassenger(player);
                 a.getAttribute(Attribute.SCALE).setBaseValue(0.01);
-
             });
-            downStands.put(id, stand); // store as Entity
+            downStands.put(id, stand);
         } else {
             // Use Interaction for precise sitting
-            Location locInteraction = player.getLocation().clone().subtract(0, 0.5, 0);
-            player.sendMessage("interaction" + distance);
+            Location locInteraction = targetLoc.clone().add(0, -0.5, 0); // ensure player sits just above the block
+            player.sendMessage("interaction: " + distance);
             Interaction inter = player.getWorld().spawn(locInteraction, Interaction.class, i -> {
                 i.setInteractionWidth(0.6f);
                 i.setInteractionHeight(0.6f);
@@ -260,8 +290,6 @@ public class PlayerDownedListener implements Listener {
         // BossBar & bleedout timer
         BossBar bar = bossBars.computeIfAbsent(id,
                 k -> Bukkit.createBossBar("§8Bleeding out", BarColor.RED, BarStyle.SOLID));
-
-
         bar.addPlayer(player);
         bossBars.put(id, bar);
 
@@ -297,9 +325,9 @@ public class PlayerDownedListener implements Listener {
             darknessTasks.put(id, darknessTask);
         }
 
-
         downTimers.put(id, task);
     }
+
 
     //allows you to spawn in a item to sit on. (Example use case: Transporting a downed player)
     public void setSit(Player player) {
@@ -320,7 +348,7 @@ public class PlayerDownedListener implements Listener {
 
         double distance = blockBelow.getY() + 1.0 - loc.getY();
 
-        if (distance * -1 > 1.0) {
+        if (distance * -1 > 0.45) {
             // Use ArmorStand for falling
             ArmorStand stand = player.getWorld().spawn(loc, ArmorStand.class, a -> {
                 a.setGravity(true);
