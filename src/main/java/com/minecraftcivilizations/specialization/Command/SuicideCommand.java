@@ -42,7 +42,7 @@ public class SuicideCommand extends BaseCommand {
     @CommandPermission("civlabs.selfdown")
     public void downSelf(@NotNull Player player) {
         if (downedListener.isDowned(player)) {
-            player.sendMessage(Component.text("You are already downed.").color(NamedTextColor.RED));
+            player.sendMessage(Component.text("You were knocked out by a magical force").color(NamedTextColor.RED));
             return;
         }
 
@@ -63,7 +63,7 @@ public class SuicideCommand extends BaseCommand {
         }
 
         downedListener.setDowned(player, false, player.getHealth());
-        player.sendMessage(Component.text("You are no longer downed.").color(NamedTextColor.GREEN));
+        player.sendMessage(Component.text("You were revived by a magical force").color(NamedTextColor.GREEN));
     }
 }
 
