@@ -26,6 +26,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
 
+/** @author Jfrogy*/
+
 @CommandPermission("specialization.emote")
 public class EmoteCommand extends BaseCommand implements Listener {
 
@@ -108,7 +110,14 @@ public class EmoteCommand extends BaseCommand implements Listener {
         Player player = event.getPlayer();
         if (!player.getInventory().getItemInMainHand().getType().isAir()) return;
         if (player.isSneaking() || isPlayerSitting(player)) return;
-        if (block.getLocation().distanceSquared(player.getLocation()) > 2.25) return;
+
+        Block blockUnder = player.getLocation().subtract(0, 1, 0).getBlock();
+        Block blockFeet = player.getLocation().getBlock();
+
+        if (!block.equals(blockUnder) && !block.equals(blockFeet)) {
+//            player.sendMessage("block: " + blockUnder.getType().name());
+            return;
+        }
         if (seatBlocks.containsKey(block)) {
             player.sendMessage("§cSomeone is already sitting here.");
             return;

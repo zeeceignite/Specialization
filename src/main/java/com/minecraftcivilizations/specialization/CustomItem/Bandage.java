@@ -82,7 +82,7 @@ public class Bandage extends CustomItem {
 
             if (downed != null && downed == 1) {
 
-                reviveListener.startRevive(healer, pTarget, reviveListener.createReviveInventory(pTarget));
+
                 applyHeal(healer, pTarget, itemStack);
 
                 return;
@@ -98,8 +98,6 @@ public class Bandage extends CustomItem {
             if (mob.getSpawnCategory() == SpawnCategory.ANIMAL) {
                 if (isOnCooldown(healer)) return;
 
-                // ------ For *TESTING*
-                reviveListener.startRevive(healer, healer, reviveListener.createReviveInventory(healer));
                 applyHeal(healer, mob, itemStack);
             }
         }
@@ -152,23 +150,39 @@ public class Bandage extends CustomItem {
         double new_health = Math.min(current_health + heal_amount, max_health);
         target.setHealth(new_health);
         healer.setFoodLevel(healer.getFoodLevel() - 3);
+        if(target instanceof Player playerTarget) {
+            reviveListener.startRevive(healer, playerTarget, reviveListener.createReviveInventory(playerTarget));
+        }
+        //for testing
+        if(target instanceof Mob && healer.isOp()) {
+            reviveListener.startRevive(healer, healer, reviveListener.createReviveInventory(healer));
+        }
+
+        //----- cooldowns-----//
 
         //healing themselves
         if (target.equals(healer)) {
-            applyCooldown(healer, 2);
+            applyCooldown(healer, 250);
         } else {
-            //healing another player?
-            applyCooldown(healer, 1);
+            //healing another player
+            applyCooldown(healer, 150);
         }
         //healing a friendly mob
         if (!(target instanceof Enemy)) {
             cHealer.addSkillXp(SkillType.HEALER, xp);
         }
-        //healing another player again?
+        //reviving player
         if (target instanceof Player pTarget) {
-            //old revive system
+            Byte downed = pTarget.getPersistentDataContainer().get(
+                    new NamespacedKey(Specialization.getInstance(), "is_downed"),
+                    PersistentDataType.BYTE
+            );
+
+            boolean isDowned = downed != null && downed == 1;
+            if (isDowned) {
+            applyCooldown(healer, 500);
+            }
 //            pTarget.getPersistentDataContainer().set(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE, (byte) 0);
-            applyCooldown(healer, 2);
         }
 
         // Heart particles

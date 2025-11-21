@@ -2,14 +2,12 @@ package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
-import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -22,31 +20,31 @@ import org.bukkit.entity.Interaction;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.player.*;
+import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+/** @author Jfrogy*/
+
 public class PlayerDownedListener implements Listener {
 
+    private static final int DOWNED_DURATION_TICKS = 60 * 20; // 60 seconds
     private final JavaPlugin plugin;
     private final NamespacedKey downedKey;
-
     private final Map<UUID, BukkitTask> downTimers = new HashMap<>();
     private final Map<UUID, Entity> downStands = new HashMap<>();
     private final Map<UUID, BossBar> bossBars = new HashMap<>();
-    private static final int DOWNED_DURATION_TICKS = 60 * 20; // 60 seconds
     // --- Add NamespacedKey for remaining ticks ---
     private final NamespacedKey downedTicksKey;
     private final Map<UUID, Integer> downTicksRemaining = new HashMap<>();
@@ -66,15 +64,15 @@ public class PlayerDownedListener implements Listener {
     }
 
 
-    //Call this to handle state changes. It can handle everything else.
+    //Call this to handle being downed or not. It can handle everything else. Use setSit if you only want to set make them sit again
     public void setDowned(Player player, boolean downed, double health) {
-        Debug.broadcast("down","[DOWNED-DEBUG] setDowned(" + player.getName() + ") = " + downed);
+        Debug.broadcast("down", "[DOWNED-DEBUG] setDowned(" + player.getName() + ") = " + downed);
 
         PersistentDataContainer pdc = player.getPersistentDataContainer();
         pdc.set(downedKey, PersistentDataType.BYTE, (byte) (downed ? 1 : 0));
 
         if (!downed) {
-            Debug.broadcast("down","[DOWNED-DEBUG] setDowned=false → clearDowned called");
+            Debug.broadcast("down", "[DOWNED-DEBUG] setDowned=false → clearDowned called");
             clearDowned(player);
         } else {
             startDowned(player, health, DOWNED_DURATION_TICKS);
@@ -99,28 +97,37 @@ public class PlayerDownedListener implements Listener {
         }
     }
 
+    public void clearMount(Player player) {
+        UUID uuid = player.getUniqueId();
+        Entity e = downStands.remove(uuid);
+        if (e != null) {
+            Debug.broadcast("down", "[DOWNED-DEBUG] Removing downed stand entity");
+            e.remove();
+        }
+    }
+
 
     // --- Clear downed state ---
     private void clearDowned(Player player) {
-        Debug.broadcast("down","[DOWNED-DEBUG] clearDowned(" + player.getName() + ")");
+        Debug.broadcast("down", "[DOWNED-DEBUG] clearDowned(" + player.getName() + ")");
 
         UUID uuid = player.getUniqueId();
 
         BossBar bar = bossBars.remove(uuid);
         if (bar != null) {
-            Debug.broadcast("down","[DOWNED-DEBUG] Removed boss bar");
+            Debug.broadcast("down", "[DOWNED-DEBUG] Removed boss bar");
             bar.removePlayer(player);
         }
 
         BukkitTask task = downTimers.remove(uuid);
         if (task != null) {
-            Debug.broadcast("down","[DOWNED-DEBUG] Cancelled bleedout timer");
+            Debug.broadcast("down", "[DOWNED-DEBUG] Cancelled bleedout timer");
             task.cancel();
         }
 
         Entity e = downStands.remove(uuid);
         if (e != null) {
-            Debug.broadcast("down","[DOWNED-DEBUG] Removing downed stand entity");
+            Debug.broadcast("down", "[DOWNED-DEBUG] Removing downed stand entity");
             e.remove();
         }
 
@@ -149,7 +156,7 @@ public class PlayerDownedListener implements Listener {
             pdc.remove(downedTicksKey);
             clearDowned(player);
             startDowned(player, player.getHealth(), ticksLeft);
-            Debug.broadcast("down","[DOWNED-DEBUG] CASE 1 - Ticks:" + ticksLeft + " is downed:" + isDowned(player));
+            Debug.broadcast("down", "[DOWNED-DEBUG] CASE 1 - Ticks:" + ticksLeft + " is downed:" + isDowned(player));
             return;
         }
 
@@ -158,13 +165,12 @@ public class PlayerDownedListener implements Listener {
             pdc.remove(downedTicksKey);
             clearDowned(player);
             startDowned(player, player.getHealth(), DOWNED_DURATION_TICKS);
-            Debug.broadcast("down","[DOWNED-DEBUG] CASE 2 - Is downed:" + player.getName());
+            Debug.broadcast("down", "[DOWNED-DEBUG] CASE 2 - Is downed:" + player.getName());
             return;
         }
 
-        Debug.broadcast("down","[DOWNED-DEBUG] NO CASE - No downed or ticks for: " + player.getName());
+        Debug.broadcast("down", "[DOWNED-DEBUG] NO CASE - No downed or ticks for: " + player.getName());
     }
-
 
 
     // --- Damage event to trigger downed ---
@@ -172,19 +178,19 @@ public class PlayerDownedListener implements Listener {
     public void onPlayerDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
 
-        Debug.broadcast("down","[DOWNED-DEBUG] DamageEvent: " + player.getName() +
+        Debug.broadcast("down", "[DOWNED-DEBUG] DamageEvent: " + player.getName() +
                 " dmg=" + event.getFinalDamage() + " hp=" + player.getHealth());
 
         if (isDowned(player)) {
-            Debug.broadcast("down","[DOWNED-DEBUG] " + player.getName() + " is already downed → letting damage occur");
+            Debug.broadcast("down", "[DOWNED-DEBUG] " + player.getName() + " is already downed → letting damage occur");
             return; // already downed, let them die
         }
 
         double finalHealth = player.getHealth() - event.getFinalDamage();
-        Debug.broadcast("down","[DOWNED-DEBUG] finalHealth=" + finalHealth);
+        Debug.broadcast("down", "[DOWNED-DEBUG] finalHealth=" + finalHealth);
 
         if (finalHealth <= 0) {
-            Debug.broadcast("down","[DOWNED-DEBUG] Cancelling lethal dmg → triggering downed state.");
+            Debug.broadcast("down", "[DOWNED-DEBUG] Cancelling lethal dmg → triggering downed state.");
             if (finalHealth <= -10) {
                 return;
             }
@@ -210,8 +216,7 @@ public class PlayerDownedListener implements Listener {
     }
 
 
-
-    // Adjusted startDowned
+    // decides which armorstand/interaction to mount the player to and then adds the player to a timer/bleedout bar progress
     private void startDowned(Player player, double health, int remainingTicks) {
         UUID id = player.getUniqueId();
         downTicksRemaining.put(id, remainingTicks);
@@ -264,7 +269,7 @@ public class PlayerDownedListener implements Listener {
 
             @Override
             public void run() {
-                if (!isDowned(player)){
+                if (!isDowned(player)) {
                     clearDowned(player);
                     return;
                 }
@@ -292,10 +297,67 @@ public class PlayerDownedListener implements Listener {
         }
 
 
-
         downTimers.put(id, task);
     }
 
+    //allows you to spawn in a item to sit on. (Example use case: Transporting a downed player)
+    public void setSit(Player player) {
+        UUID id = player.getUniqueId();
+
+        // Remove old stand if it exists
+        Entity old = downStands.remove(id);
+        if (old != null && old.isValid()) {
+            old.remove();
+        }
+
+        Location loc = player.getLocation().clone();
+        Block blockBelow = findBlockBelow(loc);
+
+        if (blockBelow == null) {
+            blockBelow = loc.getWorld().getBlockAt(loc.getBlockX(), 0, loc.getBlockZ());
+        }
+
+        double distance = blockBelow.getY() + 1.0 - loc.getY();
+
+        if (distance * -1 > 1.0) {
+            // Use ArmorStand for falling
+            ArmorStand stand = player.getWorld().spawn(loc, ArmorStand.class, a -> {
+                a.setGravity(true);
+                a.setInvulnerable(true);
+                a.setVisible(false);
+                a.setCollidable(false);
+                a.setMarker(false);
+                a.setArms(false);
+                a.getAttribute(Attribute.SCALE).setBaseValue(0.01);
+                a.addPassenger(player);
+            });
+
+            downStands.put(id, stand);
+        } else {
+            // Use Interaction for precise sitting
+            Location locInteraction = loc.clone().subtract(0, 0.5, 0);
+            Interaction inter = player.getWorld().spawn(locInteraction, Interaction.class, i -> {
+                i.setInteractionWidth(0.6f);
+                i.setInteractionHeight(0.6f);
+                i.setInvulnerable(true);
+                i.setSilent(true);
+                i.setPersistent(false);
+                i.addPassenger(player);
+            });
+
+            downStands.put(id, inter);
+        }
+    }
+
+
+    @EventHandler
+    public void onDismountEvent(EntityDismountEvent e) {
+        if (e.getEntity() instanceof Player player){
+            if(isDowned(player)) {
+                e.setCancelled(true);
+            }
+        }
+    }
 
 
     // --- Prevent interactions while downed ---
@@ -306,17 +368,9 @@ public class PlayerDownedListener implements Listener {
 
         // Cancel toggle
         event.setCancelled(true);
-
         // Force client to unsneak
         player.setSneaking(false);
 
-        // Re-mount if somehow dismounted
-        Entity inter = downStands.get(player.getUniqueId());
-        if (inter != null && inter.isValid()) {
-            if (!inter.getPassengers().contains(player)) {
-                inter.addPassenger(player);
-            }
-        }
     }
 
 
@@ -419,16 +473,23 @@ public class PlayerDownedListener implements Listener {
     @EventHandler
     public void onPickup(EntityPickupItemEvent event) {
         if (event.getEntity() instanceof Player p)
-            cancelIfDowned(p, event);}
+            cancelIfDowned(p, event);
+    }
 
     @EventHandler
-    public void onInteract(PlayerInteractEvent event) {cancelIfDowned(event.getPlayer(), event);}
+    public void onInteract(PlayerInteractEvent event) {
+        cancelIfDowned(event.getPlayer(), event);
+    }
 
     @EventHandler
-    public void onInteractEntity(PlayerInteractEntityEvent event) {cancelIfDowned(event.getPlayer(), event);}
+    public void onInteractEntity(PlayerInteractEntityEvent event) {
+        cancelIfDowned(event.getPlayer(), event);
+    }
 
     @EventHandler
-    public void onConsume(PlayerItemConsumeEvent event) {cancelIfDowned(event.getPlayer(), event);}
+    public void onConsume(PlayerItemConsumeEvent event) {
+        cancelIfDowned(event.getPlayer(), event);
+    }
 
     @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
