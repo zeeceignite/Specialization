@@ -49,9 +49,6 @@ public final class LeashListener implements Listener {
 
         Entity target = e.getRightClicked();
         Player leasher = e.getPlayer();
-        // Must hold lead in either hand
-        if (leasher.getInventory().getItemInMainHand().getType() != Material.LEAD &&
-                leasher.getInventory().getItemInOffHand().getType() != Material.LEAD) return;
 
 
         boolean isPlayerTarget = target instanceof Player;
@@ -68,6 +65,10 @@ public final class LeashListener implements Listener {
             }
             return; // done for shift-right-click
         }
+
+        // Must hold lead in either hand
+        if (leasher.getInventory().getItemInMainHand().getType() != Material.LEAD &&
+                leasher.getInventory().getItemInOffHand().getType() != Material.LEAD) return;
 
         // Normal right-click: only leash
         if (target.isInsideVehicle()) return; //must not already be leashed or carried
@@ -175,7 +176,7 @@ public final class LeashListener implements Listener {
             sm.setGravity(true);
             sm.setInvulnerable(true);
             sm.setCanPickupItems(false);
-            sm.setCollidable(true);
+            sm.setCollidable(false);
             sm.setGlowing(false);
             sm.getAttribute(Attribute.STEP_HEIGHT).setBaseValue(1.0);
             sm.getAttribute(Attribute.SCALE).setBaseValue(0.1);
