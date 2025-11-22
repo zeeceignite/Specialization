@@ -289,8 +289,9 @@ public class PlayerDownedListener implements Listener {
 
         // BossBar & bleedout timer
         BossBar bar = bossBars.computeIfAbsent(id,
-                k -> Bukkit.createBossBar("§8Bleeding out", BarColor.RED, BarStyle.SOLID));
+                k -> Bukkit.createBossBar("§7Bleeding Out", BarColor.RED, BarStyle.SEGMENTED_20));
         bar.addPlayer(player);
+
         bossBars.put(id, bar);
 
         BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, new Runnable() {
@@ -484,20 +485,6 @@ public class PlayerDownedListener implements Listener {
     }
 
 
-//    @EventHandler
-//    public void onMounted(EntityMountEvent event) {
-//        if (event.getEntity()instanceof Player player){
-//            Byte downed = player.getPersistentDataContainer().get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE);
-//            if (!(downed == null || downed == 0)) return;
-//            player.leaveVehicle();
-//            UUID uuid = player.getUniqueId();
-//        Entity e = downStands.remove(uuid);
-//        if (e != null) {
-//            Debug.broadcast("down", "[DOWNED-DEBUG] Removing downed stand entity");
-//            e.remove();
-//        }
-//        }
-//    }
 
 
     @EventHandler
@@ -524,7 +511,7 @@ public class PlayerDownedListener implements Listener {
     @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player p && cancelIfDowned(p, event)) {
-            p.sendMessage("§7You are knocked out and cannot attack");
+//            p.sendMessage("§7You are knocked out and cannot attack");
         }
     }
 }

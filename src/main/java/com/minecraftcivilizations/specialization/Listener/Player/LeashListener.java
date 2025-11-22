@@ -179,7 +179,7 @@ public final class LeashListener implements Listener {
             sm.setCollidable(false);
             sm.setGlowing(false);
             sm.getAttribute(Attribute.STEP_HEIGHT).setBaseValue(1.0);
-            sm.getAttribute(Attribute.SCALE).setBaseValue(0.1);
+            sm.getAttribute(Attribute.SCALE).setBaseValue(0.15);
             sm.getEquipment().clear();
 //            sm.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, Integer.MAX_VALUE, 255, false, false));
 //            sm.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, Integer.MAX_VALUE, 255, false, false));

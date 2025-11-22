@@ -92,12 +92,12 @@ public class PVPManager implements Listener, CommandExecutor {
         if (!victimAlreadyTagged){
 //            victim.sendMessage("§0[§0§6CivLabs§0]§8 » §7You have been tagged for §ccombat §7for §b"
 //                    + (COMBAT_COOLDOWN / 1000) + " §7seconds by: §c" + damager.getName());
-            victim.sendMessage("§0[§0§6CivLabs§0]§8 » §7§cCombat§7 logging §cleaves §7your items on a killable §aMannequin§7 for §c15s§7 before logging out safely.");
+            victim.sendMessage("§0[§0§6CivLabs§0]§8 » §7§cCombat§7 logging leaves your items on a §ckillable §aMannequin§7 for §c15s§7 before logging out safely.");
 
         }
         if (!damagerAlreadyTagged) {
 //            damager.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds");
-            damager.sendMessage("§0[§0§6CivLabs§0]§8 » §7§cCombat§7 logging §cleaves §7your items on a killable §aMannequin§7 for §c15s§7 before logging out safely.");
+            damager.sendMessage("§0[§0§6CivLabs§0]§8 » §7§cCombat§7 logging leaves your items on a §ckillable §aMannequin§7 for §c15s§7 before logging out safely.");
         }
 
 
@@ -118,7 +118,7 @@ public class PVPManager implements Listener, CommandExecutor {
     private void addCombatBar(Player p) {
         BossBar bar = combatBars.get(p.getUniqueId());
         if (bar == null) {
-            bar = Bukkit.createBossBar("§7Combat Log Timer", BarColor.RED, BarStyle.SOLID);
+            bar = Bukkit.createBossBar("§7Combat Log Timer", BarColor.RED, BarStyle.SEGMENTED_10);
             bar.addPlayer(p);
             combatBars.put(p.getUniqueId(), bar);
         }
@@ -524,7 +524,7 @@ public class PVPManager implements Listener, CommandExecutor {
         combatMap.put(p.getUniqueId(), System.currentTimeMillis());
         Debug.broadcast("combatlog","<grey>[Command] /simulatehit executed for " + p.getName());
 //        p.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds");
-        p.sendMessage("§0[§0§6CivLabs§0]§8 » §7§cCombat§7 logging §cleaves §7your items on a killable §aMannequin§7 for §c15s§7 before logging out safely.");
+        p.sendMessage("§0[§0§6CivLabs§0]§8 » §7§cCombat§7 logging leaves your items on a §ckillable §aMannequin§7 for §c15s§7 before logging out safely.");
         addCombatBar(p);
         startCombatTaskIfNeeded();
         return true;
