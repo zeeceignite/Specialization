@@ -36,7 +36,7 @@ public class PVPManager implements Listener, CommandExecutor {
     private final Map<UUID, Long> combatMap = new ConcurrentHashMap<>();
     private final Map<UUID, UUID> zombieMap = new ConcurrentHashMap<>();
     private final Map<UUID, BukkitRunnable> zombieTimers = new ConcurrentHashMap<>();
-    private static final long COMBAT_COOLDOWN = 20_000L;
+    private static final long COMBAT_COOLDOWN = 30_000L;
     private static final long ZOMBIE_LIFETIME = 15_000L; // 15s
     private final Map<UUID, BossBar> combatBars = new HashMap<>();
 
@@ -84,21 +84,24 @@ public class PVPManager implements Listener, CommandExecutor {
         // Tag both
         combatMap.put(victim.getUniqueId(), now);
         combatMap.put(damager.getUniqueId(), now);
-            addCombatBar(victim);
-            addCombatBar(damager);
-            startCombatTaskIfNeeded();
+        addCombatBar(victim);
+        addCombatBar(damager);
+        startCombatTaskIfNeeded();
 
         // Only send messages if BOTH were NOT tagged before
         if (!victimAlreadyTagged){
-            victim.sendMessage("§0[§0§6CivLabs§0]§8 » §7You have been tagged for §ccombat §7for §b"
-                    + (COMBAT_COOLDOWN / 1000) + " §7seconds by: §c" + damager.getName());
-}
+//            victim.sendMessage("§0[§0§6CivLabs§0]§8 » §7You have been tagged for §ccombat §7for §b"
+//                    + (COMBAT_COOLDOWN / 1000) + " §7seconds by: §c" + damager.getName());
+            victim.sendMessage("§0[§0§6CivLabs§0]§8 » §7§cCombat§7 logging §cleaves §7your items on a killable §aMannequin§7 for §c15s§7 before logging out safely.");
+
+        }
         if (!damagerAlreadyTagged) {
-            damager.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds");
+//            damager.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds");
+            damager.sendMessage("§0[§0§6CivLabs§0]§8 » §7§cCombat§7 logging §cleaves §7your items on a killable §aMannequin§7 for §c15s§7 before logging out safely.");
         }
 
 
-        plugin.getLogger().info("[Combat] " + damager.getName() + " hit " + victim.getName());
+        plugin.getLogger().info("<grey>[Combat] " + damager.getName() + " hit " + victim.getName());
 
         // Reset zombie timer if hit
         UUID victimId = victim.getUniqueId();
@@ -115,9 +118,12 @@ public class PVPManager implements Listener, CommandExecutor {
     private void addCombatBar(Player p) {
         BossBar bar = combatBars.get(p.getUniqueId());
         if (bar == null) {
-            bar = Bukkit.createBossBar("§7Marked for Combat", BarColor.RED, BarStyle.SEGMENTED_20);
+            bar = Bukkit.createBossBar("§7Combat Log Timer", BarColor.RED, BarStyle.SOLID);
             bar.addPlayer(p);
             combatBars.put(p.getUniqueId(), bar);
+        }
+        if (!bar.getPlayers().contains(p)) {
+            bar.addPlayer(p);
         }
         bar.setVisible(true);
     }
@@ -144,7 +150,7 @@ public class PVPManager implements Listener, CommandExecutor {
 
                 if (remaining <= 0) {
                     it.remove();
-
+                    p.sendMessage("§0[§0§6CivLabs§0]§8 » §7You may §bsafely§7 log out");
                     BossBar bar = combatBars.remove(uuid);
                     if (bar != null) bar.removeAll();
 
@@ -182,7 +188,7 @@ public class PVPManager implements Listener, CommandExecutor {
         Long lastHit = combatMap.get(id);
         if (lastHit == null || System.currentTimeMillis() - lastHit > COMBAT_COOLDOWN) return;
 
-        Debug.broadcast("combatlog", "[Logout] " + player.getName() + " logged out in combat!");
+        Debug.broadcast("combatlog", "<grey>[Logout] " + player.getName() + " logged out in combat!");
         Location loc = player.getLocation().clone().add(0, 1, 0);
         // Create marker armor stand
         ArmorStand marker = player.getWorld().spawn(loc, ArmorStand.class, as -> {
@@ -213,33 +219,44 @@ public class PVPManager implements Listener, CommandExecutor {
         zombieMap.put(id, zombie.getUniqueId());
         zombie.getPersistentDataContainer().set(OWNER_KEY, PersistentDataType.STRING, id.toString());
         zombie.getPersistentDataContainer().set(MARKER_KEY, PersistentDataType.STRING, player.getUniqueId().toString());
-
-        Debug.broadcast("combatlog","[Logout] Spawned zombie for " + player.getName());
+        combatBars.remove(id);
+        Debug.broadcast("combatlog","<grey>[Logout] Spawned zombie for " + player.getName());
 
         player.getInventory().clear();
         startZombieTimer(id, zombie);
         if (playerDownedListener.isDowned(player)) {
-        marker.addPassenger(zombie);
+            marker.addPassenger(zombie);
         }
     }
 
     private void startZombieTimer(UUID playerId, Entity zombie) {
-        if (zombie == null || !zombie.isValid()) return;
+        if (zombie == null || !zombie.isValid()) {
+            System.out.println("<grey>[ZombieTimer] Zombie is null or invalid for player " + playerId);
+            return;
+        }
+
+        System.out.println("<grey>[ZombieTimer] Scheduling despawn for zombie " + zombie.getUniqueId() + " of player " + playerId);
 
         BukkitRunnable timer = new BukkitRunnable() {
             @Override
             public void run() {
+                if (zombie == null || !zombie.isValid()) {
+                    System.out.println("<grey>[ZombieTimer] Zombie already invalid when timer ran for player " + playerId);
+                } else {
+                    System.out.println("<grey>[ZombieTimer] Removing zombie " + zombie.getUniqueId() + " for player " + playerId);
+                    zombie.remove();
+                }
 
-                zombie.remove();
                 zombieMap.remove(playerId);
                 zombieTimers.remove(playerId);
-
-                Debug.broadcast("combatlog","[ZombieTimer] Zombie despawned for player " + playerId);
+                System.out.println("<grey>[ZombieTimer] Timer cleaned up for player " + playerId);
             }
         };
+
         timer.runTaskLater(plugin, ZOMBIE_LIFETIME / 50L);
         zombieTimers.put(playerId, timer);
     }
+
 
     private ArmorStand getMarkerByPlayer(UUID playerId, Chunk chunk) {
         for (Entity e : chunk.getEntities()) {
@@ -262,18 +279,19 @@ public class PVPManager implements Listener, CommandExecutor {
         Chunk spawnChunk = player.getLocation().getChunk();
         ArmorStand marker = getMarkerByPlayer(id, spawnChunk);
         if (marker == null) {
-            Debug.broadcast("combatlog","[Login] No marker found for " + player.getName());
+            Debug.broadcast("combatlog","<grey>[Login] No marker found for " + player.getName());
             return;
         }
 
-        Debug.broadcast("combatlog","[Login] Marker found: " + marker + " for " + player.getName());
+        Debug.broadcast("combatlog","<grey>[Login] Marker found: " + marker + " for " + player.getName());
 
         int deadFlag = marker.getPersistentDataContainer().getOrDefault(DEAD_KEY, PersistentDataType.INTEGER, 0);
         byte[] invBytes = marker.getPersistentDataContainer().get(INVENTORY_KEY, PersistentDataType.BYTE_ARRAY);
         byte[] armorBytes = marker.getPersistentDataContainer().get(ARMOR_KEY, PersistentDataType.BYTE_ARRAY);
 
         if (deadFlag == 1) {
-            Debug.broadcast("combatlog","[Login] Player " + player.getName() + " died while logged out in combat!");
+            //Death
+            Debug.broadcast("combatlog","<grey>[Login] Player " + player.getName() + " died while logged out in combat!");
             player.getInventory().clear();
             if (invBytes != null)
                 for (ItemStack item : ItemSerialization.fromBytes(invBytes))
@@ -283,20 +301,18 @@ public class PVPManager implements Listener, CommandExecutor {
                     if (item != null) player.getWorld().dropItemNaturally(player.getLocation(), item);
 
             player.setHealth(0);
-            //remove this once the downsystem/revive system is fixed
-            Bukkit.getScheduler().runTaskLater(plugin, () -> player.setHealth(0), 10L);
-//            deathListener.playerActuallyDied(player.getPlayer());
             player.sendMessage("§0[§0§6CivLabs§0]§8 » §7You §ccombat logged§7, and your §cmannequin§7 was §ckilled§7 before it could safely logout");
         } else {
+            //Life
             if (invBytes != null) player.getInventory().setContents(ItemSerialization.fromBytes(invBytes));
             if (armorBytes != null) player.getInventory().setArmorContents(ItemSerialization.fromBytes(armorBytes));
             double health = marker.getPersistentDataContainer().getOrDefault(HEALTH_KEY, PersistentDataType.DOUBLE, player.getMaxHealth());
             player.setHealth(Math.min(health, player.getAttribute(Attribute.MAX_HEALTH).getValue()));
             player.sendMessage("§0[§0§6CivLabs§0]§8 » §7You §ccombat-logged§7, but your mannequin §asurvived");
-            Debug.broadcast("combatlog","[Login] Restored inventory and health(" + health + ") for " + player.getName());
+            Debug.broadcast("combatlog","<grey>[Login] Restored inventory and health(" + health + ") for " + player.getName());
         }
 
-        // --- Remove zombie ---
+//         --- Remove Mannequin Regardless ---
         UUID zombieId = zombieMap.remove(id);
         Entity zombie = (zombieId != null) ? Bukkit.getEntity(zombieId) : null;
         BukkitRunnable timer = zombieTimers.remove(id);
@@ -317,11 +333,25 @@ public class PVPManager implements Listener, CommandExecutor {
             }
         }
 
+        Long lastHit = combatMap.get(id);
+        if (lastHit != null && System.currentTimeMillis() - lastHit < COMBAT_COOLDOWN) {
+            // Temporarily remove and re-add to ensure the bar updates
+            combatMap.remove(id);
+            combatMap.put(id, lastHit);
+
+            addCombatBar(player);
+            startCombatTaskIfNeeded();
+
+            player.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are still in §ccombat §7for §b"
+                    + ((COMBAT_COOLDOWN - (System.currentTimeMillis() - lastHit)) / 1000) + " §7seconds");
+        }
+
         if (zombie != null && zombie.isValid()) {
             zombie.remove();
-            Debug.broadcast("combatlog", ("[Login] Removed leftover zombie for " + player.getName()));
+            Debug.broadcast("combatlog", ("<grey>[Login] Removed leftover zombie for " + player.getName()));
         }
-        
+
+
         marker.remove();
     }
 
@@ -341,11 +371,16 @@ public class PVPManager implements Listener, CommandExecutor {
 
         // If zombie is not in map, remove it immediately
         if (!zombieMap.containsKey(ownerId)) {
-            Debug.broadcast("combatlog", "[ZombieDamage] Untracked zombie detected for player " + ownerId + ", removing it");
+            Debug.broadcast("combatlog", "<grey>[ZombieDamage] Untracked zombie detected for player " + ownerId + ", removing it");
             event.setCancelled(true);
             zombie.remove();
             return;
         }
+
+        // Reset the zombie despawn timer
+        BukkitRunnable oldTimer = zombieTimers.get(ownerId);
+        if (oldTimer != null) oldTimer.cancel();
+        startZombieTimer(ownerId, zombie);
 
         // Otherwise, update marker
         String playerUUIDStr = zombie.getPersistentDataContainer().get(MARKER_KEY, PersistentDataType.STRING);
@@ -361,7 +396,7 @@ public class PVPManager implements Listener, CommandExecutor {
         marker.getPersistentDataContainer().set(ARMOR_KEY, PersistentDataType.BYTE_ARRAY,
                 ItemSerialization.toBytes(zombie.getEquipment().getArmorContents()));
         zombie.getWorld().playSound(zombie.getLocation(), Sound.ENTITY_PLAYER_HURT, SoundCategory.PLAYERS, 1f, 1f);
-        Debug.broadcast("combatlog","[ZombieDamage] Zombie " + zombie.getCustomName() +
+        Debug.broadcast("combatlog","<grey>[ZombieDamage] Zombie " + zombie.getCustomName() +
                 " took damage, health updated to " + currentHealth + " in marker");
     }
 
@@ -375,8 +410,9 @@ public class PVPManager implements Listener, CommandExecutor {
 
         // Early exit: zombie has no owner => clear drops and return
         if (!pdc.has(OWNER_KEY, PersistentDataType.STRING)) {
-            event.getDrops().clear();
             zombie.getEquipment().clear();
+            event.getDrops().clear();
+            event.setDroppedExp(0);
             return;
         }
 
@@ -387,8 +423,9 @@ public class PVPManager implements Listener, CommandExecutor {
         try {
             ownerId = UUID.fromString(raw);
         } catch (IllegalArgumentException ex) {
-            event.getDrops().clear();
             zombie.getEquipment().clear();
+            event.getDrops().clear();
+            event.setDroppedExp(0);
             return;
         }
 
@@ -396,11 +433,13 @@ public class PVPManager implements Listener, CommandExecutor {
 
         // If no marker exists => NO DROPS
         if (marker == null) {
+            zombie.getEquipment().clear();
+            event.getDrops().clear();
+            event.setDroppedExp(0);
             return;
         }
 
         // --- VALID MARKER FOUND: handle full logic ---
-
         event.getDrops().clear();
         zombie.getEquipment().clear();
         event.setDroppedExp(0);
@@ -409,8 +448,12 @@ public class PVPManager implements Listener, CommandExecutor {
         // Drop inventory
         byte[] invBytes = marker.getPersistentDataContainer().get(INVENTORY_KEY, PersistentDataType.BYTE_ARRAY);
         if (invBytes != null) {
+        Debug.broadcast("combatlog","<grey>[Mannequin Death] Inventory Detected...");
             for (ItemStack item : ItemSerialization.fromBytes(invBytes)) {
-                if (item != null) zombie.getWorld().dropItemNaturally(zombie.getLocation(), item);
+                if (item != null) {
+                    zombie.getWorld().dropItemNaturally(zombie.getLocation(), item);
+                    Debug.broadcast("combatlog","<grey>[Mannequin Item]: " + item.getItemMeta().displayName());
+                }
             }
             marker.getPersistentDataContainer().remove(INVENTORY_KEY);
         }
@@ -444,11 +487,11 @@ public class PVPManager implements Listener, CommandExecutor {
         Zombie zombie = (Zombie) player.getWorld().spawnEntity(player.getLocation(), EntityType.ZOMBIE);
         zombie.setCustomName(player.getName());
         zombie.setCustomNameVisible(true);
-        zombie.setPersistent(true);
+        zombie.setPersistent(false);
         zombie.setAI(false);
         zombie.setSilent(true);
         zombie.setCanPickupItems(false);
-        zombie.setRemoveWhenFarAway(false);
+        zombie.setRemoveWhenFarAway(true);
         zombie.setShouldBurnInDay(false);
         zombie.setAge(0); //0 = adult | -100 = ticks until adult
         zombie.getAttribute(Attribute.MAX_HEALTH).setBaseValue(player.getMaxHealth());
@@ -469,7 +512,7 @@ public class PVPManager implements Listener, CommandExecutor {
             zombie.getEquipment().setArmorContents(player.getInventory().getArmorContents());
         }
 
-        Debug.broadcast("combatlog", "[SpawnZombie] Spawned zombie for " + player.getName() +
+        Debug.broadcast("combatlog", "<grey>[SpawnZombie] Spawned zombie for " + player.getName() +
                 " | Health: " + zombie.getHealth() + "/" + zombie.getAttribute(Attribute.MAX_HEALTH).getValue());
 
         return zombie;
@@ -479,8 +522,9 @@ public class PVPManager implements Listener, CommandExecutor {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!(sender instanceof Player p)) return true;
         combatMap.put(p.getUniqueId(), System.currentTimeMillis());
-        Debug.broadcast("combatlog","[Command] /simulatehit executed for " + p.getName());
-        p.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds");
+        Debug.broadcast("combatlog","<grey>[Command] /simulatehit executed for " + p.getName());
+//        p.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds");
+        p.sendMessage("§0[§0§6CivLabs§0]§8 » §7§cCombat§7 logging §cleaves §7your items on a killable §aMannequin§7 for §c15s§7 before logging out safely.");
         addCombatBar(p);
         startCombatTaskIfNeeded();
         return true;
