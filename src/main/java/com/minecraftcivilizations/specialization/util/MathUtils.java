@@ -141,5 +141,26 @@ public class MathUtils {
     }
 
 
+    /**
+     * Audio-style compressor that never increases the input.
+     *
+     * @param x         input (original base damage)
+     * @param threshold knee center (where compression starts)
+     * @param knee      full knee width (soft region width)
+     * @param ratio     compression ratio (e.g. 2.0, 4.0)
+     * @return compressed value <= x
+     */
+    public static double compress(double x, double threshold, double knee, double ratio) {
+        double half = knee * 0.5;
+        // Hard reduction amount at full compression (>= 0 only when x > threshold)
+        double hard_reduction = Math.max(0.0, (x - threshold) * (1.0 - 1.0 / ratio));
+        // soft-knee scale: 0 when x <= threshold-half, 1 when x >= threshold+half
+        double s = (x - (threshold - half)) / (knee == 0 ? 1.0 : knee);
+        s = Math.max(0.0, Math.min(1.0, s));
+        // final: subtract scaled reduction (never negative)
+        return x - s * hard_reduction;
+    }
+
+
 
 }

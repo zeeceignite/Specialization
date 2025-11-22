@@ -90,15 +90,15 @@ public class GuardsmanDamage implements Listener {
                 add = 0.5;
             }
             case EXPERT ->  {
-                multiplier = 0.4;
+                multiplier = 0.33;
                 add = 0.6;
             }
             case MASTER ->  {
-                multiplier = 0.4;
+                multiplier = 0.36;
                 add = 0.8;
             } //1.4
             case GRANDMASTER -> {
-                multiplier = 0.4125;
+                multiplier = 0.39;
                 add = 1.0;
             }
         }
@@ -176,10 +176,10 @@ public class GuardsmanDamage implements Listener {
             }
             Debug.broadcast(
                     "damage",
-                     "<dark_red>Base Damage: <red>"+Debug.formatDecimal(original_damage) +"</red>"+
+                     "<dark_red>Guardsman: <red>"+Debug.formatDecimal(original_damage) +"</red>"+
                             (reduction_msg)
                             + " <red>[❤ " + Debug.formatDecimal(event.getDamage(BASE)) + "]</red>",
-                    "<gold>This output displays the calculated Guardsman Damage\nas if Vanilla Armor was being utilized</gold>\n"
+                    "<gray>This output displays the calculated Guardsman Damage\nas if Vanilla Armor was being utilized\n"
                             +"[" + damager.getName() + " is GuardMan lvl " + lvl + "]" + "\n" +
                             "Attacker: " + damager.getName() + modifiers
             );

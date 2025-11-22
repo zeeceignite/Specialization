@@ -514,7 +514,7 @@ public class MobManager implements Listener {
         for(Entity e : entities){
             if(isMobVariation(e)){
                 if(e instanceof LivingEntity le) {
-                    Specialization.getInstance().getLogger().info("applying logic to "+e.getName());
+//                    Specialization.getInstance().getLogger().info("applying logic to "+e.getName());
                     applyLogicToMob(le, getMobVariation(le));
                 }
             }

@@ -52,17 +52,24 @@ public class ArmorDamageReduction {
         double original_armor = event.getDamage(ARMOR);
         double armor_ceiling = 24;
 
+        double original_damage = CombatManager.calculateTotalDamage(event);
+
         double armor = stats.getArmor();
         double toughness = stats.getToughness();
-
 
         // SCALING REDUCTION
         double ARMOR_REDUCTION = (armor / armor_ceiling) / 2;
         // LINEAR REDUCTION
-        double TOUGHNESS_REDUCTION = Math.max (0, toughness / 8);
+        double TOUGHNESS_REDUCTION_LINEAR = Math.max (0, (toughness / 8)); // Absolute damage reduction
+        double TOUGHNESS_REDUCTION_SCALAR = Math.max (0, original_base / (8+(toughness/4))); // Relative damage reduction
 
-        double TOTAL_REDUCTION;
-        TOTAL_REDUCTION = Math.min(original_base, (original_base * ARMOR_REDUCTION) + (TOUGHNESS_REDUCTION));
+        double TOUGHNESS_REDUCTION = TOUGHNESS_REDUCTION_LINEAR + TOUGHNESS_REDUCTION_SCALAR;
+//
+//        double TOTAL_REDUCTION;
+//        TOTAL_REDUCTION = Math.min(original_base, (original_base * ARMOR_REDUCTION) + (TOUGHNESS_REDUCTION));
+        // vanilla-like toughness: scales with incoming damage and toughness (diminishing returns)
+//        double TOUGHNESS_REDUCTION = Math.max(0.0, original_base / (2.0 + toughness / 4.0));
+        double TOTAL_REDUCTION = Math.min(original_base, (original_base * ARMOR_REDUCTION) + TOUGHNESS_REDUCTION);
 
 
         //inverse finally
@@ -71,7 +78,7 @@ public class ArmorDamageReduction {
         //Blocking
         //scaled armor reduction effectiveness according to guardsman level
 
-        if(Debug.isAnyoneListening("armor", true)) {
+        if(Debug.isAnyoneListening("damage", true)) {
             String modifiers = "";
 
             for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
@@ -80,9 +87,9 @@ public class ArmorDamageReduction {
             }
 
             Debug.broadcast(
-                    "armor",
+                    "damage",
                     //WHITE+victim.getName()+" "+*
-                    "<red>" + Debug.formatDecimal(event.getDamage(BASE))+
+                    "<dark_red>Armor: </dark_red><red>" +
 //                            (WHITE+" ["+BLUE+"🅱: "+Debug.formatDecimal(original_armor)+"]")+
                             " <blue>[👕: "+Debug.formatDecimal(ARMOR_REDUCTION)+"x]</blue>"+
                             ((stats.getToughness()>0)?(" <gray>[🪨: -"+Debug.formatDecimal(TOUGHNESS_REDUCTION)+"]</gray>"):"")+
@@ -90,7 +97,10 @@ public class ArmorDamageReduction {
 //                            (event.isCritical()? GREEN+" (CRIT!)":"")+
                             " [❤ "+Debug.formatDecimal(CombatManager.calculateTotalDamage(event))+"]</red>"
                     ,
-                    "<blue>The <red>input</red> displays base damage.\nThe output displays the new calculated damage\nwith Custom Armor Reduction\n</blue>\n"
+                    "<gray>Original Armor Reduction: <dark_blue>"+Debug.formatDecimal(-original_armor)+"</dark_blue>\n"
+                    +"<gray>New Armor Reduction: <blue>"+Debug.formatDecimal(TOTAL_REDUCTION)+"</blue>\n"
+                            +"Vanilla Damage would have been <dark_red>"+Debug.formatDecimal(original_damage)+"</dark_red>\n"
+                            +"Specialization Custom Damage is <red>"+Debug.formatDecimal(CombatManager.calculateTotalDamage(event))+"</red>\n"
                             +"<blue>ARMOR REDUCTION:</blue> "+Debug.formatDecimal(ARMOR_REDUCTION)+"\n"
                             +"<light_purple>TOUGHNESS REDUCTION:</light_purple> "+Debug.formatDecimal(TOUGHNESS_REDUCTION)+"\n"
                             +"\nOriginal damage: "+Debug.formatDecimal(event.getDamage())
