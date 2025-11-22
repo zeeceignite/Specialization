@@ -28,6 +28,7 @@ public class Bandage extends CustomItem {
     private static final NamespacedKey IS_DOWNED = new NamespacedKey(Specialization.getInstance(), "is_downed");
     private final ReviveListener reviveListener;
     NamespacedKey RECIPE_KEY = new NamespacedKey(Specialization.getInstance(), "bandage_recipe");
+
     public Bandage(String id, String displayName, ReviveListener reviveListener) {
         super(id, displayName, org.bukkit.Material.PAPER, true);
         this.reviveListener = reviveListener;
@@ -130,7 +131,7 @@ public class Bandage extends CustomItem {
         CustomPlayer cHealer = CoreUtil.getPlayer(healer.getUniqueId());
         int lvl = cHealer.getSkillLevel(SkillType.HEALER);
 
-        if (lvl<=0) return;
+        if (lvl <= 0) return;
 
         double current_health = target.getHealth();
         double max_health = target.getAttribute(Attribute.MAX_HEALTH).getValue();
@@ -150,11 +151,14 @@ public class Bandage extends CustomItem {
         double new_health = Math.min(current_health + heal_amount, max_health);
         target.setHealth(new_health);
         healer.setFoodLevel(healer.getFoodLevel() - 3);
-        if(target instanceof Player playerTarget) {
-            reviveListener.startRevive(healer, playerTarget, reviveListener.createReviveInventory(playerTarget));
+        if (target instanceof Player playerTarget) {
+            Entity vehicle = playerTarget.getVehicle();
+            if (!(vehicle instanceof Snowman) && !(vehicle instanceof Player)) {
+                reviveListener.startRevive(healer, playerTarget, reviveListener.createReviveInventory(playerTarget));
+            }
         }
         //for testing
-        if(target instanceof Mob && healer.isOp()) {
+        if (target instanceof Mob && healer.isOp()) {
             reviveListener.startRevive(healer, healer, reviveListener.createReviveInventory(healer));
         }
 
@@ -180,7 +184,7 @@ public class Bandage extends CustomItem {
 
             boolean isDowned = downed != null && downed == 1;
             if (isDowned) {
-            applyCooldown(healer, 500);
+                applyCooldown(healer, 500);
             }
 //            pTarget.getPersistentDataContainer().set(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE, (byte) 0);
         }
