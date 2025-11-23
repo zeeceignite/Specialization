@@ -51,7 +51,7 @@ public final class LeashListener implements Listener {
 
 
         if (target.getVehicle() instanceof Snowman proxy) {
-            if (proxy.getPersistentDataContainer().has(leashKey, PersistentDataType.STRING)) {
+            if (proxy.getPersistentDataContainer().has(leashKey, PersistentDataType.BOOLEAN)) {
 
                 // --- Drop a lead on the ground at the proxy location ---
                 proxy.getWorld().dropItemNaturally(
@@ -99,7 +99,7 @@ public final class LeashListener implements Listener {
             Snowman proxy = spawnProxy(targetPlayer.getLocation(), leasher);
             proxy.addPassenger(targetPlayer);
             proxy.setLeashHolder(leasher);
-            proxy.getPersistentDataContainer().set(leashKey, PersistentDataType.STRING, "true");
+            proxy.getPersistentDataContainer().set(leashKey, PersistentDataType.BOOLEAN, true);
             proxies.put(targetPlayer, proxy);
             leasher.getInventory().getItemInMainHand().subtract(1);
             e.setCancelled(true);
@@ -109,36 +109,16 @@ public final class LeashListener implements Listener {
 
 
     // -------------------------
-    // Snowman despawn / unleash
-    // -------------------------
-//    @EventHandler
-//    public void onUnleash(EntityUnleashEvent e) {
-//        if (!(e.getEntity() instanceof Snowman proxy)) return;
-//        if (!proxy.getPersistentDataContainer().has(leashKey, PersistentDataType.STRING)) return;
-//
-//        // Dismount all passengers safely
-//        for (Entity passenger : proxy.getPassengers()) {
-//            passenger.leaveVehicle();
-//            if (passenger instanceof Player p && downedListener.isDowned(p)) {
-//                downedListener.setSit(p);
-//                proxies.remove(p); // remove from tracked map
-//            }
-//        }
-//
-//        proxy.remove();
-//    }
-
-    // -------------------------
     // Relog handling
     // -------------------------
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
-        Player p = e.getPlayer();
-        downedListener.clearMount(p);
-        Snowman proxy = proxies.get(p);
-        if (proxy != null && proxy.isValid()) {
-            proxy.addPassenger(p);
-        }
+//        Player p = e.getPlayer();
+////        downedListener.clearMount(p);
+//        Snowman proxy = proxies.get(p);
+//        if (proxy != null && proxy.isValid()) {
+//            proxy.addPassenger(p);
+//        }
     }
 
 //    @EventHandler

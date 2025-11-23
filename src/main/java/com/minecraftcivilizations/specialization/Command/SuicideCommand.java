@@ -25,13 +25,41 @@ public class SuicideCommand extends BaseCommand {
     @Default
     public void onSuicide(@NotNull Player player) {
 
-        Byte downed = player.getPersistentDataContainer().get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE);
+        // Check if player is riding anything
+        if (player.getVehicle() != null) {
+            // Riding another player
+            if (player.getVehicle() instanceof Player) {
+                player.sendMessage(Component.text(
+                        "§0[§0§6CivLabs§0]§8 » §7You may not perform this action while being carried"));
+                return;
+            }
+
+            // Riding a snowman leash proxy
+            if (player.getVehicle() instanceof org.bukkit.entity.Snowman snowman) {
+                NamespacedKey leashKey = new NamespacedKey(Specialization.getInstance(), "leash_proxy");
+
+                if (snowman.getPersistentDataContainer().has(leashKey, PersistentDataType.BYTE)) {
+                    Byte isLeashed = snowman.getPersistentDataContainer().get(leashKey, PersistentDataType.BYTE);
+                    if (isLeashed != null && isLeashed == 1) {
+                        player.sendMessage(Component.text(
+                                "§0[§0§6CivLabs§0]§8 » §7You may not perform this action while leashed"));
+                        return;
+                    }
+                }
+            }
+        }
+
+        Byte downed = player.getPersistentDataContainer()
+                .get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE);
+
         if (downed == null || downed == 0) {
-            player.sendMessage(Component.text("You can only use this command while downed.").color(NamedTextColor.RED));
+            player.sendMessage(Component.text("§0[§0§6CivLabs§0]§8 » §7You can only use this command while downed.").color(NamedTextColor.RED));
             return;
         }
+
         player.setHealth(0);
     }
+
 
 
 

@@ -20,6 +20,7 @@ import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDismountEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -258,13 +259,13 @@ public class ReviveListener implements Listener {
         Player downed = healerToDownedPlayer.get(healer.getUniqueId());
         if (downed == null) return;
 
-        if (healer.getLocation().distanceSquared(downed.getLocation()) > 4.0) {
+        if (healer.getLocation().distanceSquared(downed.getLocation()) > 7.0) {
             healer.closeInventory();
 //            BossBar bar = downedBossBars.remove(downed.getUniqueId());
 //            if (bar != null) bar.removeAll();
 
 
-            healer.sendMessage(Component.text("You are too far away! Revive cancelled.", NamedTextColor.RED));
+            healer.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are too far away to revive");
             return;
         }
 
@@ -274,13 +275,13 @@ public class ReviveListener implements Listener {
         boolean isHealthy = HEALTHY_ITEMS.stream().anyMatch(h -> h.mat() == type);
         if (isHealthy) {
             addRandomInjuries(inv, 3);
-            healer.playSound(healer.getLocation(), Sound.ENTITY_VILLAGER_HURT, 1, 0.8f);
+            healer.getWorld().playSound(healer.getLocation(), Sound.ENTITY_VILLAGER_HURT, 1, 0.8f);
             return;
         }
 
         // Injury clicked → replace with bandage
         inv.setItem(e.getSlot(), createBandageItem());
-        healer.playSound(healer.getLocation(), Sound.ITEM_ARMOR_EQUIP_LEATHER, 1, 1.4f);
+        downed.getWorld().playSound(downed.getLocation(), Sound.ITEM_ARMOR_EQUIP_LEATHER, 1, 1.4f);
         updateBossBarProgress(downed, inv);
 
         if (allInjuriesCleared(inv)) {
@@ -297,7 +298,10 @@ public class ReviveListener implements Listener {
     private boolean isHealer(Player player) {
         CustomPlayer cHealer = CoreUtil.getPlayer(player.getUniqueId());
         int lvl = cHealer.getSkillLevel(SkillType.HEALER);
-        if (lvl == 0 && !player.isOp()) return false;
+        if (lvl == 0) {
+//            player.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are not skilled enough for that");
+            return false;
+        }
         return true;
     }
 
@@ -344,7 +348,7 @@ public class ReviveListener implements Listener {
         Byte healerdowned = healer.getPersistentDataContainer().get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE);
         if (!(healerdowned == null || healerdowned == 0)) return; //healer must NOT be downed
 
-        if (!isHealer(healer)) return; //must be healer or op
+        if (!isHealer(healer)) return; //must be healer
         if (!healer.getPassengers().isEmpty()) return; // must not have any passangers already
         ItemStack main = healer.getInventory().getItemInMainHand();
         ItemStack off = healer.getInventory().getItemInOffHand();
@@ -414,7 +418,7 @@ public class ReviveListener implements Listener {
     }
 
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onDismount(EntityDismountEvent e) {
         // Rider must be a player
         if (!(e.getEntity() instanceof Player rider)) return;
