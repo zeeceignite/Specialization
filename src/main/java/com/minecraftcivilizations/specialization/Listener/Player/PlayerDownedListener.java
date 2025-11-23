@@ -243,6 +243,7 @@ public class PlayerDownedListener implements Listener {
                 return;
             }
             Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Cancelling lethal dmg → triggering downed state.");
+
             event.setCancelled(true);
             setDowned(player, true, 10 + finalHealth);
         }
@@ -439,8 +440,6 @@ public class PlayerDownedListener implements Listener {
 
     }
 
-    //needs a case for if the player is leashed to allow movement
-    // use this from leashlistener    private final List<Player> leashedPlayers = new ArrayList<>();
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();

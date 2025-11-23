@@ -358,6 +358,10 @@ public class ReviveListener implements Listener {
         if (target.getVehicle() instanceof Snowman) {
             return; //must not be leashed
         }
+
+        // (I want to remove this, but I have some sort of desync with states caused by canceled dismount event if I dont)
+        boolean isCarried = target.getVehicle() instanceof Player;
+        if((isCarried)) return; //must not be already carried.
         if (!(target instanceof LivingEntity)) return; //must be a living entity
 
         Byte targetdowned = target.getPersistentDataContainer().get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE);
@@ -382,10 +386,16 @@ public class ReviveListener implements Listener {
 
 
         if (target instanceof Player downedplayer) {
+            if (target.getVehicle() instanceof Player p) {
+                forceDismount(downedplayer, p);
+                removeSlowIfNoPassengers(p, true);
+//        Debug.broadcast("revive", "§7testo " + target.getName());
+
+            }
             playerDownedListener.clearMount(downedplayer);
         }
 
-        removeSlowIfNoPassengers(healer, false);
+        removeSlowIfNoPassengers(healer, true);
         healer.addPassenger(target);
         AttributeModifier slow = new AttributeModifier(CARRY_SLOW_KEY, -0.5, AttributeModifier.Operation.MULTIPLY_SCALAR_1);
 
@@ -434,7 +444,7 @@ public class ReviveListener implements Listener {
         carrier.removePassenger(rider);
     }
 
-
+//TODO: ALL DISMOUNT LOGIC NEEDS TO HAPPEN HERE OR POINT TO AN EVENT IN THIS CLASS
     @EventHandler(priority = EventPriority.LOWEST) //king of dismount logic checks
     public void onDismount(EntityDismountEvent e) {
 
@@ -513,13 +523,32 @@ public class ReviveListener implements Listener {
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
         Player p = e.getEntity();
+
+        // remove slow
         removeSlowIfNoPassengers(p, false);
 
+        // remove revive bar
         BossBar bar = downedBossBars.remove(p.getUniqueId());
         if (bar != null) bar.removeAll();
 
+        // If they were carrying someone, force dismount all passengers
+        for (Entity passenger : new ArrayList<>(p.getPassengers())) {
+            if (passenger instanceof Player rider) {
+                forceDismount(p, rider);
+                playerDownedListener.setSit(rider);
+                removeSlowIfNoPassengers(p, true);
+            }
+        }
 
+        // If THEY were being carried, force dismount them
+        if (p.getVehicle() instanceof Player carrier) {
+            forceDismount(carrier, p);
+            removeSlowIfNoPassengers(carrier, true);
+        }
     }
+
+
+
 
     // --- INJURY ITEMS ---
     public record InjuryItem(String name, Material mat) {
