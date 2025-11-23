@@ -362,6 +362,8 @@ public class ReviveListener implements Listener {
         // (I want to remove this, but I have some sort of desync with states caused by canceled dismount event if I dont)
         boolean isCarried = target.getVehicle() instanceof Player;
         if((isCarried)) return; //must not be already carried.
+
+
         if (!(target instanceof LivingEntity)) return; //must be a living entity
 
         Byte targetdowned = target.getPersistentDataContainer().get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE);

@@ -59,7 +59,7 @@ import java.util.UUID;
 
 public class PlayerDownedListener implements Listener {
 
-    private static final int DOWNED_DURATION_TICKS = 5000 * 20; // 60 seconds
+    private static final int DOWNED_DURATION_TICKS = 60 * 20; // 60 seconds
     private final JavaPlugin plugin;
     private final NamespacedKey downedKey;
     private final Map<UUID, BukkitTask> downTimers = new HashMap<>();
@@ -293,7 +293,7 @@ public class PlayerDownedListener implements Listener {
         if (!(player.getVehicle() instanceof Snowman)) {
             if (distance > 0.3) {
                 // Use ArmorStand for falling
-                player.sendMessage("armorstand");
+//                player.sendMessage("armorstand");
                 ArmorStand stand = player.getWorld().spawn(player.getLocation(), ArmorStand.class, a -> {
                     a.setGravity(true);
                     a.setInvulnerable(true);
@@ -308,7 +308,7 @@ public class PlayerDownedListener implements Listener {
             } else {
                 // Use Interaction for precise sitting
                 Location locInteraction = targetLoc.clone().add(0, -0.5, 0); // ensure player sits just above the block
-                player.sendMessage("interaction: " + distance);
+//                player.sendMessage("interaction: " + distance);
                 Interaction inter = player.getWorld().spawn(locInteraction, Interaction.class, i -> {
                     i.setInteractionWidth(0.6f);
                     i.setInteractionHeight(0.6f);
