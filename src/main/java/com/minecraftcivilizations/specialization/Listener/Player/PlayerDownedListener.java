@@ -50,7 +50,7 @@ import java.util.UUID;
  * This can also be handled by setting the players PDC "is_downed" to 1/0 for convenience.
  * IsDowned will return if the player is downed, however you can also do this with PDC.
  * <p>
- * Clear mount should be used if you would like to keep the player downed with timers, but move them to a new mount.
+ * Clear mount should be used FIRST if you would like to keep the player downed with timers, but move them to a new mount.
  * <p>
  * setSit should be used to set the state of the player back to sit without clearing timers/bleedout
  * <p>

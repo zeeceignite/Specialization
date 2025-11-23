@@ -17,13 +17,29 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.HashMap;
 import java.util.Map;
+
+
+/**
+ * @author Jfrogy
+ */
+
+/**
+ * This class handles the leashing of players using a proxy which is a snowman the player rides.
+ * The snowman is somewhat arbitrary. The only important part is that the entity can move and be lead naturally.
+ * This way the entity can be tied to things and handle normal persistent logout/login lead logic
+ * <p>
+ * Use player.getVehicle() instanceOf snowman and then
+ * <p>
+ * Relies on: PlayerDownedListener States & ReviveListener
+ * <p>
+ * Utilized by: Nothing
+ */
 
 public final class LeashListener implements Listener {
 
@@ -63,7 +79,7 @@ public final class LeashListener implements Listener {
                 if (target instanceof Player targetPlayer) {
                     // Clear their carried-mount state
                     if (downedListener.isDowned(targetPlayer)) {
-                    downedListener.clearMount(targetPlayer);
+                        downedListener.clearMount(targetPlayer);
                         downedListener.setSit(targetPlayer);
                     }
                     return;
@@ -106,33 +122,6 @@ public final class LeashListener implements Listener {
 
         }
     }
-
-
-    // -------------------------
-    // Relog handling
-    // -------------------------
-    @EventHandler
-    public void onJoin(PlayerJoinEvent e) {
-//        Player p = e.getPlayer();
-////        downedListener.clearMount(p);
-//        Snowman proxy = proxies.get(p);
-//        if (proxy != null && proxy.isValid()) {
-//            proxy.addPassenger(p);
-//        }
-    }
-
-//    @EventHandler
-//    public void onQuit(PlayerQuitEvent e) {
-//        Player p = e.getPlayer();
-//        Snowman proxy = proxies.get(p);
-//        if (proxy != null) {
-//            if (downedListener.isDowned(p)) {
-//                downedListener.setSit(p);
-//            }
-//            proxy.remove();
-//            proxies.remove(p);
-//        }
-//    }
 
     // -------------------------
     // Prevent snow layering

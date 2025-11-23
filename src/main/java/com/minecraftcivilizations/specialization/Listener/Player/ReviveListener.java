@@ -46,11 +46,12 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * This class handles the revive minigame and setting the state to revive on success
- * This also handles the pickup and dismount logic for carrying players as a healer.
+ * This also handles the pickup and dismount logic/slowness for carrying players as a healer.
+ * onDismount blocks dismounts for the player if they are downed or leashed using a blacklist. Only allowing dismounts for those that are forced.
  * <p>
  * It is called by playerDownListener to start the revive process
  * LeashListener also has some checks that rely on the logical flow/timing of pickup interact
- *
+ * <p>
  * Utilized by: playerDownListener, LeashListener
  */
 
