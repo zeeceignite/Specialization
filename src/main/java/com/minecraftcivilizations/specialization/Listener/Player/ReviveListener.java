@@ -9,7 +9,6 @@ import com.minecraftcivilizations.specialization.util.CoreUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import net.minecraft.world.item.LeadItem;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -45,8 +44,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class ReviveListener implements Listener {
 
-    private final Set<UUID> forcedDismount = Collections.newSetFromMap(new ConcurrentHashMap<>());
-
     private static final NamespacedKey CARRY_SLOW_KEY = new NamespacedKey(Specialization.getInstance(), "carry_slowness");
     private static final NamespacedKey INJURY_KEY = new NamespacedKey(Specialization.getInstance(), "revive_injury");
     private static final List<InjuryItem> INJURIES = List.of(
@@ -66,7 +63,7 @@ public class ReviveListener implements Listener {
             new HealthyItem("Healthy Brain", Material.RED_GLAZED_TERRACOTTA),
             new HealthyItem("Healthy Bone", Material.BONE)
     );
-
+    private final Set<UUID> forcedDismount = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final PlayerDownedListener playerDownedListener;
 
     //    private final Map<UUID, AttributeModifier> healerSlowModifiers = new ConcurrentHashMap<>();
@@ -262,7 +259,11 @@ public class ReviveListener implements Listener {
         if (downed == null) return;
 
         if (healer.getLocation().distanceSquared(downed.getLocation()) > 4.0) {
-            endRevive(healer, downed);
+            healer.closeInventory();
+//            BossBar bar = downedBossBars.remove(downed.getUniqueId());
+//            if (bar != null) bar.removeAll();
+
+
             healer.sendMessage(Component.text("You are too far away! Revive cancelled.", NamedTextColor.RED));
             return;
         }
@@ -346,11 +347,11 @@ public class ReviveListener implements Listener {
         if (!isHealer(healer)) return; //must be healer or op
         if (!healer.getPassengers().isEmpty()) return; // must not have any passangers already
         ItemStack main = healer.getInventory().getItemInMainHand();
-        ItemStack off  = healer.getInventory().getItemInOffHand();
+        ItemStack off = healer.getInventory().getItemInOffHand();
 
         CustomItem used = CustomItem.getManager().getCustomItem(main) != null
-                        ? CustomItem.getManager().getCustomItem(main)
-                        : CustomItem.getManager().getCustomItem(off);
+                ? CustomItem.getManager().getCustomItem(main)
+                : CustomItem.getManager().getCustomItem(off);
 
         if (used != null && used.getId().equals("bandage")) {
             return; // They interacted with the bandage → block passenger pickup
@@ -372,7 +373,7 @@ public class ReviveListener implements Listener {
 //            healerSlowModifiers.put(healer.getUniqueId(), slow);
         }
 
-        Debug.broadcast("revive", "You are now carrying " + target.getName());
+        Debug.broadcast("revive", "§7You are now carrying " + target.getName());
     }
 
 
@@ -386,7 +387,6 @@ public class ReviveListener implements Listener {
             e.setCancelled(true);
         }
         if (!healer.isSneaking()) return;
-
 
 
         for (Entity passenger : healer.getPassengers()) {
@@ -415,11 +415,10 @@ public class ReviveListener implements Listener {
 
 
     @EventHandler
-
     public void onDismount(EntityDismountEvent e) {
         // Rider must be a player
         if (!(e.getEntity() instanceof Player rider)) return;
-
+        if (rider.isDead()) return; //this doesnt fix the bug :/
         Entity vehicle = e.getDismounted();
 
         boolean forced = forcedDismount.remove(rider.getUniqueId());
@@ -427,11 +426,12 @@ public class ReviveListener implements Listener {
         boolean isDowned = rider.getPersistentDataContainer().get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE) == 1;
 
         // Identify plugin mounts (armor stand, interaction, snowman)
-        boolean isPluginMount = vehicle instanceof ArmorStand || vehicle instanceof Player || vehicle instanceof Snowman;
+        boolean isPluginMount = vehicle instanceof ArmorStand || vehicle instanceof Player || vehicle instanceof Snowman || vehicle instanceof org.bukkit.entity.Interaction;
 
         // If downed, prevent player from dismounting anything *unless forced*
         if (isDowned && !forced) {
             if (isPluginMount) {
+                /// this may cause a bug if the player dies while mounted causing a dysnc swap after a bit of carrying
                 e.setCancelled(true);
                 return;
             }
@@ -447,15 +447,13 @@ public class ReviveListener implements Listener {
     }
 
 
-
-
     private void removeSlowIfNoPassengers(Player healer, boolean override) {
         if (healer.getPassengers().isEmpty() || override) {
             AttributeModifier slow = healer.getAttribute(Attribute.MOVEMENT_SPEED).getModifier(CARRY_SLOW_KEY);
 //            AttributeModifier slow = healerSlowModifiers.remove(healer.getUniqueId());
             if (slow != null && healer.getAttribute(Attribute.MOVEMENT_SPEED) != null) {
                 healer.getAttribute(Attribute.MOVEMENT_SPEED).removeModifier(slow);
-                Debug.broadcast("revive", "Removed slowed attribute for" + healer.getName());
+                Debug.broadcast("revive", "§7Removed slowed attribute for" + healer.getName());
             }
         }
     }

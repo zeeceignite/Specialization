@@ -71,18 +71,18 @@ public class PlayerDownedListener implements Listener {
 
     //Call this to handle being downed or not. It can handle everything else. Use setSit if you only want to set make them sit again
     public void setDowned(Player player, boolean downed, double health) {
-        Debug.broadcast("down", "[DOWNED-DEBUG] setDowned(" + player.getName() + ") = " + downed);
+        Debug.broadcast("down", "§7[DOWNED-DEBUG] setDowned(" + player.getName() + ") = " + downed);
 
         PersistentDataContainer pdc = player.getPersistentDataContainer();
         pdc.set(downedKey, PersistentDataType.BYTE, (byte) (downed ? 1 : 0));
 
         if (!downed) {
-            Debug.broadcast("down", "[DOWNED-DEBUG] setDowned=false → clearDowned called");
+            Debug.broadcast("down", "§7[DOWNED-DEBUG] setDowned=false → clearDowned called");
             clearDowned(player);
         } else {
             startDowned(player, health, DOWNED_DURATION_TICKS);
+            player.sendMessage(Component.text("§0[§0§6CivLabs§0]§8 » §7You're knocked out").color(NamedTextColor.YELLOW));
             sendDownedMessage(player);
-            player.sendMessage(Component.text("You're knocked out").color(NamedTextColor.YELLOW));
         }
     }
 
@@ -105,14 +105,14 @@ public class PlayerDownedListener implements Listener {
     public void clearMount(Player player) {
         if (player.getVehicle() instanceof Snowman leashproxy) {
             leashproxy.remove();
-            Debug.broadcast("down", "[DOWNED] Cleared Leash Proxy");
+            Debug.broadcast("down", "§7[DOWNED] Cleared Leash Proxy");
         }
         if (player.getVehicle() instanceof ArmorStand armorStand) {
             armorStand.remove();
             UUID uuid = player.getUniqueId();
             Entity e = downStands.remove(uuid);
             if (e != null) {
-            Debug.broadcast("down", "[DOWNED] Cleared Armor Stand");
+            Debug.broadcast("down", "§7[DOWNED] Cleared Armor Stand");
                 e.remove();
             }
         }
@@ -121,25 +121,25 @@ public class PlayerDownedListener implements Listener {
 
     // --- Clear downed state ---
     private void clearDowned(Player player) {
-        Debug.broadcast("down", "[DOWNED-DEBUG] clearDowned(" + player.getName() + ")");
+        Debug.broadcast("down", "§7[DOWNED-DEBUG] clearDowned(" + player.getName() + ")");
 
         UUID uuid = player.getUniqueId();
 
         BossBar bar = bossBars.remove(uuid);
         if (bar != null) {
-            Debug.broadcast("down", "[DOWNED-DEBUG] Removed boss bar");
+            Debug.broadcast("down", "§7[DOWNED-DEBUG] Removed boss bar");
             bar.removePlayer(player);
         }
 
         BukkitTask task = downTimers.remove(uuid);
         if (task != null) {
-            Debug.broadcast("down", "[DOWNED-DEBUG] Cancelled bleedout timer");
+            Debug.broadcast("down", "§7[DOWNED-DEBUG] Cancelled bleedout timer");
             task.cancel();
         }
 
         Entity e = downStands.remove(uuid);
         if (e != null) {
-            Debug.broadcast("down", "[DOWNED-DEBUG] Removing downed stand entity");
+            Debug.broadcast("down", "§7[DOWNED-DEBUG] Removing downed stand entity");
             e.remove();
         }
 
@@ -183,7 +183,7 @@ public class PlayerDownedListener implements Listener {
             pdc.remove(downedTicksKey);
             clearDowned(player);
             startDowned(player, player.getHealth(), ticksLeft);
-            Debug.broadcast("down", "[DOWNED-DEBUG] CASE 1 - Ticks:" + ticksLeft + " is downed:" + isDowned(player));
+            Debug.broadcast("down", "§7[DOWNED-DEBUG] CASE 1 - Ticks:" + ticksLeft + " is downed:" + isDowned(player));
             return;
         }
 
@@ -192,11 +192,11 @@ public class PlayerDownedListener implements Listener {
             pdc.remove(downedTicksKey);
             clearDowned(player);
             startDowned(player, player.getHealth(), DOWNED_DURATION_TICKS);
-            Debug.broadcast("down", "[DOWNED-DEBUG] CASE 2 - Is downed:" + player.getName());
+            Debug.broadcast("down", "§7[DOWNED-DEBUG] CASE 2 - Is downed:" + player.getName());
             return;
         }
 
-        Debug.broadcast("down", "[DOWNED-DEBUG] NO CASE - No downed or ticks for: " + player.getName());
+        Debug.broadcast("down", "§7[DOWNED-DEBUG] NO CASE - No downed or ticks for: " + player.getName());
     }
 
 
@@ -205,22 +205,23 @@ public class PlayerDownedListener implements Listener {
     public void onPlayerDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
 
-        Debug.broadcast("down", "[DOWNED-DEBUG] DamageEvent: " + player.getName() +
+        Debug.broadcast("down", "§7[DOWNED-DEBUG] DamageEvent: " + player.getName() +
                 " dmg=" + event.getFinalDamage() + " hp=" + player.getHealth());
 
         if (isDowned(player)) {
-            Debug.broadcast("down", "[DOWNED-DEBUG] " + player.getName() + " is already downed → letting damage occur");
+            Debug.broadcast("down", "§7[DOWNED-DEBUG] " + player.getName() + " is already downed → letting damage occur");
             return; // already downed, let them die
         }
 
         double finalHealth = player.getHealth() - event.getFinalDamage();
-        Debug.broadcast("down", "[DOWNED-DEBUG] finalHealth=" + finalHealth);
+        Debug.broadcast("down", "§7[DOWNED-DEBUG] finalHealth=" + finalHealth);
 
         if (finalHealth <= 0) {
-            Debug.broadcast("down", "[DOWNED-DEBUG] Cancelling lethal dmg → triggering downed state.");
             if (finalHealth <= -10) {
+                Debug.broadcast("down", "§7[DOWNED-DEBUG] Overflow lethal dmg detected. Allowing death.");
                 return;
             }
+            Debug.broadcast("down", "§7[DOWNED-DEBUG] Cancelling lethal dmg → triggering downed state.");
             event.setCancelled(true);
             setDowned(player, true, 10 + finalHealth);
         }
@@ -479,7 +480,7 @@ public class PlayerDownedListener implements Listener {
                 .clickEvent(ClickEvent.runCommand("/giveup"))
                 .hoverEvent(HoverEvent.showText(Component.text("Click to give up and respawn")));
 
-        Component msg = Component.text("Press Here to ", NamedTextColor.GRAY)
+        Component msg = Component.text("§0[§0§6CivLabs§0]§8 » §7Press Here to ", NamedTextColor.GRAY)
                 .append(giveUp)
                 .append(Component.text(" & Respawn", NamedTextColor.GRAY));
 

@@ -47,7 +47,6 @@ public final class LeashListener implements Listener {
         Entity target = e.getRightClicked();
         Player leasher = e.getPlayer();
 
-
         boolean isPlayerTarget = target instanceof Player;
 
 
@@ -60,11 +59,13 @@ public final class LeashListener implements Listener {
                         new ItemStack(Material.LEAD, 1)
                 );
 
+
                 if (target instanceof Player targetPlayer) {
                     // Clear their carried-mount state
+                    if (downedListener.isDowned(targetPlayer)) {
                     downedListener.clearMount(targetPlayer);
-                    downedListener.setSit(targetPlayer);
-
+                        downedListener.setSit(targetPlayer);
+                    }
                     return;
                 }
             }
@@ -84,12 +85,12 @@ public final class LeashListener implements Listener {
             CustomPlayer h = CoreUtil.getPlayer(leasher);
 
             if (h.getSkillLevel(SkillType.GUARDSMAN) < SkillLevel.GRANDMASTER.getLevel()) {
-                leasher.sendMessage("Only grandmaster guardsmen can leash.");
+                leasher.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are not strong enough for that");
                 return;
             }
 
             if (!downedListener.isDowned(targetPlayer)) {
-                leasher.sendMessage("Target must be downed.");
+                leasher.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are not able to keep them still enough for that");
                 return;
             }
 
@@ -102,7 +103,7 @@ public final class LeashListener implements Listener {
             proxies.put(targetPlayer, proxy);
             leasher.getInventory().getItemInMainHand().subtract(1);
             e.setCancelled(true);
-            e.getPlayer().sendMessage("event canceled");
+
         }
     }
 
@@ -184,8 +185,7 @@ public final class LeashListener implements Listener {
             sm.getAttribute(Attribute.STEP_HEIGHT).setBaseValue(1.0);
             sm.getAttribute(Attribute.SCALE).setBaseValue(0.13);
             sm.getEquipment().clear();
-//            sm.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, Integer.MAX_VALUE, 255, false, false));
-//            sm.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, Integer.MAX_VALUE, 255, false, false));
+
         });
         return s;
     }
@@ -205,11 +205,14 @@ public final class LeashListener implements Listener {
         Entity dead = e.getEntity();
         // If a player dies and has a tracked snowman
         if (dead instanceof Player p) {
-            removeProxy(p);
-            p.getWorld().dropItemNaturally(
-                    p.getLocation(),
-                    new ItemStack(Material.LEAD, 1)
-            );
+            Snowman proxy = proxies.get(p);
+            if (proxy != null && proxy.isValid()) {
+                removeProxy(p);
+                p.getWorld().dropItemNaturally(
+                        p.getLocation(),
+                        new ItemStack(Material.LEAD, 1)
+                );
+            }
         }
     }
 }
