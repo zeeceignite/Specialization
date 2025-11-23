@@ -44,8 +44,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class ReviveListener implements Listener {
 
-    private static final NamespacedKey INJURY_KEY =
-            new NamespacedKey(Specialization.getInstance(), "revive_injury");
+
+    private static final NamespacedKey CARRY_SLOW_KEY = new NamespacedKey(Specialization.getInstance(), "carry_slowness");
+    private static final NamespacedKey INJURY_KEY = new NamespacedKey(Specialization.getInstance(), "revive_injury");
     private static final List<InjuryItem> INJURIES = List.of(
             new InjuryItem("Tumor", Material.SPIDER_EYE),
             new InjuryItem("Blood Clout", Material.REDSTONE),
@@ -66,7 +67,7 @@ public class ReviveListener implements Listener {
 
     private final PlayerDownedListener playerDownedListener;
 
-    private final Map<UUID, AttributeModifier> healerSlowModifiers = new ConcurrentHashMap<>();
+//    private final Map<UUID, AttributeModifier> healerSlowModifiers = new ConcurrentHashMap<>();
     private final Map<UUID, Player> healerToDownedPlayer = new HashMap<>();
     private final Map<UUID, BossBar> downedBossBars = new HashMap<>();
 
@@ -360,12 +361,11 @@ public class ReviveListener implements Listener {
 
         removeSlowIfNoPassengers(healer, false);
         healer.addPassenger(target);
-        NamespacedKey key = new NamespacedKey("specialization", "carry_slowness_" + healer.getUniqueId());
-        AttributeModifier slow = new AttributeModifier(key, -0.5, AttributeModifier.Operation.MULTIPLY_SCALAR_1);
+        AttributeModifier slow = new AttributeModifier(CARRY_SLOW_KEY, -0.5, AttributeModifier.Operation.MULTIPLY_SCALAR_1);
 
         if (healer.getAttribute(Attribute.MOVEMENT_SPEED) != null) {
             healer.getAttribute(Attribute.MOVEMENT_SPEED).addModifier(slow);
-            healerSlowModifiers.put(healer.getUniqueId(), slow);
+//            healerSlowModifiers.put(healer.getUniqueId(), slow);
         }
 
         Debug.broadcast("revive", "You are now carrying " + target.getName());
@@ -433,7 +433,8 @@ public class ReviveListener implements Listener {
 
     private void removeSlowIfNoPassengers(Player healer, boolean override) {
         if (healer.getPassengers().isEmpty() || override) {
-            AttributeModifier slow = healerSlowModifiers.remove(healer.getUniqueId());
+            AttributeModifier slow = healer.getAttribute(Attribute.MOVEMENT_SPEED).getModifier(CARRY_SLOW_KEY);
+//            AttributeModifier slow = healerSlowModifiers.remove(healer.getUniqueId());
             if (slow != null && healer.getAttribute(Attribute.MOVEMENT_SPEED) != null) {
                 healer.getAttribute(Attribute.MOVEMENT_SPEED).removeModifier(slow);
                 Debug.broadcast("revive", "Removed slowed attribute for" + healer.getName());
