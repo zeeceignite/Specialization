@@ -14,16 +14,15 @@ import org.bukkit.block.Block;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Interaction;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.*;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
-import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -37,11 +36,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/** @author Jfrogy*/
+/**
+ * @author Jfrogy
+ */
 
 public class PlayerDownedListener implements Listener {
 
-    private static final int DOWNED_DURATION_TICKS = 60 * 20; // 60 seconds
+    private static final int DOWNED_DURATION_TICKS = 5000 * 20; // 60 seconds
     private final JavaPlugin plugin;
     private final NamespacedKey downedKey;
     private final Map<UUID, BukkitTask> downTimers = new HashMap<>();
@@ -53,6 +54,7 @@ public class PlayerDownedListener implements Listener {
     private final Map<UUID, BukkitTask> darknessTasks = new HashMap<>();
 
     private final Map<UUID, Long> downedLogoutTime = new HashMap<>();
+
     public PlayerDownedListener(JavaPlugin plugin) {
         this.plugin = plugin;
         this.downedKey = new NamespacedKey(plugin, "is_downed");
@@ -101,12 +103,18 @@ public class PlayerDownedListener implements Listener {
     }
 
     public void clearMount(Player player) {
-        player.leaveVehicle();
-        UUID uuid = player.getUniqueId();
-        Entity e = downStands.remove(uuid);
-        if (e != null) {
-            Debug.broadcast("down", "[DOWNED-DEBUG] Clearing Mount");
-            e.remove();
+        if (player.getVehicle() instanceof Snowman leashproxy) {
+            leashproxy.remove();
+            Debug.broadcast("down", "[DOWNED] Cleared Leash Proxy");
+        }
+        if (player.getVehicle() instanceof ArmorStand armorStand) {
+            armorStand.remove();
+            UUID uuid = player.getUniqueId();
+            Entity e = downStands.remove(uuid);
+            if (e != null) {
+            Debug.broadcast("down", "[DOWNED] Cleared Armor Stand");
+                e.remove();
+            }
         }
     }
 
@@ -142,7 +150,7 @@ public class PlayerDownedListener implements Listener {
         player.removePotionEffect(PotionEffectType.DARKNESS);
 
 
-        player.leaveVehicle();
+        clearMount(player);
 
     }
 
@@ -332,26 +340,41 @@ public class PlayerDownedListener implements Listener {
 
     //allows you to spawn in a item to sit on. (Example use case: Transporting a downed player)
     public void setSit(Player player) {
+        clearMount(player);
         UUID id = player.getUniqueId();
 
-        // Remove old stand if it exists
         Entity old = downStands.remove(id);
-        if (old != null && old.isValid()) {
-            old.remove();
+        if (old != null && old.isValid()) old.remove();
+
+        Location headLoc = player.getLocation().clone()
+                .add(0, player.getEyeHeight(), 0);
+
+        RayTraceResult ray = player.getWorld().rayTraceBlocks(
+                headLoc,
+                new Vector(0, -1, 0),
+                5,
+                FluidCollisionMode.ALWAYS,
+                true
+        );
+
+        Location targetLoc;
+        if (ray != null && ray.getHitBlock() != null) {
+            targetLoc = ray.getHitPosition().toLocation(player.getWorld());
+        } else {
+            targetLoc = new Location(
+                    player.getWorld(),
+                    player.getLocation().getX(),
+                    0,
+                    player.getLocation().getZ()
+            );
         }
 
-        Location loc = player.getLocation().clone();
-        Block blockBelow = findBlockBelow(loc);
+        double distance = player.getLocation().getY() - targetLoc.getY() - 0.1;
 
-        if (blockBelow == null) {
-            blockBelow = loc.getWorld().getBlockAt(loc.getBlockX(), 0, loc.getBlockZ());
-        }
 
-        double distance = blockBelow.getY() + 1.0 - loc.getY();
-
-        if (distance * -1 > 0.45) {
-            // Use ArmorStand for falling
-            ArmorStand stand = player.getWorld().spawn(loc, ArmorStand.class, a -> {
+        if (distance > 0.3) {
+            // ArmorStand
+            ArmorStand stand = player.getWorld().spawn(player.getLocation(), ArmorStand.class, a -> {
                 a.setGravity(true);
                 a.setInvulnerable(true);
                 a.setVisible(false);
@@ -361,11 +384,11 @@ public class PlayerDownedListener implements Listener {
                 a.getAttribute(Attribute.SCALE).setBaseValue(0.01);
                 a.addPassenger(player);
             });
-
             downStands.put(id, stand);
+
         } else {
-            // Use Interaction for precise sitting
-            Location locInteraction = loc.clone().subtract(0, 0.5, 0);
+            // Interaction
+            Location locInteraction = targetLoc.clone().add(0, -0.5, 0);
             Interaction inter = player.getWorld().spawn(locInteraction, Interaction.class, i -> {
                 i.setInteractionWidth(0.6f);
                 i.setInteractionHeight(0.6f);
@@ -374,20 +397,10 @@ public class PlayerDownedListener implements Listener {
                 i.setPersistent(false);
                 i.addPassenger(player);
             });
-
             downStands.put(id, inter);
         }
     }
 
-
-    @EventHandler
-    public void onDismountEvent(EntityDismountEvent e) {
-        if (e.getEntity() instanceof Player player){
-            if(isDowned(player)) {
-//                e.setCancelled(true);
-            }
-        }
-    }
 
 
     // --- Prevent interactions while downed ---
@@ -395,15 +408,15 @@ public class PlayerDownedListener implements Listener {
     public void onSneak(PlayerToggleSneakEvent event) {
         Player player = event.getPlayer();
         if (!isDowned(player)) return;
-
-        // Cancel toggle
+//
+//        // Cancel toggle
         event.setCancelled(true);
-        // Force client to unsneak
+//        // Force client to unsneak
         player.setSneaking(false);
 
     }
 
-//needs a case for if the player is leashed to allow movement
+    //needs a case for if the player is leashed to allow movement
     // use this from leashlistener    private final List<Player> leashedPlayers = new ArrayList<>();
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
@@ -483,8 +496,6 @@ public class PlayerDownedListener implements Listener {
         }
 
     }
-
-
 
 
     @EventHandler
