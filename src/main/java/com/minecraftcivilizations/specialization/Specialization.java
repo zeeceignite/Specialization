@@ -160,7 +160,6 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PatDown(), this);
         getServer().getPluginManager().registerEvents(new XpTransferBookListener(), this);
         getServer().getPluginManager().registerEvents(new RepairingListener(), this);
-        getServer().getPluginManager().registerEvents(new RepairingListener(), this);
         getServer().getPluginManager().registerEvents(phantomRideListener, this);
         getServer().getPluginManager().registerEvents(playerDownedListener, this);
         getServer().getPluginManager().registerEvents(reviveListener, this);

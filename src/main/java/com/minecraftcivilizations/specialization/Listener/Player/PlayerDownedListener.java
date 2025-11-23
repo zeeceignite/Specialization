@@ -40,6 +40,23 @@ import java.util.UUID;
  * @author Jfrogy
  */
 
+
+/**
+ * This class handles the down state for players during combat/death and join/leave.
+ * All states should persist through logout/server shutdown
+ * <p>
+ * Using setDown will allow you to set the players down state following normal logical flow.
+ * This will cancel all tasks and timers and clear mounts.
+ * This can also be handled by setting the players PDC "is_downed" to 1/0 for convenience.
+ * IsDowned will return if the player is downed, however you can also do this with PDC.
+ * <p>
+ * Clear mount should be used if you would like to keep the player downed with timers, but move them to a new mount.
+ * <p>
+ * setSit should be used to set the state of the player back to sit without clearing timers/bleedout
+ * <p>
+ * Classes that utilize this: PVPManager, ReviveListener, LeashListener, SuicideCommand,
+ */
+
 public class PlayerDownedListener implements Listener {
 
     private static final int DOWNED_DURATION_TICKS = 5000 * 20; // 60 seconds
@@ -527,7 +544,8 @@ public class PlayerDownedListener implements Listener {
 
     @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
-        if (event.getDamager() instanceof Player p && cancelIfDowned(p, event)) {
+        Entity e = event.getDamager();
+        if (e instanceof Player player && cancelIfDowned(player, event)) {
 //            p.sendMessage("§7You are knocked out and cannot attack");
         }
     }

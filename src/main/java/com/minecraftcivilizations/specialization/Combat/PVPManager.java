@@ -1,20 +1,23 @@
 package com.minecraftcivilizations.specialization.Combat;
 
 import com.minecraftcivilizations.specialization.Listener.Player.PlayerDownedListener;
-
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
-
-
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
-import org.bukkit.command.*;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.*;
-import org.bukkit.event.*;
-import org.bukkit.event.entity.*;
-import org.bukkit.event.player.*;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -29,30 +32,44 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+
+/**
+ * @author Jfrogy
+ */
+
+/**
+ * This class handles detecting combat with visual indicators informing the player and handling combat logging in a persistent manner
+ * <p>
+ * I utilize an invisible armor stand to store players inventory and health/state on logout.
+ * The visual representation of this is a zombie which I call a mannequin.
+ * <p>
+ * Mannequin acts as a listener for damage/death and then relays that info to the armorstand each damage event.
+ * If the mannequin is not killed it returns the inventory to the player on relog  with the corresponding health the zombie has remaining.
+ * If the mannequin dies the inventory which is stored on the armor stand is fetched and deserilized and dropped.
+ * This is only restored if the player is not marked for death on rejoin.
+ * The armorstand is always stored on combat log in the world forever. It is also always destroyed after the data fetch regardless of death/life on join.
+ * <p>
+ * This utilizes the PlayerDownListener for down state checks.
+ */
+
 public class PVPManager implements Listener, CommandExecutor {
 
+    private static final long COMBAT_COOLDOWN = 30_000L;
+    private static final long ZOMBIE_LIFETIME = 15_000L; // 15s
     private final JavaPlugin plugin;
-
     private final Map<UUID, Long> combatMap = new ConcurrentHashMap<>();
     private final Map<UUID, UUID> zombieMap = new ConcurrentHashMap<>();
     private final Map<UUID, BukkitRunnable> zombieTimers = new ConcurrentHashMap<>();
-    private static final long COMBAT_COOLDOWN = 30_000L;
-    private static final long ZOMBIE_LIFETIME = 15_000L; // 15s
     private final Map<UUID, BossBar> combatBars = new HashMap<>();
-
-    private boolean combatTaskRunning = false;
-    private int combatTaskId = -1;
-
-
     private final NamespacedKey OWNER_KEY;
     private final NamespacedKey MARKER_KEY;
     private final NamespacedKey INVENTORY_KEY;
     private final NamespacedKey ARMOR_KEY;
     private final NamespacedKey HEALTH_KEY;
     private final NamespacedKey DEAD_KEY;
-
-
     private final PlayerDownedListener playerDownedListener;
+    private boolean combatTaskRunning = false;
+    private int combatTaskId = -1;
 
     public PVPManager(PlayerDownedListener playerDownedListener, JavaPlugin plugin) {
         this.plugin = plugin;
@@ -89,7 +106,7 @@ public class PVPManager implements Listener, CommandExecutor {
         startCombatTaskIfNeeded();
 
         // Only send messages if BOTH were NOT tagged before
-        if (!victimAlreadyTagged){
+        if (!victimAlreadyTagged) {
 //            victim.sendMessage("§0[§0§6CivLabs§0]§8 » §7You have been tagged for §ccombat §7for §b"
 //                    + (COMBAT_COOLDOWN / 1000) + " §7seconds by: §c" + damager.getName());
             victim.sendMessage("§0[§0§6CivLabs§0]§8 » §7§cCombat§7 logging leaves your items on a §ckillable §aMannequin§7 for §c15s§7 before logging out safely.");
@@ -220,7 +237,7 @@ public class PVPManager implements Listener, CommandExecutor {
         zombie.getPersistentDataContainer().set(OWNER_KEY, PersistentDataType.STRING, id.toString());
         zombie.getPersistentDataContainer().set(MARKER_KEY, PersistentDataType.STRING, player.getUniqueId().toString());
         combatBars.remove(id);
-        Debug.broadcast("combatlog","<grey>[Logout] Spawned zombie for " + player.getName());
+        Debug.broadcast("combatlog", "<grey>[Logout] Spawned zombie for " + player.getName());
 
         player.getInventory().clear();
         startZombieTimer(id, zombie);
@@ -279,11 +296,11 @@ public class PVPManager implements Listener, CommandExecutor {
         Chunk spawnChunk = player.getLocation().getChunk();
         ArmorStand marker = getMarkerByPlayer(id, spawnChunk);
         if (marker == null) {
-            Debug.broadcast("combatlog","<grey>[Login] No marker found for " + player.getName());
+            Debug.broadcast("combatlog", "<grey>[Login] No marker found for " + player.getName());
             return;
         }
 
-        Debug.broadcast("combatlog","<grey>[Login] Marker found: " + marker + " for " + player.getName());
+        Debug.broadcast("combatlog", "<grey>[Login] Marker found: " + marker + " for " + player.getName());
 
         int deadFlag = marker.getPersistentDataContainer().getOrDefault(DEAD_KEY, PersistentDataType.INTEGER, 0);
         byte[] invBytes = marker.getPersistentDataContainer().get(INVENTORY_KEY, PersistentDataType.BYTE_ARRAY);
@@ -291,7 +308,7 @@ public class PVPManager implements Listener, CommandExecutor {
 
         if (deadFlag == 1) {
             //Death
-            Debug.broadcast("combatlog","<grey>[Login] Player " + player.getName() + " died while logged out in combat!");
+            Debug.broadcast("combatlog", "<grey>[Login] Player " + player.getName() + " died while logged out in combat!");
             player.getInventory().clear();
             if (invBytes != null)
                 for (ItemStack item : ItemSerialization.fromBytes(invBytes))
@@ -309,7 +326,7 @@ public class PVPManager implements Listener, CommandExecutor {
             double health = marker.getPersistentDataContainer().getOrDefault(HEALTH_KEY, PersistentDataType.DOUBLE, player.getMaxHealth());
             player.setHealth(Math.min(health, player.getAttribute(Attribute.MAX_HEALTH).getValue()));
             player.sendMessage("§0[§0§6CivLabs§0]§8 » §7You §ccombat-logged§7, but your mannequin §asurvived");
-            Debug.broadcast("combatlog","<grey>[Login] Restored inventory and health(" + health + ") for " + player.getName());
+            Debug.broadcast("combatlog", "<grey>[Login] Restored inventory and health(" + health + ") for " + player.getName());
         }
 
 //         --- Remove Mannequin Regardless ---
@@ -356,7 +373,6 @@ public class PVPManager implements Listener, CommandExecutor {
     }
 
 
-
     // --- Zombie damage updates marker ---
     @EventHandler
     public void onZombieDamage(EntityDamageEvent event) {
@@ -396,7 +412,7 @@ public class PVPManager implements Listener, CommandExecutor {
         marker.getPersistentDataContainer().set(ARMOR_KEY, PersistentDataType.BYTE_ARRAY,
                 ItemSerialization.toBytes(zombie.getEquipment().getArmorContents()));
         zombie.getWorld().playSound(zombie.getLocation(), Sound.ENTITY_PLAYER_HURT, SoundCategory.PLAYERS, 1f, 1f);
-        Debug.broadcast("combatlog","<grey>[ZombieDamage] Zombie " + zombie.getCustomName() +
+        Debug.broadcast("combatlog", "<grey>[ZombieDamage] Zombie " + zombie.getCustomName() +
                 " took damage, health updated to " + currentHealth + " in marker");
     }
 
@@ -448,11 +464,11 @@ public class PVPManager implements Listener, CommandExecutor {
         // Drop inventory
         byte[] invBytes = marker.getPersistentDataContainer().get(INVENTORY_KEY, PersistentDataType.BYTE_ARRAY);
         if (invBytes != null) {
-        Debug.broadcast("combatlog","<grey>[Mannequin Death] Inventory Detected...");
+            Debug.broadcast("combatlog", "<grey>[Mannequin Death] Inventory Detected...");
             for (ItemStack item : ItemSerialization.fromBytes(invBytes)) {
                 if (item != null) {
                     zombie.getWorld().dropItemNaturally(zombie.getLocation(), item);
-                    Debug.broadcast("combatlog","<grey>[Mannequin Item]: " + item.getItemMeta().displayName());
+                    Debug.broadcast("combatlog", "<grey>[Mannequin Item]: " + item.getItemMeta().displayName());
                 }
             }
             marker.getPersistentDataContainer().remove(INVENTORY_KEY);
@@ -522,7 +538,7 @@ public class PVPManager implements Listener, CommandExecutor {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!(sender instanceof Player p)) return true;
         combatMap.put(p.getUniqueId(), System.currentTimeMillis());
-        Debug.broadcast("combatlog","<grey>[Command] /simulatehit executed for " + p.getName());
+        Debug.broadcast("combatlog", "<grey>[Command] /simulatehit executed for " + p.getName());
 //        p.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds");
         p.sendMessage("§0[§0§6CivLabs§0]§8 » §7§cCombat§7 logging leaves your items on a §ckillable §aMannequin§7 for §c15s§7 before logging out safely.");
         addCombatBar(p);

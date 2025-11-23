@@ -30,6 +30,7 @@ import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -41,6 +42,16 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author Jfrogy
+ */
+
+/**
+ * This class handles the revive minigame and setting the state to revive on success
+ * This also handles the pickup and dismount logic for carrying players as a healer.
+ * <p>
+ * It is called by playerDownListener to start the revive process
+ * LeashListener also has some checks that rely on the logical flow/timing of pickup interact
+ *
+ * Utilized by: playerDownListener, LeashListener
  */
 
 public class ReviveListener implements Listener {
@@ -73,6 +84,7 @@ public class ReviveListener implements Listener {
 
     public ReviveListener(PlayerDownedListener playerDownedListener) {
         this.playerDownedListener = playerDownedListener;
+//        Bukkit.getLogger().info("[ReviveListener] Registered listener instance " + this);
     }
 
 
@@ -337,10 +349,14 @@ public class ReviveListener implements Listener {
     // -------------------------------
 // PICKUP PASSENGER
 // -------------------------------
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST) //king of pickup logic check
     public void onPickupPassenger(PlayerInteractAtEntityEvent e) {
         Player healer = e.getPlayer();
         Entity target = e.getRightClicked();
+        if (e.getHand() != EquipmentSlot.HAND) return;
+        if (target.getVehicle() instanceof Snowman) {
+            return; //must not be leashed
+        }
         if (!(target instanceof LivingEntity)) return; //must be a living entity
 
         Byte targetdowned = target.getPersistentDataContainer().get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE);
@@ -418,22 +434,25 @@ public class ReviveListener implements Listener {
     }
 
 
-    @EventHandler(priority = EventPriority.LOWEST)
+    @EventHandler(priority = EventPriority.LOWEST) //king of dismount logic checks
     public void onDismount(EntityDismountEvent e) {
-        // Rider must be a player
+
         if (!(e.getEntity() instanceof Player rider)) return;
-        if (rider.isDead()) return; //this doesnt fix the bug :/
+        if (rider.isDead()) return;
         Entity vehicle = e.getDismounted();
 
         boolean forced = forcedDismount.remove(rider.getUniqueId());
 
         boolean isDowned = rider.getPersistentDataContainer().get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE) == 1;
-
+        boolean isLeashed = false;
+        if (rider.getVehicle() instanceof Snowman proxy) {
+            isLeashed = proxy.getPersistentDataContainer().has(new NamespacedKey(Specialization.getInstance(), "leash_proxy"), PersistentDataType.BOOLEAN);
+        }
         // Identify plugin mounts (armor stand, interaction, snowman)
         boolean isPluginMount = vehicle instanceof ArmorStand || vehicle instanceof Player || vehicle instanceof Snowman || vehicle instanceof org.bukkit.entity.Interaction;
 
         // If downed, prevent player from dismounting anything *unless forced*
-        if (isDowned && !forced) {
+        if (isDowned && !forced || isLeashed && !forced) {
             if (isPluginMount) {
                 /// this may cause a bug if the player dies while mounted causing a dysnc swap after a bit of carrying
                 e.setCancelled(true);
