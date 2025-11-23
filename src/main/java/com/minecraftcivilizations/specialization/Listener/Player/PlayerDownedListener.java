@@ -384,7 +384,7 @@ public class PlayerDownedListener implements Listener {
     public void onDismountEvent(EntityDismountEvent e) {
         if (e.getEntity() instanceof Player player){
             if(isDowned(player)) {
-                e.setCancelled(true);
+//                e.setCancelled(true);
             }
         }
     }

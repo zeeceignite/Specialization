@@ -55,16 +55,14 @@ public final class LeashListener implements Listener {
         boolean isPillagerTarget = target instanceof Pillager && leasher.isOp(); //for testing
 
 
-
-        // Shift-right-click: dismount/remove proxy
+        /// Shift-right-click: for pillager testing
         if (leasher.isSneaking() && target.isInsideVehicle()) {
-            if (isPlayerTarget || isPillagerTarget) {
-                    target.getVehicle().remove();
-                    target.leaveVehicle();
-
+            if (isPillagerTarget) {
+                target.getVehicle().remove();
+                target.leaveVehicle();
             }
-            return; // done for shift-right-click
         }
+
 
         // Must hold lead in either hand
         if (leasher.getInventory().getItemInMainHand().getType() != Material.LEAD &&
@@ -87,6 +85,15 @@ public final class LeashListener implements Listener {
                 return;
             }
 
+            // Shift-right-click: dismount/remove proxy
+            if (leasher.isSneaking() && target.isInsideVehicle()) {
+                if (isPlayerTarget) {
+                    target.getVehicle().remove();
+                    target.leaveVehicle();
+
+                }
+                return;
+            }
 
             downedListener.clearMount(targetPlayer);
             Snowman proxy = spawnProxy(targetPlayer.getLocation(), leasher);
@@ -96,6 +103,7 @@ public final class LeashListener implements Listener {
             proxies.put(targetPlayer, proxy);
             leasher.getInventory().getItemInMainHand().subtract(1);
             e.setCancelled(true);
+            e.getPlayer().sendMessage("event canceled");
         } else if (isPillagerTarget) {
             Snowman proxy = spawnProxy(target.getLocation(), leasher);
             proxy.addPassenger(target);

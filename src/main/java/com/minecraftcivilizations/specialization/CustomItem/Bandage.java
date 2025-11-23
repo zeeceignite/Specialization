@@ -155,6 +155,7 @@ public class Bandage extends CustomItem {
             Entity vehicle = playerTarget.getVehicle();
             if (!(vehicle instanceof Snowman) && !(vehicle instanceof Player)) {
                 reviveListener.startRevive(healer, playerTarget, reviveListener.createReviveInventory(playerTarget));
+                healer.sendMessage("revive started");
             }
         }
         //for testing

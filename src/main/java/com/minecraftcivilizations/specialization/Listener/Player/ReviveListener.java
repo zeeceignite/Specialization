@@ -337,11 +337,18 @@ public class ReviveListener implements Listener {
 
         Byte targetdowned = target.getPersistentDataContainer().get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE);
         if ((targetdowned == null || targetdowned == 0)) return; //target must be down
-
-        Byte healerdowned = target.getPersistentDataContainer().get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE);
+        Byte healerdowned = healer.getPersistentDataContainer().get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE);
         if (!(healerdowned == null || healerdowned == 0)) return; //healer must NOT be downed
 
         if (!isHealer(healer)) return; //must be healer or op
+
+        //Problem is we have passengers, we shouldn't
+        List<Entity> list = healer.getPassengers();
+        int debug_int = 0;
+        for(Entity ee : list){
+            healer.sendMessage("Passenger ["+debug_int+"]:" +ee.getName());
+            debug_int++;
+        }
         if (!healer.getPassengers().isEmpty()) return; // must not have any passangers already
         if (!healer.getInventory().getItemInMainHand().getType().isAir()) return; // must be empty hand
         if (healer.getPassengers().contains(target)) return; // already a passenger
@@ -353,7 +360,7 @@ public class ReviveListener implements Listener {
 
         removeSlowIfNoPassengers(healer, false);
         healer.addPassenger(target);
-        NamespacedKey key = new NamespacedKey("revive", "slow_" + healer.getUniqueId());
+        NamespacedKey key = new NamespacedKey("specialization", "carry_slowness_" + healer.getUniqueId());
         AttributeModifier slow = new AttributeModifier(key, -0.5, AttributeModifier.Operation.MULTIPLY_SCALAR_1);
 
         if (healer.getAttribute(Attribute.MOVEMENT_SPEED) != null) {
@@ -372,11 +379,14 @@ public class ReviveListener implements Listener {
     public void onDismountSneak(PlayerToggleSneakEvent e) {
         Player healer = e.getPlayer();
         if (e.getPlayer().getVehicle() instanceof Player){
-            e.setCancelled(true);
+//            e.setCancelled(true);
         }
         if (!healer.isSneaking()) return;
 
-        for (Entity passenger : new ArrayList<>(healer.getPassengers())) {
+//        healer.eject();
+
+        for (Entity passenger : healer.getPassengers()) {
+            healer.sendMessage("removing passengers");
             healer.removePassenger(passenger);
             Byte downed = passenger.getPersistentDataContainer().get(
                     new NamespacedKey(Specialization.getInstance(), "is_downed"),
@@ -407,9 +417,9 @@ public class ReviveListener implements Listener {
         boolean riddenPlayerIsSneaking = p.isSneaking();
 
         // If player is downed AND the ridden player is NOT sneaking → block dismount
-        if (isDowned && !riddenPlayerIsSneaking) {
-            e.setCancelled(true);
-        }
+//        if (isDowned && !riddenPlayerIsSneaking) {
+//            e.setCancelled(true);
+//        }
 
         //removes the slow from the carrier if they dismount a downedplayer
         if (!isDowned) {
@@ -439,15 +449,17 @@ public class ReviveListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
         Player p = e.getPlayer();
+
         removeSlowIfNoPassengers(p, false);
-        if (p.getVehicle() instanceof Player vehicle){
-            p.sendMessage("quitter");
-            vehicle.removePassenger(p);
-    }
+
+        if (p.getVehicle() instanceof Player) {
+            p.leaveVehicle();
+        }
 
         BossBar bar = downedBossBars.remove(p.getUniqueId());
         if (bar != null) bar.removeAll();
     }
+
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent e) {
