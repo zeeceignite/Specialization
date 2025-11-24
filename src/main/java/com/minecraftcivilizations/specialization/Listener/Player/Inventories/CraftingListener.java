@@ -33,6 +33,49 @@ public class CraftingListener implements Listener {
     private static final Logger LOGGER = Logger.getLogger(CraftingListener.class.getName());
     private final Plugin plugin;
 
+    private static final Set<Material> COMPLEX_ITEMS = Set.of(
+            Material.DIAMOND_PICKAXE, Material.DIAMOND_AXE, Material.DIAMOND_SHOVEL, Material.DIAMOND_HOE, Material.DIAMOND_SWORD,
+            Material.DIAMOND_HELMET, Material.DIAMOND_CHESTPLATE, Material.DIAMOND_LEGGINGS, Material.DIAMOND_BOOTS,
+            Material.NETHERITE_PICKAXE, Material.NETHERITE_AXE, Material.NETHERITE_SHOVEL, Material.NETHERITE_HOE, Material.NETHERITE_SWORD,
+            Material.NETHERITE_HELMET, Material.NETHERITE_CHESTPLATE, Material.NETHERITE_LEGGINGS, Material.NETHERITE_BOOTS,
+            Material.ANVIL,
+            Material.SMITHING_TABLE,
+            Material.BLAST_FURNACE,
+            Material.GRINDSTONE,
+
+            Material.PISTON, Material.STICKY_PISTON,
+            Material.DISPENSER, Material.DROPPER,
+            Material.OBSERVER,
+            Material.HOPPER,
+            Material.COMPARATOR,
+            Material.REPEATER,
+            Material.DAYLIGHT_DETECTOR,
+            Material.SCAFFOLDING,
+            Material.JUKEBOX,
+            Material.CAMPFIRE,
+
+            Material.ENCHANTING_TABLE,
+            Material.BOOKSHELF,
+            Material.LECTERN,
+
+            Material.BREWING_STAND,
+            Material.GLISTERING_MELON_SLICE,
+            Material.GOLDEN_CARROT,
+            Material.GOLDEN_APPLE,
+
+
+            Material.BEACON,
+            Material.ENDER_CHEST,
+            Material.SHIELD,
+            Material.CROSSBOW,
+            Material.TNT,
+            Material.TARGET,
+
+            Material.CAKE,
+            Material.PUMPKIN_PIE,
+            Material.RABBIT_STEW
+    );
+
     public CraftingListener(Plugin plugin) {
         this.plugin = plugin;
     }
@@ -43,11 +86,21 @@ public class CraftingListener implements Listener {
 
         if (!isCraftingActionValid(event)) {
             event.setResult(Event.Result.DENY);
-            event.setCancelled(true); //added to custom item override support
+            event.setCancelled(true);
             return;
         }
 
         ItemStack crafted = event.getCurrentItem();
+
+        if (COMPLEX_ITEMS.contains(crafted.getType())) {
+            CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
+
+            int amount = getCraftedAmount(event);
+            for(int i = 0; i < amount; i++) {
+                customPlayer.getAnalyticPlayerData().incrementComplexItemsCrafted(crafted.getType().toString());
+            }
+            Debug.broadcast("analytics", player.getName() + " crafted complex item: " + crafted.getType() + " x" + amount);
+        }
 
         Pair<SkillType, Double> xp_gain_pair = SpecializationConfig.getXpGainFromCraftingConfig()
                 .get(crafted.getType(), new TypeToken<>() {});

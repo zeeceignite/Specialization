@@ -25,102 +25,121 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public record AnalyticsData(
-        Timestamp timestamp,
-        String serverName,
-        
-        // Server-wide metrics
-        int serverPopulation,
-        int serverDeathsInPeriod,
-        Map<SkillType, Integer> serverClassPopulation,
-        Map<SkillType, Map<Integer, Integer>> serverPlayersPerSkillLevel,
-        Map<String, Integer> serverUrbanAreaPopulation,
-        Map<String, Integer> serverDeathCauses,
-        
-        // Town-specific metrics (for towns with 5+ beds)
-        Map<String, TownSpecificData> townSpecificData
-){
+    Timestamp timestamp,
+    String serverName,
     
-    public record TownSpecificData(
-            int townPopulation,
-            int townDeathsInPeriod,
-            Map<SkillType, Integer> townClassPopulation,
-            Map<SkillType, Map<Integer, Integer>> townPlayersPerSkillLevel,
-            Map<SkillType, Double> townClassMasteryPercentages,
-            String townBiome,
-            double distanceFromClosestTown,
-            double distanceFromSpawn,
-            long townAgeInHours
-    ){};
+    // Server-wide metrics
+    int serverPopulation,
+    int serverDeathsInPeriod,
+    int serverComplexItemsCraftedInPeriod,
+    Map<String, Integer> serverComplexItemsCraftedDetailsInPeriod,
+    Map<SkillType, Integer> serverClassPopulation,
+    Map<SkillType, Map<Integer, Integer>> serverPlayersPerSkillLevel,
+    Map<String, Integer> serverUrbanAreaPopulation,
+    Map<String, Integer> serverDeathCauses,
+    
+    // Town-specific metrics (for towns with 5+ beds)
+    Map<String, TownSpecificData> townSpecificData
+){
 
-    public static ConcurrentHashMap<EntityDamageEvent.DamageCause, Integer> deaths = new ConcurrentHashMap<>();
+public record TownSpecificData(
+        int townPopulation,
+        int townDeathsInPeriod,
+        int townComplexItemsCraftedInPeriod,
+        Map<String, Integer> townComplexItemsCraftedDetailsInPeriod,
+        Map<SkillType, Integer> townClassPopulation,
+        Map<SkillType, Map<Integer, Integer>> townPlayersPerSkillLevel,
+        Map<SkillType, Double> townClassMasteryPercentages,
+        String townBiome,
+        double distanceFromClosestTown,
+        double distanceFromSpawn,
+        long townAgeInHours
+){};
 
-    public static void autoPoll(){
-        Bukkit.getLogger().info("polling analytics");
-        Bukkit.getAsyncScheduler().runAtFixedRate(Specialization.getInstance(), (_) -> {
-            // Only record data if there are at least 10 online players
-            if (Bukkit.getOnlinePlayers().size() >= 10) {
-                AnalyticsData data = poll();
-                if (data != null) {
-                    MongoConnection.getCollection(MongoConnection.Collections.ANALYTICS).insertOne(data);
-                    Bukkit.getLogger().info("polled analytics");
-                }
-            } else {
-                Bukkit.getLogger().info("Skipping analytics poll - less than 10 players online");
+public static ConcurrentHashMap<EntityDamageEvent.DamageCause, Integer> deaths = new ConcurrentHashMap<>();
+
+public static void autoPoll(){
+    Bukkit.getLogger().info("polling analytics");
+    Bukkit.getAsyncScheduler().runAtFixedRate(Specialization.getInstance(), (_) -> {
+        // Only record data if there are at least 10 online players
+        if (Bukkit.getOnlinePlayers().size() >= 10) {
+            AnalyticsData data = poll();
+            if (data != null) {
+                MongoConnection.getCollection(MongoConnection.Collections.ANALYTICS).insertOne(data);
+                Bukkit.getLogger().info("polled analytics");
             }
-            wipe();
-        }, 0, 5, TimeUnit.MINUTES);
-    }
-
-    private static void wipe(){
-        deaths.clear();
-        // Reset death counters for all online players
-        Bukkit.getOnlinePlayers().stream()
-                .map(player -> CoreUtil.getPlayer(player.getUniqueId()))
-                .filter(Objects::nonNull)
-                .forEach(customPlayer -> customPlayer.getAnalyticPlayerData().resetDeathsForPeriod());
-    }
-
-    private static AnalyticsData poll(){
-        List<CustomPlayer> allPlayers = Bukkit.getOnlinePlayers().stream()
-                .map(CoreUtil::getPlayer)
-                .filter(Objects::nonNull)
-                .toList();
-        //change
-        if (allPlayers.isEmpty()) {
-            return null;
+        } else {
+            Bukkit.getLogger().info("Skipping analytics poll - less than 10 players online");
         }
+        wipe();
+    }, 0, 5, TimeUnit.MINUTES);
+}
 
-        Timestamp now = new Timestamp(System.currentTimeMillis());
-        
-        // Server-wide metrics
-        String serverName = SpecializationConfig.getServerConfig().get("SERVER_ANALYTIC", String.class);
-        int serverPopulation = allPlayers.size();
-        int serverDeathsInPeriod = allPlayers.stream()
-                .mapToInt(player -> player.getAnalyticPlayerData().getDeathsThisPeriod())
-                .sum();
-        Map<SkillType, Integer> serverClassPopulation = getSkillPopularity(allPlayers);
-        Map<SkillType, Map<Integer, Integer>> serverPlayersPerSkillLevel = getPlayersPerSkillLevel(allPlayers);
-        Map<String, Integer> serverUrbanAreaPopulation = getUrbanAreaPopulation();
-        
-        // Convert enum keys to strings to avoid Jackson serialization issues
-        Map<String, Integer> serverDeathCausesAsStrings = new HashMap<>();
-        for (Map.Entry<EntityDamageEvent.DamageCause, Integer> entry : deaths.entrySet()) {
-            serverDeathCausesAsStrings.put(entry.getKey().toString(), entry.getValue());
-        }
+private static void wipe(){
+    deaths.clear();
+    // Reset death counters for all online players
+    Bukkit.getOnlinePlayers().stream()
+            .map(player -> CoreUtil.getPlayer(player.getUniqueId()))
+            .filter(Objects::nonNull)
+            .forEach(customPlayer -> {
+                customPlayer.getAnalyticPlayerData().resetDeathsForPeriod();
+                customPlayer.getAnalyticPlayerData().resetComplexItemsForPeriod();
+            });
+}
 
-        // Town-specific data
-        Map<String, TownSpecificData> townSpecificData = getTownSpecificData(allPlayers);
-
-        return new AnalyticsData(now,
-                serverName,
-                serverPopulation,
-                serverDeathsInPeriod,
-                serverClassPopulation,
-                serverPlayersPerSkillLevel,
-                serverUrbanAreaPopulation,
-                serverDeathCausesAsStrings,
-                townSpecificData);
+private static AnalyticsData poll(){
+    List<CustomPlayer> allPlayers = Bukkit.getOnlinePlayers().stream()
+            .map(CoreUtil::getPlayer)
+            .filter(Objects::nonNull)
+            .toList();
+    //change
+    if (allPlayers.isEmpty()) {
+        return null;
     }
+
+    Timestamp now = new Timestamp(System.currentTimeMillis());
+    
+    // Server-wide metrics
+    String serverName = SpecializationConfig.getServerConfig().get("SERVER_ANALYTIC", String.class);
+    int serverPopulation = allPlayers.size();
+    int serverDeathsInPeriod = allPlayers.stream()
+            .mapToInt(player -> player.getAnalyticPlayerData().getDeathsThisPeriod())
+            .sum();
+    int serverComplexItemsCraftedInPeriod = allPlayers.stream()
+            .mapToInt(player -> player.getAnalyticPlayerData().getComplexItemsCraftedThisPeriod())
+            .sum();
+
+    Map<String, Integer> serverComplexItemsCraftedDetailsInPeriod = new HashMap<>();
+    for (CustomPlayer player : allPlayers) {
+        player.getAnalyticPlayerData().getComplexItemsCraftedDetailsThisPeriod().forEach((material, count) -> 
+            serverComplexItemsCraftedDetailsInPeriod.merge(material, count, Integer::sum));
+    }
+
+    Map<SkillType, Integer> serverClassPopulation = getSkillPopularity(allPlayers);
+    Map<SkillType, Map<Integer, Integer>> serverPlayersPerSkillLevel = getPlayersPerSkillLevel(allPlayers);
+    Map<String, Integer> serverUrbanAreaPopulation = getUrbanAreaPopulation();
+    
+    // Convert enum keys to strings to avoid Jackson serialization issues
+    Map<String, Integer> serverDeathCausesAsStrings = new HashMap<>();
+    for (Map.Entry<EntityDamageEvent.DamageCause, Integer> entry : deaths.entrySet()) {
+        serverDeathCausesAsStrings.put(entry.getKey().toString(), entry.getValue());
+    }
+
+    // Town-specific data
+    Map<String, TownSpecificData> townSpecificData = getTownSpecificData(allPlayers);
+
+    return new AnalyticsData(now,
+            serverName,
+            serverPopulation,
+            serverDeathsInPeriod,
+            serverComplexItemsCraftedInPeriod,
+            serverComplexItemsCraftedDetailsInPeriod,
+            serverClassPopulation,
+            serverPlayersPerSkillLevel,
+            serverUrbanAreaPopulation,
+            serverDeathCausesAsStrings,
+            townSpecificData);
+}
 
     private static Map<SkillType, Integer> getSkillPopularity(List<CustomPlayer> allPlayers){
         Map<SkillType, Integer> skillCounts = new HashMap<>();
@@ -272,6 +291,15 @@ public record AnalyticsData(
         int townDeathsInPeriod = townPlayers.stream()
                 .mapToInt(player -> player.getAnalyticPlayerData().getDeathsThisPeriod())
                 .sum();
+        int townComplexItemsCraftedInPeriod = townPlayers.stream()
+                .mapToInt(player -> player.getAnalyticPlayerData().getComplexItemsCraftedThisPeriod())
+                .sum();
+
+        Map<String, Integer> townComplexItemsCraftedDetailsInPeriod = new HashMap<>();
+        for (CustomPlayer player : townPlayers) {
+            player.getAnalyticPlayerData().getComplexItemsCraftedDetailsThisPeriod().forEach((material, count) -> 
+                townComplexItemsCraftedDetailsInPeriod.merge(material, count, Integer::sum));
+        }
         
         Map<SkillType, Integer> townClassPopulation = getSkillPopularity(townPlayers);
         Map<SkillType, Map<Integer, Integer>> townPlayersPerSkillLevel = getPlayersPerSkillLevel(townPlayers);
@@ -301,6 +329,8 @@ public record AnalyticsData(
         return new TownSpecificData(
                 townPopulation,
                 townDeathsInPeriod,
+                townComplexItemsCraftedInPeriod,
+                townComplexItemsCraftedDetailsInPeriod,
                 townClassPopulation,
                 townPlayersPerSkillLevel,
                 townClassMasteryPercentages,

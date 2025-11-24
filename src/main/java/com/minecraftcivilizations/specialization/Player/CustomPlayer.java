@@ -382,14 +382,32 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
     public static class AnalyticPlayerData {
         int deaths; // Total cumulative deaths (kept for backward compatibility)
         int deathsThisPeriod; // Deaths in current 5-minute period
+        int complexItemsCraftedThisPeriod; // Complex items crafted in current 5-minute period
+        // Map of Item Material -> Count
+        Map<String, Integer> complexItemsCraftedDetailsThisPeriod = new HashMap<>();
 
         public void incrementDeathsThisPeriod() {
             this.deathsThisPeriod++;
             this.deaths++; // Also increment total for backward compatibility
         }
 
+        public void incrementComplexItemsCrafted(String materialName) {
+            this.complexItemsCraftedThisPeriod++;
+            this.complexItemsCraftedDetailsThisPeriod.merge(materialName, 1, Integer::sum);
+        }
+        
+        @Deprecated
+        public void incrementComplexItemsCrafted() {
+            this.complexItemsCraftedThisPeriod++;
+        }
+
         public void resetDeathsForPeriod() {
             this.deathsThisPeriod = 0;
+        }
+
+        public void resetComplexItemsForPeriod() {
+            this.complexItemsCraftedThisPeriod = 0;
+            this.complexItemsCraftedDetailsThisPeriod.clear();
         }
     }
 
