@@ -141,7 +141,7 @@ public class Bandage extends CustomItem {
         }
 
         if (healer.getFoodLevel() < 3) {
-            healer.sendMessage("§cYou're too hungry to preform this action");
+            healer.sendMessage("§0[§0§6CivLabs§0]§8 » §7You're too hungry to preform this action");
             return;
         }
 
@@ -151,17 +151,7 @@ public class Bandage extends CustomItem {
         double new_health = Math.min(current_health + heal_amount, max_health);
         target.setHealth(new_health);
         healer.setFoodLevel(healer.getFoodLevel() - 3);
-        if (target instanceof Player playerTarget) {
-            Entity vehicle = playerTarget.getVehicle();
-            if (!(vehicle instanceof Snowman) && !(vehicle instanceof Player)) {
-                reviveListener.startRevive(healer, playerTarget, reviveListener.createReviveInventory(playerTarget));
-                healer.sendMessage("revive started");
-            }
-        }
-        //for testing
-        if (target instanceof Mob && healer.isOp()) {
-            reviveListener.startRevive(healer, healer, reviveListener.createReviveInventory(healer));
-        }
+
 
         //----- cooldowns-----//
 
@@ -185,7 +175,12 @@ public class Bandage extends CustomItem {
 
             boolean isDowned = downed != null && downed == 1;
             if (isDowned) {
-                applyCooldown(healer, 500);
+                Entity vehicle = pTarget.getVehicle();
+                if (!(vehicle instanceof Snowman) && !(vehicle instanceof Player)) {
+                    reviveListener.startRevive(healer, pTarget, reviveListener.createReviveInventory(pTarget));
+                    applyCooldown(healer, 500);
+//                        healer.sendMessage("revive started");
+                }
             }
 //            pTarget.getPersistentDataContainer().set(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE, (byte) 0);
         }
