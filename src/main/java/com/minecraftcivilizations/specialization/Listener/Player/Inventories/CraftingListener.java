@@ -24,57 +24,48 @@ import org.bukkit.inventory.Recipe;
 import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class CraftingListener implements Listener {
 
     private static final Logger LOGGER = Logger.getLogger(CraftingListener.class.getName());
     private final Plugin plugin;
 
-    private static final Set<Material> COMPLEX_ITEMS = Set.of(
-            Material.DIAMOND_PICKAXE, Material.DIAMOND_AXE, Material.DIAMOND_SHOVEL, Material.DIAMOND_HOE, Material.DIAMOND_SWORD,
-            Material.DIAMOND_HELMET, Material.DIAMOND_CHESTPLATE, Material.DIAMOND_LEGGINGS, Material.DIAMOND_BOOTS,
-            Material.NETHERITE_PICKAXE, Material.NETHERITE_AXE, Material.NETHERITE_SHOVEL, Material.NETHERITE_HOE, Material.NETHERITE_SWORD,
-            Material.NETHERITE_HELMET, Material.NETHERITE_CHESTPLATE, Material.NETHERITE_LEGGINGS, Material.NETHERITE_BOOTS,
-            Material.ANVIL,
-            Material.SMITHING_TABLE,
-            Material.BLAST_FURNACE,
-            Material.GRINDSTONE,
-
-            Material.PISTON, Material.STICKY_PISTON,
-            Material.DISPENSER, Material.DROPPER,
-            Material.OBSERVER,
-            Material.HOPPER,
-            Material.COMPARATOR,
-            Material.REPEATER,
-            Material.DAYLIGHT_DETECTOR,
-            Material.SCAFFOLDING,
-            Material.JUKEBOX,
-            Material.CAMPFIRE,
-
-            Material.ENCHANTING_TABLE,
-            Material.BOOKSHELF,
-            Material.LECTERN,
-
-            Material.BREWING_STAND,
-            Material.GLISTERING_MELON_SLICE,
-            Material.GOLDEN_CARROT,
-            Material.GOLDEN_APPLE,
-
-
-            Material.BEACON,
-            Material.ENDER_CHEST,
-            Material.SHIELD,
-            Material.CROSSBOW,
-            Material.TNT,
-            Material.TARGET,
-
-            Material.CAKE,
-            Material.PUMPKIN_PIE,
-            Material.RABBIT_STEW
-    );
+    private static final Set<Material> COMPLEX_ITEMS = Arrays.stream(Material.values())
+            .filter(material -> {
+                String name = material.name();
+                if ((name.startsWith("IRON_") || name.startsWith("GOLDEN_") ||
+                        name.startsWith("DIAMOND_") || name.startsWith("NETHERITE_")) &&
+                        (name.endsWith("_PICKAXE") || name.endsWith("_AXE") ||
+                                name.endsWith("_SHOVEL") || name.endsWith("_HOE") || name.endsWith("_SWORD"))) {
+                    return true;
+                }
+                return (name.startsWith("CHAINMAIL_") || name.startsWith("IRON_") ||
+                        name.startsWith("GOLDEN_") || name.startsWith("DIAMOND_") ||
+                        name.startsWith("NETHERITE_")) &&
+                        (name.endsWith("_HELMET") || name.endsWith("_CHESTPLATE") ||
+                                name.endsWith("_LEGGINGS") || name.endsWith("_BOOTS"));
+            })
+            .collect(Collectors.collectingAndThen(
+                    Collectors.toSet(),
+                    set -> {
+                        set.addAll(Set.of(
+                                Material.ANVIL, Material.SMITHING_TABLE, Material.BLAST_FURNACE, Material.GRINDSTONE,
+                                Material.PISTON, Material.STICKY_PISTON, Material.DISPENSER, Material.DROPPER,
+                                Material.OBSERVER, Material.HOPPER, Material.COMPARATOR, Material.REPEATER,
+                                Material.DAYLIGHT_DETECTOR, Material.SCAFFOLDING, Material.JUKEBOX, Material.CAMPFIRE,
+                                Material.ENCHANTING_TABLE, Material.BOOKSHELF, Material.LECTERN,
+                                Material.BREWING_STAND, Material.GLISTERING_MELON_SLICE, Material.GOLDEN_CARROT, Material.GOLDEN_APPLE,
+                                Material.BEACON, Material.ENDER_CHEST, Material.SHIELD, Material.CROSSBOW, Material.TNT, Material.TARGET,
+                                Material.CAKE, Material.PUMPKIN_PIE, Material.RABBIT_STEW
+                        ));
+                        return Set.copyOf(set);
+                    }
+            ));
 
     public CraftingListener(Plugin plugin) {
         this.plugin = plugin;
