@@ -40,6 +40,13 @@ public class AnalyticsCommand extends BaseCommand {
             player.sendMessage("§e--- Server Metrics ---");
             player.sendMessage("§7Population: §f" + data.serverPopulation());
             player.sendMessage("§7Deaths this period: §f" + data.serverDeathsInPeriod());
+            player.sendMessage("§7Complex Items Crafted: §f" + data.serverComplexItemsCraftedInPeriod());
+            if (!data.serverComplexItemsCraftedDetailsInPeriod().isEmpty()) {
+                player.sendMessage("§7Complex Items Details:");
+                for (Map.Entry<String, Integer> entry : data.serverComplexItemsCraftedDetailsInPeriod().entrySet()) {
+                    player.sendMessage("  §7" + entry.getKey() + ": §f" + entry.getValue());
+                }
+            }
 
             // Display class population
             player.sendMessage("§7Class Population:");
@@ -71,6 +78,13 @@ public class AnalyticsCommand extends BaseCommand {
                     player.sendMessage("§7" + entry.getKey() + ":");
                     player.sendMessage("  §7Population: §f" + townData.townPopulation());
                     player.sendMessage("  §7Deaths: §f" + townData.townDeathsInPeriod());
+                    player.sendMessage("  §7Complex Items Crafted: §f" + townData.townComplexItemsCraftedInPeriod());
+                    if (!townData.townComplexItemsCraftedDetailsInPeriod().isEmpty()) {
+                        player.sendMessage("    §7Complex Items Details:");
+                        for (Map.Entry<String, Integer> itemEntry : townData.townComplexItemsCraftedDetailsInPeriod().entrySet()) {
+                            player.sendMessage("      §7" + itemEntry.getKey() + ": §f" + itemEntry.getValue());
+                        }
+                    }
                     player.sendMessage("  §7Biome: §f" + townData.townBiome());
                     player.sendMessage("  §7Distance to closest town: §f" + String.format("%.1f", townData.distanceFromClosestTown()));
                     player.sendMessage("  §7Distance from spawn: §f" + String.format("%.1f", townData.distanceFromSpawn()));
