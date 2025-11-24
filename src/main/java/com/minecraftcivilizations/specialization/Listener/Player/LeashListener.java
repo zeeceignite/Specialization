@@ -93,7 +93,7 @@ public final class LeashListener implements Listener {
     private void leashPlayer(Player targetPlayer, Player leasher) {
         CustomPlayer h = CoreUtil.getPlayer(leasher);
 
-        if (h.getSkillLevel(SkillType.GUARDSMAN) < SkillLevel.GRANDMASTER.getLevel()) {
+        if (h.getSkillLevel(SkillType.GUARDSMAN) < SkillLevel.JOURNEYMAN.getLevel()) {
             leasher.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are not strong enough for that");
             return;
         }
