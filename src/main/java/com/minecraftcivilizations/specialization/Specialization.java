@@ -56,6 +56,7 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizati
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.*;
@@ -75,6 +76,7 @@ import java.util.stream.Collectors;
 
 public final class Specialization extends JavaPlugin {
 
+    public final static String TITLE = "<#334422>[<#445533>CivLabs</#445533>]";
     public static Logger logger;
 
     @Getter
@@ -96,11 +98,21 @@ public final class Specialization extends JavaPlugin {
     private PVPManager pvpManager;
     private XPMonitoringCommand xpMonitoringCommand;
     private PlayerDownedListener playerDownedListener;
-    private ReviveListener reviveListener;
+    public ReviveListener reviveListener;
 
 
     //Holder for transient player data such as cooldowns
     Map<UUID, PlayerUtil> playerUtilMap = new HashMap<>();
+
+
+    public static void notify(Player player, String msg){message(player, msg);}
+    public static void message(Player player, String msg){
+        PlayerUtil.message(player, msg);
+    }
+    public static void message(Player player, Component msg){
+        PlayerUtil.message(player, msg);
+    }
+
 
     @Override
     public void onEnable() {
@@ -121,7 +133,7 @@ public final class Specialization extends JavaPlugin {
     playerDownedListener = new PlayerDownedListener(this);
     reviveListener = new ReviveListener(playerDownedListener);
     smart_entity_manager = new SmartEntityManager(this);
-        customItemManager = new CustomItemManager(this, reviveListener);
+        customItemManager = new CustomItemManager(this);
         customItemManager.initializeCustomItems();
     phantomRideListener = new PhantomRideListener(this);
     xpMonitoringCommand = new XPMonitoringCommand();
@@ -138,7 +150,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BurnListener(), this);
         getServer().getPluginManager().registerEvents(new ExplodeListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
-        getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(playerDownedListener), this);
+        getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
         getServer().getPluginManager().registerEvents(new FishingListener(), this);
         combatManager = new CombatManager(this); // Guardsman Damage Output
         new FoodInteractionListener(this);

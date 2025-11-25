@@ -29,9 +29,9 @@ public class Bandage extends CustomItem {
     private final ReviveListener reviveListener;
     NamespacedKey RECIPE_KEY = new NamespacedKey(Specialization.getInstance(), "bandage_recipe");
 
-    public Bandage(String id, String displayName, ReviveListener reviveListener) {
+    public Bandage(String id, String displayName) {
         super(id, displayName, org.bukkit.Material.PAPER, true);
-        this.reviveListener = reviveListener;
+        this.reviveListener = Specialization.getInstance().reviveListener;
     }
 
     /**

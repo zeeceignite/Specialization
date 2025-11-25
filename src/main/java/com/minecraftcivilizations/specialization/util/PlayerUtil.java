@@ -1,10 +1,13 @@
 package com.minecraftcivilizations.specialization.util;
 
 import com.minecraftcivilizations.specialization.Specialization;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -15,13 +18,159 @@ import java.util.UUID;
  * Player Cooldowns
  */
 public class PlayerUtil {
+    public static final Component LOGO = buildLogo();
 
+    private static Component buildLogo() {
+        String colored = colorEachLetterMiniMsg(
+                "CivLabs",
+                new Color(155, 62, 20),
+                new Color(107, 38, 15),
+                new Color(129, 45, 15),
+                new Color(169, 74, 4),
+                new Color(162, 52, 2),
+                new Color(222, 112, 19),
+                new Color(145, 39, 39)
+        );
+        return MiniMessage.miniMessage().deserialize(colored);
+    }
+
+    public static void message(Player player, Object msg) {
+        // Logo + prefix component
+        Component prefix = MiniMessage.miniMessage().deserialize("<dark_gray> » ");
+
+        Component messageComp;
+
+        if (msg instanceof Component comp) {
+            messageComp = comp;
+        } else if (msg instanceof String str) {
+            // Convert legacy § codes to MiniMessage first
+            str = legacyToMini("<gray>"+str); //gray is default color
+            // Then parse MiniMessage (supports hex colors <#RRGGBB>)
+            messageComp = MiniMessage.miniMessage().deserialize(str);
+        } else {
+            throw new IllegalArgumentException("Unsupported message type: " + msg.getClass());
+        }
+
+        player.sendMessage(LOGO.append(prefix).append(messageComp));
+    }
+
+    /**
+     * Convert legacy Minecraft formatting codes (§c, §7, §a, etc.) to MiniMessage syntax.
+     */
+    private static String legacyToMini(String input) {
+        if (input == null || input.isEmpty()) return "";
+        return input
+                .replace("§0", "<black>")
+                .replace("§1", "<dark_blue>")
+                .replace("§2", "<dark_green>")
+                .replace("§3", "<dark_aqua>")
+                .replace("§4", "<dark_red>")
+                .replace("§5", "<dark_purple>")
+                .replace("§6", "<gold>")
+                .replace("§7", "<gray>")
+                .replace("§8", "<dark_gray>")
+                .replace("§9", "<blue>")
+                .replace("§a", "<green>")
+                .replace("§b", "<aqua>")
+                .replace("§c", "<red>")
+                .replace("§d", "<light_purple>")
+                .replace("§e", "<yellow>")
+                .replace("§f", "<white>")
+                .replace("§l", "<bold>")
+                .replace("§m", "<strikethrough>")
+                .replace("§n", "<underlined>")
+                .replace("§o", "<italic>")
+                .replace("§r", "<reset>");
+    }
+
+
+
+
+    public static void notify(Player player, String msg) {
+        message(player, msg);
+    }
 
 
 
     public PlayerUtil(UUID player){
 
     }
+
+//    /**
+//     * Color each character in the input string with a separate hex color using MiniMessage syntax.
+//     * Example MiniMessage per char: "<#RRGGBB>c</#RRGGBB>"
+//     *
+//     * @param input the string to color (e.g. "civLabs")
+//     * @param hexColors hex color strings, with or without leading '#', e.g. "ff0000" or "#00ff00"
+//     * @return a single MiniMessage-formatted string where each character is wrapped in its color tag
+//     */
+//    public static String colorEachLetterMiniMsg(String input, String... hexColors) {
+//        if (input == null || input.isEmpty()) return "";
+//        if (hexColors == null || hexColors.length == 0) {
+//            // default to white if no colors supplied
+//            hexColors = new String[] { "ffffff" };
+//        }
+//
+//        StringBuilder sb = new StringBuilder(input.length() * 12); // rough capacity
+//        int colors = hexColors.length;
+//        for (int i = 0; i < input.length(); i++) {
+//            char ch = input.charAt(i);
+//            String raw = hexColors[i % colors];
+//            // normalize to RRGGBB (strip leading '#' if present)
+//            String hex = raw.startsWith("#") ? raw.substring(1) : raw;
+//            // defensive: if invalid length, fall back to white
+//            if (hex.length() != 6) hex = "ffffff";
+//            sb.append('<').append('#').append(hex).append('>')
+//                    .append(ch)
+//                    .append("</").append('#').append(hex).append('>');
+//        }
+//        return sb.toString();
+//    }
+//
+//    String out = colorEachLetterMiniMsg(
+//            "civLabs",
+//            "#ff0000", "#ff7f00", "#ffff00", "#00ff00", "#0000ff", "#4b0082", "#8f00ff"
+//    );
+// out -> "<#ff0000>c</#ff0000><#ff7f00>i</#ff7f00>..."
+
+
+
+
+    /**
+     * Color each character in the input string using java.awt.Color values.
+     * Produces MiniMessage tags like: <#RRGGBB>c</#RRGGBB>
+     *
+     * @param input the text to color
+     * @param colors array of java.awt.Color (cycled if fewer than characters)
+     * @return MiniMessage-formatted string
+     */
+    public static String colorEachLetterMiniMsg(String input, Color... colors) {
+        if (input == null || input.isEmpty()) return "";
+        if (colors == null || colors.length == 0) {
+            colors = new Color[] { Color.WHITE };
+        }
+
+        StringBuilder sb = new StringBuilder(input.length() * 14);
+        int len = colors.length;
+
+        for (int i = 0; i < input.length(); i++) {
+            char ch = input.charAt(i);
+            Color c = colors[i % len];
+
+            // Format the RGB into hex
+            String hex = String.format("%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue());
+
+            sb.append("<#").append(hex).append('>')
+                    .append(ch)
+                    .append("</#").append(hex).append('>');
+        }
+
+        return sb.toString();
+    }
+
+
+
+
 
     public static PlayerUtil getPlayerUtil(Player player){
         return Specialization.getInstance().getPlayerUtil(player.getUniqueId());

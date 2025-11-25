@@ -30,6 +30,7 @@ import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -66,7 +67,7 @@ public class ReviveListener implements Listener {
             new InjuryItem("Damaged Muscle", Material.BEEF),
             new InjuryItem("Infected Injury", Material.NETHER_WART),
             new InjuryItem("Damaged Brain", Material.NETHER_WART_BLOCK),
-            new InjuryItem("Broken Bones", Material.BONE_MEAL)
+            new InjuryItem("Broken Bone", Material.BONE_MEAL)
     );
     private static final List<HealthyItem> HEALTHY_ITEMS = List.of(
             new HealthyItem("Healthy Liver", Material.FERMENTED_SPIDER_EYE),
@@ -278,7 +279,7 @@ public class ReviveListener implements Listener {
 //            if (bar != null) bar.removeAll();
 
 
-            healer.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are too far away to revive");
+            Specialization.message(healer, "You are too far away to revive");
             return;
         }
 
@@ -354,6 +355,7 @@ public class ReviveListener implements Listener {
     public void onPickupPassenger(PlayerInteractAtEntityEvent e) {
         Player healer = e.getPlayer();
         Entity target = e.getRightClicked();
+        if (healer.isDead()) return;
         if (e.getHand() != EquipmentSlot.HAND) return;
         if (target.getVehicle() instanceof Snowman) {
             return; //must not be leashed
@@ -361,7 +363,7 @@ public class ReviveListener implements Listener {
 
         // (I want to remove this, but I have some sort of desync with states caused by canceled dismount event if I dont)
         boolean isCarried = target.getVehicle() instanceof Player;
-        if((isCarried)) return; //must not be already carried.
+        if ((isCarried)) return; //must not be already carried.
 
 
         if (!(target instanceof LivingEntity)) return; //must be a living entity
@@ -372,7 +374,16 @@ public class ReviveListener implements Listener {
         if (!(healerdowned == null || healerdowned == 0)) return; //healer must NOT be downed
 
         if (!isHealer(healer)) return; //must be healer
-        if (!healer.getPassengers().isEmpty()) return; // must not have any passangers already
+
+        boolean hasPlayerPassenger = false;
+        for (Entity passenger : healer.getPassengers()) {
+            if (passenger instanceof Player) {
+                hasPlayerPassenger = true;
+                break;
+            }
+        }
+
+        if (hasPlayerPassenger) return;// must not have any passangers already
         ItemStack main = healer.getInventory().getItemInMainHand();
         ItemStack off = healer.getInventory().getItemInOffHand();
 
@@ -390,18 +401,18 @@ public class ReviveListener implements Listener {
         if (target instanceof Player downedplayer) {
             if (target.getVehicle() instanceof Player p) {
                 forceDismount(downedplayer, p);
-                removeSlowIfNoPassengers(p, true);
 //        Debug.broadcast("revive", "§7testo " + target.getName());
 
             }
             playerDownedListener.clearMount(downedplayer);
         }
 
-        removeSlowIfNoPassengers(healer, true);
+
         healer.addPassenger(target);
         AttributeModifier slow = new AttributeModifier(CARRY_SLOW_KEY, -0.5, AttributeModifier.Operation.MULTIPLY_SCALAR_1);
 
         if (healer.getAttribute(Attribute.MOVEMENT_SPEED) != null) {
+//            healer.sendMessage("slowness applied");
             healer.getAttribute(Attribute.MOVEMENT_SPEED).addModifier(slow);
 //            healerSlowModifiers.put(healer.getUniqueId(), slow);
         }
@@ -422,23 +433,25 @@ public class ReviveListener implements Listener {
         if (!healer.isSneaking()) return;
 
 
-        for (Entity passenger : healer.getPassengers()) {
+        for (Entity entityPassanger : healer.getPassengers()) {
 //            healer.sendMessage("removing passengers");
-            forceDismount(healer, (Player) passenger);
-            Byte downed = passenger.getPersistentDataContainer().get(
+
+            if(!(entityPassanger instanceof Player player_pass))continue;
+
+            forceDismount(healer, player_pass);
+            Byte downed = player_pass.getPersistentDataContainer().get(
                     new NamespacedKey(Specialization.getInstance(), "is_downed"),
                     PersistentDataType.BYTE
             );
 
-            boolean isDowned = downed != null && downed == 1;
-            if (isDowned && passenger instanceof Player rider) {
-                playerDownedListener.setSit(rider);
 
+            boolean isDowned = downed != null && downed == 1;
+            if (isDowned) {
+                playerDownedListener.setSit(player_pass);
             }
 
         }
 
-        removeSlowIfNoPassengers(healer, false);
     }
 
     private void forceDismount(Player carrier, Player rider) {
@@ -446,12 +459,20 @@ public class ReviveListener implements Listener {
         carrier.removePassenger(rider);
     }
 
-//TODO: ALL DISMOUNT LOGIC NEEDS TO HAPPEN HERE OR POINT TO AN EVENT IN THIS CLASS
+    @EventHandler
+    public void onDismount(VehicleExitEvent e) {
+        if (e.getExited() instanceof Player p) {
+//            p.sendMessage("dismount veh");
+        }
+    }
+
+
+    //TODO: ALL DISMOUNT LOGIC NEEDS TO HAPPEN HERE OR POINT TO AN EVENT IN THIS CLASS
     @EventHandler(priority = EventPriority.LOWEST) //king of dismount logic checks
     public void onDismount(EntityDismountEvent e) {
-
+        if (e.isCancelled()) return;
         if (!(e.getEntity() instanceof Player rider)) return;
-        if (rider.isDead()) return;
+//        if (rider.isDead()) return;
         Entity vehicle = e.getDismounted();
 
         boolean forced = forcedDismount.remove(rider.getUniqueId());
@@ -460,31 +481,36 @@ public class ReviveListener implements Listener {
         boolean isLeashed = false;
         if (rider.getVehicle() instanceof Snowman proxy) {
             isLeashed = proxy.getPersistentDataContainer().has(new NamespacedKey(Specialization.getInstance(), "leash_proxy"), PersistentDataType.BOOLEAN);
+
         }
         // Identify plugin mounts (armor stand, interaction, snowman)
         boolean isPluginMount = vehicle instanceof ArmorStand || vehicle instanceof Player || vehicle instanceof Snowman || vehicle instanceof org.bukkit.entity.Interaction;
 
+
         // If downed, prevent player from dismounting anything *unless forced*
         if (isDowned && !forced || isLeashed && !forced) {
             if (isPluginMount) {
-                /// this may cause a bug if the player dies while mounted causing a dysnc swap after a bit of carrying
                 e.setCancelled(true);
-                return;
             }
         }
 
-        // Standard logic for non-downed
-        if (!isDowned) {
-            // carrier might not be a player, so guard it
-            if (vehicle instanceof Player carrier) {
+        // remove slowness for carrier
+        if (vehicle instanceof Player carrier) {
+            if (e.getEntity() instanceof Player) {
                 removeSlowIfNoPassengers(carrier, true);
             }
         }
+
     }
 
 
     private void removeSlowIfNoPassengers(Player healer, boolean override) {
-        if (healer.getPassengers().isEmpty() || override) {
+        boolean hasPlayerPassenger = healer.getPassengers().stream()
+                .anyMatch(e -> e instanceof Player);
+
+
+        if (!hasPlayerPassenger || override) {
+            // proceed
             AttributeModifier slow = healer.getAttribute(Attribute.MOVEMENT_SPEED).getModifier(CARRY_SLOW_KEY);
 //            AttributeModifier slow = healerSlowModifiers.remove(healer.getUniqueId());
             if (slow != null && healer.getAttribute(Attribute.MOVEMENT_SPEED) != null) {
@@ -494,7 +520,6 @@ public class ReviveListener implements Listener {
         }
     }
 
-
     // -------------------------------
 // PLAYER LEAVE / DEATH CLEANUP
 // -------------------------------
@@ -502,7 +527,7 @@ public class ReviveListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent e) {
         Player p = e.getPlayer();
 
-        removeSlowIfNoPassengers(p, false);
+
 
         if (p.getVehicle() instanceof Player carrier) {
             forceDismount(carrier, p);
@@ -516,7 +541,7 @@ public class ReviveListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
-        removeSlowIfNoPassengers(p, false);
+
 
         BossBar bar = downedBossBars.remove(p.getUniqueId());
         if (bar != null) bar.removeAll();
@@ -525,9 +550,6 @@ public class ReviveListener implements Listener {
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
         Player p = e.getEntity();
-
-        // remove slow
-        removeSlowIfNoPassengers(p, false);
 
         // remove revive bar
         BossBar bar = downedBossBars.remove(p.getUniqueId());
@@ -538,18 +560,11 @@ public class ReviveListener implements Listener {
             if (passenger instanceof Player rider) {
                 forceDismount(p, rider);
                 playerDownedListener.setSit(rider);
-                removeSlowIfNoPassengers(p, true);
+
             }
         }
 
-        // If THEY were being carried, force dismount them
-        if (p.getVehicle() instanceof Player carrier) {
-            forceDismount(carrier, p);
-            removeSlowIfNoPassengers(carrier, true);
-        }
     }
-
-
 
 
     // --- INJURY ITEMS ---

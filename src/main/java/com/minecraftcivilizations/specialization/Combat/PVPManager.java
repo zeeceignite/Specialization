@@ -1,7 +1,9 @@
 package com.minecraftcivilizations.specialization.Combat;
 
 import com.minecraftcivilizations.specialization.Listener.Player.PlayerDownedListener;
+import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BarColor;
@@ -109,12 +111,12 @@ public class PVPManager implements Listener, CommandExecutor {
         if (!victimAlreadyTagged) {
 //            victim.sendMessage("§0[§0§6CivLabs§0]§8 » §7You have been tagged for §ccombat §7for §b"
 //                    + (COMBAT_COOLDOWN / 1000) + " §7seconds by: §c" + damager.getName());
-            victim.sendMessage("§0[§0§6CivLabs§0]§8 » §7§cCombat§7 logging leaves your items on a §ckillable §aMannequin§7 for §c15s§7 before logging out safely.");
+            Specialization.message(victim ,"§cCombat§7 logging leaves your items on a §ckillable §aMannequin§7 for §c15s§7 before logging out safely.");
 
         }
         if (!damagerAlreadyTagged) {
 //            damager.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds");
-            damager.sendMessage("§0[§0§6CivLabs§0]§8 » §7§cCombat§7 logging leaves your items on a §ckillable §aMannequin§7 for §c15s§7 before logging out safely.");
+            Specialization.message(damager, "§cCombat§7 logging leaves your items on a §ckillable §aMannequin§7 for §c15s§7 before logging out safely.");
         }
 
 
@@ -167,7 +169,7 @@ public class PVPManager implements Listener, CommandExecutor {
 
                 if (remaining <= 0) {
                     it.remove();
-                    p.sendMessage("§0[§0§6CivLabs§0]§8 » §7You may §bsafely§7 log out");
+                    Specialization.message(p,"You may §bsafely§7 log out");
                     BossBar bar = combatBars.remove(uuid);
                     if (bar != null) bar.removeAll();
 
@@ -318,14 +320,14 @@ public class PVPManager implements Listener, CommandExecutor {
                     if (item != null) player.getWorld().dropItemNaturally(player.getLocation(), item);
 
             player.setHealth(0);
-            player.sendMessage("§0[§0§6CivLabs§0]§8 » §7You §ccombat logged§7, and your §cmannequin§7 was §ckilled§7 before it could safely logout");
+            PlayerUtil.message(player, "You §ccombat logged§7, and your §cmannequin§7 was §ckilled§7 before it could safely logout");
         } else {
             //Life
             if (invBytes != null) player.getInventory().setContents(ItemSerialization.fromBytes(invBytes));
             if (armorBytes != null) player.getInventory().setArmorContents(ItemSerialization.fromBytes(armorBytes));
             double health = marker.getPersistentDataContainer().getOrDefault(HEALTH_KEY, PersistentDataType.DOUBLE, player.getMaxHealth());
             player.setHealth(Math.min(health, player.getAttribute(Attribute.MAX_HEALTH).getValue()));
-            player.sendMessage("§0[§0§6CivLabs§0]§8 » §7You §ccombat-logged§7, but your mannequin §asurvived");
+            PlayerUtil.message(player,"You §ccombat-logged§7, but your mannequin §asurvived");
             Debug.broadcast("combatlog", "<grey>[Login] Restored inventory and health(" + health + ") for " + player.getName());
         }
 
@@ -359,7 +361,7 @@ public class PVPManager implements Listener, CommandExecutor {
             addCombatBar(player);
             startCombatTaskIfNeeded();
 
-            player.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are still in §ccombat §7for §b"
+            PlayerUtil.message(player,"You are still in §ccombat §7for §b"
                     + ((COMBAT_COOLDOWN - (System.currentTimeMillis() - lastHit)) / 1000) + " §7seconds");
         }
 
@@ -540,7 +542,7 @@ public class PVPManager implements Listener, CommandExecutor {
         combatMap.put(p.getUniqueId(), System.currentTimeMillis());
         Debug.broadcast("combatlog", "<grey>[Command] /simulatehit executed for " + p.getName());
 //        p.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds");
-        p.sendMessage("§0[§0§6CivLabs§0]§8 » §7§cCombat§7 logging leaves your items on a §ckillable §aMannequin§7 for §c15s§7 before logging out safely.");
+        PlayerUtil.message(p,"§cCombat§7 logging leaves your items on a §ckillable §aMannequin§7 for §c15s§7 before logging out safely.");
         addCombatBar(p);
         startCombatTaskIfNeeded();
         return true;
