@@ -5,27 +5,26 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.reflect.StructureModifier;
 import com.minecraftcivilizations.specialization.Command.EmoteCommand;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.CrossbowMeta;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 import java.util.Set;
 
-public class EmotePacketListener extends PacketAdapter {
+public class PacketListener extends PacketAdapter {
 
     EmoteCommand emoteCommand;
 
-    public EmotePacketListener(EmoteCommand command) {
-        super(Specialization.getInstance(), PacketType.Play.Server.NAMED_SOUND_EFFECT);
+    public PacketListener(EmoteCommand command) {
+        super(Specialization.getInstance(),
+                PacketType.Play.Server.NAMED_SOUND_EFFECT,
+                PacketType.Play.Server.SYSTEM_CHAT
+        );
+
         this.emoteCommand = command;
         ProtocolManager manager = ProtocolLibrary.getProtocolManager();
         manager.addPacketListener(this);
@@ -33,9 +32,19 @@ public class EmotePacketListener extends PacketAdapter {
 
     @Override
     public void onPacketSending(PacketEvent event) {
-//if (event.getPlayer().isOp()){
-//    return;
-//}
+
+        // --- Block sleep messages ---
+        if (event.getPacketType() == PacketType.Play.Server.SYSTEM_CHAT) {
+            var comp = event.getPacket().getChatComponents().read(0);
+            if (comp != null) {
+                String json = comp.getJson();
+                if (json != null && (json.contains("sleep") || json.contains("Sleeping"))) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
+
         Set<Player> silenced_players = emoteCommand.getSilencedPlayers();
         if(silenced_players.isEmpty()){
             Debug.broadcast("packet", "<gold>No Silenced Players</gold>");

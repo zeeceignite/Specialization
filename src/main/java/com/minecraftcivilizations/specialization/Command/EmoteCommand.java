@@ -7,7 +7,7 @@ import com.comphenix.protocol.ProtocolManager;
 import com.minecraftcivilizations.specialization.CustomItem.CustomItem;
 import com.minecraftcivilizations.specialization.CustomItem.CustomItemManager;
 import com.minecraftcivilizations.specialization.CustomItem.EmoteItem;
-import com.minecraftcivilizations.specialization.CustomItem.EmotePacketListener;
+import com.minecraftcivilizations.specialization.CustomItem.PacketListener;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -43,7 +43,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
     public EmoteCommand(CustomItemManager customItemManager, JavaPlugin plugin) {
         this.plugin = plugin;
         Bukkit.getPluginManager().registerEvents(this, plugin);
-        protocolManager.addPacketListener(new EmotePacketListener(this));
+        protocolManager.addPacketListener(new PacketListener(this));
     }
 
     public Set<Player> getSilencedPlayers() {
