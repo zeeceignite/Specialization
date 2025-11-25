@@ -12,7 +12,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Snowman;
+import org.bukkit.entity.Sheep;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.EntityBlockFormEvent;
@@ -34,11 +34,11 @@ import java.util.Map;
  */
 
 /**
- * This class handles the leashing of players using a proxy which is a snowman the player rides.
- * The snowman is somewhat arbitrary. The only important part is that the entity can move and be lead naturally.
+ * This class handles the leashing of players using a proxy which is a sheep the player rides.
+ * The sheep is somewhat arbitrary. The only important part is that the entity can move and be lead naturally.
  * This way the entity can be tied to things and handle normal persistent logout/login lead logic
  * <p>
- * Use player.getVehicle() instanceOf snowman and then
+ * Use player.getVehicle() instanceOf sheep and then
  * <p>
  * Relies on: PlayerDownedListener States & ReviveListener
  * <p>
@@ -47,7 +47,7 @@ import java.util.Map;
 
 public final class LeashListener implements Listener {
 
-    private final Map<Player, Snowman> proxies = new HashMap<>();
+    private final Map<Player, Sheep> proxies = new HashMap<>();
     private final PlayerDownedListener downedListener;
     private final NamespacedKey leashKey = new NamespacedKey(Specialization.getInstance(), "leash_proxy");
 
@@ -63,7 +63,7 @@ public final class LeashListener implements Listener {
         Player leasher = e.getPlayer();
 
         // Check if the target is already leashed via a proxy
-        if (target.getVehicle() instanceof Snowman proxy && proxy.getPersistentDataContainer().has(leashKey, PersistentDataType.BOOLEAN)) {
+        if (target.getVehicle() instanceof Sheep proxy && proxy.getPersistentDataContainer().has(leashKey, PersistentDataType.BOOLEAN)) {
             if (target instanceof Player targetPlayer) {
                 unleashPlayer(targetPlayer, proxy);
             }
@@ -76,8 +76,8 @@ public final class LeashListener implements Listener {
 
         // Only leash downed players not already carried
         if (target instanceof Player targetPlayer) {
-            // Check if they are already riding a snowman
-            boolean ridingProxy = targetPlayer.getVehicle() instanceof Snowman;
+            // Check if they are already riding a sheep
+            boolean ridingProxy = targetPlayer.getVehicle() instanceof Sheep;
 
             // Check if they are already a passenger of the leasher
             boolean carriedByLeasher = leasher.getPassengers().contains(targetPlayer);
@@ -110,7 +110,7 @@ public final class LeashListener implements Listener {
 
         downedListener.clearMount(targetPlayer);
 
-        Snowman proxy = spawnProxy(targetPlayer.getLocation(), leasher);
+        Sheep proxy = spawnProxy(targetPlayer.getLocation(), leasher);
         proxy.addPassenger(targetPlayer);
         proxy.setLeashHolder(leasher);
         proxy.getPersistentDataContainer().set(leashKey, PersistentDataType.BOOLEAN, true);
@@ -120,7 +120,7 @@ public final class LeashListener implements Listener {
         leasher.getInventory().getItemInMainHand().subtract(1);
     }
 
-    private void unleashPlayer(Player targetPlayer, Snowman proxy) {
+    private void unleashPlayer(Player targetPlayer, Sheep proxy) {
         downedListener.clearMount(targetPlayer);
         downedListener.setSit(targetPlayer);
 
@@ -146,9 +146,9 @@ public final class LeashListener implements Listener {
     // -------------------------
     // Proxy spawn utility
     // -------------------------
-    private Snowman spawnProxy(Location loc, Player leasher) {
+    private Sheep spawnProxy(Location loc, Player leasher) {
         Location spawnLoc = loc.clone().add(0, 0.5, 0);
-        return spawnLoc.getWorld().spawn(spawnLoc, Snowman.class, sm -> {
+        return spawnLoc.getWorld().spawn(spawnLoc, Sheep.class, sm -> {
             sm.setSilent(true);
             sm.setInvisible(true);
             sm.setAware(false);
@@ -161,7 +161,7 @@ public final class LeashListener implements Listener {
             sm.setCollidable(false);
             sm.setGlowing(false);
             sm.getAttribute(Attribute.STEP_HEIGHT).setBaseValue(1.0);
-            sm.getAttribute(Attribute.SCALE).setBaseValue(0.13);
+            sm.getAttribute(Attribute.SCALE).setBaseValue(0.23);
             sm.getEquipment().clear();
         });
     }
@@ -170,7 +170,7 @@ public final class LeashListener implements Listener {
     @EventHandler
     public void onEntityDeath(EntityDeathEvent e) {
         if (e.getEntity() instanceof Player p) {
-            Snowman proxy = proxies.get(p);
+            Sheep proxy = proxies.get(p);
             if (proxy != null && proxy.isValid()) {
                 unleashPlayer(p, proxy);
             }
@@ -182,9 +182,9 @@ public final class LeashListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent e) {
         Player p = e.getPlayer();
 
-        // Check if the player is riding a proxy snowman
+        // Check if the player is riding a proxy sheep
         Entity vehicle = p.getVehicle();
-        if (vehicle instanceof Snowman snowman) return;
+        if (vehicle instanceof Sheep sheep) return;
 
         // cleanup if needed
 //        p.getPersistentDataContainer().set(
@@ -232,8 +232,8 @@ public final class LeashListener implements Listener {
     // -------------------------
     @EventHandler
     public void onEntityBlockForm(EntityBlockFormEvent e) {
-        if (!(e.getEntity() instanceof Snowman snowman)) return;
-        if (!snowman.getPersistentDataContainer().has(leashKey, PersistentDataType.STRING)) return;
+        if (!(e.getEntity() instanceof Sheep sheep)) return;
+        if (!sheep.getPersistentDataContainer().has(leashKey, PersistentDataType.STRING)) return;
 
         if (e.getNewState().getType() == Material.SNOW) e.setCancelled(true);
     }

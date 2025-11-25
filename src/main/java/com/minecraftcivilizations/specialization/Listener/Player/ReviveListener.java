@@ -357,7 +357,7 @@ public class ReviveListener implements Listener {
         Entity target = e.getRightClicked();
         if (healer.isDead()) return;
         if (e.getHand() != EquipmentSlot.HAND) return;
-        if (target.getVehicle() instanceof Snowman) {
+        if (target.getVehicle() instanceof Sheep) {
             return; //must not be leashed
         }
 
@@ -479,12 +479,12 @@ public class ReviveListener implements Listener {
 
         boolean isDowned = rider.getPersistentDataContainer().get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE) == 1;
         boolean isLeashed = false;
-        if (rider.getVehicle() instanceof Snowman proxy) {
+        if (rider.getVehicle() instanceof Sheep proxy) {
             isLeashed = proxy.getPersistentDataContainer().has(new NamespacedKey(Specialization.getInstance(), "leash_proxy"), PersistentDataType.BOOLEAN);
 
         }
-        // Identify plugin mounts (armor stand, interaction, snowman)
-        boolean isPluginMount = vehicle instanceof ArmorStand || vehicle instanceof Player || vehicle instanceof Snowman || vehicle instanceof org.bukkit.entity.Interaction;
+        // Identify plugin mounts (armor stand, interaction, Sheep)
+        boolean isPluginMount = vehicle instanceof ArmorStand || vehicle instanceof Player || vehicle instanceof Sheep || vehicle instanceof org.bukkit.entity.Interaction;
 
 
         // If downed, prevent player from dismounting anything *unless forced*

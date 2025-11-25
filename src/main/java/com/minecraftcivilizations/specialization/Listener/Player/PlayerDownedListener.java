@@ -173,7 +173,7 @@ public class PlayerDownedListener implements Listener {
     }
 
     public void clearMount(Player player) {
-        if (player.getVehicle() instanceof Snowman leashproxy) {
+        if (player.getVehicle() instanceof Sheep leashproxy) {
             leashproxy.remove();
             Debug.broadcast("down", "<gray>[DOWNED] Cleared Leash Proxy");
         }
@@ -216,7 +216,7 @@ public class PlayerDownedListener implements Listener {
         // --- CASE 1: Player was downed AND ticksLeft exists (normal restore) ---
         if (ticksLeft != null && isDowned(player)) {
             pdc.remove(downedTicksKey);
-            if (!(player.getVehicle() instanceof Snowman)) {
+            if (!(player.getVehicle() instanceof Sheep)) {
                 clearDowned(player);
             }
             startDowned(player, player.getHealth(), ticksLeft);
@@ -227,7 +227,7 @@ public class PlayerDownedListener implements Listener {
         // --- CASE 2: Player is downed but ticksLeft is missing (edge case) ---
         if (isDowned(player)) {
             pdc.remove(downedTicksKey);
-            if (!(player.getVehicle() instanceof Snowman)) {
+            if (!(player.getVehicle() instanceof Sheep)) {
                 clearDowned(player);
             }
             startDowned(player, player.getHealth(), DOWNED_DURATION_TICKS);
@@ -272,7 +272,7 @@ public class PlayerDownedListener implements Listener {
     public void onPlayerQuit(org.bukkit.event.player.PlayerQuitEvent event) {
         Player player = event.getPlayer();
         if (!isDowned(player)) return;
-        if (!(player.getVehicle() instanceof Snowman)) {
+        if (!(player.getVehicle() instanceof Sheep)) {
             clearDowned(player);
         }
         UUID id = player.getUniqueId();
@@ -352,7 +352,7 @@ public class PlayerDownedListener implements Listener {
         }
 
         double distance = player.getLocation().getY() - targetLoc.getY() - 0.1; // distance from head to hit block minus small offset
-        if (!(player.getVehicle() instanceof Snowman)) {
+        if (!(player.getVehicle() instanceof Sheep)) {
             if (distance > 0.3) {
                 // Use ArmorStand for falling
 //                player.sendMessage("armorstand");

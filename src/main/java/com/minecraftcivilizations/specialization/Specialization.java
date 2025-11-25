@@ -10,6 +10,7 @@ import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.minecraftcivilizations.specialization.Analytics.AnalyticsData;
+import com.minecraftcivilizations.specialization.Combat.*;
 import com.minecraftcivilizations.specialization.Command.*;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.CustomItem.CustomItemManager;
@@ -17,18 +18,12 @@ import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Data.MongoConnection;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
 import com.minecraftcivilizations.specialization.Listener.Blocks.AutoCrafterListener;
-import com.minecraftcivilizations.specialization.Listener.BurnListener;
 import com.minecraftcivilizations.specialization.Listener.Blocks.ReinforcementProtectionListener;
-import com.minecraftcivilizations.specialization.Combat.ExplodeListener;
+import com.minecraftcivilizations.specialization.Listener.BurnListener;
 import com.minecraftcivilizations.specialization.Listener.Player.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.BreakBlockListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.PlayerMineListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.PlaceBlockListener;
-import com.minecraftcivilizations.specialization.Combat.*;
-import com.minecraftcivilizations.specialization.Listener.Player.Interactions.FoodInteractionListener;
-import com.minecraftcivilizations.specialization.Listener.Player.Interactions.PlayerInteractEntityListener;
-import com.minecraftcivilizations.specialization.Listener.Player.Interactions.PlayerInteractListener;
-import com.minecraftcivilizations.specialization.Listener.Player.Interactions.RightClickListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Interactions.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Inventories.CraftingListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Inventories.FurnaceListener;
@@ -38,15 +33,15 @@ import com.minecraftcivilizations.specialization.Listener.XpTransferBookListener
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Player.LocalNameGenerator;
 import com.minecraftcivilizations.specialization.Player.PreJoinEventListener;
-//import com.minecraftcivilizations.specialization.Player.TeamManager;
 import com.minecraftcivilizations.specialization.Recipe.Blueprints;
+import com.minecraftcivilizations.specialization.Recipe.RecipeBlocker;
 import com.minecraftcivilizations.specialization.Recipe.Recipes;
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.SmartEntity.SmartEntityManager;
-import com.minecraftcivilizations.specialization.StaffTools.DebugListenCommand;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
+import com.minecraftcivilizations.specialization.StaffTools.DebugListenCommand;
 import com.minecraftcivilizations.specialization.util.LocatorBarManager;
 import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import com.mojang.authlib.GameProfile;
@@ -56,10 +51,12 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizati
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import net.minecraft.server.level.ServerPlayer;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.GameRule;
+import org.bukkit.World;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -67,10 +64,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -78,41 +71,43 @@ public final class Specialization extends JavaPlugin {
 
     public final static String TITLE = "<#334422>[<#445533>CivLabs</#445533>]";
     public static Logger logger;
-
+    public ReviveListener reviveListener;
+    //Holder for transient player data such as cooldowns
+    Map<UUID, PlayerUtil> playerUtilMap = new HashMap<>();
+    PaperCommandManager commandManager;
     @Getter
     private LocalNameGenerator localNameGenerator;
     private Debug debug;
     private PhantomRideListener phantomRideListener;
-//    private EmoteListener emoteListener;
+    //    private EmoteListener emoteListener;
     private LocalChat localChat;
-
     //follow this pattern from now on
     @Getter
     private SmartEntityManager smart_entity_manager;
-
     @Getter
     private CustomItemManager customItemManager;
-
     @Getter
     private CombatManager combatManager;
     private PVPManager pvpManager;
     private XPMonitoringCommand xpMonitoringCommand;
     private PlayerDownedListener playerDownedListener;
-    public ReviveListener reviveListener;
+    private RecipeBlocker recipeBlocker;
 
-
-    //Holder for transient player data such as cooldowns
-    Map<UUID, PlayerUtil> playerUtilMap = new HashMap<>();
-
-
-    public static void notify(Player player, String msg){message(player, msg);}
-    public static void message(Player player, String msg){
-        PlayerUtil.message(player, msg);
+    public static void notify(Player player, String msg) {
+        message(player, msg);
     }
-    public static void message(Player player, Component msg){
+
+    public static void message(Player player, String msg) {
         PlayerUtil.message(player, msg);
     }
 
+    public static void message(Player player, Component msg) {
+        PlayerUtil.message(player, msg);
+    }
+
+    public static Specialization getInstance() {
+        return getPlugin(Specialization.class);
+    }
 
     @Override
     public void onEnable() {
@@ -128,16 +123,16 @@ public final class Specialization extends JavaPlugin {
         //  Skill.InitializeSkillKeys(this);
 
 
-
-    localChat = new LocalChat();
-    playerDownedListener = new PlayerDownedListener(this);
-    reviveListener = new ReviveListener(playerDownedListener);
-    smart_entity_manager = new SmartEntityManager(this);
+        localChat = new LocalChat();
+        playerDownedListener = new PlayerDownedListener(this);
+        reviveListener = new ReviveListener(playerDownedListener);
+        smart_entity_manager = new SmartEntityManager(this);
         customItemManager = new CustomItemManager(this);
         customItemManager.initializeCustomItems();
-    phantomRideListener = new PhantomRideListener(this);
-    xpMonitoringCommand = new XPMonitoringCommand();
-    pvpManager = new PVPManager(playerDownedListener, this);
+        phantomRideListener = new PhantomRideListener(this);
+        xpMonitoringCommand = new XPMonitoringCommand();
+        pvpManager = new PVPManager(playerDownedListener, this);
+        recipeBlocker = new RecipeBlocker();
 //    emoteListener = new EmoteListener(this);
 
 
@@ -175,12 +170,10 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(phantomRideListener, this);
         getServer().getPluginManager().registerEvents(playerDownedListener, this);
         getServer().getPluginManager().registerEvents(reviveListener, this);
-
+        getServer().getPluginManager().registerEvents(recipeBlocker, this);
 
         //town data does not need to wait anymore
         TownManager.scanAllPlayersForTownsAsync();
-
-
 
 
         //overworld game rules
@@ -203,7 +196,6 @@ public final class Specialization extends JavaPlugin {
         XpGainMonitor.init();
 
         Bukkit.updateRecipes();
-
 
 
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setCustomPlayerClass(CustomPlayer.class);
@@ -233,11 +225,11 @@ public final class Specialization extends JavaPlugin {
                 ff.set(gameProfile, ComponentUtils.serializeComponentAsString(localName));
 
                 UUID uniqueId = playerJoinEvent.getUniqueId();
-                if(!playerUtilMap.containsKey(uniqueId)){
+                if (!playerUtilMap.containsKey(uniqueId)) {
                     playerUtilMap.put(uniqueId, new PlayerUtil(uniqueId));
                 }
 
-                Debug.broadcast("login", ChatColor.YELLOW+real_name+" has joined the server ("+localName+")");
+                Debug.broadcast("login", ChatColor.YELLOW + real_name + " has joined the server (" + localName + ")");
 
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 logger.severe("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
@@ -311,12 +303,10 @@ public final class Specialization extends JavaPlugin {
         AnalyticsData.autoPoll();
     }
 
-
     @Override
     public void onDisable() {
         // Plugin shutdown logic
-        for (Player p : Bukkit.getOnlinePlayers())
-        {
+        for (Player p : Bukkit.getOnlinePlayers()) {
             phantomRideListener.PhantomStateSave(p);
         }
         smart_entity_manager.shutdown();
@@ -324,13 +314,6 @@ public final class Specialization extends JavaPlugin {
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().saveAll();
         XpGainMonitor.saveConfigToDisk();
     }
-
-    public static Specialization getInstance() {
-        return getPlugin(Specialization.class);
-    }
-
-    PaperCommandManager commandManager;
-
 
     private void setupCommands() {
 
@@ -384,6 +367,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new CustomItemCommand(customItemManager));
         commandManager.registerCommand(new SudoChatCommand(localChat));
         commandManager.registerCommand(new XPMonitoringCommand());
+        commandManager.registerCommand(new RecipeRefreshCommand());
         new DebugListenCommand(commandManager);
 
 
@@ -463,7 +447,6 @@ public final class Specialization extends JavaPlugin {
     public PlayerUtil getPlayerUtil(UUID uniqueId) {
         return playerUtilMap.get(uniqueId);
     }
-
 
 
 }

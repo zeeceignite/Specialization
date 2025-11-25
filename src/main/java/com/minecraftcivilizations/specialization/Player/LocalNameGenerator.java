@@ -80,10 +80,10 @@ public class LocalNameGenerator implements Listener {
         }
 
 // Debug output
-        Specialization.logger.info("[Groups]:");
-        for (Map.Entry<String, List<String>> entry : grouping.entrySet()) {
-            Specialization.logger.info(entry.getKey() + ": " + entry.getValue());
-        }
+//        Specialization.logger.info("[Groups]:");
+//        for (Map.Entry<String, List<String>> entry : grouping.entrySet()) {
+//            Specialization.logger.info(entry.getKey() + ": " + entry.getValue());
+//        }
         Specialization.logger.info("[LocalNameGenerator] Loaded " + firstNames.size() + " first names and " + lastNames.size() + " last names");
 
         // Load existing names from world playerdata to prevent duplicates
@@ -364,7 +364,7 @@ public class LocalNameGenerator implements Listener {
                                                 if (wasNew) {
                                                     namesInThisFile++;
                                                     namesFound++;
-                                                    Specialization.logger.info("[LocalNameGenerator] Found name in " + file.getName() + ": " + internalName);
+//                                                    Specialization.logger.info("[LocalNameGenerator] Found name in " + file.getName() + ": " + internalName);
                                                 }
                                             }
                                         }
@@ -404,7 +404,7 @@ public class LocalNameGenerator implements Listener {
      */
     private String extractTextFromNestedJson(String jsonString) {
         try {
-            Specialization.logger.info("[LocalNameGenerator] Raw JSON string to parse: " + jsonString);
+//            Specialization.logger.info("[LocalNameGenerator] Raw JSON string to parse: " + jsonString);
 
             String textPattern = "\\\\\"text\\\\\"\\s*:\\s*\\\\\"([^\\\\\"]+)\\\\\"";
             java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(textPattern);
@@ -412,7 +412,7 @@ public class LocalNameGenerator implements Listener {
 
             if (matcher.find()) {
                 String textValue = matcher.group(1);
-                Specialization.logger.info("[LocalNameGenerator] Extracted text from JSON: " + textValue);
+//                Specialization.logger.info("[LocalNameGenerator] Extracted text from JSON: " + textValue);
                 return textValue;
             } else {
                 String altPattern = "\"text\"\\s*:\\s*\"([^\"]+)\"";
@@ -421,7 +421,7 @@ public class LocalNameGenerator implements Listener {
 
                 if (altMatcher.find()) {
                     String textValue = altMatcher.group(1);
-                    Specialization.logger.info("[LocalNameGenerator] Extracted text using alternative pattern: " + textValue);
+//                    Specialization.logger.info("[LocalNameGenerator] Extracted text using alternative pattern: " + textValue);
                     return textValue;
                 }
 
