@@ -12,7 +12,7 @@ public class MongoConnection {
     public static MongoClient mongoClient;
 
     public static void startDBConnection() {
-        String connectionString = "mongodb://skibidi:bongo123@wiki.civlabs.org:27017";
+        String connectionString = "mongodb://root:hvjLTQyqVhVUaB8czRB9Ji09Wge94gQ5Fo35JpC3f8OrY0fgi4zxsAx8h57z@db.civlabs.org:27017";
         mongoClient = MongoClients.create(connectionString);
     }
 
