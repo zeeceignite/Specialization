@@ -29,12 +29,9 @@ import java.util.List;
  */
 public class DefineCustomItems implements Listener {
 
-
-    private final ReviveListener reviveListener;
-    private Bandage bandage;
-    public DefineCustomItems(Specialization plugin, ReviveListener reviveListener) {
-        this.reviveListener = reviveListener;
-        this.bandage = new Bandage("bandage", "Bandage", reviveListener);
+    public Bandage bandage;
+    public DefineCustomItems(Specialization plugin) {
+        this.bandage = new Bandage("bandage", "Bandage");
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 

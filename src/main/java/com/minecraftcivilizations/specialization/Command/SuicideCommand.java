@@ -6,6 +6,7 @@ import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.commands.annotation.Default;
 import com.minecraftcivilizations.specialization.Listener.Player.PlayerDownedListener;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.NamespacedKey;
@@ -70,7 +71,7 @@ public class SuicideCommand extends BaseCommand {
     @CommandPermission("civlabs.selfdown")
     public void downSelf(@NotNull Player player) {
         if (downedListener.isDowned(player)) {
-            player.sendMessage(Component.text("You were knocked out by a magical force").color(NamedTextColor.RED));
+            PlayerUtil.message(player, Component.text("You were knocked out by a magical force").color(NamedTextColor.RED));
             return;
         }
 
@@ -86,12 +87,12 @@ public class SuicideCommand extends BaseCommand {
     @CommandPermission("civlabs.selfrevive")
     public void upSelf(@NotNull Player player) {
         if (!downedListener.isDowned(player)) {
-            player.sendMessage(Component.text("You are not downed.").color(NamedTextColor.RED));
+            PlayerUtil.message(player, Component.text("You are not downed.").color(NamedTextColor.RED));
             return;
         }
 
         downedListener.setDowned(player, false, player.getHealth());
-        player.sendMessage(Component.text("You were revived by a magical force").color(NamedTextColor.GREEN));
+        PlayerUtil.message(player, Component.text("You were revived by a magical force").color(NamedTextColor.GREEN));
     }
 }
 

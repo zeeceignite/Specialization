@@ -5,6 +5,7 @@ import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -93,13 +94,17 @@ public final class LeashListener implements Listener {
     private void leashPlayer(Player targetPlayer, Player leasher) {
         CustomPlayer h = CoreUtil.getPlayer(leasher);
 
-        if (h.getSkillLevel(SkillType.GUARDSMAN) < SkillLevel.JOURNEYMAN.getLevel()) {
-            leasher.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are not strong enough for that");
-            return;
+        int lvl = h.getSkillLevel(SkillType.GUARDSMAN);
+
+        if (lvl == SkillLevel.APPRENTICE.getLevel()) {
+            Specialization.message(leasher, "You are not skilled enough for that");
+        }else if (lvl < SkillLevel.APPRENTICE.getLevel()) {
+            return; // too low level to leash players
         }
 
         if (!downedListener.isDowned(targetPlayer)) {
-            leasher.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are not able to keep them still enough for that");
+            PlayerUtil.message(leasher, "Only downed players may be leaded");
+
             return;
         }
 
@@ -208,6 +213,7 @@ public final class LeashListener implements Listener {
 
     @EventHandler
     public void onDismount(EntityDismountEvent e) {
+        if (e.isCancelled()) return;
         if (!(e.getEntity() instanceof Player rider)) return;
 
         Boolean isLeashed = rider.getPersistentDataContainer().get(
@@ -215,9 +221,10 @@ public final class LeashListener implements Listener {
                 PersistentDataType.BOOLEAN
         );
 
-        if (isLeashed != null && isLeashed) {
-            e.setCancelled(true); // Prevent dismount while leashed
-        }
+//        if (isLeashed != null && isLeashed) {
+//
+//            e.setCancelled(true); // Prevent dismount while leashed
+//        }
     }
 
     // -------------------------

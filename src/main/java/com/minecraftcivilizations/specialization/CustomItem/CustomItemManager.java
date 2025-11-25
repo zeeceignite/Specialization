@@ -55,10 +55,8 @@ public class CustomItemManager implements Listener {
     // items are defined and referenced here
     @Getter
     public DefineCustomItems definitions;
-    private final ReviveListener reviveListener;
-    public CustomItemManager(Specialization plugin, ReviveListener reviveListener){
+    public CustomItemManager(Specialization plugin ){
         this.plugin = plugin;
-        this.reviveListener = reviveListener;
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
@@ -66,7 +64,7 @@ public class CustomItemManager implements Listener {
     public void initializeCustomItems(){
         custom_items_loaded = new HashMap<String, CustomItem>();
         customItemIds = new ArrayList<String>();
-        definitions = new DefineCustomItems(plugin, reviveListener);
+        definitions = new DefineCustomItems(plugin);
         for(CustomItem customItem : custom_items_loaded.values()){
             customItem.init();
         }

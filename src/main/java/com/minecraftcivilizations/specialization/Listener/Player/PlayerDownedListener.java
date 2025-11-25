@@ -2,6 +2,7 @@ package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
@@ -87,51 +88,30 @@ public class PlayerDownedListener implements Listener {
 
 
     //Call this to handle being downed or not. It can handle everything else. Use setSit if you only want to set make them sit again
-    public void setDowned(Player player, boolean downed, double health) {
-        Debug.broadcast("down", "<gray>[DOWNED-DEBUG] setDowned(" + player.getName() + ") = " + downed);
+    public void setDowned(Player player, boolean new_downed, double health) {
+        Debug.broadcast("down", "<gray>[DOWNED-DEBUG] setDowned(" + player.getName() + ") = " + new_downed);
 
         PersistentDataContainer pdc = player.getPersistentDataContainer();
-        pdc.set(downedKey, PersistentDataType.BYTE, (byte) (downed ? 1 : 0));
 
-        if (!downed) {
+        if(pdc.has(downedKey)){
+            boolean previous_downed = pdc.get(downedKey, PersistentDataType.BYTE)==1;
+            if(previous_downed == new_downed){
+                Debug.broadcast("down", "<dark_gray>Player is "+(previous_downed?"already downed":"not downed")+" so nothing happened");
+                return;
+            }else{
+                Debug.broadcast("down", "<dark_gray>Player is "+(previous_downed?"already downed":"not downed"));
+            }
+        }
+
+        pdc.set(downedKey, PersistentDataType.BYTE, (byte) (new_downed ? 1 : 0));
+
+        if (!new_downed) {
             Debug.broadcast("down", "<gray>[DOWNED-DEBUG] setDowned=false → clearDowned called");
             clearDowned(player);
         } else {
             startDowned(player, health, DOWNED_DURATION_TICKS);
-            player.sendMessage(Component.text("§0[§0§6CivLabs§0]§8 » §7You're knocked out").color(NamedTextColor.YELLOW));
+            Specialization.message(player, "You're knocked out");
             sendDownedMessage(player);
-        }
-    }
-
-    @EventHandler
-    public void onPlayerDeath(PlayerDeathEvent event) {
-        Player player = event.getEntity();
-
-        CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
-        // Reset all skills to 0
-        for (SkillType type : SkillType.values()) {
-            double currentXp = customPlayer.getSkill(type).getXp();
-            customPlayer.addSkillXp(type, -currentXp, null, true, false); // subtract current XP to zero it
-        }
-
-        if (isDowned(player)) {
-            setDowned(player, false, 0);
-        }
-    }
-
-    public void clearMount(Player player) {
-        if (player.getVehicle() instanceof Snowman leashproxy) {
-            leashproxy.remove();
-            Debug.broadcast("down", "<gray>[DOWNED] Cleared Leash Proxy");
-        }
-        if (player.getVehicle() instanceof ArmorStand armorStand) {
-            armorStand.remove();
-            UUID uuid = player.getUniqueId();
-            Entity e = downStands.remove(uuid);
-            if (e != null) {
-                Debug.broadcast("down", "<gray>[DOWNED] Cleared Armor Stand");
-                e.remove();
-            }
         }
     }
 
@@ -172,6 +152,44 @@ public class PlayerDownedListener implements Listener {
     }
 
 
+
+    /**
+     * If this is called, the player has actually died
+     */
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        Player player = event.getEntity();
+
+        CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
+        // Reset all skills to 0
+        for (SkillType type : SkillType.values()) {
+            double currentXp = customPlayer.getSkill(type).getXp();
+            customPlayer.addSkillXp(type, -currentXp, null, true, false); // subtract current XP to zero it
+        }
+
+        if (isDowned(player)) {
+            setDowned(player, false, 0);
+        }
+    }
+
+    public void clearMount(Player player) {
+        if (player.getVehicle() instanceof Snowman leashproxy) {
+            leashproxy.remove();
+            Debug.broadcast("down", "<gray>[DOWNED] Cleared Leash Proxy");
+        }
+        else if (player.getVehicle() instanceof ArmorStand armorStand) {
+            armorStand.remove();
+            UUID uuid = player.getUniqueId();
+            Entity e = downStands.remove(uuid);
+            if (e != null) {
+                Debug.broadcast("down", "<gray>[DOWNED] Cleared Armor Stand");
+                e.remove();
+            }
+        }
+    }
+
+
+
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
@@ -191,7 +209,7 @@ public class PlayerDownedListener implements Listener {
             }
             if (ticksLeft < 0) {
                 ticksLeft = 0;
-                player.sendMessage("§0[§0§6CivLabs§0]§8 » §7You have §cbled §7out while offline!");
+                Specialization.message(player, "You have §cbled §7out while offline!");
             }
         }
 
@@ -275,6 +293,50 @@ public class PlayerDownedListener implements Listener {
         downTicksRemaining.put(id, remainingTicks);
         player.setHealth(Math.max(0, health));
 
+        spawnMount(player, id);
+        // BossBar & bleedout timer
+        BossBar bar = bossBars.computeIfAbsent(id,
+                k -> Bukkit.createBossBar("§7Bleeding Out", BarColor.RED, BarStyle.SEGMENTED_20));
+        bar.addPlayer(player);
+
+        bossBars.put(id, bar);
+
+        BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, new Runnable() {
+            int ticksLeft = remainingTicks;
+
+            @Override
+            public void run() {
+                if (!isDowned(player)) {
+                    clearDowned(player);
+                    return;
+                }
+
+                ticksLeft--;
+                downTicksRemaining.put(id, ticksLeft);
+                bar.setProgress(Math.max(0f, ticksLeft / (float) DOWNED_DURATION_TICKS));
+
+                if (ticksLeft <= 0) {
+                    player.setHealth(0);
+                    clearDowned(player);
+                    player.damage(100);
+                }
+            }
+        }, 1L, 1L);
+
+        // Darkness effect every 5 seconds for 3 seconds
+        if (!darknessTasks.containsKey(id)) {
+            BukkitTask darknessTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+                if (!isDowned(player)) return;
+                player.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 50, 0, true, false, false));
+            }, 200L, 100L);
+
+            darknessTasks.put(id, darknessTask);
+        }
+
+        downTimers.put(id, task);
+    }
+
+    private void spawnMount(Player player, UUID id) {
         Location headLoc = player.getLocation().clone().add(0, player.getEyeHeight(), 0);
 
         // Ray trace downwards to find the first solid block
@@ -320,47 +382,8 @@ public class PlayerDownedListener implements Listener {
                 downStands.put(id, inter);
             }
         }
-        // BossBar & bleedout timer
-        BossBar bar = bossBars.computeIfAbsent(id,
-                k -> Bukkit.createBossBar("§7Bleeding Out", BarColor.RED, BarStyle.SEGMENTED_20));
-        bar.addPlayer(player);
-
-        bossBars.put(id, bar);
-
-        BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, new Runnable() {
-            int ticksLeft = remainingTicks;
-
-            @Override
-            public void run() {
-                if (!isDowned(player)) {
-                    clearDowned(player);
-                    return;
-                }
-
-                ticksLeft--;
-                downTicksRemaining.put(id, ticksLeft);
-                bar.setProgress(Math.max(0f, ticksLeft / (float) DOWNED_DURATION_TICKS));
-
-                if (ticksLeft <= 0) {
-                    player.setHealth(0);
-                    clearDowned(player);
-                    player.damage(100);
-                }
-            }
-        }, 1L, 1L);
-
-        // Darkness effect every 5 seconds for 3 seconds
-        if (!darknessTasks.containsKey(id)) {
-            BukkitTask darknessTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-                if (!isDowned(player)) return;
-                player.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 50, 0, true, false, false));
-            }, 200L, 100L);
-
-            darknessTasks.put(id, darknessTask);
-        }
-
-        downTimers.put(id, task);
     }
+
 
 
     //allows you to spawn in a item to sit on. (Example use case: Transporting a downed player)
@@ -371,59 +394,62 @@ public class PlayerDownedListener implements Listener {
         Entity old = downStands.remove(id);
         if (old != null && old.isValid()) old.remove();
 
-        Location headLoc = player.getLocation().clone()
-                .add(0, player.getEyeHeight(), 0);
+        spawnMount(player, id);
 
-        RayTraceResult ray = player.getWorld().rayTraceBlocks(
-                headLoc,
-                new Vector(0, -1, 0),
-                5,
-                FluidCollisionMode.ALWAYS,
-                true
-        );
-
-        Location targetLoc;
-        if (ray != null && ray.getHitBlock() != null) {
-            targetLoc = ray.getHitPosition().toLocation(player.getWorld());
-        } else {
-            targetLoc = new Location(
-                    player.getWorld(),
-                    player.getLocation().getX(),
-                    0,
-                    player.getLocation().getZ()
-            );
-        }
-
-        double distance = player.getLocation().getY() - targetLoc.getY() - 0.1;
-
-
-        if (distance > 0.3) {
-            // ArmorStand
-            ArmorStand stand = player.getWorld().spawn(player.getLocation(), ArmorStand.class, a -> {
-                a.setGravity(true);
-                a.setInvulnerable(true);
-                a.setVisible(false);
-                a.setCollidable(false);
-                a.setMarker(false);
-                a.setArms(false);
-                a.getAttribute(Attribute.SCALE).setBaseValue(0.01);
-                a.addPassenger(player);
-            });
-            downStands.put(id, stand);
-
-        } else {
-            // Interaction
-            Location locInteraction = targetLoc.clone().add(0, -0.5, 0);
-            Interaction inter = player.getWorld().spawn(locInteraction, Interaction.class, i -> {
-                i.setInteractionWidth(0.6f);
-                i.setInteractionHeight(0.6f);
-                i.setInvulnerable(true);
-                i.setSilent(true);
-                i.setPersistent(false);
-                i.addPassenger(player);
-            });
-            downStands.put(id, inter);
-        }
+        //should be replaced by spawnMount, but leaving this just in case
+//        Location headLoc = player.getLocation().clone()
+//                .add(0, player.getEyeHeight(), 0);
+//
+//        RayTraceResult ray = player.getWorld().rayTraceBlocks(
+//                headLoc,
+//                new Vector(0, -1, 0),
+//                5,
+//                FluidCollisionMode.ALWAYS,
+//                true
+//        );
+//
+//        Location targetLoc;
+//        if (ray != null && ray.getHitBlock() != null) {
+//            targetLoc = ray.getHitPosition().toLocation(player.getWorld());
+//        } else {
+//            targetLoc = new Location(
+//                    player.getWorld(),
+//                    player.getLocation().getX(),
+//                    0,
+//                    player.getLocation().getZ()
+//            );
+//        }
+//
+//        double distance = player.getLocation().getY() - targetLoc.getY() - 0.1;
+//
+//
+//        if (distance > 0.3) {
+//            // ArmorStand
+//            ArmorStand stand = player.getWorld().spawn(player.getLocation(), ArmorStand.class, a -> {
+//                a.setGravity(true);
+//                a.setInvulnerable(true);
+//                a.setVisible(false);
+//                a.setCollidable(false);
+//                a.setMarker(false);
+//                a.setArms(false);
+//                a.getAttribute(Attribute.SCALE).setBaseValue(0.01);
+//                a.addPassenger(player);
+//            });
+//            downStands.put(id, stand);
+//
+//        } else {
+//            // Interaction
+//            Location locInteraction = targetLoc.clone().add(0, -0.5, 0);
+//            Interaction inter = player.getWorld().spawn(locInteraction, Interaction.class, i -> {
+//                i.setInteractionWidth(0.6f);
+//                i.setInteractionHeight(0.6f);
+//                i.setInvulnerable(true);
+//                i.setSilent(true);
+//                i.setPersistent(false);
+//                i.addPassenger(player);
+//            });
+//            downStands.put(id, inter);
+//        }
     }
 
 
@@ -477,44 +503,27 @@ public class PlayerDownedListener implements Listener {
     }
 
 
-    private Block findBlockBelow(Location loc) {
-        World world = loc.getWorld();
-        int y = loc.getBlockY();
-
-        for (int i = y; i > 0; i--) {
-            Block block = world.getBlockAt(loc.getBlockX(), i, loc.getBlockZ());
-            if (!block.isPassable()) {
-                if (block.getType() == Material.WATER) {
-                    return null; // stop falling into water
-                }
-                return block;
-            }
-        }
-
-        return world.getBlockAt(loc.getBlockX(), 0, loc.getBlockZ()); // fallback floor
-    }
-
-
     private void sendDownedMessage(Player player) {
         // [Give Up] button
         Component giveUp = Component.text("/GiveUp", NamedTextColor.RED)
                 .clickEvent(ClickEvent.runCommand("/giveup"))
                 .hoverEvent(HoverEvent.showText(Component.text("Click to give up and respawn")));
 
-        Component msg = Component.text("§0[§0§6CivLabs§0]§8 » §7Press Here to ", NamedTextColor.GRAY)
+        Component msg = Component.text("§7Press Here to ", NamedTextColor.GRAY)
                 .append(giveUp)
                 .append(Component.text(" & Respawn", NamedTextColor.GRAY));
 
         // Send main message
-        player.sendMessage(msg);
+//        player.sendMessage(msg);
+        Specialization.message(player, msg);
 
         // If player is allowed to self revive
         if (player.hasPermission("civlabs.selfrevive")) {
-            Component revive = Component.text("[Revive]", NamedTextColor.GREEN)
+            Component revive_msg = Component.text("[Revive]", NamedTextColor.GREEN)
                     .clickEvent(ClickEvent.runCommand("/revive"))
                     .hoverEvent(HoverEvent.showText(Component.text("Click to instantly revive yourself!")));
 
-            player.sendMessage(revive);
+            Specialization.message(player, revive_msg);
         }
 
     }
