@@ -92,6 +92,10 @@ public class MobVariation {
     private double sizeSmallest = 1.0;
     @Getter
     private double sizeLargest = 1.0;
+    @Getter
+    private double fuseTime = 1.0;
+    @Getter
+    private double stepHeight = 1.0;
 
     private boolean random_scale_enabled = false;
 
@@ -160,6 +164,17 @@ public class MobVariation {
     public MobVariation speed(double day_multiplier, double night_multiplier){
         this.speedMultiplierNight = night_multiplier;
         this.speedMultiplierDay = day_multiplier;
+        return this;
+    }
+
+    public MobVariation stepheight(double step_height){
+        this.stepHeight = step_height;
+        return this;
+    }
+
+
+    public MobVariation fuseTime(double fuse_time){
+        this.fuseTime = fuse_time;
         return this;
     }
 

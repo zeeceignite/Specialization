@@ -16,6 +16,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.damage.DamageType;
@@ -56,13 +57,21 @@ public class MobManager implements Listener {
     private final NamespacedKey SPAWN_VARIATION_ID_KEY; //this determines if the mob was overrided
     private final NamespacedKey EXP_GAIN_OVERRIDE_KEY;
 
+    private final NamespacedKey SCALE_KEY;
+    private final NamespacedKey MOVE_SPEED_KEY;
+    private final NamespacedKey WATER_SPEED_KEY;
+
     public static MobManager getInstance(){
         return CombatManager.getInstance().getMobManager();
     }
 
     public MobManager(CombatManager combatManager) {
-        this.SPAWN_VARIATION_ID_KEY = new NamespacedKey(combatManager.getPlugin(), "mob_spawn_id");
-        this.EXP_GAIN_OVERRIDE_KEY = new NamespacedKey(combatManager.getPlugin(), "exp_gain_override");
+        Specialization plugin = combatManager.getPlugin();
+        this.SPAWN_VARIATION_ID_KEY = new NamespacedKey(plugin, "mob_spawn_id");
+        this.EXP_GAIN_OVERRIDE_KEY = new NamespacedKey(plugin, "exp_gain_override");
+        SCALE_KEY = new NamespacedKey(plugin, "custom_scale");
+        MOVE_SPEED_KEY = new NamespacedKey(plugin, "custom_move_speed");
+        WATER_SPEED_KEY = new NamespacedKey(plugin, "custom_water_speed");
         combatManager.getPlugin().getServer().getPluginManager().registerEvents(this, combatManager.getPlugin());
     }
 
@@ -74,14 +83,14 @@ public class MobManager implements Listener {
 
     void registerRule(MobOverrideRule rule) {
         for (EntityType type : rule.getReplaceTypes()) {
-            MobOverrideRuleSet rule_set = rule_mappings.computeIfAbsent(type, k -> new MobOverrideRuleSet());
+            MobOverrideRuleSet rule_set = rule_mappings.computeIfAbsent(type, k -> new MobOverrideRuleSet(type));
             rule_set.add(rule);
         }
     }
 
     void setDefaultRuleSetChance(int base_chance, EntityType...types){
         for(EntityType type : types) {
-            MobOverrideRuleSet rule_set = rule_mappings.computeIfAbsent(type, k -> new MobOverrideRuleSet());
+            MobOverrideRuleSet rule_set = rule_mappings.computeIfAbsent(type, k -> new MobOverrideRuleSet(type));
             rule_set.setBaseChance(base_chance);
         }
     }
@@ -112,7 +121,7 @@ public class MobManager implements Listener {
                 return mob_variations.get(id);
             }
         }
-        Debug.broadcast("mobrule", "using default mob for "+e.getName());
+//        Debug.broadcast("mobrule", "using default mob for "+e.getName());
         //TODO return default overrides
         return default_mob_variation;
     }
@@ -123,7 +132,7 @@ public class MobManager implements Listener {
      */
     public MobOverrideRule rollMobOverrideRule(EntityType type){
         if(rule_mappings.containsKey(type)) {
-            Debug.broadcast("mobrule", "<green>mob</green> rolling for "+type);
+            Debug.broadcast("mobrule", "<gray>mob rolling for <aqua>"+type+"</aqua>");
             return rule_mappings.get(type).rollRule();
         }
         return null;
@@ -150,29 +159,44 @@ public class MobManager implements Listener {
 
         new MobOverrideRule(100, ZOMBIE, HUSK, DROWNED)
                 .addVariation(new MobVariation("zombie_variation")
-                                .damage(1.5, 2.0)
-                                .speed(1.5, 2.0)
-                                .hunts(64)
-                                .breaks()
+                        .health(2)
+                        .damage(1.5, 2.0)
+                        .speed(1.25, 1.5)
+                        .hunts(64)
+                        .breaks()
                         );
+
         new MobOverrideRule(100, CREEPER)
                 .addVariation(new MobVariation("creeper")
                                 .xpScale(1.25)
                                 .damage(1.0)
-                                .speed(1.5, 2.0)
+                                .speed(1.5, 1.5)
                                 .hunts()
-                        , 10000);
+                        , 1000)
+                .addVariation(new MobVariation("quick_creeper")
+                        .xpScale(1.5)
+                        .damage(1.0)
+                        .speed(1.5, 1.75)
+                        .hunts()
+                , 200);
+
+
         new MobOverrideRule(100, SPIDER)
                 .addVariation(new MobVariation("spider_small")
-                                .health(0.5)
+                                .health(0.3)
                                 .damage(1.5)
                                 .speed(1.5, 1.5)
+                                .waterspeed(4, 4)
                                 .size(0.5,0.5)
-                                .spawnExtra(4)
+                                .spawnExtra(8)
                                 .hunts()
                                 .drops(0)
                         , 100)
-                .addVariation(new MobVariation("spider").damage(1.5).speed(1.5, 1.5).hunts().drops(0.5, 0.5)
+                .addVariation(new MobVariation("spider").damage(1.5)
+                                .speed(1.5, 1.5)
+                                .stepheight(2.0)
+                                .waterspeed(1.5, 1.5)
+                                .hunts().drops(0.5, 0.5)
                         , 100);
 //                .addVariation(new MobVariation("spider_large", CAVE_SPIDER).health(4).damage(2.0).speed(0.5, 0.75).addImmunity(DamageType.ARROW).size(2.5,2.5).hunts(64).drops(1.0, 2.0).xpScale(1.5)
 //                        , 100);
@@ -186,7 +210,7 @@ public class MobManager implements Listener {
 
         MobVariation killer_bees = new MobVariation("killer_bees", BEE)
                 .anger(true)
-                .hunts(28)
+                .hunts(32)
                 .damage(0.125)
                 .health(0.125)
                 .speed(2.0, 2.0)
@@ -204,16 +228,28 @@ public class MobManager implements Listener {
 
 
         // field spawn
-        new MobOverrideRule(10, COW, HORSE)
-                .addVariation(killer_bees, 100)
+        new MobOverrideRule(5, COW, HORSE)
+                .addVariation(killer_bees, 10);
+
+        new MobOverrideRule(100, COW, HORSE)
                 .addVariation(wolf_pack, 10);
 
-        // bee
-        new MobOverrideRule(100, BEE).spawnInPacks()
-                .addVariation(killer_bees);
+
+        setDefaultRuleSetChance(0, POLAR_BEAR);
+        new MobOverrideRule(100, POLAR_BEAR)
+                .addVariation(new MobVariation("mean_polar_bear", POLAR_BEAR).anger(true).speed(1.2,1.2).health(2).hunts(64));
+
+        new MobOverrideRule(50, ENDERMAN)
+                .addVariation(new MobVariation("creaker", CREAKING).anger(true).invisible().health(0.1).hunts(64).replaceOriginalMob());
+
+        // bee DONT DO THIS
+//        new MobOverrideRule(100, BEE).spawnInPacks()
+//                .addVariation(killer_bees);
+
+
 
         // wolf
-        new MobOverrideRule(100, WOLF).spawnInPacks()
+        new MobOverrideRule(150, WOLF).spawnInPacks()
                 .addVariation(wolf_pack);
 
         new MobOverrideRule(100, TURTLE).addVariation(new MobVariation("creepo", CREEPER).hunts(32).speed(2,2), 100);
@@ -229,7 +265,7 @@ public class MobManager implements Listener {
 //                .setGainsXpOverride(false)
 //                .setPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 100000000, 2, false, false, false));
 
-        new MobOverrideRule(50, DOLPHIN)
+        new MobOverrideRule(50, DOLPHIN, SQUID)
                 .spawnInPacks()
                 .addVariation(new MobVariation("evil_dolphin", DOLPHIN)
                         .anger(true)
@@ -422,7 +458,7 @@ public class MobManager implements Listener {
 
         }
 
-        if (Debug.isAnyoneListening("mob", false)) {
+        if (Debug.isAnyoneListening("mob", false) || Debug.isAnyoneListening("mobrule", false)) {
             populateEntityMappings();
 //                Debug.broadcast("mob", "repopulating mob stats!");
         }
@@ -438,7 +474,7 @@ public class MobManager implements Listener {
     /**
      * Explicitly adds the stats to an entity
      */
-    public static void applyStatsToEntity(LivingEntity entity, MobVariation stats) {
+    public void applyStatsToEntity(LivingEntity entity, MobVariation stats) {
         entity.setPersistent(true);
         boolean is_day_time = entity.getWorld().isDayTime();
 
@@ -459,17 +495,48 @@ public class MobManager implements Listener {
 //        if(damage_attribute != null) {
 //            damage_attribute.setBaseValue(damage_attribute.getBaseValue() * (is_day_time?stats.getDamageMultiplierDay():stats.getDamageMultiplierNight()));
 //        }
-        AttributeInstance scale_attribute = entity.getAttribute(Attribute.SCALE);
-        if(scale_attribute != null) {
-            scale_attribute.setBaseValue(scale_attribute.getBaseValue() * stats.getScale());
+        // SCALE
+        AttributeInstance scale_attr = entity.getAttribute(Attribute.SCALE);
+        if (scale_attr != null) {
+            double mult = stats.getScale();          // e.g. 1.3
+            double amount = mult - 1.0;              // ADD_SCALAR expects +0.3
+
+            scale_attr.removeModifier(SCALE_KEY);
+            scale_attr.addModifier(new AttributeModifier(
+                    SCALE_KEY,
+                    amount,
+                    AttributeModifier.Operation.ADD_SCALAR
+            ));
         }
-        AttributeInstance speed_attribute = entity.getAttribute(Attribute.MOVEMENT_SPEED);
-        if (speed_attribute != null) {
-            speed_attribute.setBaseValue(speed_attribute.getBaseValue() * applyspeed_modifier*(is_day_time ? stats.getSpeedMultiplierDay() : stats.getSpeedMultiplierNight()));
+
+        // MOVEMENT SPEED
+        AttributeInstance speed_attr = entity.getAttribute(Attribute.MOVEMENT_SPEED);
+        if (speed_attr != null) {
+            double mult = applyspeed_modifier *
+                    (is_day_time ? stats.getSpeedMultiplierDay() : stats.getSpeedMultiplierNight());
+            double amount = mult - 1.0;
+
+            speed_attr.removeModifier(MOVE_SPEED_KEY);
+            speed_attr.addModifier(new AttributeModifier(
+                    MOVE_SPEED_KEY,
+                    amount,
+                    AttributeModifier.Operation.ADD_SCALAR
+            ));
         }
-        AttributeInstance water_attribute = entity.getAttribute(Attribute.WATER_MOVEMENT_EFFICIENCY);
-        if (water_attribute != null) {
-            water_attribute.setBaseValue(water_attribute.getBaseValue() * applyspeed_modifier*(is_day_time ? stats.getWaterSpeedMultiplierDay() : stats.getWaterSpeedMultiplierNight()));
+
+        // WATER SPEED
+        AttributeInstance water_attr = entity.getAttribute(Attribute.WATER_MOVEMENT_EFFICIENCY);
+        if (water_attr != null) {
+            double mult = applyspeed_modifier *
+                    (is_day_time ? stats.getWaterSpeedMultiplierDay() : stats.getWaterSpeedMultiplierNight());
+            double amount = mult - 1.0;
+
+            water_attr.removeModifier(WATER_SPEED_KEY);
+            water_attr.addModifier(new AttributeModifier(
+                    WATER_SPEED_KEY,
+                    amount,
+                    AttributeModifier.Operation.ADD_SCALAR
+            ));
         }
         if(stats.isInvisible()){
             entity.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false, false));
@@ -489,6 +556,9 @@ public class MobManager implements Listener {
                 bee.setAnger(1000000);
             }else if(entity instanceof Wolf wolf) {
                 wolf.setAngry(true);
+            }else if(entity instanceof PolarBear bear){
+                bear.setAggressive(true);
+                bear.setStanding(true);
             }
             if(entity instanceof Mob mob){
                 //includes dolphins etc
@@ -514,7 +584,7 @@ public class MobManager implements Listener {
         for(Entity e : entities){
             if(isMobVariation(e)){
                 if(e instanceof LivingEntity le) {
-                    Specialization.getInstance().getLogger().info("applying logic to "+e.getName());
+//                    Specialization.getInstance().getLogger().info("applying logic to "+e.getName());
                     applyLogicToMob(le, getMobVariation(le));
                 }
             }
