@@ -33,7 +33,7 @@ public class CrossBowListener implements Listener {
         if (!(projectile instanceof Arrow)) {
             return;
         }
-        Debug.broadcast("damage", "CrossbowListener for Enchantments");
+//        Debug.broadcast("damage", "CrossbowListener for Enchantments");
         
         Arrow arrow = (Arrow) projectile;
 

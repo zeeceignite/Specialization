@@ -80,8 +80,9 @@ public class MobOverrideRule {
     private void calculateTotalRoll() {
         int sum = 0;
         for (int i : variation_mapping.values()) sum += Math.max(0, i);
-        total_roll = chance + sum;
-        Debug.broadcast("mobrule", "<green>calculated total roll:</green> " + total_roll);
+        total_roll = sum;
+//        Debug.broadcast("mobrule", "<green>calculated total roll:</green> " + total_roll);
+
     }
 
     private boolean does_spawn_in_packs = false;

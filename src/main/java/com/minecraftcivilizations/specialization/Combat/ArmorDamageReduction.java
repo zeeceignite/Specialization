@@ -50,6 +50,7 @@ public class ArmorDamageReduction {
         ArmorStats stats = ArmorStats.getArmorStats(victim.getEquipment());
         double original_base = event.getDamage(BASE);
         double original_armor = event.getDamage(ARMOR);
+
         double armor_ceiling = 24;
 
         double original_damage = CombatManager.calculateTotalDamage(event);
@@ -60,10 +61,16 @@ public class ArmorDamageReduction {
         // SCALING REDUCTION
         double ARMOR_REDUCTION = (armor / armor_ceiling) / 2;
         // LINEAR REDUCTION
-        double TOUGHNESS_REDUCTION_LINEAR = Math.max (0, (toughness / 8)); // Absolute damage reduction
-        double TOUGHNESS_REDUCTION_SCALAR = Math.max (0, original_base / (8+(toughness/4))); // Relative damage reduction
 
-        double TOUGHNESS_REDUCTION = TOUGHNESS_REDUCTION_LINEAR + TOUGHNESS_REDUCTION_SCALAR;
+
+        //FORMULA I
+        double TOUGHNESS_REDUCTION_LINEAR = Math.max (0, (toughness / 8)); // Absolute damage reduction
+        double TOUGHNESS_REDUCTION = TOUGHNESS_REDUCTION_LINEAR;
+
+        //FORMULA II
+//        double TOUGHNESS_REDUCTION_LINEAR = Math.max (0, (toughness / 8)); // Absolute damage reduction
+//        double TOUGHNESS_REDUCTION_SCALAR = Math.max (0, original_base / (8+(toughness/4))); // Relative damage reduction
+//        double TOUGHNESS_REDUCTION = TOUGHNESS_REDUCTION_LINEAR + TOUGHNESS_REDUCTION_SCALAR;
 //
 //        double TOTAL_REDUCTION;
 //        TOTAL_REDUCTION = Math.min(original_base, (original_base * ARMOR_REDUCTION) + (TOUGHNESS_REDUCTION));
@@ -75,6 +82,14 @@ public class ArmorDamageReduction {
         //inverse finally
         event.setDamage(ARMOR, -TOTAL_REDUCTION);
 
+
+        double MAGIC_REDUCTION = 0;
+        if(event.isApplicable(MAGIC)) {
+            //we apply magic (protection enchantment) to armor reduction
+            double original_magic =  - event.getDamage(MAGIC); //inverted
+            MAGIC_REDUCTION = event.getDamage(MAGIC)*0.5;
+            event.setDamage(MAGIC, MAGIC_REDUCTION);
+        }
         //Blocking
         //scaled armor reduction effectiveness according to guardsman level
 
@@ -103,6 +118,7 @@ public class ArmorDamageReduction {
                             +"Specialization Custom Damage is <red>"+Debug.formatDecimal(CombatManager.calculateTotalDamage(event))+"</red>\n"
                             +"<blue>ARMOR REDUCTION:</blue> "+Debug.formatDecimal(ARMOR_REDUCTION)+"\n"
                             +"<light_purple>TOUGHNESS REDUCTION:</light_purple> "+Debug.formatDecimal(TOUGHNESS_REDUCTION)+"\n"
+                            +"<yellow>MAGIC REDUCTION:</yellow> "+Debug.formatDecimal(MAGIC_REDUCTION)+"\n"
                             +"\nOriginal damage: "+Debug.formatDecimal(event.getDamage())
                             +modifiers
             );

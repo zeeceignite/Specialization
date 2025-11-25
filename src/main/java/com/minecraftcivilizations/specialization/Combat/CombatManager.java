@@ -155,6 +155,7 @@ public class CombatManager implements Listener {
 
     @EventHandler(priority = EventPriority.LOW)
     public void GlobalDamageListener(EntityDamageByEntityEvent event) {
+        if(!(event.getEntity() instanceof LivingEntity))return; //things like itemframes
         double original_base = event.getDamage(BASE);
         boolean fully_charged = false;
         double charge_amount = -1.0;
@@ -204,6 +205,9 @@ public class CombatManager implements Listener {
         }
 
 
+
+
+
         /**
          * Calculate Crit Modifier
          */
@@ -220,12 +224,13 @@ public class CombatManager implements Listener {
                     }
                     int cd = 120 - (lvl*10);
                     PlayerUtil.getPlayerUtil(dmger).setCooldown("crit_bonus", cd);
-                    double guardsman_bonus_crit = (standard_crit_guardsman_multiplier * (double)lvl);
-
-
+                    double guardsman_bonus_crit = (standard_crit_guardsman_multiplier * (double)(lvl+1));
                     double base = event.getDamage(BASE);
+                    double crit_base_multiplier = (base * standard_crit_base_multiplier);
+
+
                     //                crit_add = Math.min(1.5, 0.2 + Math.pow(1.055, lvl)); //slight exponent boost to crit
-                    double crit_add = (base * standard_crit_base_multiplier) + guardsman_bonus_crit + weapon_bonus_crit ;
+                    double crit_add = crit_base_multiplier + guardsman_bonus_crit + weapon_bonus_crit ;
                     double new_base = base + crit_add;
 //                    extramsg += "<green> [✨+"+Debug.formatDecimal(crit_add)+"]</green>";
                     //            new_damage *= (crit_multiplier); //apply custom crit
@@ -237,18 +242,51 @@ public class CombatManager implements Listener {
                             //WHITE+victim.getName()+" "+*
                             "<dark_red>Crit: </dark_red><red>" +Debug.formatDecimal(base)+
 //                            (WHITE+" ["+BLUE+"🅱: "+Debug.formatDecimal(original_armor)+"]")+
+                                    " <yellow>[✨: +"+Debug.formatDecimal(crit_base_multiplier)+"]</yellow>"+
                                     " <aqua>[⚔: +"+Debug.formatDecimal(guardsman_bonus_crit)+"]</aqua>"+
-                                    " <yellow>[⚒: +"+Debug.formatDecimal(weapon_bonus_crit)+"]</yellow>"+
+                                    " <green>[⚒: +"+Debug.formatDecimal(weapon_bonus_crit)+"]</green>"+
 //                            (event.isCritical()? GREEN+" (CRIT!)":"")+
                                     " [❤ "+Debug.formatDecimal(new_base)+"]</red>",
                             "<gray>Critical hits now work in a blend of scalar and additive.\nThey have two main components:\n" +
                                     "<aqua>- Guardsman Influence</aqua> which adds crit damage linearly\n"+
-                                    "<yellow>- Opening Crit Influence</yellow> which has a baseline of "+opening_crit_baseline+"\n" +
+                                    "<green>- Opening Crit Influence</green> which has a baseline of "+opening_crit_baseline+"\n" +
                                     "blacksmiths can craft weapons with an opening crit bonus\n"+
-                                    "An <yellow>Opening Crit</yellow> is utilized when a player has not attacked in awhile.\n"
+                                    "An <green>Opening Crit</green> is utilized when a player has not attacked in awhile.\n"
                     );
                 }
             }
+        }
+
+
+        if(event.getEntity() instanceof Player) {
+            /**
+             * Damage Compressor
+             */
+//            double threshold = 7;
+//            double knee = 5.0;  // soft knee width
+//            double ratio = 1.5; // compression above knee
+//            double previous_base = event.getDamage(BASE);
+//            double compressed = compress(previous_base, threshold, knee, ratio);
+//            boolean was_compressed = false;
+//            if (Math.abs(compressed - previous_base) > 0.0001) {
+//                was_compressed = true;
+//                event.setDamage(BASE, compressed);
+//            }
+//
+//            String compression_msg = was_compressed ? ("<dark_red>Compressor:</dark_red> <red>" + Debug.formatDecimal(previous_base)
+//                    + " <gray>-></gray> "
+//                    + "[❤ " + Debug.formatDecimal(compressed) + "]</red>") : "<dark_gray>Uncompressed</dark_gray>";
+//            Debug.broadcast(
+//                    "damage",
+//                    //WHITE+victim.getName()+" "+*
+//                    compression_msg,
+//                    "<gray>The compressor basically squashes the damage to prevent absurdly high hits." +
+//                            " This helps with softening extreme damage modifiers such as Sharpness and Strength potions\n"
+//                            + "<red>This modifier is PVP only</red>\n"
+//                            + "threshold: <green>" + threshold + "</green>\n"
+//                            + "ratio: <green>" + ratio + "</green>\n"
+//                            + "knee: <green>" + knee + "</green>\n"
+//            );
         }
 
 
@@ -271,36 +309,6 @@ public class CombatManager implements Listener {
 
             }
         }
-
-
-        /**
-         * Damage Compressor
-         */
-        double threshold = 5;
-        double knee = 3.0;  // soft knee width
-        double ratio = 2.0;       // compression above knee
-        double previous_base = event.getDamage(BASE);
-        double compressed = compress(previous_base, threshold, knee, ratio);
-        boolean was_compressed = false;
-        if(Math.abs(compressed-previous_base)>0.0001) {
-            was_compressed = true;
-            event.setDamage(BASE, compressed);
-        }
-
-        String compression_msg = was_compressed?("<dark_red>Compressor:</dark_red> <red>"+Debug.formatDecimal(previous_base)
-                +" <gray>-></gray> "
-                +"[❤ "+Debug.formatDecimal(compressed)+"]</red>"):"<dark_gray>Uncompressed</dark_gray>";
-        Debug.broadcast(
-                "damage",
-                //WHITE+victim.getName()+" "+*
-                compression_msg,
-                "<gray>The compressor basically squashes the damage to prevent absurdly high hits." +
-                        "This helps with softening extreme damage modifiers such as Sharpness and Strength potions\n"
-                        +"treshold: <green>"+threshold+"</green>\n"
-                        +"ratio: <green>"+ratio+"</green>\n"
-                        +"knee: <green>"+knee+"</green>\n"
-        );
-
 
 
         //ABSORPTION BEHAVIOR
@@ -346,7 +354,7 @@ public class CombatManager implements Listener {
          */
         double DAMAGE_MINIMUM = 0;
         if(damager instanceof Player) {
-            DAMAGE_MINIMUM = 0.075 * original_base;
+            DAMAGE_MINIMUM = (0.075 * original_base) * (event.isCritical()?1.5:1.0);
             double total_final = calculateTotalDamage(event);
 //        Debug.broadcast("damage", "Pre-Minimu calculation: "+total_final);
             if (total_final <= DAMAGE_MINIMUM) {
