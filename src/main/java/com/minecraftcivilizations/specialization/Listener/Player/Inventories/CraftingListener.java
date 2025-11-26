@@ -38,10 +38,17 @@ public class CraftingListener implements Listener {
     private static final Set<Material> COMPLEX_ITEMS = Arrays.stream(Material.values())
             .filter(material -> {
                 String name = material.name();
-                if ((name.startsWith("IRON_") || name.startsWith("GOLDEN_") ||
-                        name.startsWith("DIAMOND_") || name.startsWith("NETHERITE_")) &&
-                        (name.endsWith("_PICKAXE") || name.endsWith("_AXE") ||
-                                name.endsWith("_SHOVEL") || name.endsWith("_HOE") || name.endsWith("_SWORD"))) {
+                if (
+                        (
+                                name.startsWith("IRON_") || name.startsWith("GOLDEN_") ||
+                                name.startsWith("DIAMOND_") || name.startsWith("NETHERITE_")
+                        )
+                                &&
+                        (
+                                name.endsWith("_PICKAXE") || name.endsWith("_AXE") ||
+                                name.endsWith("_SHOVEL") || name.endsWith("_HOE") || name.endsWith("_SWORD")
+                        )
+                ) {
                     return true;
                 }
                 return (name.startsWith("CHAINMAIL_") || name.startsWith("IRON_") ||

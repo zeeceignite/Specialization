@@ -30,6 +30,10 @@ public class RightClickListener implements Listener {
     public void onRightClick(PlayerInteractEvent event) {
         if (!(event.getAction() == Action.RIGHT_CLICK_BLOCK)) return;
         if(event.getClickedBlock() == null) return;
+        if(event.getClickedBlock().getType().equals(Material.SPAWNER)){
+            event.setCancelled(true);
+        }
+
         if (ReinforcementManager.isReinforced(event.getClickedBlock())) return;
 
         Player player = event.getPlayer();
