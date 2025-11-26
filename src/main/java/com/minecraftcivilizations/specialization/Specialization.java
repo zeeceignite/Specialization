@@ -73,7 +73,7 @@ public final class Specialization extends JavaPlugin {
     public static Logger logger;
     public ReviveListener reviveListener;
     //Holder for transient player data such as cooldowns
-    Map<UUID, PlayerUtil> playerUtilMap = new HashMap<>();
+    static Map<UUID, PlayerUtil> playerUtilMap = new HashMap<>();
     PaperCommandManager commandManager;
     @Getter
     private LocalNameGenerator localNameGenerator;
@@ -98,12 +98,13 @@ public final class Specialization extends JavaPlugin {
     }
 
     public static void message(Player player, String msg) {
-        PlayerUtil.message(player, msg);
+        PlayerUtil.message(player, msg, 0);
     }
 
     public static void message(Player player, Component msg) {
-        PlayerUtil.message(player, msg);
+        PlayerUtil.message(player, msg, 0);
     }
+
 
     public static Specialization getInstance() {
         return getPlugin(Specialization.class);
@@ -444,7 +445,7 @@ public final class Specialization extends JavaPlugin {
         return debug;
     }
 
-    public PlayerUtil getPlayerUtil(UUID uniqueId) {
+    public static PlayerUtil getPlayerUtil(UUID uniqueId) {
         return playerUtilMap.get(uniqueId);
     }
 

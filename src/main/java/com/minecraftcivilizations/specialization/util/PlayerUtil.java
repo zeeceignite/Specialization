@@ -19,6 +19,7 @@ import java.util.UUID;
  */
 public class PlayerUtil {
 //    public static Component LOGO = buildLogo();
+    private static Map<String, Long> messageCooldowns = new HashMap<>();
 
      public static Component buildLogo() {
         // Using a smooth gradient across the logo text
@@ -26,33 +27,40 @@ public class PlayerUtil {
         return MiniMessage.miniMessage().deserialize(logoGradient);
     }
 
+    /**
+     * Sends a message with an optional cooldown in seconds.
+     * If cooldownSeconds <= 0, no cooldown is applied.
+     */
 
-    public static void message(Player player, Object msg) {
-        // Logo + prefix component
+    public static void message(Player player, Object msg, double cooldownSeconds) {
+        String key = "msg_" + player.getUniqueId();
+
+        if (cooldownSeconds > 0) {
+            long now = System.currentTimeMillis();
+            if (messageCooldowns.containsKey(key) && now < messageCooldowns.get(key)) {
+                return; // still on cooldown
+            }
+            messageCooldowns.put(key, now + (long) (cooldownSeconds * 1000));
+        }
+
         Component prefix = MiniMessage.miniMessage().deserialize("<dark_gray> » ");
-        System.out.println("Adventure MiniMessage version: " +
-                net.kyori.adventure.text.minimessage.MiniMessage.class.getPackage().getImplementationVersion());
-
         Component messageComp;
 
         if (msg instanceof Component comp) {
             messageComp = comp;
         } else if (msg instanceof String str) {
-            // Convert legacy § codes to MiniMessage first
-            str = legacyToMini("<gray>"+str); //gray is default color
-            // Then parse MiniMessage (supports hex colors <#RRGGBB>)
+            str = legacyToMini("<gray>" + str);
             messageComp = MiniMessage.miniMessage().deserialize(str);
         } else {
             throw new IllegalArgumentException("Unsupported message type: " + msg.getClass());
         }
 
         player.sendMessage(buildLogo().append(prefix).append(messageComp));
-
-        ///only works for 1.21.9+
-//        Component testmsg = MiniMessage.miniMessage().deserialize("<sprite:blocks:item/diamond>");
-//        player.sendMessage(testmsg);
+    }
 
 
+    public static void message(Player player, Object msg) {
+        message(player, msg, 0);
     }
 
     /**

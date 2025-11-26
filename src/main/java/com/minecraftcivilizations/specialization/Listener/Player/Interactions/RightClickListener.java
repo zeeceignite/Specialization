@@ -5,6 +5,7 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -16,10 +17,14 @@ import org.bukkit.block.data.type.Bed;
 import org.bukkit.block.data.type.Door;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityInteractEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,6 +86,38 @@ public class RightClickListener implements Listener {
         }
 
     }
+
+    //force feed players as guardsmen
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onRightClickPlayer(PlayerInteractEntityEvent event) {
+        if (!(event.getRightClicked() instanceof Player target)) return;
+
+        Player player = event.getPlayer();
+        CustomPlayer cPlayer = CoreUtil.getPlayer(player);
+
+        // Guardsman check
+        if (cPlayer.getSkillLevel(SkillType.GUARDSMAN) <= 0) return;
+
+        ItemStack handItem = player.getInventory().getItemInMainHand();
+        if (!handItem.getType().isEdible()) return;
+
+        // Force feed: add 1 hunger
+        // Only feed if target is not full
+        if (!(target.getFoodLevel() < 20)) {
+            PlayerUtil.message(player, target.getName() + " cant seem to handle anymore food", 1);
+           return;
+        }
+
+        target.setFoodLevel(Math.min(target.getFoodLevel() + 2, 20));
+        // Play swing animation
+        player.swingHand(EquipmentSlot.HAND);
+
+        // Consume one item from hand
+        handItem.setAmount(handItem.getAmount() - 1);
+        PlayerUtil.message(player, "Force fed <gold>" + target.getName(), 1);
+        PlayerUtil.message(target, "<gold>" + target.getName() + "</gold>force fed you", 1);
+    }
+
 
     private List<Block> getMultiBlocks(Block block) {
         List<Block> blocks = new ArrayList<>();

@@ -1,13 +1,19 @@
 package com.minecraftcivilizations.specialization.Listener.Blocks;
 
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
+import io.papermc.paper.event.block.BlockBreakProgressUpdateEvent;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
@@ -130,6 +136,42 @@ public class ReinforcementProtectionListener implements Listener {
             }, 2L);
         }
     }
+
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBreak(BlockDamageEvent event) {
+        Block block = event.getBlock();
+
+        boolean reinforced = ReinforcementManager.isReinforced(block);
+        boolean ironType   = isIronBlock(block.getType());
+        boolean isBrick = isBrickBlock(block.getType());
+
+        if (!reinforced && !ironType && !isBrick) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+        Material item = player.getInventory().getItemInMainHand().getType();
+
+        if (!isPickaxe(item)) {
+            PlayerUtil.message(player, "Pickaxe is <gold>required</gold> to break reinforced blocks", 1);
+            event.setCancelled(true);
+        }
+    }
+
+    private boolean isPickaxe(Material mat) {
+        return mat.name().endsWith("_PICKAXE");
+    }
+
+    private boolean isIronBlock(Material mat) {
+        return mat.name().contains("IRON");
+    }
+
+    private boolean isBrickBlock(Material mat) {
+        return mat.name().contains("BRICKS");
+    }
+
+
 
 
     @EventHandler(priority = EventPriority.HIGH)

@@ -41,7 +41,8 @@ public class BreakBlockListener implements Listener {
 
         if (breakSpeedAttr != null) {
             breakSpeedAttr.setBaseValue(SpecializationConfig.getBlockHardnessConfig().get(event.getBlock().getType(), Double.class));
-            Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromBreakingConfig().get(event.getBlock().getType(), new TypeToken<>() {});
+            Pair<SkillType, Double> pair = SpecializationConfig.getXpGainFromBreakingConfig().get(event.getBlock().getType(), new TypeToken<>() {
+            });
             CustomPlayer player = CoreUtil.getPlayer(event.getPlayer().getUniqueId());
             BlockData blockData = event.getBlock().getBlockData();
 
@@ -72,7 +73,7 @@ public class BreakBlockListener implements Listener {
                 block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT));
                 player.sendMessage("§7Iron Reinforcement Broke");
             }
-             if (isLightlyReinforced(block)) {
+            if (isLightlyReinforced(block)) {
                 block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT));
                 player.sendMessage("§7Copper Reinforcement Broke");
 
@@ -88,18 +89,20 @@ public class BreakBlockListener implements Listener {
     public void minerListener(BlockBreakEvent event) {
         CustomPlayer player = CoreUtil.getPlayer(event.getPlayer());
         Material materialName = event.getBlock().getType();
-        SkillLevel skillRequired = SpecializationConfig.getCanMinerLvlBreakConfig().get(materialName.toString(), new TypeToken<>() {});
+        SkillLevel skillRequired = SpecializationConfig.getCanMinerLvlBreakConfig().get(materialName.toString(), new TypeToken<>() {
+        });
         if (skillRequired != null && player.getSkillLevel(SkillType.MINER) < skillRequired.getLevel()) {
             event.setDropItems(false);
-            if(event.getPlayer().getGameMode() == GameMode.SURVIVAL)
-            event.getPlayer().sendMessage("You are unable to mine this ore.");
+            if (event.getPlayer().getGameMode() == GameMode.SURVIVAL)
+                event.getPlayer().sendMessage("You are unable to mine this ore.");
         }
     }
 
     public void farmerListener(BlockBreakEvent event) {
         CustomPlayer player = CoreUtil.getPlayer(event.getPlayer());
         Material materialName = event.getBlock().getType();
-        SkillLevel skillRequired = SpecializationConfig.getCanFarmerBreakConfig().get(materialName.toString(), new TypeToken<>() {});
+        SkillLevel skillRequired = SpecializationConfig.getCanFarmerBreakConfig().get(materialName.toString(), new TypeToken<>() {
+        });
 
         if (skillRequired != null && player.getSkillLevel(SkillType.FARMER) < skillRequired.getLevel()) {
             event.setDropItems(false);
@@ -110,7 +113,7 @@ public class BreakBlockListener implements Listener {
         double chance = SpecializationConfig.getFarmerConfig().get("FARMER_GET_DROPS_CHANCE_" + player.getSkillLevelEnum(SkillType.FARMER), Double.class);
         double random = Math.random();
 
-        if(random < chance) {
+        if (random < chance) {
             event.setDropItems(true);
         } else if (event.getBlock().getBlockData() instanceof Ageable || otherFarmables.contains(materialName)) {
             event.setDropItems(false);
@@ -123,9 +126,11 @@ public class BreakBlockListener implements Listener {
         BlockData d = b.getBlockData();
         switch (d) {
             case Door door -> l.add(b.getRelative(door.getHalf() == Bisected.Half.TOP ? BlockFace.DOWN : BlockFace.UP));
-            case Bed bed -> l.add(b.getRelative(bed.getPart() == Bed.Part.HEAD ? bed.getFacing().getOppositeFace() : bed.getFacing()));
+            case Bed bed ->
+                    l.add(b.getRelative(bed.getPart() == Bed.Part.HEAD ? bed.getFacing().getOppositeFace() : bed.getFacing()));
             case Bisected bi -> l.add(b.getRelative(bi.getHalf() == Bisected.Half.TOP ? BlockFace.DOWN : BlockFace.UP));
-            default -> {}
+            default -> {
+            }
         }
         return l;
     }
