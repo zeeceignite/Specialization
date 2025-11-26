@@ -18,25 +18,20 @@ import java.util.UUID;
  * Player Cooldowns
  */
 public class PlayerUtil {
-    public static final Component LOGO = buildLogo();
+//    public static Component LOGO = buildLogo();
 
-    private static Component buildLogo() {
-        String colored = colorEachLetterMiniMsg(
-                "CivLabs",
-                new Color(155, 62, 20),
-                new Color(107, 38, 15),
-                new Color(129, 45, 15),
-                new Color(169, 74, 4),
-                new Color(162, 52, 2),
-                new Color(222, 112, 19),
-                new Color(145, 39, 39)
-        );
-        return MiniMessage.miniMessage().deserialize(colored);
+     public static Component buildLogo() {
+        // Using a smooth gradient across the logo text
+        String logoGradient = "<gradient:#708EFA:#5E4F9F>CivLabs</gradient>";
+        return MiniMessage.miniMessage().deserialize(logoGradient);
     }
+
 
     public static void message(Player player, Object msg) {
         // Logo + prefix component
         Component prefix = MiniMessage.miniMessage().deserialize("<dark_gray> » ");
+        System.out.println("Adventure MiniMessage version: " +
+                net.kyori.adventure.text.minimessage.MiniMessage.class.getPackage().getImplementationVersion());
 
         Component messageComp;
 
@@ -51,7 +46,13 @@ public class PlayerUtil {
             throw new IllegalArgumentException("Unsupported message type: " + msg.getClass());
         }
 
-        player.sendMessage(LOGO.append(prefix).append(messageComp));
+        player.sendMessage(buildLogo().append(prefix).append(messageComp));
+
+        ///only works for 1.21.9+
+//        Component testmsg = MiniMessage.miniMessage().deserialize("<sprite:blocks:item/diamond>");
+//        player.sendMessage(testmsg);
+
+
     }
 
     /**
