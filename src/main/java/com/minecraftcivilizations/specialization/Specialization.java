@@ -29,6 +29,7 @@ import com.minecraftcivilizations.specialization.Listener.Player.Inventories.Cra
 import com.minecraftcivilizations.specialization.Listener.Player.Inventories.FurnaceListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Inventories.StonecutterListener;
 import com.minecraftcivilizations.specialization.Listener.RepairingListener;
+import com.minecraftcivilizations.specialization.Listener.TimeSyncListener;
 import com.minecraftcivilizations.specialization.Listener.XpTransferBookListener;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Player.LocalNameGenerator;
@@ -134,8 +135,9 @@ public final class Specialization extends JavaPlugin {
         xpMonitoringCommand = new XPMonitoringCommand();
         pvpManager = new PVPManager(playerDownedListener, this);
         recipeBlocker = new RecipeBlocker();
-//    emoteListener = new EmoteListener(this);
+//      emoteListener = new EmoteListener(this);
 
+        getServer().getMessenger().registerIncomingPluginChannel(this, "civlabs:weathersync", new TimeSyncListener());
 
         setupCommands();
 
