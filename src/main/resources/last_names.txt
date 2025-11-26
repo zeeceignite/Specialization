@@ -61,11 +61,12 @@
 {Call|Rumble|Fanfare} [Sound]
 {Toll|Clatter|Racket} [Sound]
 {Vibration|Pulse|Reverberation} [Sound]
+{Lyric|Tune|Melody} [Mellow] [Sound]
 
 # Time
 {Moment|Phase|Tick} [Time] [Sound]
 {Eon|Continuum|Epoch} [Time] [Sound]
-{Cycle|Span|Pulse} [Time] [Sound]
+{Cycle|Span|Origin} [Time] [Sound]
 {Dusk|Sunset|Twilight} [Time] [Sound] [Visual] [Soft] [Cold]
 {Fleeting|Transient|Ephemeral} [Time] [Sound]
 {Endless|Perpetual|Infinity} [Time] [Sound] [Cold]
@@ -101,27 +102,26 @@
 {Grasshopper|Beetle|Wasp|Firefly} [Plains]
 {Wind|Petal|Willow|Seed} [Plains]
 {Thistle|Clover|Fern|Reed} [Plains]
-{Pebble|Stream|Pond|Burrow} [Plains]
+{Stream|Pond} [Plains]
 {Sun|Mist|Shadow|Light} [Plains]
 {Cloud|Rain|Dew|Storm} [Plains]
 {Echo|Song|Whisper|Drift} [Plains]
-{Trail|Hill|Nest|Burrow} [Plains]
+{Trail|Hill} [Plains]
 {Stone|Feather|Root|Twig} [Plains]
 {Glow|Dust|Shade|Horizon} [Plains]
 
 # Mellow
 {Sunshine|name} [Mellow]
+{Serenity|Concord} [Mellow] [Soft]
 
-# Numbers
-{One|Two|Three|Four|Five|Six|Seven|Eight|Nine|Ten|} [Number]
+# Old
+{Ruin|Tomb|Fossil} [Old] [Time]
+{Obelisk|Amber|Rock} [Rock] [Light] [Dark]
 
-# Referances
-{White} [BreakingBad]
-{Heart|Face} [NickNames]
-{Guy|Dude} [Terrorist}
-{NotFound|Unknown|Error|Unexpected} [Error]
-{Frog|Cat|Roll|Cat} [Internet]
-{Baby|Devil} [Funny]
+# Forest
+{Maple|Hazel} [Forest]
+{Willow|Twig|Branch} [Forest]
+
 
 #defualt -
 Echo

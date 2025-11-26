@@ -86,13 +86,15 @@
 {Echo|Faint|Ethereal|Noisy} [Sound]
 
 # Time
-{Moment|Pulse|Flicker} [Time]
+{Instant|Flickering} [Time]
 {Fleeting|Ephemeral|Momentary} [Time]
-{Dimming|Waning|Brief} [Time]
+{Dimming|Waning|Ending} [Time]
 {Eon|Perpetual|Endless} [Time]
 {Passing|Transient|Fading} [Time]
 {Cycling|Rotating|Spanning} [Time]
-{Epoch|Chronos|Continuum} [Time]
+{Continue|Starting} [Time]
+{Relative|Nocturnal}
+
 
 # Air
 {Gusting|Whirling|Swirling} [Air]
@@ -110,6 +112,7 @@
 {Celestial|Ethereal|Astral} [Space]
 {Orbiting|Unbounded} [Space]
 {Ecliptic|Steamy|Unfathomed} [Space]
+{Lunar|Solar} [Space]
 
 # Visual
 {Shimmering|Glinting|Twinkling} [Visual]
@@ -119,9 +122,16 @@
 {Glowing|Illuminated|Brightened} [Visual]
 {Flickering|Glinting|Glistening} [Visual]
 {Veiled|Hazy|Obscured} [Visual]
+{Mottled|Marbled|Speckled} [Visual]
 
 # Mellow
 {lowercased} [Mellow]
+{Alternating|Oscilating|Harmonic} [Motion]
+
+
+{Gentle|Careful|Calm} [Mellow]
+{Idyllic|Light|Pure} [Mellow]
+{Warm|Smooth} [Mellow]
 
 # Meadow
 {Suspicious|Calming} [Plains]
@@ -141,16 +151,12 @@
 {Boundless|Serene|Gentle} [Plains]
 {Drifting|Waving|Breezy} [Plains]
 
-# numbers
-{One|Two|Three|Four|Five|Six|Seven|Eight|Nine|Ten|} [Number]
+# Forest
+{Flowery|Verdant|Lush} [Forest]
+{Wisened|Tangled} [Forest]
+{Billowing|Buzzing|Rustling} [Forest]
+{Ashen|Oaken|Pale} [Forest]
 
-# References
-{Walter|Mr} [BreakingBad]
-{Half|Withered} [NickNames]
-{Chill|Nice} [Terrorist}
-{404|500|Unknown|Expected|Null|Syntax} [Error]
-{Pepe|Keyboard|Rick|Grumpy|Nyan} [Internet]
-{Barbaric|Lawful} [Funny]
 
 #defualts -
 Foggy
