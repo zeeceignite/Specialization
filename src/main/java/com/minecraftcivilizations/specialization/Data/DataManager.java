@@ -50,7 +50,7 @@ public class DataManager {
                     "<gold>If you are suspicious of any xp loss,\nplease compare this to <bold>/class</bold></gold>\n"
             + timestamp;
             Component hover_msg = MiniMessage.miniMessage().deserialize(msg);
-            Component final_msg = MiniMessage.miniMessage().deserialize("Saving... <gold>[</gold><gray>Details</gray><gold>]</gold>")
+            Component final_msg = MiniMessage.miniMessage().deserialize("<underlined>[Saved Data]...</underlined>")
                     .hoverEvent(HoverEvent.showText(hover_msg)).clickEvent(ClickEvent.suggestCommand("/class"));
             PlayerUtil.message(player, final_msg);
         }

@@ -1,6 +1,7 @@
 package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -86,7 +87,18 @@ public class PhantomRideListener implements Listener {
         ItemStack item = player.getInventory().getItemInMainHand();
         Material type = item.getType();
 
-        if (!isValid(type)) return;
+        if (!isValid(type)){
+            if (Math.random() < 0.005) { // 0.5% chance
+                PlayerUtil.message(player, "Phantom doesn't have time for that...", 10);
+            } else if (Math.random() < 0.004) { // 0.4% chance
+                PlayerUtil.message(player, "Phantom is too lost for that...", 10);
+            } else if (Math.random() < 0.014){ // 1.4% chance
+                PlayerUtil.message(player, "Phantom seems to like metal...", 10);
+            } else {
+                PlayerUtil.message(player, "Phantom doesn't like that...", 2);
+            }
+            return;
+        }
         event.setCancelled(true);
 
         int progress = phantom.getPersistentDataContainer().getOrDefault(tameProgressKey, PersistentDataType.INTEGER, 0);

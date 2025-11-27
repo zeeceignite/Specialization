@@ -66,7 +66,7 @@ public class ReviveListener implements Listener {
             new InjuryItem("Severe Bleeding", Material.RED_DYE),
             new InjuryItem("Damaged Muscle", Material.BEEF),
             new InjuryItem("Infected Injury", Material.NETHER_WART),
-            new InjuryItem("Damaged Brain", Material.NETHER_WART_BLOCK),
+            new InjuryItem("Brain Tumor", Material.NETHER_WART_BLOCK),
             new InjuryItem("Broken Bone", Material.BONE_MEAL)
     );
     private static final List<HealthyItem> HEALTHY_ITEMS = List.of(
@@ -477,7 +477,10 @@ public class ReviveListener implements Listener {
 
         boolean forced = forcedDismount.remove(rider.getUniqueId());
 
-        boolean isDowned = rider.getPersistentDataContainer().get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE) == 1;
+        boolean isDowned = rider.getPersistentDataContainer().getOrDefault(
+                new NamespacedKey(Specialization.getInstance(), "is_downed"),
+                PersistentDataType.BYTE, (byte)0) == 1; //default to not downed
+
         boolean isLeashed = false;
         if (rider.getVehicle() instanceof Sheep proxy) {
             isLeashed = proxy.getPersistentDataContainer().has(new NamespacedKey(Specialization.getInstance(), "leash_proxy"), PersistentDataType.BOOLEAN);

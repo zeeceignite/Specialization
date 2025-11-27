@@ -12,12 +12,10 @@ import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -31,6 +29,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -84,7 +84,9 @@ public class EmoteCommand extends BaseCommand implements Listener {
     @CommandPermission("civlabs.emotes")
     public void onList(Player sender) {
         PlayerUtil.message(sender ,"§7==== §eAvailable Emotes §7====");
-        PlayerUtil.message(sender ,"§9● §f Sit");
+        PlayerUtil.message(sender ,"§9● §b Sit");
+        PlayerUtil.message(sender ,"§9● §b Cannonball");
+        PlayerUtil.message(sender ,"§9● §b Fart");
         for (CustomItem item : CustomItemManager.getInstance().getCustomItems()) {
             if (!(item instanceof EmoteItem)) continue;
             boolean enabled = item.isEnabled();
@@ -318,6 +320,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
         return world.spawn(loc, ArmorStand.class, as -> {
             as.setGravity(true);
             as.setInvulnerable(true);
+            as.setPersistent(false);
             as.setVisible(false);
             as.setCollidable(false);
             as.setBasePlate(true);
@@ -365,6 +368,79 @@ public class EmoteCommand extends BaseCommand implements Listener {
             player.leaveVehicle();
         }
     }
+
+    @CommandAlias("cannonball|cb")
+    @Description("Launch yourself like a cannonball")
+    public void onCannonball(Player player) {
+        if (player.isInsideVehicle()) {
+            PlayerUtil.message(player, "You can't do that right now.");
+            return;
+        }
+
+        Block support = findSolidBlockBelow(player);
+        if (support == null) {
+            PlayerUtil.message(player, "No solid block below you.");
+            return;
+        }
+
+        double offsetY = 1.02;
+        Location spawnLoc = support.getLocation().add(0.5, offsetY, 0.5);
+        spawnLoc.setYaw(player.getLocation().getYaw());
+        spawnLoc.setPitch(0);
+
+        ArmorStand seat = spawnSitStand(player, spawnLoc);
+        seat.addPassenger(player);
+        sittingStands.put(player, seat);
+
+        // Apply forward and upward velocity
+        @NotNull Vector direction = player.getLocation().getDirection().normalize().multiply(0.6); // forward strength
+        direction.setY(0.5); // upward strength
+        seat.setVelocity(direction);
+    }
+
+    @CommandAlias("fart|f")
+    @Description("Perform a stinky emote")
+    public void onFart(Player player) {
+
+        // REAL sneaking start
+        player.setSneaking(true);
+
+        // Fart in 1 second
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!player.isOnline()) return;
+
+            Location loc = player.getLocation().clone().add(0, 0.5, 0);
+            loc.add(loc.getDirection().multiply(-0.5));
+
+            player.getWorld().spawnParticle(
+                    Particle.DUST,
+                    loc,
+                    20,
+                    0.1, 0.1, 0.1,
+                    0,
+                    new Particle.DustOptions(Color.fromRGB(0,155,0), 1f)
+            );
+
+            // Base pitch
+            float basePitch = 0.4f;
+            // Variance range (±0.1)
+            float variance = 0.2f;
+
+            // Randomized pitch
+            float randomPitch = basePitch + (float)((Math.random() * 2 - 1) * variance);
+
+            player.getWorld().playSound(loc, Sound.ENTITY_PIG_AMBIENT, SoundCategory.PLAYERS,0.1f, randomPitch);
+            player.getWorld().playSound(loc, Sound.ENTITY_PARROT_IMITATE_PIGLIN, SoundCategory.PLAYERS, 0.5f, randomPitch);
+
+        }, 20L);
+
+        // Uncrouch after 25 ticks total
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            player.setSneaking(false);
+        }, 25L);
+    }
+
+
 
 
 
