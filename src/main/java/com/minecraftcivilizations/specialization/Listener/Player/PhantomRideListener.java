@@ -82,6 +82,7 @@ public class PhantomRideListener implements Listener {
     @EventHandler
     public void onFeedPhantom(PlayerInteractEntityEvent event) {
         if (!(event.getRightClicked() instanceof Phantom phantom)) return;
+        if (!event.getPlayer().isOp()) return; //disabled for now
 
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
