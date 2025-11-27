@@ -70,6 +70,7 @@ public class Recipes {
         // ----- EXTRA RECIPES -----
         successCount += addNetherRecipes(failedExceptions, skippedDuplicateCount);
         addUnobtainableRecipes(failedExceptions, skippedDuplicateCount);
+        addArmorTrims(failedExceptions, skippedDuplicateCount);
 
         // ----- FINAL LOG -----
         Bukkit.getLogger().info("[Recipes] Registration complete. Total successes: " + successCount);
