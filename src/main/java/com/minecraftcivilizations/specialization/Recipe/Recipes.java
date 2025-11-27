@@ -158,7 +158,7 @@ public class Recipes {
         ShapedRecipe bolt = new ShapedRecipe(boltTrim, new ItemStack(Material.BOLT_ARMOR_TRIM_SMITHING_TEMPLATE));
         bolt.shape("ABA", "BBB", "AAA");
         bolt.setIngredient('A', Material.LIGHT_BLUE_DYE);
-        bolt.setIngredient('G', Material.COPPER_BLOCK);
+        bolt.setIngredient('B', Material.COPPER_BLOCK);
         if (!recipeExists(boltTrim, bolt.getResult())) {
             try { Bukkit.addRecipe(bolt, true); }
             catch (Exception e) { failedExceptions.add("bolt_trim (" + e.getMessage() + ")"); }
