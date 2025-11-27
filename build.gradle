@@ -57,10 +57,12 @@ dependencies {
     implementation("net.kyori:adventure-text-minimessage:4.25.0")
     implementation("net.kyori:adventure-api:4.25.0")
     implementation("net.kyori:adventure-text-serializer-legacy:4.25.0")
+
     shadow "co.aikar:acf-paper:0.5.1-SNAPSHOT"
     shadow "org.mongojack:mongojack:5.0.3"
 
     compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "5.3.0"
+    compileOnly("net.luckperms:api:5.4")
     compileOnly("org.projectlombok:lombok:1.18.38")
     annotationProcessor("org.projectlombok:lombok:1.18.38")
 

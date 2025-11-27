@@ -20,6 +20,9 @@ import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.node.Node;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
@@ -195,10 +198,20 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
                 player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 100, 1);
                 player.sendMessage(LoreUtils.createLoreLine("You have leveled up " + skill_name + ", you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
                 Debug.broadcast("levelup", player.getName()+" leveled up "+skill_name);
+                if(currentLevel == 3 && skillType == SkillType.LIBRARIAN){
+                    LuckPerms api = Specialization.getInstance().getLpAPI();
+                    User user = api.getPlayerAdapter(Player.class).getUser(player);
+                    user.data().add(Node.builder("permissionhere").value(true).build());
+                }
             } else {
                 player.playSound(player, Sound.ITEM_BOTTLE_FILL_DRAGONBREATH, 100F, 1.5F);
                 player.sendMessage(LoreUtils.createLoreLine("Your " + skill_name + "ing ability has deteriorated, you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
-            }
+
+                if(currentLevel < 3 && skillType == SkillType.LIBRARIAN){
+                    LuckPerms api = Specialization.getInstance().getLpAPI();
+                    User user = api.getPlayerAdapter(Player.class).getUser(player);
+                    user.data().add(Node.builder("permissionhere").value(true).build());
+                }            }
             while (currentLevel > 0) {
                 Set<NamespacedKey> recipes =
                         SpecializationConfig.getUnlockedRecipesConfig().get(skillType.name() + "_" + SkillLevel.getSkillLevelFromInt(currentLevel), new TypeToken<>(){});

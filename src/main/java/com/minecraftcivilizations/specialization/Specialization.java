@@ -53,6 +53,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
+import net.luckperms.api.LuckPerms;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -60,6 +61,7 @@ import org.bukkit.GameRule;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
@@ -111,6 +113,9 @@ public final class Specialization extends JavaPlugin {
         return getPlugin(Specialization.class);
     }
 
+    @Getter
+    public LuckPerms lpAPI;
+
     @Override
     public void onEnable() {
         logger = getLogger();
@@ -123,6 +128,11 @@ public final class Specialization extends JavaPlugin {
         MongoConnection.startDBConnection();
         // TODO PDC-xp-hotfix
         //  Skill.InitializeSkillKeys(this);
+
+        RegisteredServiceProvider<LuckPerms> provider = Bukkit.getServicesManager().getRegistration(LuckPerms.class);
+        if (provider != null) {
+            lpAPI = provider.getProvider();
+        }
 
 
         localChat = new LocalChat();
