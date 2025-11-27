@@ -196,7 +196,7 @@ public class PhantomRideListener implements Listener {
                     phantom.setAware(false);
                     phantom.setSilent(true);
                     phantom.getPersistentDataContainer().remove(ownerKey);
-                    player.sendMessage("start ride");
+//                    player.sendMessage("start ride");
                     startPhantomRide(player, phantom);
                 }
             };
@@ -317,7 +317,7 @@ public class PhantomRideListener implements Listener {
 
                     // === Speed debug display ===
                     double speedBlocksPerSec = velocity.length() * 20.0; // 20 ticks = 1 second
-                    player.sendActionBar(String.format("§bSpeed: §f%.2f blocks/s", speedBlocksPerSec));
+//                    player.sendActionBar(String.format("§bSpeed: §f%.2f blocks/s", speedBlocksPerSec));
 
                     float visualPitch = Math.max(-visualMaxPitch, Math.min(visualMaxPitch, pitch));
                     phantom.setRotation(yaw, -visualPitch);

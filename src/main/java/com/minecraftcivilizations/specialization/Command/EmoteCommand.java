@@ -8,10 +8,16 @@ import com.minecraftcivilizations.specialization.CustomItem.CustomItem;
 import com.minecraftcivilizations.specialization.CustomItem.CustomItemManager;
 import com.minecraftcivilizations.specialization.CustomItem.EmoteItem;
 import com.minecraftcivilizations.specialization.CustomItem.PacketListener;
+import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Stairs;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -22,9 +28,12 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
+
 
 /** @author Jfrogy*/
 
@@ -37,6 +46,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
 
     public EmoteItem clap_item = new EmoteItem("clap_crossbow", "§bClap", EmoteItem.EmoteType.CLAP, "clap", this);
     public EmoteItem point_item = new EmoteItem("point_crossbow", "§bPoint", EmoteItem.EmoteType.POINT, "point", this);
+    private final NamespacedKey sitKey = new NamespacedKey(Specialization.getInstance(), "sitemote");
 
     private final Set<Player> silenced_players = new HashSet<>();
 
@@ -55,48 +65,49 @@ public class EmoteCommand extends BaseCommand implements Listener {
 
         if (hand.getType().isAir()) {
             player.getInventory().setItemInMainHand(emoteItem.createItemStack(1, player));
-            player.sendMessage(successMsg);
+            PlayerUtil.message(player ,successMsg);
             return;
         }
 
         CustomItem current = CustomItemManager.getInstance().getCustomItem(hand);
         if (current instanceof EmoteItem) {
             player.getInventory().setItemInMainHand(emoteItem.createItemStack(1, player));
-            player.sendMessage(successMsg);
+            PlayerUtil.message(player ,successMsg);
             return;
         }
 
-        player.sendMessage("§cMain hand must be empty to emote");
+        PlayerUtil.message(player ,"Main hand must be empty to emote");
     }
 
     @CommandAlias("emotes|e")
     @Description("Lists all emote-type custom items")
     @CommandPermission("civlabs.emotes")
     public void onList(Player sender) {
-        sender.sendMessage("§7==== §eAvailable Emotes §7====");
+        PlayerUtil.message(sender ,"§7==== §eAvailable Emotes §7====");
+        PlayerUtil.message(sender ,"§9● §f Sit");
         for (CustomItem item : CustomItemManager.getInstance().getCustomItems()) {
             if (!(item instanceof EmoteItem)) continue;
             boolean enabled = item.isEnabled();
             String icon = enabled ? "§9●" : "§8●";
-            sender.sendMessage(icon + " §f" + " §7" + item.getDisplayName());
+            PlayerUtil.message(sender ,icon + " §f" + " §7" + item.getDisplayName());
         }
     }
 
     @CommandAlias("point|p")
     public void givePoint(Player player) {
         if (CustomItemManager.getInstance().getCustomItem("point_crossbow").isEnabled()) {
-            giveEmote(player, point_item, "§9You are now pointing...");
+            giveEmote(player, point_item, "You are now pointing...");
         } else {
-            player.sendMessage("§cEmote is disabled");
+            PlayerUtil.message(player ,"§cEmote is disabled");
         }
     }
 
     @CommandAlias("clap|c")
     public void giveClap(Player player) {
         if (CustomItemManager.getInstance().getCustomItem("clap_crossbow").isEnabled()) {
-            giveEmote(player, clap_item, "§9You can now clap... (Tap Right Click)");
+            giveEmote(player, clap_item, "§9You can now clap... (Tap Right-Click)");
         } else {
-            player.sendMessage("§cEmote is disabled");
+            PlayerUtil.message(player ,"§cEmote is disabled");
         }
     }
 
@@ -119,7 +130,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
             return;
         }
         if (seatBlocks.containsKey(block)) {
-            player.sendMessage("§cSomeone is already sitting here.");
+            PlayerUtil.message(player ,"§cSomeone is already sitting here.");
             return;
         }
         sit(player, block);
@@ -151,13 +162,19 @@ public class EmoteCommand extends BaseCommand implements Listener {
 
     @EventHandler
     public void onSneak(PlayerToggleSneakEvent e) {
-        if (e.isSneaking()) cancelSeat(e.getPlayer());
+        if (e.isSneaking()) {
+            cancelSeat(e.getPlayer());
+            cancelRide(e.getPlayer());
+        }
     }
+
 
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
         cancelSeat(e.getPlayer());
+        cancelRide(e.getPlayer());
     }
+
 
     @EventHandler
     public void onBlockPhysics(BlockPhysicsEvent e) {
@@ -256,6 +273,95 @@ public class EmoteCommand extends BaseCommand implements Listener {
 
         loc.add(xOffset, yOffset, zOffset);
         return loc;
+    }
+
+    @CommandAlias("sit|s")
+    @Description("Sit anywhere using an invisible mini armor stand")
+    public void onSit(Player player) {
+
+        if (player.isInsideVehicle()) {
+            PlayerUtil.message(player ,"You cant do that right now");
+            return;
+        }
+
+        Block support = findSolidBlockBelow(player);
+        if (support == null) {
+            PlayerUtil.message(player ,"No solid block below you");
+            return;
+        }
+
+        // consistent offset above the block
+        double offsetY = 1.02; // adjust as needed
+
+        Location spawnLoc = support.getLocation().add(0.5, offsetY, 0.5);
+
+        // match player facing
+        spawnLoc.setYaw(player.getLocation().getYaw());
+        spawnLoc.setPitch(0);
+
+
+        ArmorStand seat = spawnSitStand(player, spawnLoc);
+
+        seat.addPassenger(player);
+    }
+
+
+    private ArmorStand spawnSitStand(Player player, Location loc) {
+        World world = player.getWorld();
+
+        // Set facing direction to player
+        loc.setYaw(player.getLocation().getYaw());
+        loc.setPitch(0f);
+
+        return world.spawn(loc, ArmorStand.class, as -> {
+            as.setGravity(true);
+            as.setInvulnerable(true);
+            as.setVisible(false);
+            as.setCollidable(false);
+            as.setBasePlate(false);
+           PlayerUtil.message(player, "falldistance:" + as.getFallDistance());
+            as.getAttribute(Attribute.SCALE).setBaseValue(0.001);
+
+            // mark with PDC
+            as.getPersistentDataContainer().set(sitKey, PersistentDataType.BYTE, (byte) 1);
+        });
+    }
+
+    private Block findSolidBlockBelow(Player player) {
+        Location loc = player.getLocation();
+        World world = loc.getWorld();
+
+        int startY = loc.getBlockY() + 1; // head level
+        int minY = Math.max(world.getMinHeight(), startY - 3); // max 3 blocks down
+
+        for (int y = startY; y >= minY; y--) {
+            Block b = world.getBlockAt(loc.getBlockX(), y, loc.getBlockZ());
+            if (b.getType().isSolid()) {
+                return b;
+            }
+        }
+
+        return null;
+    }
+
+
+
+
+
+    private void cancelRide(Player player) {
+        if (!player.isInsideVehicle()) return;
+
+        Entity vehicle = player.getVehicle();
+        player.leaveVehicle();
+
+        if (vehicle instanceof ArmorStand as) {
+            PersistentDataContainer pdc = as.getPersistentDataContainer();
+            Byte flag = pdc.get(sitKey, PersistentDataType.BYTE);
+
+            if (flag != null && flag == (byte) 1) {
+                as.remove();
+            }
+        }
     }
 
 

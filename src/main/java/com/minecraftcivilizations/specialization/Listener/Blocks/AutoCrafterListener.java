@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.Listener.Blocks;
 
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -46,7 +47,7 @@ public class AutoCrafterListener implements Listener {
         double radius = 8.0;
         for (Player player : loc.getWorld().getPlayers()) {
             if (player.getLocation().distanceSquared(loc) <= radius * radius) {
-                player.sendMessage("§c" + msg);
+                PlayerUtil.message(player,"§c" + msg);
             }
         }
     }

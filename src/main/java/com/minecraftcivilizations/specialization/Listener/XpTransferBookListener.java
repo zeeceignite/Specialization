@@ -6,6 +6,7 @@ import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.SmartEntity.SmartEntity;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import org.bukkit.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -84,14 +85,14 @@ public class XpTransferBookListener implements Listener {
 
             if(item.hasItemMeta() && item.getItemMeta() instanceof BookMeta m){
                 if(m.getPersistentDataContainer().has(XP_BLESSED_KEY)){
-                    player.sendMessage(ChatColor.RED + "Book is already blessed");
+                    PlayerUtil.message(player, "Book is already blessed");
                     return;
                 }
             }
 
             CustomPlayer cp = CoreUtil.getPlayer(player.getUniqueId());
             if (cp.getSkillLevel(SkillType.LIBRARIAN) < 3) {
-                player.sendMessage(ChatColor.RED + "You must be a Librarian level 3 to bless XP books.");
+                PlayerUtil.message(player, "You must be a Librarian level 3 to bless XP books.");
                 return;
             }
 
@@ -117,7 +118,7 @@ public class XpTransferBookListener implements Listener {
             item.setItemMeta(book_meta);
 
             player.getWorld().playSound(player.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, SoundCategory.AMBIENT, VOLUME, PITCH +random(-PITCH_VARIANCE, PITCH_VARIANCE));
-            player.sendMessage(ChatColor.GREEN + "Book blessed successfully!");
+            PlayerUtil.message(player,ChatColor.GREEN + "Book blessed successfully!");
 
             Bukkit.getScheduler().runTask(Specialization.getInstance(), new Runnable() {
                 @Override
@@ -142,7 +143,7 @@ public class XpTransferBookListener implements Listener {
             is.setAmount(is.getAmount()-1);
 
             Debug.broadcast("xpbook", WHITE+player.getName()+" consumed an XP book of "+GREEN+xp+WHITE+" xp");
-            player.sendMessage(ChatColor.GREEN + "You absorbed " + xp + " XP from the book!");
+            PlayerUtil.message(player,ChatColor.GREEN + "You absorbed " + xp + " XP from the book!");
             new SmartEntitySpiral(player, xp);
         }
     }
@@ -171,7 +172,7 @@ public class XpTransferBookListener implements Listener {
 
         long now = System.currentTimeMillis();
         if (now - lastSignTime.getOrDefault(player.getUniqueId(), 0L) < 1000L) {
-            player.sendMessage(ChatColor.RED + "Wait a moment before signing another book.");
+            PlayerUtil.message(player,ChatColor.RED + "Wait a moment before signing another book.");
             return;
         }
         lastSignTime.put(player.getUniqueId(), now);
@@ -179,7 +180,7 @@ public class XpTransferBookListener implements Listener {
         BookMeta meta = event.getNewBookMeta();
         List<String> pages = meta.getPages();
         if (pages.isEmpty()) {
-            player.sendMessage(ChatColor.RED + "bruv what are you doing?");
+            PlayerUtil.message(player,ChatColor.RED + "bruv what are you doing?");
             return;
         }
 
@@ -193,7 +194,7 @@ public class XpTransferBookListener implements Listener {
         try{
             requestedLevels = Math.max(0, Integer.valueOf(number_string));
         }catch(NumberFormatException e){
-            player.sendMessage(ChatColor.RED + "Invalid number entered: "+number_string);
+            PlayerUtil.message(player,ChatColor.RED + "Invalid number entered: "+number_string);
             return;
         }
 
@@ -210,7 +211,7 @@ public class XpTransferBookListener implements Listener {
 
         //Check if any xp is being transfered
         if(totalXp<=0){
-            player.sendMessage(ChatColor.RED+"You have no xp to transfer. Go play the game.");
+            PlayerUtil.message(player,ChatColor.RED+"You have no xp to transfer. Go play the game.");
             return;
         }
 
@@ -235,7 +236,7 @@ public class XpTransferBookListener implements Listener {
         Debug.broadcast("xpbook", WHITE+"Xp Book created by "+YELLOW+player.getName()+YELLOW+" with "+GREEN+totalXp+WHITE+" xp");
 
         if (player.getInventory().getItemInMainHand().getType() != Material.WRITABLE_BOOK){
-            player.sendMessage(GREEN + "Stop trying to exploit nerd...");
+            PlayerUtil.message(player,GREEN + "Stop trying to exploit nerd...");
             return;
         }
 
@@ -256,7 +257,7 @@ public class XpTransferBookListener implements Listener {
 
         player.getInventory().setItemInMainHand(xpBook);
         player.updateInventory();
-        player.sendMessage(GREEN + "XP sealed into book: " + totalXp + " points.");
+        PlayerUtil.message(player,GREEN + "XP sealed into book: " + totalXp + " points.");
     }
 
     private static int getTotalXpForLevel(int level) {

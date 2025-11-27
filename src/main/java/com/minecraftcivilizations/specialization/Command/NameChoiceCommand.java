@@ -3,6 +3,7 @@ package com.minecraftcivilizations.specialization.Command;
 import com.minecraftcivilizations.specialization.Player.LocalNameGenerator;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
@@ -31,13 +32,13 @@ public class NameChoiceCommand extends BaseCommand {
     @Syntax("/setnameoption confirm <chosenName>")
     public void confirm(Player sender, String chosenName) {
         if (chosenName == null || chosenName.isEmpty()) {
-            sender.sendMessage("§cYou must specify a name to confirm.");
+            PlayerUtil.message(sender,"§cYou must specify a name to confirm.");
             return;
         }
 
         // Use the helper from LocalNameGenerator
         if (!nameGenerator.canSelectTempName(sender)) {
-            sender.sendMessage("§cYou can no longer confirm a temporary name because you have played longer than 10 minutes");
+            PlayerUtil.message(sender, "§cYou can no longer confirm a temporary name because you have played longer than 10 minutes");
             return;
         }
 
@@ -45,7 +46,7 @@ public class NameChoiceCommand extends BaseCommand {
 
         boolean confirmed = nameGenerator.confirmNameChoice(uuid, chosenName);
         if (!confirmed) {
-            sender.sendMessage("§cInvalid choice or you have already chosen a name");
+            PlayerUtil.message(sender,"§cInvalid choice or you have already chosen a name");
             return;
         }
 
@@ -67,7 +68,7 @@ public class NameChoiceCommand extends BaseCommand {
             // simulate writing and sealing a name
             sender.playSound(sender.getLocation(), Sound.ITEM_BOOK_PAGE_TURN, SoundCategory.UI,  0.8f, 1.2f);
             sender.playSound(sender.getLocation(), Sound.ITEM_BOOK_PUT, SoundCategory.UI,  0.5f, 1f);
-            bukkitPlayer.sendMessage(
+            PlayerUtil.message(sender,
                     Component.text("Your name is now: ", NamedTextColor.GREEN)
                             .append(newName.color(NamedTextColor.GOLD))
             );
@@ -80,7 +81,7 @@ public class NameChoiceCommand extends BaseCommand {
     @Syntax("/setnameoption <tempName>")
     public void choose(Player sender, String tempName) {
         if (tempName == null || tempName.isEmpty()) {
-            sender.sendMessage("§cYou must specify a temporary name to select.");
+            PlayerUtil.message(sender,"§cYou must specify a temporary name to select.");
             return;
         }
 
@@ -91,7 +92,7 @@ public class NameChoiceCommand extends BaseCommand {
                 .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(
                         "/setnameoption confirm " + tempName));
 
-        sender.sendMessage(
+        PlayerUtil.message(sender,
                 Component.text("Are you sure? ", NamedTextColor.WHITE)
                         .append(Component.text( tempName, NamedTextColor.GOLD))
                         .append(Component.text(" →", NamedTextColor.AQUA))

@@ -3,6 +3,7 @@ package com.minecraftcivilizations.specialization.Command;
 import com.minecraftcivilizations.specialization.Player.LocalNameGenerator;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
@@ -45,38 +46,38 @@ public class RerollNameCommand extends BaseCommand {
         // Permission and limit checks
         if (target.equals(sender)) {
             if (!sender.hasPermission("specialization.rerollname.self") && !isBypass) {
-                sender.sendMessage("§cYou do not have permission to reroll your own name.");
+                PlayerUtil.message(sender,"§cYou do not have permission to reroll your own name.");
                 return;
             }
 
             Long timestamp = sender.getPersistentDataContainer().get(rerollKey, PersistentDataType.LONG);
             if (timestamp != null && !isBypass) {
-                sender.sendMessage("§cYou have already rerolled your name.");
+                PlayerUtil.message(sender,"§cYou have already rerolled your name.");
                 return;
             }
 
             if (System.currentTimeMillis() - sender.getFirstPlayed() > MAX_REROLL_TIME_MS && !isBypass) {
-                sender.sendMessage("§cYou can only reroll your username within the first 15 minutes of playtime.");
+                PlayerUtil.message(sender,"§cYou can only reroll your username within the first 15 minutes of playtime.");
                 return;
             }
         } else if (!sender.hasPermission("specialization.rerollname.other") && !isBypass) {
-            sender.sendMessage("§cYou do not have permission to reroll other players' names.");
+            PlayerUtil.message(sender,"§cYou do not have permission to reroll other players' names.");
             return;
         }
 
         try {
             String newNameStr = nameGenerator.nextName();
             if (target.equals(sender)) {
-                sender.sendMessage("§aSuccessfully rerolled §c" + target.getName() + "§6 -> §f" + newNameStr);
+                PlayerUtil.message(sender,"§aSuccessfully rerolled §c" + target.getName() + "§6 -> §f" + newNameStr);
             } else {
-                sender.sendMessage("§aSuccessfully rerolled §c" + target.getName() + " §6 -> §f" + newNameStr);
+                PlayerUtil.message(sender,"§aSuccessfully rerolled §c" + target.getName() + " §6 -> §f" + newNameStr);
                 target.sendMessage("§eYour username has been rerolled " + target.getName() + "§6 ->§f " + newNameStr);
             }
 
             applyName(sender, target, newNameStr, now);
 
         } catch (NoSuchElementException e) {
-            sender.sendMessage("§cCould not generate a new unique name. Try again later.");
+            PlayerUtil.message(sender,"§cCould not generate a new unique name. Try again later.");
         }
     }
 
@@ -94,17 +95,17 @@ public class RerollNameCommand extends BaseCommand {
         desiredName = desiredName.replace(" ", "_").replaceAll("[^a-zA-Z0-9_]", "");
 
         if (desiredName.length() > 16) {
-            sender.sendMessage("§cThe name cannot exceed 16 characters.");
+            PlayerUtil.message(sender,"§cThe name cannot exceed 16 characters.");
             return;
         }
 
         if (desiredName.isEmpty()) {
-            sender.sendMessage("§cThe name must contain at least one valid character.");
+            PlayerUtil.message(sender,"§cThe name must contain at least one valid character.");
             return;
         }
 
         long now = System.currentTimeMillis();
-        sender.sendMessage("§aSuccessfully set custom name §6" + target.getName() + " §6-> §f" + desiredName);
+        PlayerUtil.message(sender,"§aSuccessfully set custom name §6" + target.getName() + " §6-> §f" + desiredName);
         applyName(sender, target, desiredName, now);
 
         if (!target.equals(sender)) {
@@ -141,7 +142,7 @@ public class RerollNameCommand extends BaseCommand {
 
         Player target = Bukkit.getPlayerExact(targetName);
         if (target == null) {
-            sender.sendMessage("§cPlayer '" + targetName + "' not found.");
+            PlayerUtil.message(sender,"§cPlayer '" + targetName + "' not found.");
             return null;
         }
         return target;

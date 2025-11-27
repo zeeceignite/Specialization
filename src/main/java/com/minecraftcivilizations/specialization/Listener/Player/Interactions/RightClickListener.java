@@ -63,7 +63,7 @@ public class RightClickListener implements Listener {
                 if (success) {
                     player.swingHand(EquipmentSlot.HAND);
                     player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
-                    player.sendMessage(Component.text("§7Lightly Reinforced").color(NamedTextColor.WHITE).decorations(Set.of(TextDecoration.BOLD, TextDecoration.ITALIC), false));
+                    PlayerUtil.message(player, Component.text("§7Lightly Reinforced").color(NamedTextColor.WHITE).decorations(Set.of(TextDecoration.BOLD, TextDecoration.ITALIC), false));
                 }
             }
         } else if (player.getInventory().getItemInMainHand().getType() == Material.IRON_INGOT) {
@@ -80,7 +80,7 @@ public class RightClickListener implements Listener {
                 if (success) {
                     player.swingHand(EquipmentSlot.HAND);
                     player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
-                    player.sendMessage(Component.text("§7Heavily Reinforced").color(NamedTextColor.WHITE).decorations(Set.of(TextDecoration.BOLD, TextDecoration.ITALIC), false));
+                    PlayerUtil.message(player, Component.text("§7Heavily Reinforced").color(NamedTextColor.WHITE).decorations(Set.of(TextDecoration.BOLD, TextDecoration.ITALIC), false));
                 }
             }
         }

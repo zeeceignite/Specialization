@@ -30,8 +30,8 @@ public class SuicideCommand extends BaseCommand {
         if (player.getVehicle() != null) {
             // Riding another player
             if (player.getVehicle() instanceof Player) {
-                player.sendMessage(Component.text(
-                        "§0[§0§6CivLabs§0]§8 » §7You may not perform this action while being carried"));
+                PlayerUtil.message(player, Component.text(
+                        "You may not perform this action while being carried"));
                 return;
             }
 
@@ -42,8 +42,8 @@ public class SuicideCommand extends BaseCommand {
                 if (snowman.getPersistentDataContainer().has(leashKey, PersistentDataType.BYTE)) {
                     Byte isLeashed = snowman.getPersistentDataContainer().get(leashKey, PersistentDataType.BYTE);
                     if (isLeashed != null && isLeashed == 1) {
-                        player.sendMessage(Component.text(
-                                "§0[§0§6CivLabs§0]§8 » §7You may not perform this action while leashed"));
+                        PlayerUtil.message(player, Component.text(
+                                "You may not perform this action while leashed"));
                         return;
                     }
                 }
@@ -54,7 +54,7 @@ public class SuicideCommand extends BaseCommand {
                 .get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE);
 
         if (downed == null || downed == 0) {
-            player.sendMessage(Component.text("§0[§0§6CivLabs§0]§8 » §7You can only use this command while downed.").color(NamedTextColor.RED));
+            PlayerUtil.message(player,Component.text("You can only use this command while downed.").color(NamedTextColor.RED));
             return;
         }
 

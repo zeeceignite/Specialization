@@ -120,7 +120,7 @@ public class PVPManager implements Listener, CommandExecutor {
         }
 
 
-        plugin.getLogger().info("<grey>[Combat] " + damager.getName() + " hit " + victim.getName());
+//        plugin.getLogger().info("<grey>[Combat] " + damager.getName() + " hit " + victim.getName());
 
         // Reset zombie timer if hit
         UUID victimId = victim.getUniqueId();
@@ -137,7 +137,7 @@ public class PVPManager implements Listener, CommandExecutor {
     private void addCombatBar(Player p) {
         BossBar bar = combatBars.get(p.getUniqueId());
         if (bar == null) {
-            bar = Bukkit.createBossBar("§7Combat Log Timer", BarColor.RED, BarStyle.SEGMENTED_10);
+            bar = Bukkit.createBossBar("§7Combat-Log Timer", BarColor.RED, BarStyle.SEGMENTED_10);
             bar.addPlayer(p);
             combatBars.put(p.getUniqueId(), bar);
         }

@@ -4,6 +4,7 @@ import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.commands.annotation.Default;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,7 +16,7 @@ public class NotifyRestartCommand extends BaseCommand {
     @CommandPermission("civlabs.notifyrestart")
     public void notifyRestart(@NotNull Integer min) {
         Bukkit.getOnlinePlayers().forEach(player -> {
-            player.sendRichMessage("<red>This server will be shutting down in the next <white> " + min + "<red> min!");
+            PlayerUtil.message(player,"<red>This server will be shutting down in the next <white> " + min + "<red> min(s)!");
         });
     }
 

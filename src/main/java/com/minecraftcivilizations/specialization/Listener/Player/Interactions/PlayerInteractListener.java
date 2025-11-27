@@ -7,6 +7,7 @@ import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemLore;
 import io.papermc.paper.registry.RegistryAccess;
@@ -135,7 +136,7 @@ public class PlayerInteractListener implements Listener {
 
         // ✅ Prevent blessing if item already has any enchantments
         if (!e.getItem().getEnchantments().isEmpty()) {
-            e.getPlayer().sendMessage(ChatColor.RED + "This item has already been blessed.");
+            PlayerUtil.message(e.getPlayer(), ChatColor.RED + "This item has already been blessed.");
             return;
         }
 
@@ -156,7 +157,7 @@ public class PlayerInteractListener implements Listener {
                 .toList();
 
         if (validEnchants.isEmpty()) {
-            e.getPlayer().sendMessage(ChatColor.RED + "This item cannot be blessed further.");
+            PlayerUtil.message(e.getPlayer(), ChatColor.RED + "This item cannot be blessed further.");
             return;
         }
 
@@ -177,7 +178,7 @@ public class PlayerInteractListener implements Listener {
         e.getPlayer().getInventory().getItemInOffHand()
                 .setAmount(e.getPlayer().getInventory().getItemInOffHand().getAmount() - 1);
 
-        e.getPlayer().sendMessage(ChatColor.GOLD + "✨ Your " + typeName.replace("_", " ") + " has been blessed with " + enchantDisplay + " " + finalLevel + "!");
+        PlayerUtil.message(e.getPlayer(), ChatColor.GOLD + "✨ Your " + typeName.replace("_", " ") + " has been blessed with " + enchantDisplay + " " + finalLevel + "!");
     }
 
 

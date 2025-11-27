@@ -63,7 +63,7 @@ public class RepairingListener implements Listener {
         int hungerCost = 1;
         if (player.getFoodLevel() < hungerCost) {
             event.setCancelled(true);
-            player.sendMessage(GRAY + "Food needed to repair this");
+            PlayerUtil.message(player, "Food needed to repair this");
             return;
         }
 
@@ -71,7 +71,7 @@ public class RepairingListener implements Listener {
         int xpCost = 1;
         if (!PlayerUtil.tryConsumeXp(player, xpCost)) {
             event.setCancelled(true);
-            player.sendMessage(GRAY + "XP needed to repair this");
+            PlayerUtil.message(player,"XP needed to repair this");
             return;
         }
 
