@@ -31,6 +31,7 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
     private final Monster monster;
     private float breakAmount = 0;
     private Block block;
+    private boolean hardBlock = false;
     private Collection<Player> nearbyPlayers;
     private static final Random random = new Random();
 
@@ -60,11 +61,11 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
             if(result == null || result.getHitBlock() == null) return false;
         }
 
-
         block = result.getHitBlock();
         if (ReinforcementManager.isReinforced(block)) return false;
         List<String> deniedBlocks = SpecializationConfig.getMobConfig().get("BLOCK_BREAK_IGNORE_LIST_REGEX", new TypeToken<>(){});
-        return block.getType() != Material.AIR && deniedBlocks.stream().noneMatch(it -> block.getType().name().matches(it));
+        if(deniedBlocks.stream().anyMatch(it -> block.getType().name().matches(it))) hardBlock = true;
+        return block.getType() != Material.AIR;
     }
 
     @Override
@@ -86,7 +87,17 @@ public class BreakBlockMobGoal implements Goal<@NotNull Monster> {
         breakAmount += breakPercentagePerTick / 100f;
         if(breakAmount >= 1.0){
             if(block.getBlockData().getMaterial().getHardness() > 0) {
+                boolean isCracked = false;
+                if(block.getType().equals(Material.CRACKED_STONE_BRICKS)) {
+                    isCracked = true;
+                }
                 block.breakNaturally(true, false);
+                if(isCracked) {
+                    block.setType(Material.DIRT);
+                }
+                else if(hardBlock){
+                    block.setType(Material.CRACKED_STONE_BRICKS);
+                }
             }
             return;
         }
