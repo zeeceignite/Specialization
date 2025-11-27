@@ -151,4 +151,178 @@ public class Recipes {
             catch (Exception e) { failedExceptions.add("bell (" + e.getMessage() + ")"); }
         } else skippedDuplicateCount++;
     }
+
+    public static void addArmorTrims(List<String> failedExceptions, int skippedDuplicateCount) {
+        NamespacedKey boltTrim = new NamespacedKey(Specialization.getInstance(), "bolt_trim");
+        ShapedRecipe bolt = new ShapedRecipe(boltTrim, new ItemStack(Material.BOLT_ARMOR_TRIM_SMITHING_TEMPLATE));
+        bolt.shape("ABA", "BBB", "AAA");
+        bolt.setIngredient('A', Material.LIGHT_BLUE_DYE);
+        bolt.setIngredient('G', Material.COPPER_BLOCK);
+        if (!recipeExists(boltTrim, bolt.getResult())) {
+            try { Bukkit.addRecipe(bolt, true); }
+            catch (Exception e) { failedExceptions.add("bolt_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey flowTrim = new NamespacedKey(Specialization.getInstance(), "flow_trim");
+        ShapedRecipe flow = new ShapedRecipe(flowTrim, new ItemStack(Material.FLOW_ARMOR_TRIM_SMITHING_TEMPLATE));
+        flow.shape("ABA", "BBA", "ABB");
+        flow.setIngredient('A', Material.LIGHT_BLUE_DYE);
+        flow.setIngredient('B', Material.LIGHT_BLUE_TERRACOTTA);
+        if (!recipeExists(flowTrim, flow.getResult())) {
+            try { Bukkit.addRecipe(flow, true); }
+            catch (Exception e) { failedExceptions.add("flow_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey tideTrim = new NamespacedKey(Specialization.getInstance(), "tide_trim");
+        ShapedRecipe tide = new ShapedRecipe(tideTrim, new ItemStack(Material.TIDE_ARMOR_TRIM_SMITHING_TEMPLATE));
+        tide.shape("ABA", "ABA", "BAB");
+        tide.setIngredient('A', Material.DEAD_BRAIN_CORAL_BLOCK);
+        tide.setIngredient('B', Material.LIGHT_BLUE_TERRACOTTA);
+        if (!recipeExists(tideTrim, tide.getResult())) {
+            try { Bukkit.addRecipe(tide, true); }
+            catch (Exception e) { failedExceptions.add("tide_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey silenceTrim = new NamespacedKey(Specialization.getInstance(), "silence_trim");
+        ShapedRecipe silence = new ShapedRecipe(silenceTrim, new ItemStack(Material.SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE));
+        silence.shape("ABC", "ABA", "CBA");
+        silence.setIngredient('A', Material.DEEPSLATE);
+        silence.setIngredient('B', Material.LIGHT_BLUE_DYE);
+        silence.setIngredient('C', Material.SCULK);
+        if (!recipeExists(silenceTrim, silence.getResult())) {
+            try { Bukkit.addRecipe(silence, true); }
+            catch (Exception e) { failedExceptions.add("silence_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey wardTrim = new NamespacedKey(Specialization.getInstance(), "ward_trim");
+        ShapedRecipe ward = new ShapedRecipe(wardTrim, new ItemStack(Material.WARD_ARMOR_TRIM_SMITHING_TEMPLATE));
+        ward.shape("ABA", "BAB", "BBB");
+        ward.setIngredient('A', Material.LIGHT_BLUE_DYE);
+        ward.setIngredient('B', Material.DEEPSLATE);
+        if (!recipeExists(wardTrim, ward.getResult())) {
+            try { Bukkit.addRecipe(ward, true); }
+            catch (Exception e) { failedExceptions.add("ward_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey snoutTrim = new NamespacedKey(Specialization.getInstance(), "snout_trim");
+        ShapedRecipe snout = new ShapedRecipe(snoutTrim, new ItemStack(Material.SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE));
+        snout.shape("AAA", "BAB", "AAA");
+        snout.setIngredient('A', Material.BLACKSTONE);
+        snout.setIngredient('B', Material.LIGHT_BLUE_DYE);
+        if (!recipeExists(snoutTrim, snout.getResult())) {
+            try { Bukkit.addRecipe(snout, true); }
+            catch (Exception e) { failedExceptions.add("snout_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey raiserTrim = new NamespacedKey(Specialization.getInstance(), "raiser_trim");
+        ShapedRecipe raiser = new ShapedRecipe(raiserTrim, new ItemStack(Material.RAISER_ARMOR_TRIM_SMITHING_TEMPLATE));
+        raiser.shape("ABB", "BAB", "BBA");
+        raiser.setIngredient('A', Material.LIGHT_BLUE_DYE);
+        raiser.setIngredient('B', Material.TERRACOTTA);
+        if (!recipeExists(raiserTrim, raiser.getResult())) {
+            try { Bukkit.addRecipe(raiser, true); }
+            catch (Exception e) { failedExceptions.add("raiser_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey shaperTrim = new NamespacedKey(Specialization.getInstance(), "shaper_trim");
+        ShapedRecipe shaper = new ShapedRecipe(shaperTrim, new ItemStack(Material.SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE));
+        shaper.shape("AAB", "BBB", "BAA");
+        shaper.setIngredient('A', Material.TERRACOTTA);
+        shaper.setIngredient('B', Material.LIGHT_BLUE_DYE);
+        if (!recipeExists(shaperTrim, shaper.getResult())) {
+            try { Bukkit.addRecipe(shaper, true); }
+            catch (Exception e) { failedExceptions.add("shaper_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey hostTrim = new NamespacedKey(Specialization.getInstance(), "host_trim");
+        ShapedRecipe host = new ShapedRecipe(hostTrim, new ItemStack(Material.HOST_ARMOR_TRIM_SMITHING_TEMPLATE));
+        host.shape("ABA", "ABB", "ABA");
+        host.setIngredient('A', Material.TERRACOTTA);
+        host.setIngredient('B', Material.LIGHT_BLUE_DYE);
+        if (!recipeExists(hostTrim, host.getResult())) {
+            try { Bukkit.addRecipe(host, true); }
+            catch (Exception e) { failedExceptions.add("host_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey wildTrim = new NamespacedKey(Specialization.getInstance(), "wild_trim");
+        ShapedRecipe wild = new ShapedRecipe(wildTrim, new ItemStack(Material.WILD_ARMOR_TRIM_SMITHING_TEMPLATE));
+        wild.shape("AAA", "BBB", "AAA");
+        wild.setIngredient('A', Material.MOSSY_COBBLESTONE);
+        wild.setIngredient('B', Material.LIGHT_BLUE_DYE);
+        if (!recipeExists(wildTrim, wild.getResult())) {
+            try { Bukkit.addRecipe(wild, true); }
+            catch (Exception e) { failedExceptions.add("wild_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey coastTrim = new NamespacedKey(Specialization.getInstance(), "coast_trim");
+        ShapedRecipe coast = new ShapedRecipe(coastTrim, new ItemStack(Material.COAST_ARMOR_TRIM_SMITHING_TEMPLATE));
+        coast.shape("ABA", "CAC", "CCC");
+        coast.setIngredient('A', Material.LIGHT_BLUE_DYE);
+        coast.setIngredient('B', Material.DEAD_TUBE_CORAL);
+        coast.setIngredient('C', Material.COBBLED_DEEPSLATE);
+        if (!recipeExists(coastTrim, coast.getResult())) {
+            try { Bukkit.addRecipe(coast, true); }
+            catch (Exception e) { failedExceptions.add("coast_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey duneTrim = new NamespacedKey(Specialization.getInstance(), "dune_trim");
+        ShapedRecipe dune = new ShapedRecipe(duneTrim, new ItemStack(Material.DUNE_ARMOR_TRIM_SMITHING_TEMPLATE));
+        dune.shape("AAA", "BBB", "AAA");
+        dune.setIngredient('A', Material.LIGHT_BLUE_DYE);
+        dune.setIngredient('B', Material.SANDSTONE);
+        if (!recipeExists(duneTrim, dune.getResult())) {
+            try { Bukkit.addRecipe(dune, true); }
+            catch (Exception e) { failedExceptions.add("dune_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey eyeTrim = new NamespacedKey(Specialization.getInstance(), "eye_trim");
+        ShapedRecipe eye = new ShapedRecipe(eyeTrim, new ItemStack(Material.EYE_ARMOR_TRIM_SMITHING_TEMPLATE));
+        eye.shape("ABA", "BAB", "ABA");
+        eye.setIngredient('A', Material.SANDSTONE);
+        eye.setIngredient('B', Material.LIGHT_BLUE_DYE);
+        if (!recipeExists(eyeTrim, eye.getResult())) {
+            try { Bukkit.addRecipe(eye, true); }
+            catch (Exception e) { failedExceptions.add("eye_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey sentryTrim = new NamespacedKey(Specialization.getInstance(), "sentry_trim");
+        ShapedRecipe sentry = new ShapedRecipe(sentryTrim, new ItemStack(Material.SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE));
+        sentry.shape("ABA", "BAB", "ABA");
+        sentry.setIngredient('A', Material.COBBLESTONE);
+        sentry.setIngredient('B', Material.LIGHT_BLUE_DYE);
+        if (!recipeExists(sentryTrim, sentry.getResult())) {
+            try { Bukkit.addRecipe(sentry, true); }
+            catch (Exception e) { failedExceptions.add("sentry_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey vexTrim = new NamespacedKey(Specialization.getInstance(), "vex_trim");
+        ShapedRecipe vex = new ShapedRecipe(vexTrim, new ItemStack(Material.VEX_ARMOR_TRIM_SMITHING_TEMPLATE));
+        vex.shape("ABB", "BAB", "BBA");
+        vex.setIngredient('A', Material.LIGHT_BLUE_DYE);
+        vex.setIngredient('B', Material.COBBLESTONE);
+        if (!recipeExists(vexTrim, vex.getResult())) {
+            try { Bukkit.addRecipe(vex, true); }
+            catch (Exception e) { failedExceptions.add("vex_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey wayfinderTrim = new NamespacedKey(Specialization.getInstance(), "wayfinder_trim");
+        ShapedRecipe wayfinder = new ShapedRecipe(wayfinderTrim, new ItemStack(Material.WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE));
+        wayfinder.shape("AAA", "ABA", "BAB");
+        wayfinder.setIngredient('A', Material.TERRACOTTA);
+        wayfinder.setIngredient('B', Material.LIGHT_BLUE_DYE);
+        if (!recipeExists(wayfinderTrim, wayfinder.getResult())) {
+            try { Bukkit.addRecipe(wayfinder, true); }
+            catch (Exception e) { failedExceptions.add("wayfinder_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+
+        NamespacedKey spireTrim = new NamespacedKey(Specialization.getInstance(), "spire_trim");
+        ShapedRecipe spire = new ShapedRecipe(spireTrim, new ItemStack(Material.SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE));
+        spire.shape("AAA", "ABA", "AAA");
+        spire.setIngredient('A', Material.PINK_CONCRETE);
+        spire.setIngredient('B', Material.LIGHT_BLUE_DYE);
+        if (!recipeExists(spireTrim, spire.getResult())) {
+            try { Bukkit.addRecipe(spire, true); }
+            catch (Exception e) { failedExceptions.add("spire_trim (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
+    }
 }
