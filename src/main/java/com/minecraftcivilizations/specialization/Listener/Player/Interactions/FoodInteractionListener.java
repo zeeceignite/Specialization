@@ -6,6 +6,7 @@ import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Item.CustomItem;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -53,13 +54,13 @@ public class FoodInteractionListener implements Listener {
 
                     // Prevent blessing of golden apples and enchanted golden apples
                     if (item.getType() == Material.GOLDEN_APPLE || item.getType() == Material.ENCHANTED_GOLDEN_APPLE) {
-                        player.sendMessage(ChatColor.RED + "Golden apples cannot be blessed!");
+                        PlayerUtil.message(player,ChatColor.RED + "Golden apples cannot be blessed!");
                         event.setCancelled(true);
                         return;
                     }
 
                     if (player.getFoodLevel() < 10) {
-                        player.sendMessage(ChatColor.RED + "You need more hunger to bless food");
+                        PlayerUtil.message(player,ChatColor.RED + "You need more hunger to bless food");
                         event.setCancelled(true);
                         return;
                     }
@@ -70,7 +71,7 @@ public class FoodInteractionListener implements Listener {
                         if (meta != null && meta.hasLore()) {
                             for (String line : meta.getLore()) {
                                 if (ChatColor.stripColor(line).toLowerCase().contains("blessed")) {
-                                    player.sendMessage(ChatColor.RED + "This food is already blessed!");
+                                    PlayerUtil.message(player,ChatColor.RED + "This food is already blessed!");
                                     event.setCancelled(true);
                                     return;
                                 }
@@ -89,10 +90,10 @@ public class FoodInteractionListener implements Listener {
                             player.getInventory().addItem(singleItem);
                         } else {
                             player.getWorld().dropItemNaturally(player.getLocation(), singleItem);
-                            player.sendMessage(ChatColor.YELLOW + "Your inventory is full! The blessed food was dropped.");
+                            PlayerUtil.message(player,ChatColor.YELLOW + "Your inventory is full! The blessed food was dropped.");
                         }
                         customPlayer.addSkillXp(SkillType.HEALER, blessXp);
-                        player.sendMessage(ChatColor.GOLD + "You have blessed one " + getItemName(singleItem));
+                        PlayerUtil.message(player,ChatColor.GOLD + "You have blessed one " + getItemName(singleItem));
                     }
 
                     event.setCancelled(true);
@@ -136,14 +137,14 @@ public class FoodInteractionListener implements Listener {
     private void giveKelpEffects(Player player){
         if(new Random().nextDouble() < .1) {
             player.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 20 * 6, 1));
-            player.sendRichMessage("<#456e55>You feel a little seasick from eating the kelp.");
+            PlayerUtil.message(player,"<#456e55>You feel a little seasick from eating the kelp.");
         }
     }
 
     private void giveGoldenAppleEffects(Player player){
         if(new Random().nextDouble() < .2) {
             player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 20 * 60, 2));
-            player.sendRichMessage("<#dbae32>You feel solidified by the golden nature of the apple.");
+            PlayerUtil.message(player,"<#dbae32>You feel solidified by the golden nature of the apple.");
         }
     }
 
@@ -235,7 +236,7 @@ public class FoodInteractionListener implements Listener {
             if (currentMaxHealth < normalMaxHealth) {
                 double newMaxHealth = Math.min(normalMaxHealth, currentMaxHealth + healthRestoreAmount);
                 Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(newMaxHealth);
-                player.sendMessage(ChatColor.GREEN + "You feel your vitality returning! Max health restored to " + (int) newMaxHealth);
+                PlayerUtil.message(player,ChatColor.GREEN + "You feel your vitality returning! Max health restored to " + (int) newMaxHealth);
             }
         }
     }

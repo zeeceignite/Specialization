@@ -3,6 +3,7 @@ package com.minecraftcivilizations.specialization.Data;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import lombok.Getter;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import net.kyori.adventure.text.Component;
@@ -49,9 +50,9 @@ public class DataManager {
                     "<gold>If you are suspicious of any xp loss,\nplease compare this to <bold>/class</bold></gold>\n"
             + timestamp;
             Component hover_msg = MiniMessage.miniMessage().deserialize(msg);
-            Component final_msg = MiniMessage.miniMessage().deserialize("Saving Player Data: <gold>[</gold><gray>Details</gray><gold>]</gold>")
+            Component final_msg = MiniMessage.miniMessage().deserialize("Saving... <gold>[</gold><gray>Details</gray><gold>]</gold>")
                     .hoverEvent(HoverEvent.showText(hover_msg)).clickEvent(ClickEvent.suggestCommand("/class"));
-            player.sendMessage(final_msg);
+            PlayerUtil.message(player, final_msg);
         }
 
         // TODO Future note for CivCore : Make sure you handle exceptions with e.printStackTrace(); so we can figure out when things go wrong.

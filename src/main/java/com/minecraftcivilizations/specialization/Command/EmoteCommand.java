@@ -232,6 +232,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
         cancelSeat(event.getPlayer());
+        cancelRide(event.getPlayer());
         if (event.getPlayer().isInsideVehicle()) event.getPlayer().leaveVehicle();
     }
     private Location getSeatLocation(Block block) {
@@ -274,7 +275,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
         loc.add(xOffset, yOffset, zOffset);
         return loc;
     }
-
+    private final Map<Player, ArmorStand> sittingStands = new HashMap<>();
     @CommandAlias("sit|s")
     @Description("Sit anywhere using an invisible mini armor stand")
     public void onSit(Player player) {
@@ -303,6 +304,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
         ArmorStand seat = spawnSitStand(player, spawnLoc);
 
         seat.addPassenger(player);
+        sittingStands.put(player, seat);
     }
 
 
@@ -318,9 +320,10 @@ public class EmoteCommand extends BaseCommand implements Listener {
             as.setInvulnerable(true);
             as.setVisible(false);
             as.setCollidable(false);
-            as.setBasePlate(false);
-           PlayerUtil.message(player, "falldistance:" + as.getFallDistance());
-            as.getAttribute(Attribute.SCALE).setBaseValue(0.001);
+            as.setBasePlate(true);
+            as.setSmall(true);
+            as.setArms(false);
+            as.getAttribute(Attribute.SCALE).setBaseValue(0.01);
 
             // mark with PDC
             as.getPersistentDataContainer().set(sitKey, PersistentDataType.BYTE, (byte) 1);
@@ -346,23 +349,24 @@ public class EmoteCommand extends BaseCommand implements Listener {
 
 
 
-
-
     private void cancelRide(Player player) {
-        if (!player.isInsideVehicle()) return;
+        ArmorStand seat = sittingStands.remove(player);
 
-        Entity vehicle = player.getVehicle();
-        player.leaveVehicle();
-
-        if (vehicle instanceof ArmorStand as) {
-            PersistentDataContainer pdc = as.getPersistentDataContainer();
+        if (seat != null && seat.isValid()) {
+            PersistentDataContainer pdc = seat.getPersistentDataContainer();
             Byte flag = pdc.get(sitKey, PersistentDataType.BYTE);
 
             if (flag != null && flag == (byte) 1) {
-                as.remove();
+                seat.remove();
             }
         }
+
+        if (player.isInsideVehicle()) {
+            player.leaveVehicle();
+        }
     }
+
+
 
 
 }

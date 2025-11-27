@@ -158,7 +158,7 @@ public class ArmorEquipAttributes implements Listener {
                 meta = current.getItemMeta();
 //                ItemStackUtils.setLoreLine(meta, 2, DARK_GRAY+"Crafted by "+GRAY+player.getName());
                 current.setItemMeta(meta);
-                player.sendMessage("You've crafted extra light-weight armor!");
+                PlayerUtil.message(player,"You've crafted extra light-weight armor!");
             }
         }else{
             current = ArmorEquipAttributes.applyArmorStats(modified, -1, BLUE);

@@ -12,6 +12,7 @@ import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import com.minecraftcivilizations.specialization.util.LoreUtils;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -147,10 +148,10 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         boolean negative = xp<0;
         String color = (negative)?"red":"green";
         if(negative) {
-            player.sendMessage("Negative XP Warning: " + skillType.name() + ": " + skill.getXp() + " (+ " + ((xp > 0) ? ChatColor.GREEN : ChatColor.RED) + xp + ")");
+            PlayerUtil.message(player,"XP LOSS: " + skillType.name() + ": " + skill.getXp() + " (+ " + ((xp > 0) ? ChatColor.GREEN : ChatColor.RED) + xp + ")");
         }
         Component simple_xp_msg = MiniMessage.miniMessage().deserialize(
-                "<white>"+skill.getXp()+"</white> " +
+                "<gray>"+skill.getXp()+"</gray> " +
                 "<"+color+">(" +(negative?"":"+") +xp+")</"+color+"> " +
                 "<gray>"+getDisplayName(skillType)+"</gray>");
 
@@ -193,11 +194,11 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
             String skill_name = SkillType.getDisplayName(skillType);
             if (previousLevel < currentLevel) {
                 player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 100, 1);
-                player.sendMessage(LoreUtils.createLoreLine("You have leveled up " + skill_name + ", you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
+                PlayerUtil.message(player, LoreUtils.createLoreLine("You have leveled up " + skill_name + ", you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
                 Debug.broadcast("levelup", player.getName()+" leveled up "+skill_name);
             } else {
                 player.playSound(player, Sound.ITEM_BOTTLE_FILL_DRAGONBREATH, 100F, 1.5F);
-                player.sendMessage(LoreUtils.createLoreLine("Your " + skill_name + "ing ability has deteriorated, you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
+                PlayerUtil.message(player, LoreUtils.createLoreLine("Your " + skill_name + "ing ability has deteriorated, you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
             }
             while (currentLevel > 0) {
                 Set<NamespacedKey> recipes =

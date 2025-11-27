@@ -7,6 +7,7 @@ import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -71,11 +72,11 @@ public class BreakBlockListener implements Listener {
         if (Math.random() < 0.5) {
             if (isHeavilyReinforced(block)) {
                 block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT));
-                player.sendMessage("§7Iron Reinforcement Broke");
+                PlayerUtil.message(player,"Iron Reinforcement Broke");
             }
             if (isLightlyReinforced(block)) {
                 block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT));
-                player.sendMessage("§7Copper Reinforcement Broke");
+                PlayerUtil.message(player,"Copper Reinforcement Broke");
 
             }
         }
@@ -94,7 +95,7 @@ public class BreakBlockListener implements Listener {
         if (skillRequired != null && player.getSkillLevel(SkillType.MINER) < skillRequired.getLevel()) {
             event.setDropItems(false);
             if (event.getPlayer().getGameMode() == GameMode.SURVIVAL)
-                event.getPlayer().sendMessage("You are unable to mine this ore.");
+                PlayerUtil.message(event.getPlayer(),"You are unable to mine this ore.");
         }
     }
 
@@ -106,7 +107,7 @@ public class BreakBlockListener implements Listener {
 
         if (skillRequired != null && player.getSkillLevel(SkillType.FARMER) < skillRequired.getLevel()) {
             event.setDropItems(false);
-            event.getPlayer().sendMessage(org.bukkit.ChatColor.RED + "You are unable to farm this");
+            PlayerUtil.message(event.getPlayer(), org.bukkit.ChatColor.RED + "You are unable to farm this");
         }
 
         List<Material> otherFarmables = List.of(Material.COCOA_BEANS, Material.SUGAR_CANE, Material.CACTUS, Material.MELON, Material.PUMPKIN);

@@ -71,7 +71,7 @@ public class RerollNameCommand extends BaseCommand {
                 PlayerUtil.message(sender,"§aSuccessfully rerolled §c" + target.getName() + "§6 -> §f" + newNameStr);
             } else {
                 PlayerUtil.message(sender,"§aSuccessfully rerolled §c" + target.getName() + " §6 -> §f" + newNameStr);
-                target.sendMessage("§eYour username has been rerolled " + target.getName() + "§6 ->§f " + newNameStr);
+                PlayerUtil.message(target,"§eYour username has been rerolled " + target.getName() + "§6 ->§f " + newNameStr);
             }
 
             applyName(sender, target, newNameStr, now);
@@ -109,7 +109,7 @@ public class RerollNameCommand extends BaseCommand {
         applyName(sender, target, desiredName, now);
 
         if (!target.equals(sender)) {
-            target.sendMessage("§aYour name has been set to: §f" + desiredName);
+            PlayerUtil.message(sender,"§aYour name has been set to: §f" + desiredName);
         }
     }
 

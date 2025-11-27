@@ -6,6 +6,7 @@ import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -141,7 +142,7 @@ public class Bandage extends CustomItem {
         }
 
         if (healer.getFoodLevel() < 3) {
-            healer.sendMessage("§0[§0§6CivLabs§0]§8 » §7You're too hungry to preform this action");
+            PlayerUtil.message(healer,"You're too hungry to preform this action");
             return;
         }
 
