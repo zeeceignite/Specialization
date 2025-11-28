@@ -229,7 +229,7 @@ public class MobManager implements Listener {
 
         // field spawn
         new MobOverrideRule(5, COW, HORSE)
-                .addVariation(killer_bees, 20);
+                .addVariation(killer_bees, 4);
 
         new MobOverrideRule(50, COW, HORSE)
                 .addVariation(wolf_pack, 10);
