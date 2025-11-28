@@ -240,7 +240,7 @@ public class CombatManager implements Listener {
                     //            new_damage *= (crit_multiplier); //apply custom crit
                     //            crit_msg = GOLD+" ("+GRAY+"✨ "+GOLD+(Debug.formatDecimal(crit_multiplier) +"x)");
                     event.setDamage(BASE, new_base);
-                    dmger.setCooldown(item, cd);
+//                    dmger.setCooldown(item, cd);
                     Debug.broadcast(
                             "damage",
                             //WHITE+victim.getName()+" "+*
