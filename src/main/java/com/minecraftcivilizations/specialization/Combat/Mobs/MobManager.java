@@ -265,7 +265,7 @@ public class MobManager implements Listener {
 //                .setGainsXpOverride(false)
 //                .setPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 100000000, 2, false, false, false));
 
-        new MobOverrideRule(100, DOLPHIN, SQUID)
+        new MobOverrideRule(20, DOLPHIN, SQUID)
                 .spawnInPacks()
                 .addVariation(new MobVariation("evil_dolphin", DOLPHIN)
                         .anger(true)
