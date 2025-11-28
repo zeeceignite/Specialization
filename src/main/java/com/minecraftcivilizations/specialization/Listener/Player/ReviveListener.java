@@ -417,7 +417,7 @@ public class ReviveListener implements Listener {
 //            healerSlowModifiers.put(healer.getUniqueId(), slow);
         }
 
-        Debug.broadcast("revive", "§7You are now carrying " + target.getName());
+        Debug.broadcast("revive", healer.getName()+"§7is now carrying " + target.getName());
     }
 
 

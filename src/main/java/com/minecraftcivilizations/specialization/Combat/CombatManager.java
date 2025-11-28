@@ -112,7 +112,7 @@ public class CombatManager implements Listener {
                         ps.setCooldown(Material.CROSSBOW, 16);
                     }else{
                         //skeleton or mob
-                        multiplier = 1.25;
+                        multiplier = 1.5;
                     }
                     break;
                 case CROSSBOW:
@@ -176,7 +176,7 @@ public class CombatManager implements Listener {
 
         Debug.broadcast("damage", " ");
 
-        Debug.broadcast("damage", "<gray> ------- <white>"+event.getDamager().getName()+GOLD+"</white> -> <white>"+WHITE+event.getEntity().getName()+"</white> ------- </gray>");
+        Debug.broadcast("damage", "<gray> ------- <white>"+event.getDamager().getName()+"</white> -> <white>"+event.getEntity().getName()+"</white> ------- </gray>");
 
         Entity damager = event.getDamager();
         CustomPlayer customPlayer = CoreUtil.getPlayer(damager.getUniqueId());
