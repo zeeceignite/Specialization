@@ -151,7 +151,7 @@ public class MobManager implements Listener {
         //THESE EXIST PRIMARILY FOR REFRESHING
         rule_mappings = new HashMap<>();
         mob_variations = new HashMap<>();
-        default_mob_variation = new MobVariation("default_mob").damage(1.5).health(2.0).speed(1.25, 1.25);
+        default_mob_variation = new MobVariation("default_mob").damage(1.5).health(2.0).speed(2.5, 3.5);
         //END OF PRIMARY REFRESH
         setDefaultRuleSetChance(0, ZOMBIE, HUSK, DROWNED, SKELETON, CREEPER, SPIDER); //always override these mobs
 //        setDefaultRuleSetChance(10, MAGMA_CUBE, PIGLIN, PIGLIN_BRUTE, HOGLIN, GHAST, BLAZE, WITHER_SKELETON);
@@ -160,7 +160,7 @@ public class MobManager implements Listener {
         new MobOverrideRule(100, ZOMBIE, HUSK, DROWNED)
                 .addVariation(new MobVariation("zombie_variation")
                         .health(2)
-                        .damage(1.5, 2.0)
+                        .damage(2.5, 3.5)
                         .speed(1.25, 1.5)
                         .hunts(64)
                         .breaks()
@@ -169,7 +169,7 @@ public class MobManager implements Listener {
         new MobOverrideRule(100, CREEPER)
                 .addVariation(new MobVariation("creeper")
                                 .xpScale(1.25)
-                                .damage(1.0)
+                                .damage(2.5, 3.5)
                                 .speed(1.5, 1.5)
                                 .hunts()
                         , 1000)
@@ -185,7 +185,7 @@ public class MobManager implements Listener {
                 .addVariation(new MobVariation("spider_small")
                                 .health(0.3)
                                 .damage(1.5)
-                                .speed(1.5, 1.5)
+                                .speed(1.5, 2.5)
                                 .waterspeed(4, 4)
                                 .size(0.5,0.5)
                                 .spawnExtra(8)
@@ -193,7 +193,7 @@ public class MobManager implements Listener {
                                 .drops(0)
                         , 100)
                 .addVariation(new MobVariation("spider").damage(1.5)
-                                .speed(1.5, 1.5)
+                                .speed(2.5, 3.5)
                                 .stepheight(2.0)
                                 .waterspeed(1.5, 1.5)
                                 .hunts().drops(0.5, 0.5)
@@ -220,7 +220,7 @@ public class MobManager implements Listener {
         MobVariation wolf_pack = new MobVariation("wolf_pack", WOLF)
                 .anger(true)
                 .hunts(64)
-                .damage(1.0)
+                .damage(2.5, 3.5)
                 .health(1.5)
                 .speed(1.5, 1.5)
                 .setGainsXpOverride(true)
