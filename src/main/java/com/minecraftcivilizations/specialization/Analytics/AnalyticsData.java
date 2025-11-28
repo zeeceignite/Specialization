@@ -273,7 +273,7 @@ private static AnalyticsData poll(){
                         }
                         
                         // Try multiple methods to get player location for town association
-                        Location p      layerLocation = null;
+                        Location playerLocation = null;
                         
                         // Method 1: Check spawn location from TownManager
                         Location playerSpawn = TownManager.getPlayerSpawnLocations().get(player.getUuid());

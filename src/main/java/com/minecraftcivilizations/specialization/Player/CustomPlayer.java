@@ -244,6 +244,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
 
     public int getSkillLevel(SkillType skillType) {
+        if(skillType==null)return 0;
 
         /**
          * This code is a patch that is highly optimized, but allows multi-classing
@@ -262,9 +263,6 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 //        return last_level; // max level
 
         //Shhhh, there... it's all over now... Just close your eyes and rest 💀💀💀
-
-
-
 
         int level;
         // So, so sorry if you have to read this, it was fixed about 10 times and I forgot to call it, so now it looks like this :sad:
