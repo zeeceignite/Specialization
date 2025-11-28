@@ -87,7 +87,7 @@ public class ArmorBreakSystem {
             for (int i = 0; i < armor_rolls; i++) {
                 EquipmentSlot piece = pickRandomArmorSlot();
                 set.add(piece);
-                Debug.broadcast("armor", "<gray>Rolled Armor to break: <white>"+piece.name());
+//                Debug.broadcast("armor", "<gray>Rolled Armor to break: <white>"+piece.name());
             }
             for (EquipmentSlot slot : set) {
                 ItemStack item = equipment.getItem(slot);

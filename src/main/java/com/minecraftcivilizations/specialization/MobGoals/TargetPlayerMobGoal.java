@@ -68,10 +68,15 @@ public class TargetPlayerMobGoal implements Goal<Mob> {
         }
     }
 
+    int tick = 0;
+
     @Override
     public void tick() {
-        if(mob.getTarget() == null){
-            calculateNewTarget(); //ensures the mob always has a new target
+        if (mob.getTarget() == null) {
+            tick++;
+            if(tick%20==0) {
+                calculateNewTarget(); //ensures the mob always has a new target
+            }
         }
     }
 
