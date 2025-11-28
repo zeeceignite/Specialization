@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 public record AnalyticsData(
     Timestamp timestamp,
     String serverName,
-    
     // Server-wide metrics
     int serverPopulation,
     int serverDeathsInPeriod,
