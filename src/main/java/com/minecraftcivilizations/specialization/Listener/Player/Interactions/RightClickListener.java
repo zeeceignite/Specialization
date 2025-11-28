@@ -10,6 +10,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Bisected;
@@ -111,6 +114,7 @@ public class RightClickListener implements Listener {
         target.setFoodLevel(Math.min(target.getFoodLevel() + 2, 20));
         // Play swing animation
         player.swingHand(EquipmentSlot.HAND);
+        target.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_BURP, SoundCategory.PLAYERS, 1, 1);
 
         // Consume one item from hand
         handItem.setAmount(handItem.getAmount() - 1);
