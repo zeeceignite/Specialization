@@ -167,23 +167,21 @@ public class GuardsmanDamage implements Listener {
 //        event.setDamage(RESISTANCE, 0);
 
 
-        if (Debug.isAnyoneListening("damage", true)) {
-            String modifiers = "";
+        String modifiers = "";
 
-            for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
-                if (event.getDamage(m) != 0)
-                    modifiers += "\n<gray>" + m.name() + "</gray>: " + Debug.formatDecimal(event.getDamage(m));
-            }
-            Debug.broadcast(
-                    "damage",
-                     "<dark_red>Guardsman: <red>"+Debug.formatDecimal(original_damage) +"</red>"+
-                            (reduction_msg)
-                            + " <red>[❤ " + Debug.formatDecimal(event.getDamage(BASE)) + "]</red>",
-                    "<gray>This output displays the calculated Guardsman Damage\nas if Vanilla Armor was being utilized\n"
-                            +"[" + damager.getName() + " is GuardMan lvl " + lvl + "]" + "\n" +
-                            "Attacker: " + damager.getName() + modifiers
-            );
+        for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
+            if (event.getDamage(m) != 0)
+                modifiers += "\n<gray>" + m.name() + "</gray>: " + Debug.formatDecimal(event.getDamage(m));
         }
+        Debug.message(damager,
+                "damage",
+                 "<dark_red>Guard: <red>"+Debug.formatDecimal(original_damage) +"</red>"+
+                        (reduction_msg)
+                        + " <red>[❤ " + Debug.formatDecimal(event.getDamage(BASE)) + "]</red>",
+                "<gray>This output displays the calculated Guardsman Damage\nas if Vanilla Armor was being utilized\n"
+                        +"[" + damager.getName() + " is GuardMan lvl " + lvl + "]" + "\n" +
+                        "Attacker: " + damager.getName() + modifiers
+        );
     }
 
 

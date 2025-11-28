@@ -253,8 +253,9 @@ public class MobManager implements Listener {
                                 .hunts()
                                 .drops(0)
                         , 100)
-                .addVariation(new MobVariation("spider").damage(1.5)
-                                .speed(2.5, 3.5)
+                .addVariation(new MobVariation("spider")
+                                .damage(2.5, 3.5)
+                                .speed(1.5, 2.0)
                                 .stepheight(2.0)
                                 .waterspeed(1.5, 1.5)
                                 .breaks()
@@ -317,7 +318,7 @@ public class MobManager implements Listener {
 
         new MobOverrideRule(20, TURTLE).addVariation(new MobVariation("creepo", CREEPER).hunts(32).speed(2,2), 100);
 
-        new MobOverrideRule(20, DOLPHIN, SQUID)
+        new MobOverrideRule(20, DOLPHIN)
                 .spawnInPacks()
                 .addVariation(new MobVariation("evil_dolphin", DOLPHIN)
                         .anger(true)
@@ -611,7 +612,6 @@ public class MobManager implements Listener {
                     return;
                 }
             }
-//            Debug.broadcast("mob", "Mob is Variation: <green>"+variation.getId()+"");
         }
 
 
@@ -739,14 +739,11 @@ public class MobManager implements Listener {
 
         MobVariation mobStats = getMobVariation(victim);
         if(victim.getPersistentDataContainer().has(EXP_GAIN_OVERRIDE_KEY)){
-//            Debug.broadcast("mobxp", "grant exp from PDC");
             does_grant_exp = victim.getPersistentDataContainer().get(EXP_GAIN_OVERRIDE_KEY, PersistentDataType.BOOLEAN);
         }else {
             if(mobStats.isXpGainOverrideActive()) {
-//                Debug.broadcast("mobxp", "grant exp OVERRIDE ACTIVE");
                 does_grant_exp = mobStats.getXpGainOverrideState();
              }else if(victim instanceof  Enemy){
-//                Debug.broadcast("mobxp", "grant exp because is enemy");
                 does_grant_exp = true;
             }else{
                 does_grant_exp = false;
@@ -758,8 +755,6 @@ public class MobManager implements Listener {
             return;
         }
 
-//        Debug.broadcast("mobxp", "APPLYING EXP");
-
         double xp_multiplier = mobStats.getXpScale();
         if (xp_multiplier>0) {
             LivingEntity le = (LivingEntity) victim;
@@ -767,6 +762,7 @@ public class MobManager implements Listener {
             if (xp > le.getHealth()) {
                 xp = le.getHealth();
             }
+//            customPlayer.addSkillXp(SkillType.GUARDSMAN, (int) Math.max(1, (xp * xp_multiplier)), true); // USE THIS if we want xp gained on each low hit (account for sweeping edge)
             customPlayer.addSkillXp(SkillType.GUARDSMAN, (int) (xp * xp_multiplier), true);
         }
     }
