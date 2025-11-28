@@ -244,26 +244,35 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
 
 
     public int getSkillLevel(SkillType skillType) {
-        Skill skill = getSkill(skillType);
-        double xp = skill.getXp();
+        if(skillType==null)return 0;
 
-        double[] cached_levels = Skill.CACHED_LEVELS;
-        int last_level = cached_levels.length - 1;
-
-        for (int lvl = 0; lvl < last_level; lvl++) {
-            if (xp < cached_levels[lvl + 1]) return lvl;
-        }
-
-        return last_level; // max level
+        /**
+         * This code is a patch that is highly optimized, but allows multi-classing
+         * -Alec
+         */
+//        Skill skill = getSkill(skillType);
+//        double xp = skill.getXp();
+//
+//        double[] cached_levels = Skill.CACHED_LEVELS;
+//        int last_level = cached_levels.length - 1;
+//
+//        for (int lvl = 0; lvl < last_level; lvl++) {
+//            if (xp < cached_levels[lvl + 1]) return lvl;
+//        }
+//
+//        return last_level; // max level
 
         //Shhhh, there... it's all over now... Just close your eyes and rest 💀💀💀
-//        int level;
-//        // So, so sorry if you have to read this, it was fixed about 10 times and I forgot to call it, so now it looks like this :sad:
-//        level = 0;
-//        while (level < SkillLevel.values().length && !isMissingXpForLevel(skillType, level+1) && !isMissingPercentForLevel(skillType, level+1)) {
-//            level++;
-//        }
-//        return Math.min(5, level); // prevents levels above 5
+
+        int level;
+        // So, so sorry if you have to read this, it was fixed about 10 times and I forgot to call it, so now it looks like this :sad:
+        level = 0;
+        while (level < SkillLevel.values().length && !isMissingXpForLevel(skillType, level+1) && !isMissingPercentForLevel(skillType, level+1)) {
+            level++;
+        }
+        Debug.broadcast("skill", "<gray>getSkillLevel <white>"+skillType.name()+"</white> is lvl "+level);
+
+        return Math.min(5, level); // prevents levels above 5
     }
 
 

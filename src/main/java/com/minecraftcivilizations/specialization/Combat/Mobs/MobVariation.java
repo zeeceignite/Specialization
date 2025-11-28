@@ -79,6 +79,10 @@ public class MobVariation {
     @Getter
     private double damageMultiplierNight = 1.0;
     @Getter
+    private double damageBaseDay = 0.0;
+    @Getter
+    private double damageBaseNight = 0.0;
+    @Getter
     private double healthMultiplier = 1.0;
     @Getter
     private double speedMultiplierDay = 1.0;
