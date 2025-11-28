@@ -178,6 +178,7 @@ public final class Specialization extends JavaPlugin {
 
         //overworld game rules
         World world = Bukkit.getWorlds().get(0);
+        world.setDifficulty(Difficulty.HARD);
         world.setGameRule(GameRule.SPAWN_RADIUS, 350);
         world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true);
         world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
@@ -188,6 +189,8 @@ public final class Specialization extends JavaPlugin {
         world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
         world.setGameRule(GameRule.MINECART_MAX_SPEED, 24);
         world.setDifficulty(Difficulty.HARD);
+        world.setGameRule(GameRule.SEND_COMMAND_FEEDBACK, false);
+
 
         //global game rules
         Bukkit.getWorlds().forEach(w -> w.setGameRule(GameRule.NATURAL_REGENERATION, false));

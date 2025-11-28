@@ -29,7 +29,7 @@ public class TargetPlayerMobGoal implements Goal<Mob> {
 
     @Override
     public boolean shouldActivate() {
-        return mob.getTarget() == null && !mob.getWorld().isDayTime();
+        return mob.getTarget() == null;
     }
 
     @Override
@@ -44,7 +44,7 @@ public class TargetPlayerMobGoal implements Goal<Mob> {
 
         mob.getLocation().getNearbyPlayers(follow_range).stream()
                 .filter(validGamemode)
-                .filter(p -> p.getLocation().distance(mob.getLocation())<64)
+                .filter(p -> p.getLocation().distance(mob.getLocation())<48)
                 .min((p1, p2) -> {
                     CustomPlayer player1 = CoreUtil.getPlayer(p1);
                     CustomPlayer player2 = CoreUtil.getPlayer(p2);
@@ -68,10 +68,15 @@ public class TargetPlayerMobGoal implements Goal<Mob> {
         }
     }
 
+    int tick = 0;
+
     @Override
     public void tick() {
-        if(mob.getTarget() == null){
-            calculateNewTarget(); //ensures the mob always has a new target
+        if (mob.getTarget() == null) {
+            tick++;
+            if(tick%20==0) {
+                calculateNewTarget(); //ensures the mob always has a new target
+            }
         }
     }
 

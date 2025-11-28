@@ -270,7 +270,6 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         while (level < SkillLevel.values().length && !isMissingXpForLevel(skillType, level+1) && !isMissingPercentForLevel(skillType, level+1)) {
             level++;
         }
-        Debug.broadcast("skill", "<gray>getSkillLevel <white>"+skillType.name()+"</white> is lvl "+level);
 
         return Math.min(5, level); // prevents levels above 5
     }

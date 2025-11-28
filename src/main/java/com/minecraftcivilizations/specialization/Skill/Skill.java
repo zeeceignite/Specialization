@@ -39,7 +39,7 @@ public class Skill {
      * Uses a pre-cached lookup, you're welcome.
      */
     public static double getXPNeededForLevel(int level) {
-        Debug.broadcast("xp", "xp needed lookup");
+//        Debug.broadcast("xp", "xp needed lookup");
         return CACHED_LEVELS[Math.max(0, Math.min(MAX_LEVEL, level))];
     }
 
