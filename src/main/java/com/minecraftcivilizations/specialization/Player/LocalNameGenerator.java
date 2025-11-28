@@ -1,6 +1,8 @@
 package com.minecraftcivilizations.specialization.Player;
 
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -608,7 +610,7 @@ public class LocalNameGenerator implements Listener {
     //------------------Temp name/optional names helpers---------------------//
 
     private final Set<String> tempUsedNames = new HashSet<>();
-    private final Map<UUID, TempNameData> tempNames = new ConcurrentHashMap<>();
+    public final Map<UUID, TempNameData> tempNames = new ConcurrentHashMap<>();
 
     public static class TempNameData {
         public String initialName;
@@ -640,18 +642,28 @@ public class LocalNameGenerator implements Listener {
         return result;
     }
 
-    /** Clean up expired temporary names */
+    /** Clean up expired temporary names and sets initial name */
     public void cleanupExpiredTemps() {
         long now = System.currentTimeMillis();
-        tempNames.entrySet().removeIf(entry -> {
-            TempNameData data = entry.getValue();
-            if (!data.confirmed && data.expirationTime <= now) {
-                for (String temp : data.options) tempUsedNames.remove(temp);
-                return true;
+        tempNames.forEach((uuid, data) -> {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player == null) return;
+
+
+            boolean isPermanent = player.getPersistentDataContainer().has(PERMANENT_NAME_KEY, PersistentDataType.BYTE);
+
+            if (!data.confirmed && data.expirationTime <= now && !isPermanent) {
+                PlayerUtil.message(player,"Name choice time has <red>expired</red>. Using initial name: <gold>" + player.getName());
+                Debug.broadcast("name", "unconfirmed name setting initial name to: " + data.initialName + "expTime: " + data.expirationTime + "now:" + now + "Perm & confirmed: " + !data.confirmed + !isPermanent);
+                confirmNameChoice(uuid, data.initialName);
+            } else if (!isPermanent) {
+                PlayerUtil.message(player, "Remaining time to pick other names:<red> " + getRemainingTime(player) + "<gray>min(s)");
             }
-            return false;
         });
     }
+
+
+
 
     // Key for permanent name selection
     private final NamespacedKey PERMANENT_NAME_KEY = new NamespacedKey(Specialization.getInstance(), "permanent_name");
@@ -690,7 +702,8 @@ public class LocalNameGenerator implements Listener {
             names.add(data.initialName);
             names.addAll(data.options);
         }
-        player.sendMessage(MiniMessage.miniMessage().deserialize("<black>====================================================</black>"));
+        PlayerUtil.message(player, MiniMessage.miniMessage().deserialize("<gradient:#0D1B2A:#1B263B>=====================================</gradient>"));
+
         // Display current name
         player.sendMessage(
                 Component.text("Your current name is: ", NamedTextColor.GRAY)
@@ -705,7 +718,7 @@ public class LocalNameGenerator implements Listener {
             String temp = names.get(i);
 
             // Name selection button (suggest command)
-            Component nameComponent = MiniMessage.miniMessage().deserialize("<gray>[<aqua>" + temp + "</aqua>]</gray>")
+            Component nameComponent = MiniMessage.miniMessage().deserialize("<gray>[<#687AB9>" + temp + "</#687AB9>]</gray>")
                     .hoverEvent(HoverEvent.showText(Component.text("Click to select " + temp)))
                     .clickEvent(ClickEvent.runCommand("/setnameoption " + temp));
 
@@ -715,23 +728,24 @@ public class LocalNameGenerator implements Listener {
                 message = message.append(Component.text(" || ", NamedTextColor.GRAY));
             }
         }
-        player.sendMessage(message);
-        player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>You have <red>" + getRemainingTime(player) + "</red> minute(s) to select a rerolled name.</gray>"));
-        player.sendMessage(MiniMessage.miniMessage().deserialize("<black>====================================================</black>"));
+        player.sendMessage( message);
+        player.sendMessage( MiniMessage.miniMessage().deserialize("<gray>You have <red>" + getRemainingTime(player) + "</red> minute(s) to select a rerolled name.</gray>"));
+        PlayerUtil.message(player, MiniMessage.miniMessage().deserialize("<gradient:#3E4C7F:#2A3253>=====================================</gradient>"));
     }
 
+
+    //this handles cleanup when a name is confirmed using namechoicecommand
     public boolean confirmNameChoice(UUID playerUUID, String selectedName) {
         Player player = Bukkit.getPlayer(playerUUID);
         if (player == null) return false;
 
-        // Block if player has already played >10min
-        if (!canSelectTempName(player)) {
-            player.sendMessage("§cYou can no longer confirm a temporary name.");
-            return false;
-        }
+
 
         TempNameData data = tempNames.get(playerUUID);
-        if (data == null || data.confirmed) return false;
+        if (data == null || data.confirmed) {
+//            PlayerUtil.message(player,"Your name has already been confirmed: <gold>" + selectedName);
+            return false;
+        }
 
         if (!selectedName.equals(data.initialName) && !data.options.contains(selectedName)) return false;
 
@@ -750,7 +764,7 @@ public class LocalNameGenerator implements Listener {
         return true;
     }
 
-    long timeLimitMinute = 10;
+        long timeLimitMinute = 10;
 
     public long getRemainingTime(Player player){
         int ticksPlayed = player.getStatistic(Statistic.PLAY_ONE_MINUTE);

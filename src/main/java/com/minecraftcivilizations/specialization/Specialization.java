@@ -244,34 +244,14 @@ public final class Specialization extends JavaPlugin {
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerJoin(playerJoinEvent -> {
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(playerJoinEvent.getUniqueId());
             applyCustomName(playerJoinEvent.getPlayer(), customPlayer.getName());
-//            customPlayer.applyEffects();
 
-            // We don't really need this anymore right? -Alec
-            // Migrate old bandages to new format
-//            Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
-//                migrateLegacyItems(playerJoinEvent.getPlayer());
-//            }, 10L);
 
             // TODO PDC-xp-hotfix for later if we need it
             //  customPlayer.reloadSkillsXp(playerJoinEvent.getPlayer());
 
             // Assign player to team based on their highest skill
-
 //            TeamManager.setTeam(playerJoinEvent.getPlayer());
 
-            // Restore downed state if they were downed when they logged out
-            if (customPlayer.isWasDownedOnLogout()) {
-                // Use Bukkit.getScheduler() to delay this until after the player has fully joined
-                Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
-                    Player player = playerJoinEvent.getPlayer();
-                    if (player != null && player.isOnline()) {
-                        // Restore downed state without starting the death timer
-//                        playerDeathListener.setDowned(player, true);
-                        // Clear the flag since we've restored the state
-                        customPlayer.setWasDownedOnLogout(false);
-                    }
-                }, 5L); // 5 ticks delay to ensure player is fully loaded
-            }
         });
 
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerQuit(playerQuitEvent -> {
@@ -330,7 +310,7 @@ public final class Specialization extends JavaPlugin {
         // Cleans up optional names held in temp reserves
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             localNameGenerator.cleanupExpiredTemps();
-        }, 0L, 10 * 60 * 20L); // every 10 minutes
+        }, 0L, 1 * 60 * 20L); // every 10 minutes
 
 
         commandManager = new PaperCommandManager(this);
