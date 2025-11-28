@@ -38,6 +38,10 @@ public class AnalyticsCommand extends BaseCommand {
 
             // Display server-wide metrics
             player.sendMessage("§e--- Server Metrics ---");
+            player.sendMessage("§Gini: §f" + data.gini());
+            player.sendMessage("§Inverted Shannon: §f" + data.invertShannon());
+
+
             player.sendMessage("§7Population: §f" + data.serverPopulation());
             player.sendMessage("§7Deaths this period: §f" + data.serverDeathsInPeriod());
             player.sendMessage("§7Complex Items Crafted: §f" + data.serverComplexItemsCraftedInPeriod());
