@@ -29,7 +29,7 @@ public class TargetPlayerMobGoal implements Goal<Mob> {
 
     @Override
     public boolean shouldActivate() {
-        return mob.getTarget() == null && !mob.getWorld().isDayTime();
+        return mob.getTarget() == null;
     }
 
     @Override
