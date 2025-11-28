@@ -123,7 +123,10 @@ public class CraftingListener implements Listener {
         double xpGainBenefit = (5-((double)lvl)/1.5);
         // Reduction based on Skill Level and Amount Crafted
         int totalReduction = (int) (xpGainBenefit *  (craftedAmount));
-        totalReduction = Math.max(1, totalReduction);//Math.max(0, totalReduction - (int) (Math.random() * 3));
+        int divider = event.getRecipe().getResult().getAmount();
+        totalReduction = Math.max(1, totalReduction / divider);//Math.max(0, totalReduction - (int) (Math.random() * 3));
+
+        Debug.message(player, "craft", "🍎 Req: "+totalReduction);
 
         int foodLevel = player.getFoodLevel();
         if(player.getGameMode()==GameMode.CREATIVE){
