@@ -44,7 +44,7 @@ public class TargetPlayerMobGoal implements Goal<Mob> {
 
         mob.getLocation().getNearbyPlayers(follow_range).stream()
                 .filter(validGamemode)
-                .filter(p -> p.getLocation().distance(mob.getLocation())<64)
+                .filter(p -> p.getLocation().distance(mob.getLocation())<48)
                 .min((p1, p2) -> {
                     CustomPlayer player1 = CoreUtil.getPlayer(p1);
                     CustomPlayer player2 = CoreUtil.getPlayer(p2);
