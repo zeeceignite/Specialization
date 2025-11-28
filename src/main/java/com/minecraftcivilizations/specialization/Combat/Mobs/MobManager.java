@@ -229,17 +229,17 @@ public class MobManager implements Listener {
 
         // field spawn
         new MobOverrideRule(5, COW, HORSE)
-                .addVariation(killer_bees, 10);
+                .addVariation(killer_bees, 20);
 
-        new MobOverrideRule(100, COW, HORSE)
+        new MobOverrideRule(50, COW, HORSE)
                 .addVariation(wolf_pack, 10);
 
 
-        setDefaultRuleSetChance(0, POLAR_BEAR);
+        setDefaultRuleSetChance(25, POLAR_BEAR);
         new MobOverrideRule(100, POLAR_BEAR)
                 .addVariation(new MobVariation("mean_polar_bear", POLAR_BEAR).anger(true).speed(1.2,1.2).health(2).hunts(64));
 
-        new MobOverrideRule(50, ENDERMAN)
+        new MobOverrideRule(25, ENDERMAN)
                 .addVariation(new MobVariation("creaker", CREAKING).anger(true).invisible().health(0.1).hunts(64).replaceOriginalMob());
 
         // bee DONT DO THIS
@@ -249,10 +249,10 @@ public class MobManager implements Listener {
 
 
         // wolf
-        new MobOverrideRule(150, WOLF).spawnInPacks()
+        new MobOverrideRule(20, WOLF).spawnInPacks()
                 .addVariation(wolf_pack);
 
-        new MobOverrideRule(100, TURTLE).addVariation(new MobVariation("creepo", CREEPER).hunts(32).speed(2,2), 100);
+        new MobOverrideRule(20, TURTLE).addVariation(new MobVariation("creepo", CREEPER).hunts(32).speed(2,2), 100);
 
 //        new MobOverrideRule(50, ENDERMAN).addVariation(new MobVariation("creakerman", CREAKING).invisible().hunts(32).health(1), 100);
 
@@ -265,7 +265,7 @@ public class MobManager implements Listener {
 //                .setGainsXpOverride(false)
 //                .setPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 100000000, 2, false, false, false));
 
-        new MobOverrideRule(50, DOLPHIN, SQUID)
+        new MobOverrideRule(100, DOLPHIN, SQUID)
                 .spawnInPacks()
                 .addVariation(new MobVariation("evil_dolphin", DOLPHIN)
                         .anger(true)
@@ -674,8 +674,9 @@ public class MobManager implements Listener {
          * Scales mob damage based on their day/night settings
          */
         double newDamage = event.getDamage(BASE);
-        double mob_damage = entity.getWorld().isDayTime()?stats.getDamageMultiplierDay():stats.getDamageMultiplierNight();
-        event.setDamage(BASE, newDamage * mob_damage);
+        double mob_damage_multiplier = entity.getWorld().isDayTime()?stats.getDamageMultiplierDay():stats.getDamageMultiplierNight();
+        double mob_damage_base_increase = entity.getWorld().isDayTime()?stats.getDamageBaseDay():stats.getDamageBaseNight();
+        event.setDamage(BASE, (newDamage * mob_damage_multiplier) + mob_damage_base_increase);
 
 //      BACKUP PLAN FOR MOB DAMAGE:
 //        Ensure this method is called after CombatManager's ArmorReduction.

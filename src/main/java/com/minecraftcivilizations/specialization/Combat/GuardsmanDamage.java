@@ -90,13 +90,13 @@ public class GuardsmanDamage implements Listener {
                 add = 0.5;
             }
             case EXPERT ->  {
-                multiplier = 0.425;
+                multiplier = 0.45;
                 add = 0.6;
             }
             case MASTER ->  {
                 multiplier = 0.475;
                 add = 0.8;
-            } //1.4
+            }
             case GRANDMASTER -> {
                 multiplier = 0.5;
                 add = 1.0;

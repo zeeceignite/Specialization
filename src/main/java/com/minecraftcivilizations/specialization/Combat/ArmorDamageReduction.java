@@ -1,9 +1,14 @@
 package com.minecraftcivilizations.specialization.Combat;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Player.CustomPlayer;
+import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
+import com.minecraftcivilizations.specialization.util.CoreUtil;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Config.ConfigFile;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
@@ -58,14 +63,28 @@ public class ArmorDamageReduction {
         double armor = stats.getArmor();
         double toughness = stats.getToughness();
 
-        // SCALING REDUCTION
-        double ARMOR_REDUCTION = (armor / armor_ceiling) / 2;
-        // LINEAR REDUCTION
+        // GM should be 1
+        // Noob should be 1.5
 
-
-        //FORMULA I
-        double TOUGHNESS_REDUCTION_LINEAR = Math.max (0, (toughness / 8)); // Absolute damage reduction
-        double TOUGHNESS_REDUCTION = TOUGHNESS_REDUCTION_LINEAR;
+        double armor_redux_factor = 2;
+        double toughness_redux_factor = 8;
+        if (event.getDamager() instanceof Player) {
+            armor_redux_factor = 2;
+        }else{
+            //Attacker is mob
+            if(event.getEntity() instanceof Player pvictim){
+                armor_redux_factor = 1.35; //default armor reduction against mobs
+                CustomPlayer cp = CoreUtil.getPlayer(pvictim);
+                int guardsman_level = cp.getSkillLevel(SkillType.GUARDSMAN);
+                armor_ceiling = 26;//-guardsman_level;//-guardsman_level;
+                armor_redux_factor -= ((double)guardsman_level)*0.05;
+                toughness_redux_factor = 12;
+            }
+        }
+        // ARMOR (SCALING) REDUCTION
+        double ARMOR_REDUCTION = (armor / armor_ceiling) / armor_redux_factor;
+        // TOUGHNESS (LINEAR) REDUCTION
+        double TOUGHNESS_REDUCTION = Math.max (0, (toughness / toughness_redux_factor)); // Absolute damage reduction
 
         //FORMULA II
 //        double TOUGHNESS_REDUCTION_LINEAR = Math.max (0, (toughness / 8)); // Absolute damage reduction
@@ -102,9 +121,9 @@ public class ArmorDamageReduction {
             }
 
             Debug.broadcast(
-                    "damage",
+                    "armor",
                     //WHITE+victim.getName()+" "+*
-                    "<dark_red>Armor: </dark_red><red>" +
+                    "<dark_red>Armor: </dark_red><red>" +Debug.formatDecimal(original_base)+
 //                            (WHITE+" ["+BLUE+"🅱: "+Debug.formatDecimal(original_armor)+"]")+
                             " <blue>[👕: "+Debug.formatDecimal(ARMOR_REDUCTION)+"x]</blue>"+
                             ((stats.getToughness()>0)?(" <gray>[🪨: -"+Debug.formatDecimal(TOUGHNESS_REDUCTION)+"]</gray>"):"")+
