@@ -330,7 +330,7 @@ public final class Specialization extends JavaPlugin {
         // Cleans up optional names held in temp reserves
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             localNameGenerator.cleanupExpiredTemps();
-        }, 0L, 10 * 60 * 20L); // every 10 minutes
+        }, 0L, 1 * 60 * 20L); // every 10 minutes
 
 
         commandManager = new PaperCommandManager(this);
