@@ -231,12 +231,12 @@ public class MobManager implements Listener {
         new MobOverrideRule(5, COW, HORSE)
                 .addVariation(killer_bees, 4);
 
-        new MobOverrideRule(50, COW, HORSE)
+        new MobOverrideRule(5, COW, HORSE)
                 .addVariation(wolf_pack, 10);
 
 
         setDefaultRuleSetChance(25, POLAR_BEAR);
-        new MobOverrideRule(100, POLAR_BEAR)
+        new MobOverrideRule(5, POLAR_BEAR)
                 .addVariation(new MobVariation("mean_polar_bear", POLAR_BEAR).anger(true).speed(1.2,1.2).health(2).hunts(64));
 
         new MobOverrideRule(25, ENDERMAN)
