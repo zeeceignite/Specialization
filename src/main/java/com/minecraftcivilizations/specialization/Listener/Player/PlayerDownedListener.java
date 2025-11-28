@@ -263,6 +263,15 @@ public class PlayerDownedListener implements Listener {
             Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Cancelling lethal dmg → triggering downed state.");
 
             event.setCancelled(true);
+            Location loc = player.getLocation();
+            World world = loc.getWorld();
+
+            float pitch = 0.6f;    // low, heavy
+            float volume = 1.0f;
+
+            world.playSound(loc, Sound.ENTITY_IRON_GOLEM_ATTACK, SoundCategory.PLAYERS, volume, pitch);
+            world.playSound(loc, Sound.ENTITY_PLAYER_HURT, SoundCategory.PLAYERS, volume, pitch);
+
             setDowned(player, true, 10 + finalHealth);
         }
     }
