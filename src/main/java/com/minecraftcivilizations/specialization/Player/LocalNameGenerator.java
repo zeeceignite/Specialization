@@ -117,7 +117,7 @@ public class LocalNameGenerator implements Listener {
                 List<String> variants = expandBraces(clean);
 
                 firstLines.add(new NameLine(variants, group));
-                System.out.println("[DEBUG FIRST] line=" + line + " | group=" + group + " | variants=" + variants);
+//                System.out.println("[DEBUG FIRST] line=" + line + " | group=" + group + " | variants=" + variants);
             }
 
             // --- Parse last names (defaults + grouped) ---
@@ -139,7 +139,7 @@ public class LocalNameGenerator implements Listener {
                     if (val.isEmpty()) continue;
                     List<String> variants = expandBraces(val);
                     lastLines.add(new NameLine(variants, group));
-                    System.out.println("[DEBUG GROUPED LAST] " + group + " -> " + variants);
+//                    System.out.println("[DEBUG GROUPED LAST] " + group + " -> " + variants);
                 }
             }
 
