@@ -190,6 +190,8 @@ public final class Specialization extends JavaPlugin {
         world.setGameRule(GameRule.WATER_SOURCE_CONVERSION, false);
         world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
         world.setGameRule(GameRule.MINECART_MAX_SPEED, 24);
+        world.setGameRule(GameRule.SEND_COMMAND_FEEDBACK, false);
+
 
         //global game rules
         Bukkit.getWorlds().forEach(w -> w.setGameRule(GameRule.NATURAL_REGENERATION, false));
