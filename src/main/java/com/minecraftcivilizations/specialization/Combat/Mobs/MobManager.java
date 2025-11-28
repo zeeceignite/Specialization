@@ -169,6 +169,7 @@ public class MobManager implements Listener {
                 SLIME, BREEZE,
                 GUARDIAN, ELDER_GUARDIAN,
                 PILLAGER, RAVAGER, ILLUSIONER, VINDICATOR, WITCH,
+                SILVERFISH, ENDERMITE, SHULKER,
                 BLAZE, MAGMA_CUBE, GHAST, PIGLIN, PIGLIN_BRUTE, HOGLIN, ZOGLIN, WITHER_SKELETON, ZOMBIFIED_PIGLIN
         };
         setDefaultRuleSetChance(0, types);
@@ -178,6 +179,20 @@ public class MobManager implements Listener {
                         .health(2)
                         .damage(2.5, 3.5)
                         .speed(1.25, 1.5)
+                        .hunts()
+                        .breaks()
+                );
+
+        EntityType[] nether_types = new EntityType[]{
+                BLAZE, MAGMA_CUBE, GHAST, PIGLIN, PIGLIN_BRUTE, HOGLIN, ZOGLIN, WITHER_SKELETON, ZOMBIFIED_PIGLIN
+        };
+        setDefaultRuleSetChance(0, nether_types);
+        new MobOverrideRule(100,
+                nether_types)
+                .addVariation(new MobVariation("nether_variation")
+                        .health(2)
+                        .damage(3.0, 3.0)
+                        .speed(1.5, 1.5)
                         .hunts()
                         .breaks()
                 );
@@ -215,6 +230,7 @@ public class MobManager implements Listener {
                                 .health(2.0)
                                 .damage(2.5, 3.5)
                                 .speed(1.5, 1.5)
+                                .breaks()
                                 .hunts()
                         , 1000)
                 .addVariation(new MobVariation("quick_creeper")
@@ -233,6 +249,7 @@ public class MobManager implements Listener {
                                 .waterspeed(4, 4)
                                 .size(0.5,0.5)
                                 .spawnExtra(8)
+                                .breaks()
                                 .hunts()
                                 .drops(0)
                         , 100)
@@ -240,6 +257,7 @@ public class MobManager implements Listener {
                                 .speed(2.5, 3.5)
                                 .stepheight(2.0)
                                 .waterspeed(1.5, 1.5)
+                                .breaks()
                                 .hunts().drops(0.5, 0.5)
                         , 100);
 //                .addVariation(new MobVariation("spider_large", CAVE_SPIDER).health(4).damage(2.0).speed(0.5, 0.75).addImmunity(DamageType.ARROW).size(2.5,2.5).hunts(64).drops(1.0, 2.0).xpScale(1.5)
@@ -268,6 +286,7 @@ public class MobManager implements Listener {
                 .health(1.5)
                 .speed(1.5, 1.5)
                 .setGainsXpOverride(true)
+                .breaks()
                 .xpScale(1.5).replaceOriginalMob();
 
 
@@ -281,7 +300,7 @@ public class MobManager implements Listener {
 
         setDefaultRuleSetChance(25, POLAR_BEAR);
         new MobOverrideRule(5, POLAR_BEAR)
-                .addVariation(new MobVariation("mean_polar_bear", POLAR_BEAR).anger(true).speed(1.2,1.2).health(2).hunts(64));
+                .addVariation(new MobVariation("mean_polar_bear", POLAR_BEAR).anger(true).speed(1.2,1.2).health(2).hunts(64).breaks());
 
         new MobOverrideRule(25, ENDERMAN)
                 .addVariation(new MobVariation("creaker", CREAKING).anger(true).invisible().health(0.1).hunts(64).replaceOriginalMob());
