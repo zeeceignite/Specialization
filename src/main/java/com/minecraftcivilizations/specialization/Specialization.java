@@ -117,8 +117,8 @@ public final class Specialization extends JavaPlugin {
 
         Skill.InitCacheXPLevelFormula();
         debug = new Debug(this);
-        saveResource("first_names.txt", false);
-        saveResource("last_names.txt", false);
+        saveResource("first_names.txt", true);
+        saveResource("last_names.txt", true);
         SpecializationConfig.initialize();
         MongoConnection.startDBConnection();
         // TODO PDC-xp-hotfix
