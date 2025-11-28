@@ -54,10 +54,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import net.minecraft.server.level.ServerPlayer;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.GameRule;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -181,6 +178,7 @@ public final class Specialization extends JavaPlugin {
 
         //overworld game rules
         World world = Bukkit.getWorlds().get(0);
+        world.setDifficulty(Difficulty.HARD);
         world.setGameRule(GameRule.SPAWN_RADIUS, 350);
         world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true);
         world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
