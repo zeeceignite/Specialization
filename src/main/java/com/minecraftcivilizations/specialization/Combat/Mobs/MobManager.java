@@ -617,6 +617,19 @@ public class MobManager implements Listener {
                 mob.setAggressive(true);
             }
         }
+
+
+
+        /**
+         * This logic is a hybrid of target acquisition and block breaking. The break logic is better.
+         * If we need old Mob Goals back, Comment out this logic and uncomment the two originals below
+         * - Alec
+         */
+        if(stats.doesHunting()) {
+            if (entity instanceof Mob mob) {
+                Bukkit.getMobGoals().addGoal(mob, 0, new HuntPlayerMobGoal(mob, stats.getFollowRange(), stats.doesBreaking(), stats.getBreakScalar()));
+            }
+        }
 //        if(stats.doesBreaking()) {
 //            if (entity instanceof Monster monster) {
 //                Bukkit.getMobGoals().addGoal(monster, 3, new BreakBlockMobGoal(monster));
@@ -624,14 +637,9 @@ public class MobManager implements Listener {
 //        }
 //        if(stats.doesHunting()) {
 //            if (entity instanceof Monster mob) {
-//                Bukkit.getMobGoals().addGoal(mob, 0, new TargetPlayerMobGoal(mob, stats.getFollowRange()));
+//                Bukkit.getMobGoals().addGoal(mob, 0, new TargetPlayerMobGoal(mob));
 //            }
 //        }
-        if(stats.doesHunting()) {
-            if (entity instanceof Monster mob) {
-                Bukkit.getMobGoals().addGoal(mob, 0, new HuntPlayerMobGoal(mob, stats.getFollowRange(), stats.doesBreaking(), stats.getBreakScalar()));
-            }
-        }
     }
 
 

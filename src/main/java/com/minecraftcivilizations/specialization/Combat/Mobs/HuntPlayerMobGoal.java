@@ -218,7 +218,7 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
              * Block validation, incase it was broken
              * Also checks if the mob has walked too far away from the block
              */
-            if (block.getType() == Material.AIR || block.getLocation().distanceSquared(mob.getLocation()) > 42) {
+            if (block.getType() == Material.AIR || block.getLocation().distanceSquared(mob.getLocation()) > 50) {
                 if (nearbyPlayers != null && !nearbyPlayers.isEmpty()) {
                     nearbyPlayers.forEach(player -> player.sendBlockDamage(block.getLocation(), 0));
                 }

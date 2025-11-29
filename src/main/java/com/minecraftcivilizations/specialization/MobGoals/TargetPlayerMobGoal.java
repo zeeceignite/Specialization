@@ -1,5 +1,4 @@
 package com.minecraftcivilizations.specialization.MobGoals;
-
 import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.destroystokyo.paper.entity.ai.GoalType;
@@ -7,53 +6,32 @@ import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
-import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
-import org.bukkit.GameMode;
 import org.bukkit.NamespacedKey;
-import org.bukkit.entity.*;
+import org.bukkit.entity.Enderman;
+import org.bukkit.entity.Monster;
+import org.bukkit.entity.Piglin;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.EnumSet;
-import java.util.function.Predicate;
 
-public class TargetPlayerMobGoal implements Goal<Mob> {
-    public static final GoalKey<Mob> KEY = GoalKey.of(Mob.class, new NamespacedKey(Specialization.getInstance(),"monster_target_player"));
+public class TargetPlayerMobGoal implements Goal<Monster> {
+    public static final GoalKey<Monster> KEY = GoalKey.of(Monster.class, new NamespacedKey(Specialization.getInstance(),"monster_target_player"));
+    private Monster monster;
 
-    private Mob mob; //the mob of this goal
-    private double follow_range;
-
-    public TargetPlayerMobGoal(Mob mob, double follow_range){
-        this.mob = mob;
-        this.follow_range = follow_range;
+    public TargetPlayerMobGoal(Monster monster){
+        this.monster = monster;
     }
 
     @Override
     public boolean shouldActivate() {
-        Debug.broadcast("targetplayer", ""+mob.getName()+ (mob.getTarget()!=null?" target is "+mob.getTarget().getName():"<gray> null target"));
-        return mob.getTarget() == null;
-    }
-
-    @Override
-    public boolean shouldStayActive() {
-        Debug.broadcast("targetplayer", "<yellow>should stay active: "+mob.getName() + (mob.getTarget()!=null?" target is "+mob.getTarget().getName():"<gray> null target"));
-        return false;
-//        return mob.getTarget()!=null;
+        return monster.getTarget() == null && !monster.getWorld().isDayTime() && !(monster instanceof Enderman) && !(monster instanceof Piglin);
     }
 
     @Override
     public void start() {
-        Debug.broadcast("targetplayer", "<green>starting mobgoal "+mob.getName());
-        calculateNewTarget();
-    }
-
-    public void calculateNewTarget(){
-        Predicate<Player> validGamemode = p ->
-                p.getGameMode() == GameMode.SURVIVAL ||
-                        p.getGameMode() == GameMode.ADVENTURE;
-
-        mob.getLocation().getNearbyPlayers(follow_range).stream()
-                .filter(validGamemode)
-                .filter(p -> p.getLocation().distance(mob.getLocation())<48)
+        int targetRange = SpecializationConfig.getMobConfig().get("MOB_RULE_TARGET_RANGE", Integer.class);
+        monster.getLocation().getNearbyPlayers(targetRange).stream()
                 .min((p1, p2) -> {
                     CustomPlayer player1 = CoreUtil.getPlayer(p1);
                     CustomPlayer player2 = CoreUtil.getPlayer(p2);
@@ -65,39 +43,16 @@ public class TargetPlayerMobGoal implements Goal<Mob> {
                         return 1;  // p2 has priority, so it comes first
                     }
                     // If priorities are the same, compare by distance
-                    if(mob.getLocation().getWorld().equals(p1.getLocation().getWorld()) && mob.getLocation().getWorld().equals(p2.getLocation().getWorld())){
-                        return Double.compare(p1.getLocation().distanceSquared(mob.getLocation()), p2.getLocation().distanceSquared(mob.getLocation()));
+                    if(monster.getLocation().getWorld().equals(p1.getLocation().getWorld()) && monster.getLocation().getWorld().equals(p2.getLocation().getWorld())){
+                        return Double.compare(p1.getLocation().distanceSquared(monster.getLocation()), p2.getLocation().distanceSquared(monster.getLocation()));
                     }
                     return 0;
                 })
-                .ifPresent(player -> mob.setTarget(player));
-
-        if(mob.getTarget()!=null) {
-            Debug.broadcast("targetplayer", mob.getType().name().toLowerCase() + ": <red>targeting player</red> " + mob.getTarget().getName());
-        }
-    }
-
-    int tick = 0;
-
-    @Override
-    public void tick() {
-//        if (mob.getTarget() == null) {
-//            tick++;
-//            if(tick%20==0) {
-//                calculateNewTarget(); //ensures the mob always has a new target
-//            }
-//        }
+                .ifPresent(player -> monster.setTarget(player));
     }
 
     @Override
-    public void stop() {
-//        Debug.broadcast("mobgoal_stop", "should stop: "+mob.getName());
-//        this.mob.setTarget(null);
-        Goal.super.stop();
-    }
-
-    @Override
-    public GoalKey<Mob> getKey() {
+    public GoalKey<@NotNull Monster> getKey() {
         return KEY;
     }
 
