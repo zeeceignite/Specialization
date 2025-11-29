@@ -134,6 +134,9 @@ public class MobVariation {
     @Getter
     private double mountChance = 1.0;
 
+    @Getter
+    private double breakScalar = 1.0;
+
     public double getXpScale() {
         return xp_multiplier;
     }
@@ -240,6 +243,12 @@ public class MobVariation {
 
     public MobVariation breaks(){
         this.does_breaking = true;
+        return this;
+    }
+
+    public MobVariation breaks(double scalar){
+        this.does_breaking = true;
+        this.breakScalar = scalar;
         return this;
     }
 
