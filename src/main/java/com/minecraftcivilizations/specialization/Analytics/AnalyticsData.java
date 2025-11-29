@@ -142,29 +142,28 @@ private static AnalyticsData poll(){
         double inverted;
 
         if(player.getTotalXp() == 0) {
-            // Player with no XP has perfect equality (all skills equally at 0)
-            gini = 0.0;  // No inequality
-            inverted = 0.0;  // Maximum entropy (perfectly uniform distribution)
-        } else {
-            int i = 1;
-            double weightedSum = 0D;
-            double H = 0D;
-
-            List<Skill> toSort = new ArrayList<>(player.getSkills());
-            toSort.sort(Comparator.comparingDouble(Skill::getXp)); // sorted list of skills
-
-            for (Skill skill : toSort) {
-                weightedSum += skill.getXp() * i; // this is the sum at the top of the gini fraction
-                double Pi = skill.getXp() / player.getTotalXp(); // Pi value for shannon
-                if (Pi > 0) {
-                    H += Pi * Math.log(Pi); // H value for shannon
-                }
-                i++;
-            }
-            gini = (2 * weightedSum / (7 * player.getTotalXp())) - ((double) 8 / 7);
-            double normalizedH = -H / Math.log(7);
-            inverted = 1 - normalizedH;
+            continue;
         }
+
+        int i = 1;
+        double weightedSum = 0D;
+        double H = 0D;
+
+        List<Skill> toSort = new ArrayList<>(player.getSkills());
+        toSort.sort(Comparator.comparingDouble(Skill::getXp)); // sorted list of skills
+
+        for (Skill skill : toSort) {
+            weightedSum += skill.getXp() * i; // this is the sum at the top of the gini fraction
+            double Pi = skill.getXp() / player.getTotalXp(); // Pi value for shannon
+            if (Pi > 0) {
+                H += Pi * Math.log(Pi); // H value for shannon
+            }
+            i++;
+        }
+        gini = (2 * weightedSum / (7 * player.getTotalXp())) - ((double) 8 / 7);
+        double normalizedH = -H / Math.log(7);
+        inverted = 1 - normalizedH;
+
 
         giniList.add(gini);
         shannonList.add(inverted);
