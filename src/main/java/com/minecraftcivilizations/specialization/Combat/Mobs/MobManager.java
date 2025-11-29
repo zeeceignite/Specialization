@@ -236,7 +236,7 @@ public class MobManager implements Listener {
                 .addVariation(new MobVariation("zombie_variation")
                         .health(2)
                         .damage(2.0, 2.5)
-                        .speed(1.25, 1.5)
+                        .speed(1.5, 2.0)
                         .hunts(64)
                         .breaks(2)
                 );
@@ -282,7 +282,8 @@ public class MobManager implements Listener {
                         , 100)
                 .addVariation(new MobVariation("spider")
                                 .damage(2.5, 2.5)
-                                .speed(1.5, 2.5)
+                                .speed(1.5, 1.5)
+                                .health(2.0)
                                 .stepheight(2.0)
                                 .waterspeed(1.5, 1.5)
                                 .breaks(1.5)
