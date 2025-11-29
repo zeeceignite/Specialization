@@ -82,19 +82,21 @@ public class PhantomRideListener implements Listener {
     @EventHandler
     public void onFeedPhantom(PlayerInteractEntityEvent event) {
         if (!(event.getRightClicked() instanceof Phantom phantom)) return;
-        if (!event.getPlayer().isOp()) return; //disabled for now
+//        if (!event.getPlayer().isOp()) return; //disabled for now
 
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
         Material type = item.getType();
 
-        if (!isValid(type)){
+        boolean tamed = phantom.getPersistentDataContainer().has(isTamed, PersistentDataType.BYTE) && phantom.getPersistentDataContainer().get(isTamed, PersistentDataType.BYTE) == 1;
+
+        if (!isValid(type) && !tamed){
             if (Math.random() < 0.005) { // 0.5% chance
                 PlayerUtil.message(player, "Phantom doesn't have time for that...", 10);
             } else if (Math.random() < 0.004) { // 0.4% chance
                 PlayerUtil.message(player, "Phantom is too lost for that...", 10);
             } else if (Math.random() < 0.014){ // 1.4% chance
-                PlayerUtil.message(player, "Phantom seems to like metal...", 10);
+                PlayerUtil.message(player, "Phantom seems to want something not edible...", 10);
             } else {
                 PlayerUtil.message(player, "Phantom doesn't like that...", 2);
             }
