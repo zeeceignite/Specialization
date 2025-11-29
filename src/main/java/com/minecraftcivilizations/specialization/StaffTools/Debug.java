@@ -269,7 +269,7 @@ public class Debug implements Listener {
     public static void message(Player player, String debug_channel, String msg, String hover_details){
         Debug debug = getInstance();
         Component comp = debug.formatDebugMessageDefault(debug_channel, msg, hover_details);
-        if(debug.getOrCreateChannelPlayerSet(debug_channel, false).contains(player)){
+        if(debug.getOrCreateChannelPlayerSet(debug_channel, false).contains(player.getUniqueId())){
             player.sendMessage(comp);
         }
     }
@@ -283,7 +283,7 @@ public class Debug implements Listener {
         if(hover!=null){
             msg = msg.hoverEvent(HoverEvent.showText(hover));
         }
-        if(debug.getOrCreateChannelPlayerSet(debug_channel, false).contains(player)){
+        if(debug.getOrCreateChannelPlayerSet(debug_channel, false).contains(player.getUniqueId())){
             player.sendMessage(getPrefix(debug_channel).append(msg));
         }
     }

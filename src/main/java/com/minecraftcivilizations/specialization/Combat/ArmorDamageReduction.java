@@ -113,34 +113,36 @@ public class ArmorDamageReduction {
         //scaled armor reduction effectiveness according to guardsman level
 
         if(Debug.isAnyoneListening("damage", true)) {
-            String modifiers = "";
+            if(event.getDamager() instanceof Player px) {
+                String modifiers = "";
 
-            for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
-                if(event.getDamage(m)!=0)
-                modifiers += "\n<gray>"+m.name()+"</gray>: "+Debug.formatDecimal(event.getDamage(m));
-            }
+                for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
+                    if (event.getDamage(m) != 0)
+                        modifiers += "\n<gray>" + m.name() + "</gray>: " + Debug.formatDecimal(event.getDamage(m));
+                }
 
-            Debug.broadcast(
-                    "armor",
-                    //WHITE+victim.getName()+" "+*
-                    "<dark_red>Armor: </dark_red><red>" +Debug.formatDecimal(original_base)+
+                Debug.message(px,
+                        "armor",
+                        //WHITE+victim.getName()+" "+*
+                        "<dark_red>Armor: </dark_red><red>" + Debug.formatDecimal(original_base) +
 //                            (WHITE+" ["+BLUE+"🅱: "+Debug.formatDecimal(original_armor)+"]")+
-                            " <blue>[👕: "+Debug.formatDecimal(ARMOR_REDUCTION)+"x]</blue>"+
-                            ((stats.getToughness()>0)?(" <gray>[🪨: -"+Debug.formatDecimal(TOUGHNESS_REDUCTION)+"]</gray>"):"")+
-                            (" <green>[🚫: "+Debug.formatDecimal(TOTAL_REDUCTION)+"]</green>")+
+                                " <blue>[👕: " + Debug.formatDecimal(ARMOR_REDUCTION) + "x]</blue>" +
+                                ((stats.getToughness() > 0) ? (" <gray>[🪨: -" + Debug.formatDecimal(TOUGHNESS_REDUCTION) + "]</gray>") : "") +
+                                (" <green>[🚫: " + Debug.formatDecimal(TOTAL_REDUCTION) + "]</green>") +
 //                            (event.isCritical()? GREEN+" (CRIT!)":"")+
-                            " [❤ "+Debug.formatDecimal(CombatManager.calculateTotalDamage(event))+"]</red>"
-                    ,
-                    "<gray>Original Armor Reduction: <dark_blue>"+Debug.formatDecimal(-original_armor)+"</dark_blue>\n"
-                    +"<gray>New Armor Reduction: <blue>"+Debug.formatDecimal(TOTAL_REDUCTION)+"</blue>\n"
-                            +"Vanilla Damage would have been <dark_red>"+Debug.formatDecimal(original_damage)+"</dark_red>\n"
-                            +"Specialization Custom Damage is <red>"+Debug.formatDecimal(CombatManager.calculateTotalDamage(event))+"</red>\n"
-                            +"<blue>ARMOR REDUCTION:</blue> "+Debug.formatDecimal(ARMOR_REDUCTION)+"\n"
-                            +"<light_purple>TOUGHNESS REDUCTION:</light_purple> "+Debug.formatDecimal(TOUGHNESS_REDUCTION)+"\n"
-                            +"<yellow>MAGIC REDUCTION:</yellow> "+Debug.formatDecimal(MAGIC_REDUCTION)+"\n"
-                            +"\nOriginal damage: "+Debug.formatDecimal(event.getDamage())
-                            +modifiers
-            );
+                                " [❤ " + Debug.formatDecimal(CombatManager.calculateTotalDamage(event)) + "]</red>"
+                        ,
+                        "<gray>Original Armor Reduction: <dark_blue>" + Debug.formatDecimal(-original_armor) + "</dark_blue>\n"
+                                + "<gray>New Armor Reduction: <blue>" + Debug.formatDecimal(TOTAL_REDUCTION) + "</blue>\n"
+                                + "Vanilla Damage would have been <dark_red>" + Debug.formatDecimal(original_damage) + "</dark_red>\n"
+                                + "Specialization Custom Damage is <red>" + Debug.formatDecimal(CombatManager.calculateTotalDamage(event)) + "</red>\n"
+                                + "<blue>ARMOR REDUCTION:</blue> " + Debug.formatDecimal(ARMOR_REDUCTION) + "\n"
+                                + "<light_purple>TOUGHNESS REDUCTION:</light_purple> " + Debug.formatDecimal(TOUGHNESS_REDUCTION) + "\n"
+                                + "<yellow>MAGIC REDUCTION:</yellow> " + Debug.formatDecimal(MAGIC_REDUCTION) + "\n"
+                                + "\nOriginal damage: " + Debug.formatDecimal(event.getDamage())
+                                + modifiers
+                );
+            }
         }
 
     }

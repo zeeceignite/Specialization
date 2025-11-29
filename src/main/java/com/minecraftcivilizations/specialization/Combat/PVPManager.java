@@ -59,7 +59,7 @@ public class PVPManager implements Listener, CommandExecutor {
     private static final long COMBAT_COOLDOWN = 30_000L;
     private static final long ZOMBIE_LIFETIME = 15_000L; // 15s
     private final JavaPlugin plugin;
-    private final Map<UUID, Long> combatMap = new ConcurrentHashMap<>();
+    public final Map<UUID, Long> combatMap = new ConcurrentHashMap<>();
     private final Map<UUID, UUID> zombieMap = new ConcurrentHashMap<>();
     private final Map<UUID, BukkitRunnable> zombieTimers = new ConcurrentHashMap<>();
     private final Map<UUID, BossBar> combatBars = new HashMap<>();

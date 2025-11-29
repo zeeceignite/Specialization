@@ -62,12 +62,14 @@ public class PlayerDownedListener implements Listener {
 
     private static final int DOWNED_DURATION_TICKS = 60 * 20; // 60 seconds
     private final JavaPlugin plugin;
-    private final NamespacedKey downedKey;
     private final Map<UUID, BukkitTask> downTimers = new HashMap<>();
     private final Map<UUID, Entity> downStands = new HashMap<>();
     private final Map<UUID, BossBar> bossBars = new HashMap<>();
     // --- Add NamespacedKey for remaining ticks ---
     private final NamespacedKey downedTicksKey;
+    private final NamespacedKey downedKey;
+    private final NamespacedKey downedByPlayerKey;
+
     private final Map<UUID, Integer> downTicksRemaining = new HashMap<>();
     private final Map<UUID, BukkitTask> darknessTasks = new HashMap<>();
 
@@ -77,6 +79,7 @@ public class PlayerDownedListener implements Listener {
         this.plugin = plugin;
         this.downedKey = new NamespacedKey(plugin, "is_downed");
         this.downedTicksKey = new NamespacedKey(plugin, "downed_ticks");
+        this.downedByPlayerKey = new NamespacedKey(plugin, "playerdowned");
     }
 
 
@@ -145,6 +148,8 @@ public class PlayerDownedListener implements Listener {
             darknessTask.cancel();
         }
         player.removePotionEffect(PotionEffectType.DARKNESS);
+
+        player.getPersistentDataContainer().remove(downedByPlayerKey);
 
 
         clearMount(player);
@@ -261,6 +266,27 @@ public class PlayerDownedListener implements Listener {
                 return;
             }
             Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Cancelling lethal dmg → triggering downed state.");
+
+            Entity damager = event.getEntity();
+            boolean playerCuased = false;
+
+            if (damager instanceof Player p) {
+                if (p.getPlayer() != player.getPlayer()){
+                playerCuased = true;
+                }
+
+            } else if (damager instanceof Projectile proj &&
+                    proj.getShooter() instanceof Player) {
+                playerCuased = true;
+            }
+
+            if (playerCuased) {
+                player.getPersistentDataContainer().set(
+                        downedByPlayerKey,
+                        PersistentDataType.BYTE,
+                        (byte) 1
+                );
+            }
 
             event.setCancelled(true);
             Location loc = player.getLocation();
