@@ -7,6 +7,7 @@ import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
+import net.minecraft.world.entity.animal.Animal;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -122,6 +123,9 @@ public class GuardsmanDamage implements Listener {
                 if(variation.isAngry() || variation.doesHunting()){
                     multiplier *= 2;
                 }
+            }else if(victim instanceof Mob){
+                multiplier = 1.0;
+                add = 0.0;
             }
         }
 
@@ -167,21 +171,23 @@ public class GuardsmanDamage implements Listener {
 //        event.setDamage(RESISTANCE, 0);
 
 
-        String modifiers = "";
+        if(Debug.isListeningToChannel(damager, "damage")) {
+            String modifiers = "";
 
-        for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
-            if (event.getDamage(m) != 0)
-                modifiers += "\n<gray>" + m.name() + "</gray>: " + Debug.formatDecimal(event.getDamage(m));
+            for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
+                if (event.getDamage(m) != 0)
+                    modifiers += "\n<gray>" + m.name() + "</gray>: " + Debug.formatDecimal(event.getDamage(m));
+            }
+            Debug.message(damager,
+                    "damage",
+                    "<dark_red>Guard: <red>" + Debug.formatDecimal(original_damage) + "</red>" +
+                            (reduction_msg)
+                            + " <red>[❤ " + Debug.formatDecimal(event.getDamage(BASE)) + "]</red>",
+                    "<gray>This output displays the calculated Guardsman Damage\nas if Vanilla Armor was being utilized\n"
+                            + "[" + damager.getName() + " is GuardMan lvl " + lvl + "]" + "\n" +
+                            "Attacker: " + damager.getName() + modifiers
+            );
         }
-        Debug.message(damager,
-                "damage",
-                 "<dark_red>Guard: <red>"+Debug.formatDecimal(original_damage) +"</red>"+
-                        (reduction_msg)
-                        + " <red>[❤ " + Debug.formatDecimal(event.getDamage(BASE)) + "]</red>",
-                "<gray>This output displays the calculated Guardsman Damage\nas if Vanilla Armor was being utilized\n"
-                        +"[" + damager.getName() + " is GuardMan lvl " + lvl + "]" + "\n" +
-                        "Attacker: " + damager.getName() + modifiers
-        );
     }
 
 

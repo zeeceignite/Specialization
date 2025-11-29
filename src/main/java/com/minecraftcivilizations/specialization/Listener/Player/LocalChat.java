@@ -95,6 +95,8 @@ public class LocalChat implements Listener {
         Player p = e.getPlayer();
         String raw = MiniMessage.miniMessage().stripTags(e.getMessage().trim());
 
+        if(true)return;
+
         if (handleGlobalChat(p, raw)) {
             e.setCancelled(true);
             return;

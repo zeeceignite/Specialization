@@ -45,7 +45,7 @@ public class MobOverrideRuleSet {
         if (total <= 0) return null;
         int r = ThreadLocalRandom.current().nextInt(total);
         if (r < baseChance){
-            Debug.broadcast("mobrule", "<dark_gray> "+type.name()+" <gray>landed "+r+" out of "+total+ " <white>VANILLA");
+//            Debug.broadcast("mobrule", "<dark_gray> "+type.name()+" <gray>landed "+r+" out of "+total+ " <white>VANILLA");
             return null; //returns vanilla mob
         }
         r -= baseChance;
@@ -59,7 +59,7 @@ public class MobOverrideRuleSet {
                 break;
             }
         }
-        Debug.broadcast("mobrule", "<dark_gray> "+type.name()+" <gray>landed "+r+" out of "+total+ " <green>MODIFIED");
+//        Debug.broadcast("mobrule", "<dark_gray> "+type.name()+" <gray>landed "+r+" out of "+total+ " <green>MODIFIED");
         return selected;
     }
 
