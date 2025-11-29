@@ -177,7 +177,7 @@ public class Bandage extends CustomItem {
             boolean isDowned = downed != null && downed == 1;
             if (isDowned) {
                 Entity vehicle = pTarget.getVehicle();
-                if (!(vehicle instanceof Snowman) && !(vehicle instanceof Player)) {
+                if (!(vehicle instanceof Sheep) && !(vehicle instanceof Player)) {
                     reviveListener.startRevive(healer, pTarget, reviveListener.createReviveInventory(pTarget));
                     applyCooldown(healer, 500);
 //                        healer.sendMessage("revive started");

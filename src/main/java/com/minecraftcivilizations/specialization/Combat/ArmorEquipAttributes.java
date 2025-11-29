@@ -48,6 +48,11 @@ public class ArmorEquipAttributes implements Listener {
 
     public static NamespacedKey WEIGHT_KEY;
 
+
+    //Used for previous values
+    Map<UUID, Double> weight_map = new HashMap<UUID, Double>();
+
+
     public ArmorEquipAttributes(CombatManager manager){
         this.manager = manager;
         this.plugin = manager.plugin;
@@ -255,10 +260,17 @@ public class ArmorEquipAttributes implements Listener {
 
         if(armor_swap) {
             double weight = calculateWeight(player);
-//            if (old_weight != weight) {
-//        Debug.broadcast("weight", "New Weight: "+weightColor(weight)+weight);
-            player.sendActionBar("Armor Weight: " + weightColor(weight) + weight);
-            ArmorStats stats = ArmorStats.getArmorStats(player.getEquipment());
+            double previous_weight = -25;
+            UUID uuid = player.getUniqueId();
+            if(weight_map.containsKey(uuid)) {
+                previous_weight = weight_map.get(uuid);
+            }
+
+
+            if(previous_weight != weight) {
+                player.sendActionBar("Armor Weight: " + weightColor(weight) + weight);
+                weight_map.put(uuid, previous_weight);
+            }
 //            Debug.broadcast("armorstats", "<blue>Armor:</blue> "+stats.getArmor()+" <blue>Toughness:</blue> "+stats.getToughness());
 //        player.updateInventory();
 //            Debug.broadcast("armorstats", "Player's Water Move: "+player.getAttribute(Attribute.WATER_MOVEMENT_EFFICIENCY).getValue());

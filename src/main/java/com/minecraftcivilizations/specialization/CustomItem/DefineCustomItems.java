@@ -31,7 +31,7 @@ public class DefineCustomItems implements Listener {
 
     public Bandage bandage;
     public DefineCustomItems(Specialization plugin) {
-        this.bandage = new Bandage("bandage", "Bandage");
+        this.bandage = new Bandage("custombandage", "Bandage");
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 

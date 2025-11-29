@@ -8,23 +8,23 @@
 {Velour|Feathered|Cottony} [Soft]
 {Cozy|Blossomed} [Soft]
 {Fuzzy|Plush} [Soft]
-{Satin|Silken|Smooth} [Soft]
+{Slippery|Silken|Smooth} [Soft]
 {Billowy|Padded|Cushioned} [Soft]
 {Lambent|Murmuring|Gossamer} [Soft]
 {Padded|Fluffy|Supple} [Soft]
 {Velour|Feathered|Cottony} [Soft]
-{Petled|Cozy|Blossomed} [Soft]
-{Satin|Silken|Smooth} [Soft]
+{Petaled|Cozy|Blossomed} [Soft]
+{Soft|Silken|Smooth} [Soft]
 {Billowy|Padded|Cushioned} [Soft]
 {Lambent|Murmuring|Gossamer} [Soft]
 {Fluffy|Supple|Tender} [Soft]
 {Blushing|Gentle|Delicate} [Soft]
-{Velvetine|Rosy|Lustrous} [Soft]
+{Velvety|Rosy|Lustrous} [Soft]
 {Honeyed|Lulling|Pale} [Soft]
 {Glossy|Misty|Meek} [Soft]
 {Caressing|Dusky|Sweetened} [Soft]
 {Silvery|Warmed|Floral} [Soft]
-{Coy|Graceful|Scented} [Soft]
+{Light|Graceful|Scented} [Soft]
 {Dainty|Willowy|Softened} [Soft]
 {Sugared|Pearled|Murmured} [Soft]
 {Seraphic|Glistened|Kindly} [Soft]
@@ -71,12 +71,13 @@
 {Frosted|Iced|Biting} [Cold]
 
 # Motion
-{Sinuous|Twisting|Meandering} [Motion]
+{Falling|Twisting|Meandering} [Motion]
+{Stumbling|Tripping|Collapsing} [Motion]
 {Wave|Roll|Current} [Motion]
 {Spiraling|Drifting|Undulating} [Motion]
 {Flowing|Surging|Rippling} [Motion]
 {Tumbling|Skimming|Gliding} [Motion]
-{Oscillating|Shifting|Fluttering} [Motion]
+{Jumping|Shifting|Fluttering} [Motion]
 {Rolling|Swaying|Turning} [Motion]
 {Vibration|Sonorous|Harmonic} [Motion]
 
@@ -85,13 +86,15 @@
 {Echo|Faint|Ethereal|Noisy} [Sound]
 
 # Time
-{Moment|Pulse|Flicker} [Time]
+{Instant|Flickering} [Time]
 {Fleeting|Ephemeral|Momentary} [Time]
-{Dimming|Waning|Brief} [Time]
+{Dimming|Waning|Ending} [Time]
 {Eon|Perpetual|Endless} [Time]
 {Passing|Transient|Fading} [Time]
-{Cycle|Rotation|Span} [Time]
-{Epoch|Chronos|Continuum} [Time]
+{Cycling|Rotating|Spanning} [Time]
+{Continue|Starting} [Time]
+{Relative|Nocturnal}
+
 
 # Air
 {Gusting|Whirling|Swirling} [Air]
@@ -109,6 +112,7 @@
 {Celestial|Ethereal|Astral} [Space]
 {Orbiting|Unbounded} [Space]
 {Ecliptic|Steamy|Unfathomed} [Space]
+{Lunar|Solar} [Space]
 
 # Visual
 {Shimmering|Glinting|Twinkling} [Visual]
@@ -118,18 +122,45 @@
 {Glowing|Illuminated|Brightened} [Visual]
 {Flickering|Glinting|Glistening} [Visual]
 {Veiled|Hazy|Obscured} [Visual]
-
-# Happy
+{Mottled|Marbled|Speckled} [Visual]
 
 # Mellow
-
 {lowercased} [Mellow]
+{Alternating|Oscilating|Harmonic} [Motion]
 
 
+{Gentle|Careful|Calm} [Mellow]
+{Idyllic|Light|Pure} [Mellow]
+{Warm|Smooth} [Mellow]
 
+# Meadow
+{Suspicious|Calming} [Plains]
+{Golden|Endless|Rolling} [Plains]
+{Windswept|Vast|Silent} [Plains]
+{Gentle|Wide|Open} [Plains]
+{Whispering|Sunlit|Tranquil} [Plains]
+{Flowery|Soft|Peaceful} [Plains]
+{Calming|Rustling|Humming} [Plains]
+{Buzzing|Warm|Idling} [Plains]
+{Verdant|Lush|Fertile} [Plains]
+{Still|Lonely|Quiet} [Plains]
+{Misty|Dewy|Morning} [Plains]
+{Hazy|Distant|Shimmering} [Plains]
+{Drowsy|Lazy|Dreaming} [Plains]
+{Pastoral|Blooming|Idyllic} [Plains]
+{Boundless|Serene|Gentle} [Plains]
+{Drifting|Waving|Breezy} [Plains]
+
+# Forest
+{Flowery|Verdant|Lush} [Forest]
+{Wisened|Tangled} [Forest]
+{Billowing|Buzzing|Rustling} [Forest]
+{Ashen|Oaken|Pale} [Forest]
 
 
 #defualts -
+Foggy
+Windy
 Ancient
 Mystic
 Infernal
@@ -201,11 +232,14 @@ Withered
 Drowned
 Lovely
 Chaotic
+True
 Lil
 Smelly
 Lazy
 Wonky
 Whispered
 Witherborn
+Goofy
+Final
 
 Shot

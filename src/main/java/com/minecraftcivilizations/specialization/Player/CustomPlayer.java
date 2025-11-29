@@ -190,7 +190,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
         if (previousLevel != currentLevel) {
             SkillLevelChangeEvent level_change_event = new SkillLevelChangeEvent(this, player, skillType, previousLevel, currentLevel, xp);
             Bukkit.getPluginManager().callEvent(level_change_event);
-//            applyEffects(); disabled for testing new combat
+            applyEffects(); //disabled for testing new combat
             String skill_name = SkillType.getDisplayName(skillType);
             if (previousLevel < currentLevel) {
                 player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 100, 1);
@@ -227,7 +227,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
                 }
                 if(player.getActivePotionEffects().stream().noneMatch(effect -> effect.getType().equals(potionEffectType) && effect.getAmplifier() > dataEffect.secondValue())){
                     player.removePotionEffect(potionEffectType);
-                    player.addPotionEffect(new PotionEffect(potionEffectType,-1, dataEffect.secondValue(), false, true, true));
+                    player.addPotionEffect(new PotionEffect(potionEffectType,-1, dataEffect.secondValue(), false, false, true));
                 }
             }
         });

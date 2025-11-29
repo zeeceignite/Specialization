@@ -188,8 +188,6 @@ public final class Specialization extends JavaPlugin {
         world.setGameRule(GameRule.WATER_SOURCE_CONVERSION, false);
         world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
         world.setGameRule(GameRule.MINECART_MAX_SPEED, 24);
-        world.setDifficulty(Difficulty.HARD);
-        world.setGameRule(GameRule.SEND_COMMAND_FEEDBACK, false);
 
 
         //global game rules
@@ -308,10 +306,10 @@ public final class Specialization extends JavaPlugin {
             throw new RuntimeException(e);
         }
 
-        // Cleans up optional names held in temp reserves
+        // Cleans up optional names held in temp reserves if a name was chosen
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             localNameGenerator.cleanupExpiredTemps();
-        }, 0L, 1 * 60 * 20L); // every 10 minutes
+        }, 0L, 1 * 60 * 20L); // every 1 minute
 
 
         commandManager = new PaperCommandManager(this);
@@ -338,7 +336,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new SetXpCommand());
         commandManager.registerCommand(new SetLoreCommand());
         commandManager.registerCommand(new TownsCommand());
-        commandManager.registerCommand(new SuicideCommand(playerDownedListener));
+        commandManager.registerCommand(new SuicideCommand(playerDownedListener, pvpManager, this));
         commandManager.registerCommand(new AnalyticsCommand());
         commandManager.registerCommand(new RestoreHealthCommand());
         commandManager.registerCommand(new NotifyRestartCommand());

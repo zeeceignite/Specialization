@@ -174,16 +174,13 @@ public class CombatManager implements Listener {
         }
 
 
-        Debug.broadcast("damage", " ");
+//        Debug.broadcast("damage", " ");
 
-        Debug.broadcast("damage", "<gray> ------- <white>"+event.getDamager().getName()+"</white> -> <white>"+event.getEntity().getName()+"</white> ------- </gray>");
+//        Debug.broadcast("damage", "<gray> ------- <white>"+event.getDamager().getName()+"</white> -> <white>"+event.getEntity().getName()+"</white> ------- </gray>");
 
         Entity damager = event.getDamager();
         CustomPlayer customPlayer = CoreUtil.getPlayer(damager.getUniqueId());
         String extramsg = "";
-
-
-
 
 
 
@@ -194,17 +191,18 @@ public class CombatManager implements Listener {
 
                 String modifiers = "";
 
-                if(event.isApplicable(ARMOR)) {
+                if (event.isApplicable(ARMOR)) {
                     double armor_resist = event.getDamage(ARMOR);
-                    event.setDamage(ARMOR, armor_resist*multiplier);
+                    event.setDamage(ARMOR, armor_resist * multiplier);
                 }
-
-                for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
+                if (Debug.isAnyoneListening("damage", false)) {
+                    for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
 //            if(event.getDamage(m)!=0)
-                    modifiers += "\n<gray>"+m.name()+"</gray>: "+Debug.formatDecimal(event.getDamage(m));
+                        modifiers += "\n<gray>" + m.name() + "</gray>: " + Debug.formatDecimal(event.getDamage(m));
+                    }
+                    Debug.broadcast("damage", "Arrow Damage: <red>" + original_base + (event.isCritical() ? "<yellow>[CRIT]</yellow>" : "") +
+                            " <gold>[<gray>🏹</gray>x" + multiplier + "]</gold>" + "</red> Final: <red>" + Debug.formatDecimal(event.getFinalDamage()), modifiers);
                 }
-                Debug.broadcast("damage", "Arrow Damage: <red>" + original_base + (event.isCritical()?"<yellow>[CRIT]</yellow>":"") +
-                        " <gold>[<gray>🏹</gray>x"+multiplier+"]</gold>"+"</red> Final: <red>" + Debug.formatDecimal(event.getFinalDamage()), modifiers);
             }
         }
 
@@ -241,7 +239,7 @@ public class CombatManager implements Listener {
                     //            crit_msg = GOLD+" ("+GRAY+"✨ "+GOLD+(Debug.formatDecimal(crit_multiplier) +"x)");
                     event.setDamage(BASE, new_base);
 //                    dmger.setCooldown(item, cd);
-                    Debug.broadcast(
+                    Debug.message(dmger,
                             "damage",
                             //WHITE+victim.getName()+" "+*
                             "<dark_red>Crit: </dark_red><red>" +Debug.formatDecimal(base)+
@@ -384,28 +382,36 @@ public class CombatManager implements Listener {
             }
         }
 
-        if(damager instanceof Player player) {
+        //display player CHARGE - ENSURE damager is in survival for testing
+        extramsg +=  "<gold> [⚡" + Debug.formatDecimal(charge_amount) + "]</gold>";
+        String modifiers = "";
+
+        for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
+            modifiers += "\n<gray>"+m.name()+"</gray>: "+Debug.formatDecimal(event.getDamage(m));
+        }
+
+        if(damager instanceof Player dmger) {
             if (event.getEntity() instanceof LivingEntity victim) {
                 if (!event.isCancelled()) {
                     mobManager.applyExp(event, customPlayer, victim); //Exp is acquired only after calculating final damage
                 }
             }
+
+
+            Debug.message(dmger,
+                    "damage",
+                    "<dark_red>Final Damage: <red>"+Debug.formatDecimal(calculateTotalDamage(event))+extramsg,
+                    "<red>Minimum Hit Required: </red>"+DAMAGE_MINIMUM+""+modifiers
+            );
         }
-
-        //display player CHARGE - ENSURE damager is in survival for testing
-        extramsg +=  "<gold> [⚡" + Debug.formatDecimal(charge_amount) + "]</gold>";
-
-        String modifiers = "";
-
-        for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
-//            if(event.getDamage(m)!=0)
-            modifiers += "\n<gray>"+m.name()+"</gray>: "+Debug.formatDecimal(event.getDamage(m));
+        if(event.getEntity() instanceof Player victim){
+            //display player CHARGE - ENSURE damager is in survival for testing
+            Debug.message(victim,
+                    "damage",
+                    "<dark_red>📩 Damage: <red>"+Debug.formatDecimal(calculateTotalDamage(event))+extramsg,
+                    "<red>Minimum Hit Required: </red>"+DAMAGE_MINIMUM+""+modifiers
+            );
         }
-        Debug.broadcast(
-                "damage",
-                "<dark_red>Final Damage: <red>"+Debug.formatDecimal(calculateTotalDamage(event))+extramsg,
-                "<red>Minimum Hit Required: </red>"+DAMAGE_MINIMUM+""+modifiers
-        );
 
     }
 
