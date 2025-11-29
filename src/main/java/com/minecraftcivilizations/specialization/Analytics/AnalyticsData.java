@@ -36,6 +36,7 @@ public record AnalyticsData(
     int serverComplexItemsCraftedInPeriod,
     double gini,
     double invertShannon,
+    int playersWithZeroXP,
     Map<String, Integer> serverComplexItemsCraftedDetailsInPeriod,
     Map<SkillType, Integer> serverClassPopulation,
     Map<SkillType, Map<Integer, Integer>> serverPlayersPerSkillLevel,
@@ -135,6 +136,7 @@ private static AnalyticsData poll(){
 
     List<Double> giniList = new ArrayList<>();
     List<Double> shannonList = new ArrayList<>();
+    int playersWithZeroXP = 0;
 
     //for all players
     for(CustomPlayer player: allPlayers){
@@ -142,6 +144,7 @@ private static AnalyticsData poll(){
         double inverted;
 
         if(player.getTotalXp() == 0) {
+            playersWithZeroXP++;
             continue;
         }
 
@@ -181,6 +184,7 @@ private static AnalyticsData poll(){
             serverComplexItemsCraftedInPeriod,
             gini,
             shannon,
+            playersWithZeroXP,
             serverComplexItemsCraftedDetailsInPeriod,
             serverClassPopulation,
             serverPlayersPerSkillLevel,
