@@ -30,7 +30,7 @@ public class Skill {
         //ASSIGN XP CURVE FORMULA
         for (int lvl = 1; lvl <= MAX_LEVEL; lvl++) {
             CACHED_LEVELS[lvl] =
-                    Math.floor(1.8 * (25 * Math.pow(lvl, 2) + (5 * lvl) + (200 * Math.pow(2.45, lvl))) - 300);
+                        Math.floor(1.35 * (25 * Math.pow(lvl, 2) + (5 * lvl) + (200 * Math.pow(2.3, lvl))) );
         }
     }
 
