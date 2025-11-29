@@ -37,7 +37,6 @@ import java.util.*;
 
 /** @author Jfrogy*/
 
-@CommandPermission("specialization.emote")
 public class EmoteCommand extends BaseCommand implements Listener {
 
     private final Map<Block, Interaction> seatBlocks = new HashMap<>();
@@ -81,7 +80,6 @@ public class EmoteCommand extends BaseCommand implements Listener {
 
     @CommandAlias("emotes|e")
     @Description("Lists all emote-type custom items")
-    @CommandPermission("civlabs.emotes")
     public void onList(Player sender) {
         PlayerUtil.message(sender ,"§7==== §eAvailable Emotes §7====");
         PlayerUtil.message(sender ,"§9● §b Sit");
