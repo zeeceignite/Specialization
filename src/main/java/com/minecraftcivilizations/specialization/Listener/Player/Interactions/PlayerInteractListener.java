@@ -21,7 +21,9 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -29,10 +31,7 @@ import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.event.player.PlayerBucketEmptyEvent;
-import org.bukkit.event.player.PlayerBucketFillEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -182,22 +181,41 @@ public class PlayerInteractListener implements Listener {
     }
 
 
-    @EventHandler
-    public void onHarvestSweetBerries(PlayerInteractEvent e) {
-        // main-hand right click on a fully-grown sweet-berry bush
-        if (!e.getAction().isRightClick() || e.getHand() == EquipmentSlot.OFF_HAND) return;
-        Block clicked = e.getClickedBlock();
-        if (clicked == null || clicked.getType() != Material.SWEET_BERRY_BUSH) return;
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void onSweetBerryHarvest(PlayerHarvestBlockEvent e) {
+        if (e.getHarvestedBlock().getType() != Material.SWEET_BERRY_BUSH) return;
+        boolean producedBerries = e.getItemsHarvested().stream()
+                .anyMatch(item -> item.getType() == Material.SWEET_BERRIES);
+        if (!producedBerries) return;
 
-        org.bukkit.block.data.BlockData data = clicked.getBlockData();
-        if (data instanceof Ageable age && age.getAge() == age.getMaximumAge()) {
-            CustomPlayer cp = CoreUtil.getPlayer(e.getPlayer());
-            if (cp != null) {
-                // tweak value if you like; 1 is a safe default
-                cp.addSkillXp(SkillType.FARMER, 3);
-            }
+        Player player = e.getPlayer();
+        CustomPlayer cp = CoreUtil.getPlayer(player);
+        if (cp != null) {
+            cp.addSkillXp(SkillType.FARMER, 3);
         }
     }
+
+    @EventHandler
+    public void onSugarcanePhysics(org.bukkit.event.block.BlockPhysicsEvent e) {
+        if (e.getBlock().getType() != org.bukkit.Material.SUGAR_CANE) return;
+        org.bukkit.block.Block base = e.getBlock();
+        org.bukkit.block.Block below = base.getRelative(org.bukkit.block.BlockFace.DOWN);
+        if (below.getType() == org.bukkit.Material.SUGAR_CANE) return;
+        boolean hasWater =
+                below.getRelative(org.bukkit.block.BlockFace.NORTH).getType() == org.bukkit.Material.WATER ||
+                        below.getRelative(org.bukkit.block.BlockFace.SOUTH).getType() == org.bukkit.Material.WATER ||
+                        below.getRelative(org.bukkit.block.BlockFace.EAST).getType() == org.bukkit.Material.WATER ||
+                        below.getRelative(org.bukkit.block.BlockFace.WEST).getType() == org.bukkit.Material.WATER;
+        if (!hasWater) {
+            org.bukkit.block.Block b = base;
+            while (b.getType() == org.bukkit.Material.SUGAR_CANE) {
+                b.setType(org.bukkit.Material.AIR, false);
+                b = b.getRelative(org.bukkit.block.BlockFace.UP);
+            }
+            e.setCancelled(true);
+        }
+    }
+
     @EventHandler
     public void onHarvestGlowBerries(PlayerInteractEvent e) {
         if (!e.getAction().isRightClick() || e.getHand() == EquipmentSlot.OFF_HAND) return;
