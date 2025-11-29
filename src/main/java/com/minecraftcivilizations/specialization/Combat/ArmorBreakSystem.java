@@ -40,11 +40,15 @@ public class ArmorBreakSystem {
         // Armor Bonus for EXPERT and above
         if(!(event.getDamager() instanceof HumanEntity attacker)) return "";
 
-        if(attacker.getAttackCooldown()<0.425)return "not ready";
+
+        if(attacker.getAttackCooldown()<0.25){
+            return "not ready";
+        }
         ItemStack itemInMainHand = attacker.getEquipment().getItemInMainHand();
-        if(itemInMainHand==null)return "";
-        if(itemInMainHand.getType().name().contains("_PICKAXE")){
-            event.setDamage(BASE, event.getDamage(BASE)*0.5);
+        if(victim instanceof Player) {
+            if (itemInMainHand.getType().name().contains("_PICKAXE")) {
+                event.setDamage(BASE, event.getDamage(BASE) * 0.75); //nerf pickaxes to account for armor
+            }
         }
 
         int armor_rolls = 3;//1+ ThreadLocalRandom.current().nextInt(3);
@@ -53,6 +57,9 @@ public class ArmorBreakSystem {
         CustomPlayer customPlayer = CoreUtil.getPlayer(attacker);
         if(customPlayer!=null){
             armor_damage = armor_damage + break_stats.getSkillBonus(customPlayer);
+            if(attacker.getAttackCooldown()<1){
+                armor_damage *= 0.5; //non full charges should break less armor
+            }
         }
         if(armor_rolls == 0) return "";
 
@@ -109,15 +116,13 @@ public class ArmorBreakSystem {
                                 scale = 0.5;
                                 break;
                         }
-//                        if(chance < ThreadLocalRandom.current().nextDouble()) {
                         int current_damage_amount = (int) (armor_damage * scale);
                         item.damage(current_damage_amount, attacker);
                         total_extra_penetration += current_damage_amount;
-                        Debug.broadcast("armor", "<white>"+slot.name()+"</white> broke by <light_purple>"+current_damage_amount);
-                        armor_damage *= 0.5; //for the next armor piece
-//                        }else{
-//                            Debug.broadcast("armor", "Unbreaking proc");
+//                        if(attacker instanceof Player px) {
+//                            Debug.message(px, "armor", "<white>" + slot.name() + "</white> broke by <light_purple>" + current_damage_amount);
 //                        }
+                        armor_damage *= 0.5; //for the next armor piece
                     }
                 }
             }
@@ -126,10 +131,6 @@ public class ArmorBreakSystem {
 //                    double mine_hit = 1;
                 total_extra_penetration *= attacker.getAttackCooldown();
                 //Negate Armor Break from Base Damage
-
-//                    event.setDamage(ARMOR, event.getDamage(ARMOR) - 1 - (total_extra_penetration/4));
-
-
 
                 Sound sound = null;
                 for (Map.Entry<EquipmentSlot, Material> slot : map.entrySet()) {
