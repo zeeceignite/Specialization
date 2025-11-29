@@ -45,8 +45,6 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
     private int reacquire_tick = 0;
     private float break_scalar;
 
-    private static final EnumSet<Material> deniedTypes = EnumSet.of(OBSIDIAN, BEDROCK);
-
     public HuntPlayerMobGoal(Mob mob, double follow_range, boolean breaks_blocks, double break_scalar) {
         this.mob = mob;
         this.follow_range = follow_range;
@@ -92,7 +90,7 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
 
         mob.getLocation().getNearbyPlayers(follow_range).stream()
                 .filter(validGamemode)
-                .filter(p -> p.getLocation().distance(mob.getLocation()) < 48)
+                .filter(p -> p.getLocation().distance(mob.getLocation()) < follow_range)
                 .min((p1, p2) -> {
                     CustomPlayer player1 = CoreUtil.getPlayer(p1);
                     CustomPlayer player2 = CoreUtil.getPlayer(p2);
@@ -105,9 +103,9 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
                 })
                 .ifPresent(player -> mob.setTarget(player));
 
-        if (mob.getTarget() != null) {
-            Debug.broadcast("huntplayer", mob.getType().name().toLowerCase() + ": <red>targeting player</red> " + mob.getTarget().getName());
-        }
+//        if (mob.getTarget() != null) {
+//            Debug.broadcast("huntplayer", mob.getType().name().toLowerCase() + ": <red>targeting player</red> " + mob.getTarget().getName());
+//        }
     }
 
     @Override
@@ -118,17 +116,21 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
 
         tick++;
         if (tick % 20 == 0) { // once per second
+            calculateNewTarget();
             if (mob.getTarget() == null) {
-                    calculateNewTarget();
                 return;
             }
             tick = 0;
         }
 
+
+
         // We have a target. detect target changes and reset state
         Entity current_target = mob.getTarget();
-        if(current_target==null){
+        if(current_target==null) {
             return;
+        }else if(current_target.getLocation().distance(current_target.getLocation())>follow_range){
+            mob.setTarget(null);
         }else if (current_target != last_target) {
             last_target = current_target;
             breakAmount = 0f;
@@ -183,10 +185,14 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
             Block hit = result.getHitBlock();
             if (hit == null) return;
 
-//            List<String> deniedBlocks = SpecializationConfig.getMobConfig().get("BLOCK_BREAK_IGNORE_LIST_REGEX", new TypeToken<>(){}); screw the config
+            List<String> deniedBlocks = SpecializationConfig.getMobConfig()
+                    .get("BLOCK_BREAK_IGNORE_LIST_REGEX", new TypeToken<List<String>>() {});
+
             if (hit.getType() == Material.AIR) return;
 
-            if(deniedTypes.contains(hit.getType())){
+            String material_name = hit.getType().name();
+
+            if (deniedBlocks.stream().anyMatch(material_name::matches)) {
                 return;
             }
 
