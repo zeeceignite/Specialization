@@ -578,8 +578,8 @@ public class MobManager implements Listener {
             }
         }
         if(stats.doesHunting()) {
-            if (entity instanceof Mob mob) {
-                Bukkit.getMobGoals().addGoal(mob, 0, new TargetPlayerMobGoal(mob, stats.getFollowRange()));
+            if (entity instanceof Monster mob) {
+                Bukkit.getMobGoals().addGoal(mob, 0, new TargetPlayerMobGoal(mob));
             }
         }
     }
