@@ -1,5 +1,4 @@
 package com.minecraftcivilizations.specialization.MobGoals;
-
 import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.destroystokyo.paper.entity.ai.GoalType;
@@ -16,8 +15,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.EnumSet;
 
-public class TargetPlayerMobGoal implements Goal<@NotNull Monster> {
-    public static final GoalKey<@NotNull Monster> KEY = GoalKey.of(Monster.class, new NamespacedKey(Specialization.getInstance(),"monster_target_player"));
+public class TargetPlayerMobGoal implements Goal<Monster> {
+    public static final GoalKey<Monster> KEY = GoalKey.of(Monster.class, new NamespacedKey(Specialization.getInstance(),"monster_target_player"));
     private Monster monster;
 
     public TargetPlayerMobGoal(Monster monster){
@@ -53,12 +52,12 @@ public class TargetPlayerMobGoal implements Goal<@NotNull Monster> {
     }
 
     @Override
-    public @NotNull GoalKey<@NotNull Monster> getKey() {
+    public GoalKey<@NotNull Monster> getKey() {
         return KEY;
     }
 
     @Override
-    public @NotNull EnumSet<GoalType> getTypes() {
+    public EnumSet<GoalType> getTypes() {
         return EnumSet.of(GoalType.TARGET, GoalType.MOVE);
     }
 }
