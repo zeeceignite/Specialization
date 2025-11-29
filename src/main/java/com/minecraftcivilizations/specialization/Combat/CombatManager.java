@@ -382,25 +382,33 @@ public class CombatManager implements Listener {
             }
         }
 
-        if(damager instanceof Player player) {
+        //display player CHARGE - ENSURE damager is in survival for testing
+        extramsg +=  "<gold> [⚡" + Debug.formatDecimal(charge_amount) + "]</gold>";
+        String modifiers = "";
+
+        for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
+            modifiers += "\n<gray>"+m.name()+"</gray>: "+Debug.formatDecimal(event.getDamage(m));
+        }
+
+        if(damager instanceof Player dmger) {
             if (event.getEntity() instanceof LivingEntity victim) {
                 if (!event.isCancelled()) {
                     mobManager.applyExp(event, customPlayer, victim); //Exp is acquired only after calculating final damage
                 }
             }
 
-            //display player CHARGE - ENSURE damager is in survival for testing
-            extramsg +=  "<gold> [⚡" + Debug.formatDecimal(charge_amount) + "]</gold>";
 
-            String modifiers = "";
-
-            for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
-//            if(event.getDamage(m)!=0)
-                modifiers += "\n<gray>"+m.name()+"</gray>: "+Debug.formatDecimal(event.getDamage(m));
-            }
-            Debug.message(player,
+            Debug.message(dmger,
                     "damage",
                     "<dark_red>Final Damage: <red>"+Debug.formatDecimal(calculateTotalDamage(event))+extramsg,
+                    "<red>Minimum Hit Required: </red>"+DAMAGE_MINIMUM+""+modifiers
+            );
+        }
+        if(event.getEntity() instanceof Player victim){
+            //display player CHARGE - ENSURE damager is in survival for testing
+            Debug.message(victim,
+                    "damage",
+                    "<dark_red>📩 Damage: <red>"+Debug.formatDecimal(calculateTotalDamage(event))+extramsg,
                     "<red>Minimum Hit Required: </red>"+DAMAGE_MINIMUM+""+modifiers
             );
         }
