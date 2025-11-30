@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -71,7 +72,7 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
         Debug.broadcast("huntplayer", "<green>starting hunt player for " + mob.getName());
         // immediate attempt to find a target if none exists
         if (mob.getTarget() == null) {
-            calculateNewTarget();
+            calculateNewTarget(true);
         } else {
             // ensure internal state reflects current target
             last_target = mob.getTarget();
@@ -83,7 +84,40 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
         reacquire_tick = 0;
     }
 
-    public void calculateNewTarget() {
+    public void calculateRandomTarget(boolean detect_guardsman_level) {
+        Predicate<Player> validGamemode = p ->
+                p.getGameMode() == GameMode.SURVIVAL ||
+                        p.getGameMode() == GameMode.ADVENTURE;
+
+        List<Player> valid_targets = mob.getLocation().getNearbyPlayers(follow_range).stream()
+                .filter(validGamemode)
+                .filter(p -> p.getLocation().distance(mob.getLocation()) < follow_range)
+                .toList();
+
+        if (valid_targets.isEmpty()) return;
+
+        if (detect_guardsman_level) {
+            int max_level = valid_targets.stream()
+                    .mapToInt(p -> CoreUtil.getPlayer(p).getSkillLevel(SkillType.GUARDSMAN))
+                    .max()
+                    .orElse(0);
+
+            valid_targets = valid_targets.stream()
+                    .filter(p -> CoreUtil.getPlayer(p).getSkillLevel(SkillType.GUARDSMAN) == max_level)
+                    .toList();
+        }
+
+        Player chosen = valid_targets.get(ThreadLocalRandom.current().nextInt(valid_targets.size()));
+        mob.setTarget(chosen);
+    }
+
+
+
+    public void calculateNewTarget(boolean detect_guardsman_level) {
+//        Debug.broadcast("mob", "Calculating New Target with guardsman");
+        double guardsman_zone_radius_base = 6; // the minimum radius for guardsman attraction
+        double guardsman_zone_radius_per_lvl = 2; //each level increase for guardsman
+
         Predicate<Player> validGamemode = p ->
                 p.getGameMode() == GameMode.SURVIVAL ||
                         p.getGameMode() == GameMode.ADVENTURE;
@@ -94,35 +128,67 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
                 .min((p1, p2) -> {
                     CustomPlayer player1 = CoreUtil.getPlayer(p1);
                     CustomPlayer player2 = CoreUtil.getPlayer(p2);
-                    if (player1.getSkillLevel(SkillType.GUARDSMAN) > player2.getSkillLevel(SkillType.GUARDSMAN)) return -1;
-                    if (player1.getSkillLevel(SkillType.GUARDSMAN) < player2.getSkillLevel(SkillType.GUARDSMAN)) return 1;
-                    if (mob.getLocation().getWorld().equals(p1.getLocation().getWorld()) && mob.getLocation().getWorld().equals(p2.getLocation().getWorld())) {
-                        return Double.compare(p1.getLocation().distanceSquared(mob.getLocation()), p2.getLocation().distanceSquared(mob.getLocation()));
+
+                    int lvl1 = player1.getSkillLevel(SkillType.GUARDSMAN);
+                    int lvl2 = player2.getSkillLevel(SkillType.GUARDSMAN);
+
+                    double zone1 = guardsman_zone_radius_base + (lvl1 * guardsman_zone_radius_per_lvl);
+                    double zone2 = guardsman_zone_radius_base + (lvl2 * guardsman_zone_radius_per_lvl);
+
+                    double d1sq = p1.getLocation().distanceSquared(mob.getLocation());
+                    double d2sq = p2.getLocation().distanceSquared(mob.getLocation());
+
+                    boolean p1_in_zone = d1sq <= (zone1 * zone1);
+                    boolean p2_in_zone = d2sq <= (zone2 * zone2);
+
+                    if (lvl1 != lvl2) {
+                        if (lvl1 > lvl2) {
+                            if (!p1_in_zone && p2_in_zone) return 1;
+                            if (p1_in_zone && !p2_in_zone) return -1;
+                            return Integer.compare(lvl2, lvl1);
+                        } else {
+                            if (!p2_in_zone && p1_in_zone) return -1;
+                            if (p2_in_zone && !p1_in_zone) return 1;
+                            return Integer.compare(lvl2, lvl1);
+                        }
+                    }
+
+                    // ALWAYS fall back to distance check (including equal guardsman)
+                    if (mob.getWorld().equals(p1.getWorld()) && mob.getWorld().equals(p2.getWorld())) {
+                        return Double.compare(d1sq, d2sq);
                     }
                     return 0;
                 })
                 .ifPresent(player -> mob.setTarget(player));
-
-//        if (mob.getTarget() != null) {
-//            Debug.broadcast("huntplayer", mob.getType().name().toLowerCase() + ": <red>targeting player</red> " + mob.getTarget().getName());
-//        }
     }
+
 
     @Override
     public void tick() {
         // If we don't have a target, periodically try to acquire one
 
-
-
         tick++;
-        if (tick % 20 == 0) { // once per second
-            calculateNewTarget();
+        if (tick % 40 == 0) { // once per second
+//            if (mob.getTarget() == null) {
+//                calculateNewTarget(true);
+//            }else
+
             if (mob.getTarget() == null) {
+                calculateNewTarget(false);
+            }
+            if (ThreadLocalRandom.current().nextDouble() < 0.5) {
+                calculateNewTarget(true);
+//                if(ThreadLocalRandom.current().nextDouble() < 0.30){
+//                }else{
+//
+//                }
+            }
+            if (mob.getTarget() == null) {
+                calculateNewTarget(false);
                 return;
             }
             tick = 0;
         }
-
 
 
         // We have a target. detect target changes and reset state
@@ -224,7 +290,7 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
              * Block validation, incase it was broken
              * Also checks if the mob has walked too far away from the block
              */
-            if (block.getType() == Material.AIR || block.getLocation().distanceSquared(mob.getLocation()) > 50) {
+            if (block.getType() == Material.AIR || block.getLocation().distance(mob.getLocation()) > 5) {
                 if (nearbyPlayers != null && !nearbyPlayers.isEmpty()) {
                     nearbyPlayers.forEach(player -> player.sendBlockDamage(block.getLocation(), 0));
                 }
@@ -235,13 +301,13 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
                 return;
             }
 
-            float breakPercentagePerTick = 2f; //SpecializationConfig.getMobConfig().get("VISUAL_BREAKING_INCREASE_PER_TICK_PERCENTAGE", Float.class);
+            float breakPercentagePerTick = 5f; //SpecializationConfig.getMobConfig().get("VISUAL_BREAKING_INCREASE_PER_TICK_PERCENTAGE", Float.class);
             if (ReinforcementManager.isReinforced(block)){
                 if(ReinforcementManager.isLightlyReinforced(block)){
-                    breakPercentagePerTick = 0.25f;
+                    breakPercentagePerTick = 0.5f;
                 }
                 if(ReinforcementManager.isHeavilyReinforced(block)){
-                    breakPercentagePerTick = 0.125f;
+                    breakPercentagePerTick = 0.25f;
                 }
             }
             breakPercentagePerTick *= break_scalar;

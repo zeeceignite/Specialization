@@ -73,167 +73,49 @@ public class MobManager implements Listener {
         WATER_SPEED_KEY = new NamespacedKey(plugin, "custom_water_speed");
         STEP_HEIGHT_KEY = new NamespacedKey(plugin, "custom_step_height");
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
-//        plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
-//            @Override
-//            public void run() {
-//                nextArtificalMobSpawn();
-//            }
-//        }, 1L, 1L);
     }
 
 
 
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onMooshroom(PlayerInteractEntityEvent event) {
-        if (!(event.getRightClicked() instanceof MushroomCow mooshroom)) return;
-
-        Player player = event.getPlayer();
-        ItemStack item = player.getInventory().getItem(event.getHand());
-        if (item.getType() != Material.BOWL) return;
-
-        CustomPlayer pp = CoreUtil.getPlayer(player);
-        int lvl = pp.getSkillLevel(SkillType.FARMER);
-
-        // Minimum level to milk
-        if (lvl < 2) {
-            event.setCancelled(true);
-            PlayerUtil.message(player, "You need to be better at farming to do that");
-            return;
-        }
-
-        // Calculate cooldown scaling
-        // Example: lvl 1 = 60s, lvl 10+ = 10s
-        int maxCooldownTicks = 20 * 130; // 90 seconds
-        int minCooldownTicks = 20 * 45; // 45 seconds
-        int maxLevel = 5;
-
-        int scaledCooldown = maxCooldownTicks - ((lvl - 1) * (maxCooldownTicks - minCooldownTicks) / (maxLevel - 1));
-        if (scaledCooldown < minCooldownTicks) scaledCooldown = minCooldownTicks;
-
-        // Cooldown check
-        if (player.hasCooldown(Material.BOWL)) {
-            event.setCancelled(true);
-            PlayerUtil.message(player, "You're still tired from last milking.");
-            return;
-        }
-
-        // Grant XP
-        pp.addSkillXp(SkillType.FARMER, 10);
-
-        // Apply scaled cooldown
-        player.setCooldown(Material.BOWL, scaledCooldown);
-    }
-
-
-
-//    private int player_index = 0;
-
-//    private void nextArtificalMobSpawn() {
-//        List<Player> players = new ArrayList<>(Bukkit.getServer().getOnlinePlayers());
-//        if (players.isEmpty()) return;
+//    @EventHandler(priority = EventPriority.LOWEST)
+//    public void onMooshroom(PlayerInteractEntityEvent event) {
+//        if (!(event.getRightClicked() instanceof MushroomCow mooshroom)) return;
 //
-//        int attempts = 0;
-//        Player target_player = null;
+//        Player player = event.getPlayer();
+//        ItemStack item = player.getInventory().getItem(event.getHand());
+//        if (item.getType() != Material.BOWL) return;
 //
-//        while (attempts < players.size()) {
-//            if (player_index >= players.size()) {
-//                player_index = 0;
-//            }
+//        CustomPlayer pp = CoreUtil.getPlayer(player);
+//        int lvl = pp.getSkillLevel(SkillType.FARMER);
 //
-//            Player candidate = players.get(player_index);
-//            player_index++;
-//            attempts++;
-//
-//            if (candidate.getGameMode() != GameMode.CREATIVE &&
-//                    candidate.getGameMode() != GameMode.SPECTATOR) {
-//                target_player = candidate;
-//                break;
-//            }
-//        }
-//
-//        if (target_player == null) {
-//            return; // all players were creative/spectator
-//        }
-
-//        spawnArtificalMob(target_player);
-//    }
-
-//    private void spawnArtificalMob(Player target_player) {
-//        double radius = 48;
-//        List<Entity> nearby = target_player.getNearbyEntities(radius, radius, radius);
-//        long enemy_count = nearby.stream()
-//                .filter(e -> e instanceof LivingEntity)
-//                .filter(e -> e instanceof Enemy)
-//                .count();
-//        if (enemy_count > 50) {
+//        // Minimum level to milk
+//        if (lvl < 2) {
+//            event.setCancelled(true);
+//            PlayerUtil.message(player, "You need to be better at farming to do that");
 //            return;
 //        }
 //
-//        // 1% chance
-//        if (ThreadLocalRandom.current().nextDouble() >= 0.01) {
+//        // Calculate cooldown scaling
+//        // Example: lvl 1 = 60s, lvl 10+ = 10s
+//        int maxCooldownTicks = 20 * 130; // 90 seconds
+//        int minCooldownTicks = 20 * 45; // 45 seconds
+//        int maxLevel = 5;
+//
+//        int scaledCooldown = maxCooldownTicks - ((lvl - 1) * (maxCooldownTicks - minCooldownTicks) / (maxLevel - 1));
+//        if (scaledCooldown < minCooldownTicks) scaledCooldown = minCooldownTicks;
+//
+//        // Cooldown check
+//        if (player.hasCooldown(Material.BOWL)) {
+//            event.setCancelled(true);
+//            PlayerUtil.message(player, "You're still tired from last milking.");
 //            return;
 //        }
 //
-//        // Attempt to find a valid spawn location near the player
-//        final int attempts = 8;
-//        Location spawn_loc = null;
-//        for (int i = 0; i < attempts; i++) {
-//            // pick a random point within radius on XZ plane
-//            double angle = ThreadLocalRandom.current().nextDouble(0, Math.PI * 2);
-//            double dist = ThreadLocalRandom.current().nextDouble(4, radius); // avoid extremely close spawns
-//            double dx = Math.cos(angle) * dist;
-//            double dz = Math.sin(angle) * dist;
+//        // Grant XP
+////        pp.addSkillXp(SkillType.FARMER, 10);
 //
-//            Location candidate = target_player.getLocation().clone().add(dx, 0, dz);
-//            // Get the highest non-solid block location at that XZ (your util)
-//            Location highest = WorldUtils.getHighestNonsolidBlockLocation(candidate);
-//            if (highest == null) continue;
-//
-//            // Ensure there's solid ground below (so mob doesn't spawn inside air)
-//            Location below = highest.clone().subtract(0, 1, 0);
-//            if (below.getBlock().getType().isAir()) continue;
-//
-//            // Ensure there are no entities right at the spawn point
-//            boolean blockedByEntity = highest.getWorld().getNearbyEntities(highest, 1.0, 1.0, 1.0)
-//                    .stream().anyMatch(e -> e instanceof LivingEntity);
-//            if (blockedByEntity) continue;
-//
-//            // simple light / biome checks could be added here if desired
-//
-//            spawn_loc = highest.clone().add(0, 0, 0);
-//            break;
-//        }
-//
-//        if (spawn_loc == null) {
-//            // failed to find a valid location
-//            return;
-//        }
-//
-//        // Pick a hostile mob type suitable for overworld spawning
-//        EntityType[] choices = new EntityType[]{
-//                EntityType.ZOMBIE,
-//                EntityType.SKELETON,
-//                EntityType.CREEPER,
-//                EntityType.SPIDER
-//        };
-//        EntityType selected = choices[ThreadLocalRandom.current().nextInt(choices.length)];
-//
-//        // spawn the mob one block above the highest non-solid block (so it doesn't intersect)
-//        Location final_spawn = spawn_loc.clone().add(0.0, 0.0, 0.0);
-//        try {
-//            // Use World.spawnEntity and cast to LivingEntity
-//            LivingEntity spawned = (LivingEntity) spawn_loc.getWorld().spawnEntity(final_spawn, selected);
-//
-//            // optional: set persistent custom data, tags, or target the player
-//            if (spawned instanceof Monster monster) {
-//                monster.setTarget(target_player);
-//            }
-//
-//            Debug.broadcast("mobspawn", "spawned artificial mob " + selected.name() + " near " + target_player.getName());
-//        } catch (IllegalArgumentException ex) {
-//            // fallback: failed to spawn that entity type here
-//            Debug.broadcast("mobspawn", "failed to spawn artificial mob: " + ex.getMessage());
-//        }
+//        // Apply scaled cooldown
+//        player.setCooldown(Material.BOWL, scaledCooldown);
 //    }
 
 
@@ -322,21 +204,33 @@ public class MobManager implements Listener {
 
 
         //END OF PRIMARY REFRESH
-        setDefaultRuleSetChance(0, ZOMBIE, HUSK, DROWNED, SKELETON, CREEPER, SPIDER); //always override these mobs
+//        setDefaultRuleSetChance(0, ZOMBIE, HUSK, DROWNED,
+//                SKELETON, CREEPER, SPIDER,
+//                CAVE_SPIDER,
+//        ); //always override these mobs
 
         /**
          *    NOTE: If you add any mob variations, add it to this list
          */
-        for(EntityType type : EntityType.values()){
-            setDefaultRuleSetChance(0, type);
-        }
-//        setDefaultRuleSetChance(0,
-//                SLIME, BREEZE,
-//                GUARDIAN, ELDER_GUARDIAN,
-//                PILLAGER, RAVAGER, ILLUSIONER, VINDICATOR, WITCH,
-//                SILVERFISH, ENDERMITE, SHULKER,
-//                BLAZE, GHAST, PIGLIN, PIGLIN_BRUTE, HOGLIN, ZOGLIN, WITHER_SKELETON, ZOMBIFIED_PIGLIN);
+//        for(EntityType type : EntityType.values()){
+//            if(type) {
+//                setDefaultRuleSetChance(0, type);
+//            }
+//        }
 
+        /**
+         * These mobs will have a 100% chance of spawning
+         */
+        setDefaultRuleSetChance(0,
+                ZOMBIE, HUSK, DROWNED, ZOMBIE_VILLAGER,
+                SKELETON, BOGGED, STRAY,
+                CREEPER, SPIDER, CAVE_SPIDER,
+                SLIME, MAGMA_CUBE,
+                BREEZE,
+                GUARDIAN, ELDER_GUARDIAN,
+                PILLAGER, RAVAGER, ILLUSIONER, VINDICATOR, WITCH,
+                SILVERFISH, ENDERMITE, SHULKER,
+                BLAZE, GHAST, PIGLIN, PIGLIN_BRUTE, HOGLIN, ZOGLIN, WITHER_SKELETON, ZOMBIFIED_PIGLIN);
 
         /**
          * This covers miscelanious mobs
@@ -351,10 +245,29 @@ public class MobManager implements Listener {
                         .hunts()
                         .breaks()
                 );
+
+        /**
+         * Example:
+         * 95% of normal dolphin
+         * 5% of special dolphin
+         */
+        setDefaultRuleSetChance(75, DOLPHIN);
+        new MobOverrideRule(25, DOLPHIN)
+                .spawnInPacks()
+                .addVariation(new MobVariation("evil_dolphin", DOLPHIN)
+                        .anger(true)
+                        .damage(0.25, 0.5)
+                        .health(1.0)
+                        .size(1.25,1.5)
+                        .speed(0.75, 1.25)
+                        .hunts(42)
+                        .setGainsXpOverride(true)
+                        .drops(0)
+                );
         new MobOverrideRule(100,
                 SLIME, MAGMA_CUBE)
                 .addVariation(new MobVariation("slime_variation")
-                        .damage(2.0, 2.5)
+                        .damage(1.0, 1.5)
                         .speed(1.25, 1.5)
                         .xpScale(0.25)
                         .hunts()
@@ -362,8 +275,8 @@ public class MobManager implements Listener {
         new MobOverrideRule(100,
                 SILVERFISH)
                 .addVariation(new MobVariation("silverfish")
-                        .damage(2.0, 2.5)
-                        .speed(3.0, 3.0)
+                        .damage(1.0, 1.5)
+                        .speed(1.5, 2.0)
                         .hunts(32)
                         .xpScale(0.25)
                         .hunts(32)
@@ -373,8 +286,8 @@ public class MobManager implements Listener {
                 BLAZE, GHAST, PIGLIN, PIGLIN_BRUTE, WITHER_SKELETON, ZOMBIFIED_PIGLIN)
                 .addVariation(new MobVariation("nether_variation")
                         .health(2)
-                        .damage(2.0, 2.0)
-                        .speed(1.5, 1.5)
+                        .damage(1.5)
+                        .speed(1.5)
                         .xpScale(1.5)
                         .hunts()
                         .breaks()
@@ -383,9 +296,9 @@ public class MobManager implements Listener {
         new MobOverrideRule(100,
                 HOGLIN, ZOGLIN)
                 .addVariation(new MobVariation("hoglin")
-                        .health(2)
-                        .damage(2.0, 2.0)
-                        .speed(1.25, 1.25)
+                        .health(1.5)
+                        .damage(1.5)
+                        .speed(1.25)
                         .xpScale(0.5)
                         .hunts()
                         .breaks()
@@ -394,44 +307,39 @@ public class MobManager implements Listener {
         new MobOverrideRule(100, ZOMBIE, HUSK, DROWNED, ZOMBIE_VILLAGER)
                 .addVariation(new MobVariation("zombie_variation")
                         .health(2)
-                        .damage(2.0, 2.5)
-                        .speed(1.5, 2.0)
+                        .damage(1.0, 1.35)
+                        .speed(1.5, 1.75)
                         .hunts(64)
-                        .breaks(2)
+                        .breaks(1.5)
                 );
 
         new MobOverrideRule(100, SKELETON, BOGGED, STRAY)
                 .addVariation(new MobVariation("skeleton_variation")
                         .health(2)
-                        .damage(2.5, 3.0)
+                        .damage(1.25, 1.5)
                         .speed(1.25, 1.5)
                         .hunts(48)
-                        .breaks(0.5)
+                        .breaks(0.75)
                 );
 
         new MobOverrideRule(100, CREEPER)
                 .addVariation(new MobVariation("creeper")
                                 .xpScale(1.25)
                                 .health(2.0)
-                                .damage(2.0, 2.5)
-                                .speed(1.5, 1.5)
+                                .damage(1.0, 1.5)
+                                .speed(1.75)
                                 .hunts()
                                 .breaks(0.25)
                         , 1000)
-                .addVariation(new MobVariation("quick_creeper")
-                        .xpScale(1.5)
-                        .damage(1.0)
-                        .speed(1.5, 1.75)
-                        .hunts()
-                , 200);
+                ;
 
 
         new MobOverrideRule(100, SPIDER)
                 .addVariation(new MobVariation("spider_small")
-                                .health(0.3)
-                                .damage(1.5, 1.5)
-                                .stepheight(2.0)
-                                .speed(2.0, 2.5)
+                                .health(0.25)
+                                .damage(0.25, 0.5)
+                                .stepheight(0.5)
+                                .speed(2.0)
                                 .waterspeed(4, 4)
                                 .size(0.5,0.5)
                                 .spawnExtra(8)
@@ -440,13 +348,14 @@ public class MobManager implements Listener {
                                 .drops(0)
                         , 100)
                 .addVariation(new MobVariation("spider")
-                                .damage(2.5, 2.5)
-                                .speed(1.5, 1.5)
+                                .damage(1.5, 1.5)
+                                .speed(1.25)
                                 .health(2.0)
-                                .stepheight(2.0)
+                                .stepheight(1.0)
                                 .waterspeed(1.5, 1.5)
                                 .breaks(1.5)
-                                .hunts().drops(1, 1)
+                                .hunts()
+                                .drops(0.75, 2)
                         , 100);
 //                .addVariation(new MobVariation("spider_large", CAVE_SPIDER).health(4).damage(2.0).speed(0.5, 0.75).addImmunity(DamageType.ARROW).size(2.5,2.5).hunts(64).drops(1.0, 2.0).xpScale(1.5)
 //                        , 100);
@@ -460,39 +369,52 @@ public class MobManager implements Listener {
 
         MobVariation killer_bees = new MobVariation("killer_bees", BEE)
                 .anger(true)
-                .damage(0)
+                .damage(0.25)
                 .health(0.125)
                 .speed(2.0, 2.0)
-                .size(0.33, 0.44)
+                .size(0.5, 0.5)
                 .hunts(32)
-                .setGainsXpOverride(true).spawnExtra(2);
+                .setGainsXpOverride(true)
+                .spawnExtra(2);
 
         MobVariation wolf_pack = new MobVariation("wolf_pack", WOLF)
                 .anger(true)
-                .damage(2.0, 2.0)
+                .damage(1.25, 1.25)
                 .health(1.5)
                 .speed(1.5, 1.5)
                 .setGainsXpOverride(true)
                 .hunts(64)
                 .breaks()
-                .xpScale(1.5).replaceOriginalMob();
+                .xpScale(1.5)
+                .replaceOriginalMob();
 
+        setDefaultRuleSetChance(100, PIG, SHEEP, HORSE, WOLF);
 
         // field spawn
-        new MobOverrideRule(5, PIG, HORSE)
+        new MobOverrideRule(5, HORSE)
+                .addVariation(killer_bees, 4);
+        new MobOverrideRule(4, PIG)
                 .addVariation(killer_bees, 4);
 
-        new MobOverrideRule(5, PIG, HORSE)
-                .addVariation(wolf_pack, 10);
-
+        new MobOverrideRule(5, PIG)
+                .addVariation(wolf_pack, 10).spawnInPacks();
+        new MobOverrideRule(25, WOLF)
+                .addVariation(wolf_pack, 10).spawnInPacks();
 
 
         setDefaultRuleSetChance(25, POLAR_BEAR);
         new MobOverrideRule(25, POLAR_BEAR)
                 .addVariation(new MobVariation("mean_polar_bear", POLAR_BEAR).anger(true).speed(1.2,1.2).health(2).hunts(64).breaks(2));
 
+
+        setDefaultRuleSetChance(200, ENDERMAN);
         new MobOverrideRule(25, ENDERMAN)
-                .addVariation(new MobVariation("creaker", CREAKING).anger(true).invisible().health(0.1).hunts(64).replaceOriginalMob());
+                .addVariation(new MobVariation("creaker", CREAKING)
+                        .anger(true)
+                        .invisible()
+                        .health(0.1)
+                        .hunts(64)
+                        .replaceOriginalMob());
 
         // bee DONT DO THIS
 //        new MobOverrideRule(100, BEE).spawnInPacks()
@@ -506,16 +428,15 @@ public class MobManager implements Listener {
 
         new MobOverrideRule(20, TURTLE).addVariation(new MobVariation("creepo", CREEPER).hunts(32).speed(2,2), 100);
 
-        new MobOverrideRule(20, DOLPHIN)
-                .spawnInPacks()
-                .addVariation(new MobVariation("evil_dolphin", DOLPHIN)
-                        .anger(true)
-                        .hunts(64)
-                        .damage(0.5)
-                        .health(4.0)
-                        .size(1.25,1.5)
-                        .speed(0.75, 1.25)
-                        );
+
+
+
+
+
+
+
+
+
     }
 
 
@@ -600,8 +521,6 @@ public class MobManager implements Listener {
 
     @EventHandler
     public void onCreatureSpawn(CreatureSpawnEvent event) {
-
-
 //        Debug.broadcast("mobspawn", "Attempting <green>"+event.getEntity().getType().name()+"</green> spawn at "+event.getLocation().getBlock().getBiome().toString());
         if(event.isCancelled())return;
         LivingEntity entity = event.getEntity();
@@ -759,6 +678,7 @@ public class MobManager implements Listener {
         applyLogicToMob(entity, stats);
     }
 
+
     /**
      * Called on mob creation AND on mob load to reapply logic
      */
@@ -827,6 +747,18 @@ public class MobManager implements Listener {
                 if (event_type.equals(immunity)){
                     event.setCancelled(true);
                     return;
+                }
+            }
+        }
+
+        if(damager instanceof Player px){
+            if(victim instanceof Mob mob){
+                if(mob.getTarget()!=null){
+                    if(!mob.getTarget().equals(px)) {
+                        if(ThreadLocalRandom.current().nextDouble() < 0.90) {
+                            mob.setTarget(px);
+                        }
+                    }
                 }
             }
         }

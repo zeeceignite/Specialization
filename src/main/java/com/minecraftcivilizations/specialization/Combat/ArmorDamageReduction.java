@@ -73,11 +73,11 @@ public class ArmorDamageReduction {
         }else{
             //Attacker is mob
             if(event.getEntity() instanceof Player pvictim){
-                armor_redux_factor = 1.3; //default armor reduction against mobs
+                armor_redux_factor = 1.25; //default armor reduction against mobs
                 CustomPlayer cp = CoreUtil.getPlayer(pvictim);
                 int guardsman_level = cp.getSkillLevel(SkillType.GUARDSMAN);
                 armor_ceiling = 26;
-                armor_redux_factor -= ((double)guardsman_level)*0.05;
+                armor_redux_factor -= ((double)guardsman_level)*0.04;
                 toughness_redux_factor = 12;
             }
         }
