@@ -112,7 +112,7 @@ public class CombatManager implements Listener {
                         ps.setCooldown(Material.CROSSBOW, 16);
                     }else{
                         //skeleton or mob
-                        multiplier = 1.5;
+                        multiplier = 0.7;
                     }
                     break;
                 case CROSSBOW:
