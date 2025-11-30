@@ -19,12 +19,15 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPhysicsEvent;
+import org.bukkit.event.entity.EntityDismountEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -384,6 +387,12 @@ public class EmoteCommand extends BaseCommand implements Listener {
             return;
         }
 
+        // --- HUNGER REQUIREMENT (7 points) ---
+        if (player.getFoodLevel() < 7) {
+            PlayerUtil.message(player, "You're too hungry to do that");
+            return;
+        }
+
         Block support = findSolidBlockBelow(player);
         if (support == null) {
             PlayerUtil.message(player, "No solid block below you");
@@ -423,7 +432,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
                 return;
             }
 
-            Location loc = seat.getLocation();
+            Location loc = player.getLocation();
 
             // Collision radius ~0.8
             Vector vel = seat.getVelocity();
@@ -473,7 +482,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
 
         // Player/stand half-width
         double hw = 0.4;
-        double hh = 1.0; // vertical span height
+        double hh = 0.2; // vertical span height
 
         // 8 sample points (corners)
         double[] xs = { -hw, hw };
@@ -488,11 +497,11 @@ public class EmoteCommand extends BaseCommand implements Listener {
             for (double dy : ys) {
                 for (double dz : zs) {
 
-                    Location start = origin.clone().add(dx, dy, dz);
+                    Location start = origin.clone().add(dx, dy+2, dz);
                     RayTraceResult result = w.rayTraceBlocks(start, dir, distance, FluidCollisionMode.NEVER);
 
                     // Debug particle
-//                    w.spawnParticle(Particle.FLAME, start, 1, 0, 0, 0, 0);
+                    w.spawnParticle(Particle.FLAME, start, 1, 0, 0, 0, 0);
 
                     if ((result != null) && (!result.getHitBlock().isPassable())) return true;
                 }
@@ -501,6 +510,25 @@ public class EmoteCommand extends BaseCommand implements Listener {
 
         return false;
     }
+
+
+    @EventHandler
+    public void onDismount(EntityDismountEvent event) {
+        if (!(event.getEntity() instanceof Player p)) return;
+        if (!(event.getDismounted() instanceof ArmorStand seat)) return;
+
+        // Only cannonball seats
+        Byte flag = seat.getPersistentDataContainer().get(sitKey, PersistentDataType.BYTE);
+        if (flag == null || flag != (byte) 1) return;
+
+        // EXACT current velocity of the seat this tick
+        Vector seatVel = seat.getVelocity().clone();
+
+        // Apply that velocity to the player right after dismount
+        Bukkit.getScheduler().runTask(plugin, () -> p.setVelocity(seatVel));
+    }
+
+
 
 
     // Cleanup
