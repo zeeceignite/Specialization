@@ -325,9 +325,9 @@ public class EmoteCommand extends BaseCommand implements Listener {
             as.setPersistent(false);
             as.setVisible(false);
             as.setCollidable(false);
-            as.setBasePlate(true);
+            as.setBasePlate(false);
             as.setSmall(true);
-            as.setArms(true);
+            as.setArms(false);
             as.getAttribute(Attribute.SCALE).setBaseValue(0.01);
 
             // mark with PDC
@@ -547,6 +547,10 @@ public class EmoteCommand extends BaseCommand implements Listener {
     @Description("Perform a stinky emote")
     public void onFart(Player player) {
 
+        if (player.isInsideVehicle()) {
+            PlayerUtil.message(player, "You struggle to rip one out right now...");
+            return;
+        }
         // REAL sneaking start
         player.setSneaking(true);
 
