@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.UUID;
 
 
-@CommandAlias("giveup|suicide|die")
+@CommandAlias("giveup|suicide|die|rip|gg|d")
 public class SuicideCommand extends BaseCommand {
     private final PlayerDownedListener downedListener;
     private final PVPManager pvpManager;
@@ -66,7 +66,7 @@ public class SuicideCommand extends BaseCommand {
         boolean inCombat = pvpManager.combatMap.containsKey(id);
 
         if (player.getPersistentDataContainer().has(downedByPlayerKey, PersistentDataType.BYTE) && player.getPersistentDataContainer().get(downedByPlayerKey, PersistentDataType.BYTE) == 1 || inCombat) {
-            PlayerUtil.message(player,Component.text("You may not perform this action due to PVP").color(NamedTextColor.RED), 1);
+            PlayerUtil.message(player, Component.text("You may not perform this action due to PVP").color(NamedTextColor.RED), 1);
             return;
         }
 
@@ -74,14 +74,12 @@ public class SuicideCommand extends BaseCommand {
                 .get(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE);
 
         if (downed == null || downed == 0) {
-            PlayerUtil.message(player,Component.text("You can only use this command while downed.").color(NamedTextColor.RED));
+            PlayerUtil.message(player, Component.text("You can only use this command while downed.").color(NamedTextColor.RED));
             return;
         }
 
         player.setHealth(0);
     }
-
-
 
 
     // -------------------------

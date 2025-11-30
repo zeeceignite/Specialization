@@ -29,6 +29,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
@@ -168,13 +169,11 @@ public class EmoteCommand extends BaseCommand implements Listener {
         }
     }
 
-
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
         cancelSeat(e.getPlayer());
         cancelRide(e.getPlayer());
     }
-
 
     @EventHandler
     public void onBlockPhysics(BlockPhysicsEvent e) {
@@ -235,6 +234,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
         cancelRide(event.getPlayer());
         if (event.getPlayer().isInsideVehicle()) event.getPlayer().leaveVehicle();
     }
+
     private Location getSeatLocation(Block block) {
         Location loc = block.getLocation().clone().add(0.5, 0, 0.5);
         String name = block.getType().name();
@@ -275,6 +275,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
         loc.add(xOffset, yOffset, zOffset);
         return loc;
     }
+
     private final Map<Player, ArmorStand> sittingStands = new HashMap<>();
     @CommandAlias("sit|s")
     @Description("Sit anywhere using an invisible mini armor stand")
@@ -323,7 +324,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
             as.setCollidable(false);
             as.setBasePlate(true);
             as.setSmall(true);
-            as.setArms(false);
+            as.setArms(true);
             as.getAttribute(Attribute.SCALE).setBaseValue(0.01);
 
             // mark with PDC
@@ -361,6 +362,8 @@ public class EmoteCommand extends BaseCommand implements Listener {
                 seat.remove();
             }
         }
+        Integer task = cannonTasks.remove(player.getUniqueId());
+        if (task != null) Bukkit.getScheduler().cancelTask(task);
 
         if (player.isInsideVehicle()) {
             player.leaveVehicle();
@@ -370,31 +373,147 @@ public class EmoteCommand extends BaseCommand implements Listener {
     @CommandAlias("cannonball|cb")
     @Description("Launch yourself like a cannonball")
     public void onCannonball(Player player) {
+
+        if (PlayerUtil.isOnCooldown(player,"cannonballemote")) {
+            PlayerUtil.message(player, "You need a break from that", 1);
+            return;
+        }
+
         if (player.isInsideVehicle()) {
-            PlayerUtil.message(player, "You can't do that right now.");
+            PlayerUtil.message(player, "You can't do that right now");
             return;
         }
 
         Block support = findSolidBlockBelow(player);
         if (support == null) {
-            PlayerUtil.message(player, "No solid block below you.");
+            PlayerUtil.message(player, "No solid block below you");
             return;
         }
 
-        double offsetY = 1.02;
-        Location spawnLoc = support.getLocation().add(0.5, offsetY, 0.5);
+        Location spawnLoc = support.getLocation().add(0.5, 1.02, 0.5);
         spawnLoc.setYaw(player.getLocation().getYaw());
         spawnLoc.setPitch(0);
 
+        // --- STARTUP PASSABILITY CHECK ---
+        if (!hasPassableForward(player, player.getLocation())) {
+            PlayerUtil.message(player, "Not enough room to launch.");
+            return;
+        }
+
+        // Spawn seat
         ArmorStand seat = spawnSitStand(player, spawnLoc);
         seat.addPassenger(player);
         sittingStands.put(player, seat);
 
-        // Apply forward and upward velocity
-        @NotNull Vector direction = player.getLocation().getDirection().normalize().multiply(0.6); // forward strength
-        direction.setY(0.5); // upward strength
-        seat.setVelocity(direction);
+        // Apply forward & upward velocity
+        Vector dir = player.getLocation().getDirection().normalize().multiply(0.6);
+        dir.setY(0.5);
+        seat.setVelocity(dir);
+
+        // --- SPHERE CAST TICK LOOP ---
+        UUID id = player.getUniqueId();
+        int task = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+
+            // Stop if dismounted or seat removed
+            if (!player.isInsideVehicle() ||
+                    !seat.isValid() ||
+                    seat.getPassengers().isEmpty()
+            ) {
+                stopCannonball(player);
+                return;
+            }
+
+            Location loc = seat.getLocation();
+
+            // Collision radius ~0.8
+            Vector vel = seat.getVelocity();
+            if (boxRayHit(loc, vel)) {
+                stopCannonball(player);
+            }
+
+        }, 1L, 1L);
+
+        cannonTasks.put(id, task);
     }
+
+
+    // Track running cannonball tasks
+    private final Map<UUID, Integer> cannonTasks = new HashMap<>();
+
+    private boolean hasPassableForward(Player player, Location loc) {
+        World w = loc.getWorld();
+        Vector dir = loc.getDirection().normalize();
+        int x0 = loc.getBlockX();
+        int y0 = loc.getBlockY();
+        int z0 = loc.getBlockZ();
+
+        // Offset starting position 1 block forward
+        x0 += (int) Math.round(dir.getX());
+        z0 += (int) Math.round(dir.getZ());
+
+        for (int dx = -1; dx <= 1; dx++) {       // 3 blocks across X
+            for (int dy = 0; dy <= 2; dy++) {    // 3 blocks high
+                for (int dz = 0; dz <= 1; dz++) { // 2 blocks forward in look direction
+                    // Determine actual world position
+                    int checkX = x0 + dx;
+                    int checkY = y0 + dy;
+                    int checkZ = z0 + dz;
+                    Block b = w.getBlockAt(checkX, checkY, checkZ);
+                    if (!b.isPassable()) return false;
+                }
+            }
+        }
+        return true;
+    }
+
+
+
+    private boolean boxRayHit(Location origin, Vector velocity) {
+        World w = origin.getWorld();
+
+        // Player/stand half-width
+        double hw = 0.4;
+        double hh = 1.0; // vertical span height
+
+        // 8 sample points (corners)
+        double[] xs = { -hw, hw };
+        double[] ys = { 0, hh };
+        double[] zs = { -hw, hw };
+
+        // Normalize ray direction
+        Vector dir = velocity.clone().normalize();
+        double distance = velocity.length(); // how far we moved this tick
+
+        for (double dx : xs) {
+            for (double dy : ys) {
+                for (double dz : zs) {
+
+                    Location start = origin.clone().add(dx, dy, dz);
+                    RayTraceResult result = w.rayTraceBlocks(start, dir, distance, FluidCollisionMode.NEVER);
+
+                    // Debug particle
+//                    w.spawnParticle(Particle.FLAME, start, 1, 0, 0, 0, 0);
+
+                    if ((result != null) && (!result.getHitBlock().isPassable())) return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+    // Cleanup
+    private void stopCannonball(Player p) {
+        ArmorStand seat = sittingStands.remove(p);
+        PlayerUtil.setCooldown(p, "cannonballemote", 50);
+        if (seat != null && seat.isValid()) seat.remove();
+        if (p.isInsideVehicle()) p.leaveVehicle();
+
+        Integer task = cannonTasks.remove(p.getUniqueId());
+        if (task != null) Bukkit.getScheduler().cancelTask(task);
+    }
+
 
     @CommandAlias("fart|f")
     @Description("Perform a stinky emote")
@@ -437,10 +556,4 @@ public class EmoteCommand extends BaseCommand implements Listener {
             player.setSneaking(false);
         }, 25L);
     }
-
-
-
-
-
-
 }
