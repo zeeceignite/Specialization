@@ -1,24 +1,20 @@
 package com.minecraftcivilizations.specialization.Combat.Mobs;
 
 import com.minecraftcivilizations.specialization.Combat.CombatManager;
-import com.minecraftcivilizations.specialization.MobGoals.BreakBlockMobGoal;
-import com.minecraftcivilizations.specialization.MobGoals.TargetPlayerMobGoal;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import com.minecraftcivilizations.specialization.util.WorldUtils;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -27,6 +23,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityInteractEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.world.ChunkPopulateEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.inventory.ItemStack;
@@ -74,8 +72,169 @@ public class MobManager implements Listener {
         MOVE_SPEED_KEY = new NamespacedKey(plugin, "custom_move_speed");
         WATER_SPEED_KEY = new NamespacedKey(plugin, "custom_water_speed");
         STEP_HEIGHT_KEY = new NamespacedKey(plugin, "custom_step_height");
-        combatManager.getPlugin().getServer().getPluginManager().registerEvents(this, combatManager.getPlugin());
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+//        plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+//            @Override
+//            public void run() {
+//                nextArtificalMobSpawn();
+//            }
+//        }, 1L, 1L);
     }
+
+
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onMooshroom(PlayerInteractEntityEvent event) {
+        if (!(event.getRightClicked() instanceof MushroomCow mooshroom)) return;
+
+        Player player = event.getPlayer();
+        ItemStack item = player.getInventory().getItem(event.getHand());
+        if (item.getType() != Material.BOWL) return;
+
+        CustomPlayer pp = CoreUtil.getPlayer(player);
+        int lvl = pp.getSkillLevel(SkillType.FARMER);
+
+        // Minimum level to milk
+        if (lvl < 2) {
+            event.setCancelled(true);
+            PlayerUtil.message(player, "You need to be better at farming to do that");
+            return;
+        }
+
+        // Calculate cooldown scaling
+        // Example: lvl 1 = 60s, lvl 10+ = 10s
+        int maxCooldownTicks = 20 * 130; // 90 seconds
+        int minCooldownTicks = 20 * 45; // 45 seconds
+        int maxLevel = 5;
+
+        int scaledCooldown = maxCooldownTicks - ((lvl - 1) * (maxCooldownTicks - minCooldownTicks) / (maxLevel - 1));
+        if (scaledCooldown < minCooldownTicks) scaledCooldown = minCooldownTicks;
+
+        // Cooldown check
+        if (player.hasCooldown(Material.BOWL)) {
+            event.setCancelled(true);
+            PlayerUtil.message(player, "You're still tired from last milking.");
+            return;
+        }
+
+        // Grant XP
+        pp.addSkillXp(SkillType.FARMER, 10);
+
+        // Apply scaled cooldown
+        player.setCooldown(Material.BOWL, scaledCooldown);
+    }
+
+
+
+//    private int player_index = 0;
+
+//    private void nextArtificalMobSpawn() {
+//        List<Player> players = new ArrayList<>(Bukkit.getServer().getOnlinePlayers());
+//        if (players.isEmpty()) return;
+//
+//        int attempts = 0;
+//        Player target_player = null;
+//
+//        while (attempts < players.size()) {
+//            if (player_index >= players.size()) {
+//                player_index = 0;
+//            }
+//
+//            Player candidate = players.get(player_index);
+//            player_index++;
+//            attempts++;
+//
+//            if (candidate.getGameMode() != GameMode.CREATIVE &&
+//                    candidate.getGameMode() != GameMode.SPECTATOR) {
+//                target_player = candidate;
+//                break;
+//            }
+//        }
+//
+//        if (target_player == null) {
+//            return; // all players were creative/spectator
+//        }
+
+//        spawnArtificalMob(target_player);
+//    }
+
+//    private void spawnArtificalMob(Player target_player) {
+//        double radius = 48;
+//        List<Entity> nearby = target_player.getNearbyEntities(radius, radius, radius);
+//        long enemy_count = nearby.stream()
+//                .filter(e -> e instanceof LivingEntity)
+//                .filter(e -> e instanceof Enemy)
+//                .count();
+//        if (enemy_count > 50) {
+//            return;
+//        }
+//
+//        // 1% chance
+//        if (ThreadLocalRandom.current().nextDouble() >= 0.01) {
+//            return;
+//        }
+//
+//        // Attempt to find a valid spawn location near the player
+//        final int attempts = 8;
+//        Location spawn_loc = null;
+//        for (int i = 0; i < attempts; i++) {
+//            // pick a random point within radius on XZ plane
+//            double angle = ThreadLocalRandom.current().nextDouble(0, Math.PI * 2);
+//            double dist = ThreadLocalRandom.current().nextDouble(4, radius); // avoid extremely close spawns
+//            double dx = Math.cos(angle) * dist;
+//            double dz = Math.sin(angle) * dist;
+//
+//            Location candidate = target_player.getLocation().clone().add(dx, 0, dz);
+//            // Get the highest non-solid block location at that XZ (your util)
+//            Location highest = WorldUtils.getHighestNonsolidBlockLocation(candidate);
+//            if (highest == null) continue;
+//
+//            // Ensure there's solid ground below (so mob doesn't spawn inside air)
+//            Location below = highest.clone().subtract(0, 1, 0);
+//            if (below.getBlock().getType().isAir()) continue;
+//
+//            // Ensure there are no entities right at the spawn point
+//            boolean blockedByEntity = highest.getWorld().getNearbyEntities(highest, 1.0, 1.0, 1.0)
+//                    .stream().anyMatch(e -> e instanceof LivingEntity);
+//            if (blockedByEntity) continue;
+//
+//            // simple light / biome checks could be added here if desired
+//
+//            spawn_loc = highest.clone().add(0, 0, 0);
+//            break;
+//        }
+//
+//        if (spawn_loc == null) {
+//            // failed to find a valid location
+//            return;
+//        }
+//
+//        // Pick a hostile mob type suitable for overworld spawning
+//        EntityType[] choices = new EntityType[]{
+//                EntityType.ZOMBIE,
+//                EntityType.SKELETON,
+//                EntityType.CREEPER,
+//                EntityType.SPIDER
+//        };
+//        EntityType selected = choices[ThreadLocalRandom.current().nextInt(choices.length)];
+//
+//        // spawn the mob one block above the highest non-solid block (so it doesn't intersect)
+//        Location final_spawn = spawn_loc.clone().add(0.0, 0.0, 0.0);
+//        try {
+//            // Use World.spawnEntity and cast to LivingEntity
+//            LivingEntity spawned = (LivingEntity) spawn_loc.getWorld().spawnEntity(final_spawn, selected);
+//
+//            // optional: set persistent custom data, tags, or target the player
+//            if (spawned instanceof Monster monster) {
+//                monster.setTarget(target_player);
+//            }
+//
+//            Debug.broadcast("mobspawn", "spawned artificial mob " + selected.name() + " near " + target_player.getName());
+//        } catch (IllegalArgumentException ex) {
+//            // fallback: failed to spawn that entity type here
+//            Debug.broadcast("mobspawn", "failed to spawn artificial mob: " + ex.getMessage());
+//        }
+//    }
 
 
     Map<EntityType, MobOverrideRuleSet> rule_mappings = new HashMap<>();
@@ -320,11 +479,12 @@ public class MobManager implements Listener {
 
 
         // field spawn
-        new MobOverrideRule(5, COW, HORSE)
+        new MobOverrideRule(5, PIG, HORSE)
                 .addVariation(killer_bees, 4);
 
-        new MobOverrideRule(5, COW, HORSE)
+        new MobOverrideRule(5, PIG, HORSE)
                 .addVariation(wolf_pack, 10);
+
 
 
         setDefaultRuleSetChance(25, POLAR_BEAR);
@@ -441,6 +601,8 @@ public class MobManager implements Listener {
     @EventHandler
     public void onCreatureSpawn(CreatureSpawnEvent event) {
 
+
+//        Debug.broadcast("mobspawn", "Attempting <green>"+event.getEntity().getType().name()+"</green> spawn at "+event.getLocation().getBlock().getBiome().toString());
         if(event.isCancelled())return;
         LivingEntity entity = event.getEntity();
         EntityType type = entity.getType();
@@ -498,8 +660,6 @@ public class MobManager implements Listener {
 //                Debug.broadcast("mob", "repopulating mob stats!");
         }
     }
-
-
 
 
         /**
@@ -642,7 +802,6 @@ public class MobManager implements Listener {
 //        }
     }
 
-
     @EventHandler
     public void onEntityLoad(EntitiesLoadEvent event){
         List<Entity> entities = event.getEntities();
@@ -705,18 +864,28 @@ public class MobManager implements Listener {
         switch(damager.getType()){
             case BEE:
                 if(isMobVariation(damager)) {
-                    Bee bee = (Bee) event.getDamager();
-                    bee.setHasStung(false);
-                    bee.getServer().getScheduler().scheduleSyncDelayedTask(Specialization.getInstance(), new Runnable() {
-                        @Override
-                        public void run() {
-                            unsetBee(bee);
+                    if(event.getDamageSource().getDamageType()!=DamageType.SPIT) {
+                        Bee bee = (Bee) event.getDamager();
+                        bee.setHasStung(false);
+                        bee.getServer().getScheduler().scheduleSyncDelayedTask(Specialization.getInstance(), new Runnable() {
+                            @Override
+                            public void run() {
+                                unsetBee(bee);
+                            }
+                        });
+                        event.setCancelled(true);
+                        if (victim instanceof LivingEntity le) {
+                            le.damage(0.5, DamageSource.builder(DamageType.SPIT).build());
+//                        Debug.broadcast("bee", ""+event.getDamageSource().getDamageType());
                         }
-                    });
+                    }
                 }
                 break;
         }
     }
+
+//    public void on(EntityPotionEffectEvent le){
+//    }
 
     private void unsetBee(Bee bee) {
 //        Debug.broadcast("mob", "Be has stung = false");
