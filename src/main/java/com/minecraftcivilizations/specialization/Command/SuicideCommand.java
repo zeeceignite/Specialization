@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.UUID;
 
 
-@CommandAlias("giveup|suicide|die|rip|gg|rip|d")
+@CommandAlias("giveup|suicide|die|rip|gg|d")
 public class SuicideCommand extends BaseCommand {
     private final PlayerDownedListener downedListener;
     private final PVPManager pvpManager;
