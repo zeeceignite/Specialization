@@ -379,26 +379,24 @@ public class MobManager implements Listener {
 
         MobVariation wolf_pack = new MobVariation("wolf_pack", WOLF)
                 .anger(true)
-                .damage(1.25, 1.25)
-                .health(1.5)
+                .damage(1.0, 1.0)
+                .health(1.0)
                 .speed(1.5, 1.5)
                 .setGainsXpOverride(true)
-                .hunts(64)
+                .hunts(32)
                 .breaks()
-                .xpScale(1.5)
+                .xpScale(2.0)
                 .replaceOriginalMob();
 
         setDefaultRuleSetChance(100, PIG, SHEEP, HORSE, WOLF);
 
         // field spawn
-        new MobOverrideRule(5, HORSE)
-                .addVariation(killer_bees, 4);
-        new MobOverrideRule(4, PIG)
+        new MobOverrideRule(1, HORSE)
                 .addVariation(killer_bees, 4);
 
-        new MobOverrideRule(5, PIG)
+        new MobOverrideRule(3, PIG)
                 .addVariation(wolf_pack, 10).spawnInPacks();
-        new MobOverrideRule(25, WOLF)
+        new MobOverrideRule(10, WOLF)
                 .addVariation(wolf_pack, 10).spawnInPacks();
 
 
@@ -796,6 +794,9 @@ public class MobManager implements Listener {
         switch(damager.getType()){
             case BEE:
                 if(isMobVariation(damager)) {
+                    if(ThreadLocalRandom.current().nextBoolean()) {
+                        ((Bee) damager).damage(10);
+                    }
                     if(event.getDamageSource().getDamageType()!=DamageType.SPIT) {
                         Bee bee = (Bee) event.getDamager();
                         bee.setHasStung(false);

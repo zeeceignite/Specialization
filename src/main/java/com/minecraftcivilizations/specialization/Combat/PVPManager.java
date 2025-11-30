@@ -302,7 +302,7 @@ public class PVPManager implements Listener, CommandExecutor {
             return;
         }
 
-        Debug.broadcast("combatlog", "<grey>[Login] Marker found: " + marker + " for " + player.getName());
+        Debug.broadcast("combatlog", "<grey>[Login] Marker found: " + marker.getName() + " for " + player.getName());
 
         int deadFlag = marker.getPersistentDataContainer().getOrDefault(DEAD_KEY, PersistentDataType.INTEGER, 0);
         byte[] invBytes = marker.getPersistentDataContainer().get(INVENTORY_KEY, PersistentDataType.BYTE_ARRAY);
@@ -415,7 +415,7 @@ public class PVPManager implements Listener, CommandExecutor {
                 ItemSerialization.toBytes(zombie.getEquipment().getArmorContents()));
         zombie.getWorld().playSound(zombie.getLocation(), Sound.ENTITY_PLAYER_HURT, SoundCategory.PLAYERS, 1f, 1f);
         Debug.broadcast("combatlog", "<grey>[ZombieDamage] Zombie " + zombie.getCustomName() +
-                " took damage, health updated to " + currentHealth + " in marker");
+                " took damage, health updated to <red>" + Debug.formatDecimal(currentHealth) + "</red> in marker");
     }
 
 

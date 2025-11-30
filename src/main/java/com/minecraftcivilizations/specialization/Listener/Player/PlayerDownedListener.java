@@ -9,6 +9,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -109,7 +110,7 @@ public class PlayerDownedListener implements Listener {
         pdc.set(downedKey, PersistentDataType.BYTE, (byte) (new_downed ? 1 : 0));
 
         if (!new_downed) {
-            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] setDowned=false → clearDowned called");
+//            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] setDowned=false → clearDowned called");
             clearDowned(player);
         } else {
             startDowned(player, health, DOWNED_DURATION_TICKS);
@@ -121,25 +122,25 @@ public class PlayerDownedListener implements Listener {
 
     // --- Clear downed state ---
     private void clearDowned(Player player) {
-        Debug.broadcast("down", "<gray>[DOWNED-DEBUG] clearDowned(" + player.getName() + ")");
+//        Debug.broadcast("down", "<gray>[DOWNED-DEBUG] clearDowned(" + player.getName() + ")");
 
         UUID uuid = player.getUniqueId();
 
         BossBar bar = bossBars.remove(uuid);
         if (bar != null) {
-            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Removed boss bar");
+//            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Removed boss bar");
             bar.removePlayer(player);
         }
 
         BukkitTask task = downTimers.remove(uuid);
         if (task != null) {
-            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Cancelled bleedout timer");
+//            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Cancelled bleedout timer");
             task.cancel();
         }
 
         Entity e = downStands.remove(uuid);
         if (e != null) {
-            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Removing downed stand entity");
+//            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Removing downed stand entity");
             e.remove();
         }
 
@@ -175,6 +176,7 @@ public class PlayerDownedListener implements Listener {
         if (isDowned(player)) {
             setDowned(player, false, 0);
         }
+        Debug.broadcast("death", Component.text(player.getName()+" died 💀 ").color(TextColor.color(122,88,88)).append(Debug.formatLocationClickable(event.getPlayer().getLocation(), false)));
     }
 
     public void clearMount(Player player) {

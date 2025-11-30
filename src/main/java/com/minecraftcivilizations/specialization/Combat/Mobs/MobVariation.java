@@ -99,7 +99,7 @@ public class MobVariation {
     @Getter
     private double fuseTime = 1.0;
     @Getter
-    private double stepHeight = 1.0;
+    private double stepHeight = 0.0;
 
     private boolean random_scale_enabled = false;
 
