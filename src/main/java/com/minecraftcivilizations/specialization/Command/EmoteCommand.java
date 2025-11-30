@@ -501,7 +501,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
                     RayTraceResult result = w.rayTraceBlocks(start, dir, distance, FluidCollisionMode.NEVER);
 
                     // Debug particle
-                    w.spawnParticle(Particle.FLAME, start, 1, 0, 0, 0, 0);
+//                    w.spawnParticle(Particle.FLAME, start, 1, 0, 0, 0, 0);
 
                     if ((result != null) && (!result.getHitBlock().isPassable())) return true;
                 }
