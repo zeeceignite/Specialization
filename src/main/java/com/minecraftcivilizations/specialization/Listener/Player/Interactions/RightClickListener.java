@@ -1,6 +1,7 @@
 package com.minecraftcivilizations.specialization.Listener.Player.Interactions;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Listener.Player.LocalChat;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -49,7 +50,7 @@ public class RightClickListener implements Listener {
         if(event.getClickedBlock().getType().equals(Material.SWEET_BERRY_BUSH) && cPlayer.getSkillLevel(SkillType.FARMER) < 2){
             if(Math.random() < 0.2){
                 player.damage(1);
-//                player.chat("Ouch!");
+//                LocalChat.getInstance().spawnBubble(player, "Ouch!");
             }
         }
 

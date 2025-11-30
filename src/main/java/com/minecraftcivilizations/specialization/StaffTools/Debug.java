@@ -84,10 +84,12 @@ public class Debug implements Listener {
      */
     private void setupDefaultChannels() {
         getOrCreateChannelPlayerSet("xp", true);
+        getOrCreateChannelPlayerSet("levelup", true);
         getOrCreateChannelPlayerSet("craft", true);
         getOrCreateChannelPlayerSet("customitem", true);
         getOrCreateChannelPlayerSet("damage", true);
         getOrCreateChannelPlayerSet("armor", true);
+        getOrCreateChannelPlayerSet("death", true);
         getOrCreateChannelPlayerSet("weight", true);
         getOrCreateChannelPlayerSet("globalchat", true);
         getOrCreateChannelPlayerSet("down", true);

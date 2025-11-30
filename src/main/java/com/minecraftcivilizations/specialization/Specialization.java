@@ -78,7 +78,8 @@ public final class Specialization extends JavaPlugin {
     private Debug debug;
     private PhantomRideListener phantomRideListener;
     //    private EmoteListener emoteListener;
-    private LocalChat localChat;
+    @Getter
+    public LocalChat localChat;
     //follow this pattern from now on
     @Getter
     private SmartEntityManager smart_entity_manager;

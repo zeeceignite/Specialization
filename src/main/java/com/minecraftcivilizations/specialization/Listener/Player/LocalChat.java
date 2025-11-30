@@ -118,6 +118,11 @@ public class LocalChat implements Listener {
         });
     }
 
+
+    public static LocalChat getInstance(){
+        return Specialization.getInstance().getLocalChat();
+    }
+
     // ---- SPAWNING ----
     public void spawnBubble(Player p, String msg) {
 
