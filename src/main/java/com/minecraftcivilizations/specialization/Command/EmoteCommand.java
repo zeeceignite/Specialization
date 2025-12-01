@@ -403,7 +403,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
 
         // --- STARTUP PASSABILITY CHECK ---
         if (!hasPassableForward(player, player.getLocation())) {
-            PlayerUtil.message(player, "Not enough room to launch.");
+            PlayerUtil.message(player, "Not enough room to launch");
             return;
         }
 
@@ -446,28 +446,29 @@ public class EmoteCommand extends BaseCommand implements Listener {
     private boolean hasPassableForward(Player player, Location loc) {
         World w = loc.getWorld();
         Vector dir = loc.getDirection().normalize();
+
         int x0 = loc.getBlockX();
         int y0 = loc.getBlockY();
         int z0 = loc.getBlockZ();
 
-        // Offset starting position 1 block forward
+        // Offset starting position 1 block forward in look direction
         x0 += (int) Math.round(dir.getX());
         z0 += (int) Math.round(dir.getZ());
 
-        for (int dx = -1; dx <= 1; dx++) {       // 3 blocks across X
-            for (int dy = 0; dy <= 2; dy++) {    // 3 blocks high
-                for (int dz = 0; dz <= 1; dz++) { // 2 blocks forward in look direction
-                    // Determine actual world position
-                    int checkX = x0 + dx;
-                    int checkY = y0 + dy;
-                    int checkZ = z0 + dz;
-                    Block b = w.getBlockAt(checkX, checkY, checkZ);
-                    if (!b.isPassable()) return false;
-                }
+        for (int dy = 0; dy <= 2; dy++) {     // 3 blocks high
+            for (int dz = 0; dz <= 1; dz++) { // 2 blocks forward
+                int checkX = x0;
+                int checkY = y0 + dy;
+                int checkZ = z0 + dz;
+
+                Block b = w.getBlockAt(checkX, checkY, checkZ);
+                if (!b.isPassable()) return false;
             }
         }
+
         return true;
     }
+
 
 
     private boolean boxRayHit(Location origin, Vector velocity) {
@@ -515,13 +516,13 @@ public class EmoteCommand extends BaseCommand implements Listener {
 
         Vector seatVel = seat.getVelocity().clone();
         float seatFall = seat.getFallDistance();
+        Bukkit.getScheduler().runTask(plugin, () -> {
             // Apply the seat's velocity to the player
             p.setVelocity(seatVel);
-            p.sendMessage("falldistance 1 tick late:" + seatFall);
             // Apply the seat's fall distance to the player
             // (if seatFall is 0, you can compute manually if you tracked startY)
             p.setFallDistance(seatFall);
-
+        });
     }
 
 
