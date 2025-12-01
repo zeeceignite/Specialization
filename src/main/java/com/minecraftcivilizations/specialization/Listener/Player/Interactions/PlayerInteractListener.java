@@ -14,6 +14,7 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -196,25 +197,62 @@ public class PlayerInteractListener implements Listener {
     }
 
     @EventHandler
-    public void onSugarcanePhysics(org.bukkit.event.block.BlockPhysicsEvent e) {
+    public void onSugarcaneBreak(org.bukkit.event.block.BlockBreakEvent e) {
         if (e.getBlock().getType() != org.bukkit.Material.SUGAR_CANE) return;
-        org.bukkit.block.Block base = e.getBlock();
-        org.bukkit.block.Block below = base.getRelative(org.bukkit.block.BlockFace.DOWN);
-        if (below.getType() == org.bukkit.Material.SUGAR_CANE) return;
+
+        CustomPlayer cp = CoreUtil.getPlayer(e.getPlayer());
+        if (cp == null) return;
+
+        Pair<SkillType, Double> pair =
+                SpecializationConfig.getXpGainFromBreakingConfig()
+                        .get(org.bukkit.Material.SUGAR_CANE, new TypeToken<>() {});
+        if (pair == null || pair.secondValue() == null) return;
+
+        cp.addSkillXp(SkillType.FARMER, pair.secondValue());
+    }
+
+
+
+    @EventHandler
+    public void onSugarcanePhysics(org.bukkit.event.block.BlockPhysicsEvent e) {
+        if (e.getBlock().getType() != Material.SUGAR_CANE) return;
+
+        Block base = e.getBlock();
+        Block below = base.getRelative(BlockFace.DOWN);
+        if (below.getType() == Material.SUGAR_CANE) return;
+
         boolean hasWater =
-                below.getRelative(org.bukkit.block.BlockFace.NORTH).getType() == org.bukkit.Material.WATER ||
-                        below.getRelative(org.bukkit.block.BlockFace.SOUTH).getType() == org.bukkit.Material.WATER ||
-                        below.getRelative(org.bukkit.block.BlockFace.EAST).getType() == org.bukkit.Material.WATER ||
-                        below.getRelative(org.bukkit.block.BlockFace.WEST).getType() == org.bukkit.Material.WATER;
+                below.getRelative(BlockFace.NORTH).getType() == Material.WATER ||
+                        below.getRelative(BlockFace.SOUTH).getType() == Material.WATER ||
+                        below.getRelative(BlockFace.EAST).getType()  == Material.WATER ||
+                        below.getRelative(BlockFace.WEST).getType()  == Material.WATER;
+
         if (!hasWater) {
-            org.bukkit.block.Block b = base;
-            while (b.getType() == org.bukkit.Material.SUGAR_CANE) {
-                b.setType(org.bukkit.Material.AIR, false);
-                b = b.getRelative(org.bukkit.block.BlockFace.UP);
+            int caneCount = 0;
+            Block b = base;
+            while (b.getType() == Material.SUGAR_CANE) {
+                b.setType(Material.AIR, false);
+                caneCount++;
+                b = b.getRelative(BlockFace.UP);
             }
+
+            Player p = base.getWorld().getPlayers().stream().findFirst().orElse(null);
+            if (p != null && caneCount > 0) {
+                CustomPlayer cp = CoreUtil.getPlayer(p);
+                if (cp != null) {
+                    Pair<SkillType, Double> pair =
+                            SpecializationConfig.getXpGainFromBreakingConfig()
+                                    .get(Material.SUGAR_CANE, new TypeToken<>() {});
+                    if (pair == null || pair.secondValue() == null) return;
+
+                    cp.addSkillXp(SkillType.FARMER, caneCount * pair.secondValue());
+                }
+            }
+
             e.setCancelled(true);
         }
     }
+
 
     @EventHandler
     public void onHarvestGlowBerries(PlayerInteractEvent e) {
