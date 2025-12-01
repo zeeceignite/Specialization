@@ -393,7 +393,9 @@ public class CombatManager implements Listener {
         if(damager instanceof Player dmger) {
             if (event.getEntity() instanceof LivingEntity victim) {
                 if (!event.isCancelled()) {
-                    mobManager.applyExp(event, customPlayer, victim); //Exp is acquired only after calculating final damage
+                    if (!Specialization.getInstance().getPlayerDownedListener().isDowned(dmger)) {
+                        mobManager.applyExp(event, customPlayer, victim); //Exp is acquired only after calculating final damage
+                    }
                 }
             }
 
