@@ -87,8 +87,13 @@ public final class Specialization extends JavaPlugin {
     private CustomItemManager customItemManager;
     @Getter
     private CombatManager combatManager;
+    @Getter
+    private BlacksmithArmorTrim armorTrimSystem;
+    @Getter
     private PVPManager pvpManager;
     private XPMonitoringCommand xpMonitoringCommand;
+
+    @Getter
     private PlayerDownedListener playerDownedListener;
     private RecipeBlocker recipeBlocker;
 
@@ -133,6 +138,7 @@ public final class Specialization extends JavaPlugin {
         xpMonitoringCommand = new XPMonitoringCommand();
         pvpManager = new PVPManager(playerDownedListener, this);
         recipeBlocker = new RecipeBlocker();
+        armorTrimSystem = new BlacksmithArmorTrim();
 //      emoteListener = new EmoteListener(this);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, "civlabs:weathersync", new TimeSyncListener());

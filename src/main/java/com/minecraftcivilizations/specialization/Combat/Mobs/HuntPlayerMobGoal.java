@@ -231,7 +231,7 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
             // Basic validation: same world and within configured target radius
             if (!mob.getWorld().equals(current_target.getWorld())) return;
 
-            Vector vectorToPlayer = current_target.getLocation().subtract(mob.getEyeLocation().add(0,1,0)).toVector().normalize().add(MathUtils.randomVectorCentered(0.25)).normalize();
+            Vector vectorToPlayer = current_target.getLocation().subtract(mob.getEyeLocation()).toVector().normalize().add(MathUtils.randomVectorCentered(0.25)).normalize();
             // Raytrace for a blocking block up to distance 5 from the mob's eye (like the previous logic)
             RayTraceResult result = mob.getWorld().rayTrace(mob.getEyeLocation(), vectorToPlayer.normalize(), 3, FluidCollisionMode.NEVER, true, .15, entity -> false);
             if (result == null || result.getHitBlock() == null) {
@@ -242,21 +242,23 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
 //                    Debug.broadcast("huntplayer", "<#554400>Both blocks null");
                     return;
                 }else{
+                    Debug.broadcast("huntplayer", "<gray>⛏ Block Found ⬇");
 //                    Debug.broadcast("huntplayer", "<gold>Block found on Floor location");
                 }
             }else{
+                Debug.broadcast("huntplayer", "<gray>⛏ Block Found ⬆");
 //                Debug.broadcast("huntplayer", "<gold>Block found on Eye location");
             }
 
-            Block hit = result.getHitBlock();
-            if (hit == null) return;
+            Block hit_block = result.getHitBlock();
+            if (hit_block == null) return;
 
             List<String> deniedBlocks = SpecializationConfig.getMobConfig()
                     .get("BLOCK_BREAK_IGNORE_LIST_REGEX", new TypeToken<List<String>>() {});
 
-            if (hit.getType() == Material.AIR) return;
+            if (hit_block.getType() == Material.AIR) return;
 
-            String material_name = hit.getType().name();
+            String material_name = hit_block.getType().name();
 
             if (deniedBlocks.stream().anyMatch(material_name::matches)) {
                 return;
@@ -265,15 +267,15 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
             /**
              * Prevents mobs from breaking blocks at their feet
              */
-            if(hit.getLocation().getY()<mob.getLocation().getY()+0.25){
+            if(hit_block.getLocation().getY() < mob.getLocation().getY()-0.25){
                 //block is below mob
-                if(current_target.getLocation().getY()>=hit.getLocation().getY()){
+                if(current_target.getLocation().getY()>=hit_block.getLocation().getY()){
                     return;
                 }
             }
 
             // We have a valid block to break
-            block = hit;
+            block = hit_block;
             breakAmount = 0f;
             nearbyPlayers = block.getLocation().getNearbyPlayers(16).stream()
                     .filter(player -> player.getGameMode().equals(GameMode.SURVIVAL))
@@ -304,10 +306,13 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
             float breakPercentagePerTick = 5f; //SpecializationConfig.getMobConfig().get("VISUAL_BREAKING_INCREASE_PER_TICK_PERCENTAGE", Float.class);
             if (ReinforcementManager.isReinforced(block)){
                 if(ReinforcementManager.isLightlyReinforced(block)){
-                    breakPercentagePerTick = 0.5f;
+                    breakPercentagePerTick = 0.25f;
                 }
                 if(ReinforcementManager.isHeavilyReinforced(block)){
-                    breakPercentagePerTick = 0.25f;
+                    block = null;
+                    breakAmount = 0f;
+                    nearbyPlayers = null;
+                    return;
                 }
             }
             breakPercentagePerTick *= break_scalar;
