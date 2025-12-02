@@ -9,6 +9,7 @@ import com.minecraftcivilizations.specialization.CustomItem.CustomItem;
 import com.minecraftcivilizations.specialization.CustomItem.CustomItemManager;
 import com.minecraftcivilizations.specialization.CustomItem.EmoteItem;
 import com.minecraftcivilizations.specialization.CustomItem.PacketListener;
+import com.minecraftcivilizations.specialization.Listener.Player.LocalChat;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import org.bukkit.*;
@@ -23,6 +24,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.entity.EntityDismountEvent;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -41,20 +43,20 @@ import java.util.*;
  * @author Jfrogy
  */
 
-public class EmoteCommand extends BaseCommand implements Listener {
+public class EmoteManager extends BaseCommand implements Listener {
 
     private final Map<Block, Interaction> seatBlocks = new HashMap<>();
     private final JavaPlugin plugin;
     private final ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
     private final NamespacedKey sitKey = new NamespacedKey(Specialization.getInstance(), "sitemote");
     private final Set<Player> silenced_players = new HashSet<>();
-    private final Map<Player, ArmorStand> sittingStands = new HashMap<>();
+    private final Map<UUID, ArmorStand> sittingStands = new HashMap<>();
     // Track running cannonball tasks
     private final Map<UUID, Integer> cannonTasks = new HashMap<>();
     public EmoteItem clap_item = new EmoteItem("clap_crossbow", "§bClap", EmoteItem.EmoteType.CLAP, "clap", this);
     public EmoteItem point_item = new EmoteItem("point_crossbow", "§bPoint", EmoteItem.EmoteType.POINT, "point", this);
 
-    public EmoteCommand(CustomItemManager customItemManager, JavaPlugin plugin) {
+    public EmoteManager(CustomItemManager customItemManager, JavaPlugin plugin) {
         this.plugin = plugin;
         Bukkit.getPluginManager().registerEvents(this, plugin);
         protocolManager.addPacketListener(new PacketListener(this));
@@ -158,11 +160,28 @@ public class EmoteCommand extends BaseCommand implements Listener {
         }
     }
 
-    private boolean isPlayerSitting(Player player) {
+    public boolean isPlayerSitting(Player player) {
+        // Check custom Interaction seats
         for (Interaction seat : seatBlocks.values()) {
             if (seat.getPassengers().contains(player)) return true;
         }
+        // Check armor-stand based /sit
+        if (sittingStands.containsKey(player.getUniqueId())) {
+            ArmorStand seat = sittingStands.get(player.getUniqueId());
+            return seat.isValid() && seat.getPassengers().contains(player);
+        }
+
         return false;
+    }
+
+
+    @EventHandler
+    public void onSittingFoodLoss(FoodLevelChangeEvent e) {
+        if (e.getEntity() instanceof Player p) {
+            if (isPlayerSitting(p)) {
+                p.sendMessage("stopped food loss");
+            }
+        }
     }
 
     @EventHandler
@@ -177,6 +196,13 @@ public class EmoteCommand extends BaseCommand implements Listener {
     public void onQuit(PlayerQuitEvent e) {
         cancelSeat(e.getPlayer());
         cancelRide(e.getPlayer());
+    }
+
+    public void shutdown() {
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            cancelSeat(p);
+            cancelRide(p);
+        }
     }
 
     @EventHandler
@@ -309,7 +335,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
         ArmorStand seat = spawnSitStand(player, spawnLoc);
 
         seat.addPassenger(player);
-        sittingStands.put(player, seat);
+        sittingStands.put(player.getUniqueId(), seat);
     }
 
     private ArmorStand spawnSitStand(Player player, Location loc) {
@@ -353,7 +379,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
     }
 
     private void cancelRide(Player player) {
-        ArmorStand seat = sittingStands.remove(player);
+        ArmorStand seat = sittingStands.remove(player.getUniqueId());
 
         if (player.isInsideVehicle()) {
             player.leaveVehicle();
@@ -397,6 +423,10 @@ public class EmoteCommand extends BaseCommand implements Listener {
             return;
         }
 
+        if (Math.random() < 0.05) { // 5% chance
+            LocalChat.createBubble(player, "Cannonball!");
+        }
+
         Location spawnLoc = support.getLocation().add(0.5, 1.02, 0.5);
         spawnLoc.setYaw(player.getLocation().getYaw());
         spawnLoc.setPitch(0);
@@ -410,7 +440,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
         // Spawn seat
         ArmorStand seat = spawnSitStand(player, spawnLoc);
         seat.addPassenger(player);
-        sittingStands.put(player, seat);
+        sittingStands.put(player.getUniqueId(), seat);
 
         // Apply forward & upward velocity
         Vector dir = player.getLocation().getDirection().normalize().multiply(0.6);
@@ -528,7 +558,8 @@ public class EmoteCommand extends BaseCommand implements Listener {
 
     // Cleanup
     private void stopCannonball(Player p) {
-        ArmorStand seat = sittingStands.remove(p);
+        p.sendMessage("removing");
+        ArmorStand seat = sittingStands.remove(p.getUniqueId());
         PlayerUtil.setCooldown(p, "cannonballemote", 50);
         if (p.isInsideVehicle()) p.leaveVehicle();
         if (seat != null && seat.isValid()) seat.remove();
@@ -542,12 +573,10 @@ public class EmoteCommand extends BaseCommand implements Listener {
     @Description("Perform a stinky emote")
     public void onFart(Player player) {
 
-        if (player.isInsideVehicle()) {
-            PlayerUtil.message(player, "You struggle to rip one out right now...");
-            return;
+        if (!player.isInsideVehicle()) {
+        player.setSneaking(true);
         }
         // REAL sneaking start
-        player.setSneaking(true);
 
         // Fart in 1 second
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -583,4 +612,6 @@ public class EmoteCommand extends BaseCommand implements Listener {
             player.setSneaking(false);
         }, 25L);
     }
+
+
 }

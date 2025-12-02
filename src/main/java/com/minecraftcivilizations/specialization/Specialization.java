@@ -91,6 +91,7 @@ public final class Specialization extends JavaPlugin {
     private XPMonitoringCommand xpMonitoringCommand;
     private PlayerDownedListener playerDownedListener;
     private RecipeBlocker recipeBlocker;
+    private EmoteManager emoteManager;
 
     public static void notify(Player player, String msg) {
         message(player, msg);
@@ -131,12 +132,14 @@ public final class Specialization extends JavaPlugin {
         customItemManager.initializeCustomItems();
         phantomRideListener = new PhantomRideListener(this);
         xpMonitoringCommand = new XPMonitoringCommand();
+        emoteManager = new EmoteManager(customItemManager, this);
         pvpManager = new PVPManager(playerDownedListener, this);
         recipeBlocker = new RecipeBlocker();
 //      emoteListener = new EmoteListener(this);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, "civlabs:weathersync", new TimeSyncListener());
 
+        //commands registered here
         setupCommands();
 
         getServer().getPluginManager().registerEvents(new PlayerMineListener(), this);
@@ -150,7 +153,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new FishingListener(), this);
         combatManager = new CombatManager(this); // Guardsman Damage Output
         new FoodInteractionListener(this);
-        getServer().getPluginManager().registerEvents(new HungerSystemListener(this), this);
+        getServer().getPluginManager().registerEvents(new HungerSystemListener(this, emoteManager), this);
         getServer().getPluginManager().registerEvents(new LeashListener(), this);
         getServer().getPluginManager().registerEvents(new BedListener(), this);
         getServer().getPluginManager().registerEvents(new LocatorBarManager(this), this);
@@ -293,6 +296,7 @@ public final class Specialization extends JavaPlugin {
         for (Player p : Bukkit.getOnlinePlayers()) {
             phantomRideListener.PhantomStateSave(p);
         }
+        emoteManager.shutdown();
         smart_entity_manager.shutdown();
         DataManager.getScheduler().shutdown();
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().saveAll();
@@ -347,11 +351,11 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new RerollNameCommand(localNameGenerator));
         commandManager.registerCommand(new NameChoiceCommand(localNameGenerator));
         commandManager.registerCommand(new XPLeaderboardCommand());
-        commandManager.registerCommand(new EmoteCommand(customItemManager, this));
         commandManager.registerCommand(new CustomItemCommand(customItemManager));
         commandManager.registerCommand(new SudoChatCommand(localChat));
         commandManager.registerCommand(new XPMonitoringCommand());
         commandManager.registerCommand(new RecipeRefreshCommand());
+        commandManager.registerCommand(emoteManager);
         new DebugListenCommand(commandManager);
 
 
