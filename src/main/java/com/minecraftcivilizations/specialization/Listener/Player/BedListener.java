@@ -113,6 +113,7 @@ public class BedListener implements Listener {
             float pitch = (float) ThreadLocalRandom.current().nextDouble(0.3, 0.6);
             clickedBlock.getWorld().playSound(clickedBlock.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_PLACE, 10f, pitch);
             PlayerUtil.message(player, "§6You have unclaimed your bed");
+            event.setCancelled(true);
             return;
         }
 
