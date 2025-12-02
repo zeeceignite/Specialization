@@ -205,7 +205,7 @@ public class MobManager implements Listener {
         mob_variations = new HashMap<>();
 
         //TODO looks like this doesn't work right now, leaving it anyway
-        default_mob_variation = new MobVariation("default_mob").damage(1.5).health(4.0).speed(2.5, 3.5);
+        default_mob_variation = new MobVariation("default_mob").damage(1.5).health(2.0).speed(1.5, 2.0);
 
 
         //END OF PRIMARY REFRESH
@@ -312,7 +312,7 @@ public class MobManager implements Listener {
                 .addVariation(new MobVariation("zombie_variation")
                         .health(2)
                         .damage(1.0, 1.35)
-                        .speed(1.5, 2.25)
+                        .speed(1.5, 1.75)
                         .hunts(54)
                         .breaks(1.25)
                 );

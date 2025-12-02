@@ -86,15 +86,17 @@ public class Debug implements Listener {
         getOrCreateChannelPlayerSet("xp", true);
         getOrCreateChannelPlayerSet("levelup", true);
         getOrCreateChannelPlayerSet("craft", true);
+        getOrCreateChannelPlayerSet("recipe", true);
         getOrCreateChannelPlayerSet("customitem", true);
         getOrCreateChannelPlayerSet("damage", true);
         getOrCreateChannelPlayerSet("armor", true);
         getOrCreateChannelPlayerSet("death", true);
+        getOrCreateChannelPlayerSet("down", true);
+        getOrCreateChannelPlayerSet("revive", true);
+        getOrCreateChannelPlayerSet("combatlog", true);
         getOrCreateChannelPlayerSet("weight", true);
         getOrCreateChannelPlayerSet("globalchat", true);
-        getOrCreateChannelPlayerSet("down", true);
-        getOrCreateChannelPlayerSet("combatlog", true);
-        getOrCreateChannelPlayerSet("revive", true);
+        getOrCreateChannelPlayerSet("mob", true);
     }
 
     /**
