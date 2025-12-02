@@ -20,10 +20,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
-import org.bukkit.event.player.PlayerBedEnterEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -115,7 +112,7 @@ public class BedListener implements Listener {
 
             float pitch = (float) ThreadLocalRandom.current().nextDouble(0.3, 0.6);
             clickedBlock.getWorld().playSound(clickedBlock.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_PLACE, 10f, pitch);
-            PlayerUtil.message(player,"§6You have unclaimed your bed");
+            PlayerUtil.message(player, "§6You have unclaimed your bed");
             return;
         }
 
@@ -152,7 +149,7 @@ public class BedListener implements Listener {
 
         // --- CANCEL IF CLAIMED BY SOMEONE ELSE ---
         if (bedOwnerUUID != null && !bedOwnerUUID.equals(player.getUniqueId().toString())) {
-            PlayerUtil.message(player,"§7This bed is already claimed by another player");
+            PlayerUtil.message(player, "§7This bed is already claimed by another player");
             event.setCancelled(true);
             return;
         }
@@ -186,7 +183,7 @@ public class BedListener implements Listener {
             if (owner != null) {
                 clearPlayerBed(owner);
                 owner.setRespawnLocation(null, true);
-                PlayerUtil.message(owner,"§cYour bed was destroyed");
+                PlayerUtil.message(owner, "§cYour bed was destroyed");
             }
         }
     }
@@ -234,58 +231,79 @@ public class BedListener implements Listener {
     //-----------BED HEALING ---------------------//
     private static final double NIGHT_HEAL_CAP = 5.0; // 2.5 hearts
     private static final long BED_HEAL_INTERVAL = 1200L; // ticks between heals
-    private final Map<UUID, Long> lastHealDay = new HashMap<>();
-    private final Map<UUID, Double> healedThisDay = new HashMap<>();
-    private final Map<UUID, BedHealingTasks> bedHealTasks = new HashMap<>();
 
+    private final Map<UUID, BedHealingTasks> bedHealTasks = new HashMap<>();
+    private final Map<UUID, Long> lastHealDay = new HashMap<>();     // MC day index
+    private final Map<UUID, Double> healedThisDay = new HashMap<>(); // healed today
 
     private void startBedHealing(Player player) {
         UUID id = player.getUniqueId();
         if (bedHealTasks.containsKey(id)) return;
 
-        // --- Check for warm campfire ---
-        if (!hasWarmCampfire(player.getLocation())) {
-            PlayerUtil.message(player, "<gray>Bed is too <aqua>Cold</aqua> to recover health</gray>");
+
+        //------------- DAY CALCULATION ----------------//
+        World world = player.getWorld();
+        long currentDay = world.getFullTime() / 24000L;
+
+        long storedDay = lastHealDay.getOrDefault(id, Long.MIN_VALUE);
+        double healedSoFar = healedThisDay.getOrDefault(id, 0.0);
+
+        player.sendMessage("stored day:" + storedDay + "current Day:" + currentDay);
+        // daily cap
+        if (storedDay == currentDay && healedSoFar >= NIGHT_HEAL_CAP) {
+            PlayerUtil.message(player, "You're fully rested");
             stopBedHealing(player);
             return;
         }
+        double max = player.getAttribute(Attribute.MAX_HEALTH).getValue();
+        double newHealth = Math.min(player.getHealth() + 1.0, max);
 
-        long currentDay = player.getWorld().getFullTime() / 24000L;
+        // stop if full HP
+        if (newHealth >= max) return;
 
-        long storedDay = lastHealDay.getOrDefault(id, -1L);
-        final double[] used = {healedThisDay.getOrDefault(id, 0.0)};
-
-        // new day → reset
+        // Handle new day reset
         if (storedDay != currentDay) {
             lastHealDay.put(id, currentDay);
             healedThisDay.put(id, 0.0);
-            used[0] = 0.0;
+            healedSoFar = 0.0;
         }
 
-        // enforce cap
-        if (used[0] >= NIGHT_HEAL_CAP) {
-            PlayerUtil.message(player, "<gray>You're fully rested</gray>");
+        // Warm campfire requirement
+        if (!hasWarmCampfire(player.getLocation())) {
+            double r = Math.random();
+
+            String msg;
+            if (r < 0.80) {
+                msg = "<gray>This bed feels quite <aqua>chilly</aqua>.</gray>";  // 80%
+            } else if (r < 0.95) {
+                msg = "<gray>This bed feels a bit <aqua>cold</aqua>.</gray>";   // 15%
+            } else {
+                msg = "<gray>You <aqua>shiver</aqua> in your sleep</gray>"; // 5%
+            }
+
+            PlayerUtil.message(player, msg);
+
             stopBedHealing(player);
             return;
         }
 
+        //------------- SETUP BOSSBAR ----------------//
         BedHealingTasks tasks = new BedHealingTasks();
 
-        // --- Create BossBar ---
-        BossBar bar = Bukkit.createBossBar("Resting", BarColor.GREEN, BarStyle.SEGMENTED_20);
+        BossBar bar = Bukkit.createBossBar("Resting", BarColor.GREEN, BarStyle.SOLID);
         bar.addPlayer(player);
         bar.setProgress(0);
         tasks.bossBar = bar;
 
-        PlayerUtil.message(player, "<gray>You feel <gold>warm</gold> and cozy enough to <green>recover</green> health");
+        PlayerUtil.message(player, "<gray>This bed feels <gold>warm</gold> and cozy");
+
         final int totalTicks = (int) BED_HEAL_INTERVAL;
         final int[] tickCounter = {0};
 
-        // --- BossBar + Healing updater ---
         tasks.bossBarUpdater = new BukkitRunnable() {
             @Override
             public void run() {
-                if (!player.isSleeping()) {
+                if (!bedHealTasks.containsKey(id) || !player.isOnline()) {
                     stopBedHealing(player);
                     return;
                 }
@@ -294,75 +312,72 @@ public class BedListener implements Listener {
                 double progress = Math.min((double) tickCounter[0] / totalTicks, 1.0);
                 bar.setProgress(progress);
 
-                //--------------start increment---------------
                 if (progress < 1.0) return;
 
-                // enforce cap
-                if (used[0] >= NIGHT_HEAL_CAP) {
-                    PlayerUtil.message(player, "<gray>You're fully rested</gray>");
-                    stopBedHealing(player);
-                    return;
-                }
+                // Refresh healed amount
+                double healed = healedThisDay.getOrDefault(id, 0.0);
 
-                // --- Apply healing ---
+
+
+                //------------- APPLY HEAL -------------//
                 double max = player.getAttribute(Attribute.MAX_HEALTH).getValue();
-                double newHealth = Math.min(player.getHealth() + 1, max);
+                double newHealth = Math.min(player.getHealth() + 1.0, max);
                 player.setHealth(newHealth);
 
-                // --- increment healed amount this night ---
-                used[0] += 1.0;
-                healedThisDay.put(id, used[0]);
+                // update healed amount
+                healed += 1.0;
+                healedThisDay.put(id, healed);
+                lastHealDay.put(id, currentDay);
 
-                // hit max → end healing
-                if (newHealth >= max) {
-                    stopBedHealing(player);
-                    return;
-                }
-                // --- Check for warm campfire ---
-                if (!hasWarmCampfire(player.getLocation())) {
-                    PlayerUtil.message(player, "<gray>Bed is too <aqua>Cold</aqua> to recover health</gray>");
-                    stopBedHealing(player);
-                    return;
-                }
 
-                // --- HEART PARTICLES ---
-                player.getWorld().spawnParticle(
-                        Particle.HEART,
-                        player.getLocation().add(0, 1.0, 0),
-                        1,
-                        0.3, 0.3, 0.3,
-                        0
-                );
-
+                // particle & sound
+                player.getWorld().spawnParticle(Particle.HEART, player.getLocation().add(0, 1.0, 0),
+                        1, 0.3, 0.3, 0.3, 0);
                 player.getWorld().playSound(
                         player.getLocation(),
                         Sound.BLOCK_AMETHYST_BLOCK_CHIME,
                         SoundCategory.PLAYERS,
-                        2, 1
+                        2f,
+                        0.9f + (float)(Math.random() * 0.2f)
                 );
 
-                // --- TEXT HEART BAR ---
+
+                // heart bar text
                 double health = newHealth;
                 int full = (int) (health / 2);
-                boolean half = (health % 2) == 1;
+                boolean half = ((int) health % 2) == 1;
                 int total = (int) (max / 2);
 
                 StringBuilder barText = new StringBuilder();
-
-                for (int i = 0; i < full; i++)
-                    barText.append("<dark_red>❤</dark_red>");
-
-                if (half)
-                    barText.append("<#804040>❤</#804040>");
-
+                for (int i = 0; i < full; i++) barText.append("<dark_red>❤</dark_red>");
+                if (half) barText.append("<#804040>❤</#804040>");
                 int empty = total - full - (half ? 1 : 0);
-                for (int i = 0; i < empty; i++)
-                    barText.append("<#383838>❤</#383838>");
+                for (int i = 0; i < empty; i++) barText.append("<#383838>❤</#383838>");
 
                 PlayerUtil.message(player, barText.toString());
 
-                // reset bar for next heal cycle
-                tickCounter[0] = 0;
+                // check cap at heal moment also
+                if (healed >= NIGHT_HEAL_CAP) {
+                    PlayerUtil.message(player, "You're fully rested");
+                    stopBedHealing(player);
+                    return;
+                }
+
+                // stop if full HP
+                if (newHealth >= max) {
+                    stopBedHealing(player);
+                    return;
+                }
+
+                // warm campfire validation
+                if (!hasWarmCampfire(player.getLocation())) {
+                    PlayerUtil.message(player, "<gray>This bed is quite <aqua>chilly</aqua> </gray>");
+                    stopBedHealing(player);
+                    return;
+                }
+
+
+                tickCounter[0] = 0; // reset for next heal cycle
             }
         };
 
@@ -414,15 +429,12 @@ public class BedListener implements Listener {
     @EventHandler
     public void onSleepingFoodLoss(FoodLevelChangeEvent e) {
         if (e.getEntity() instanceof Player p) {
-            if (p.isSleeping()) {
-                e.setCancelled(true);
-            }
+            if (p.isSleeping()) e.setCancelled(true);
         }
     }
 
-
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onBedLeave(org.bukkit.event.player.PlayerBedLeaveEvent event) {
+    public void onBedLeave(PlayerBedLeaveEvent event) {
         stopBedHealing(event.getPlayer());
     }
 
@@ -430,5 +442,4 @@ public class BedListener implements Listener {
         BossBar bossBar;
         BukkitRunnable bossBarUpdater;
     }
-
 }

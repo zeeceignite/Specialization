@@ -18,6 +18,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
@@ -196,6 +197,15 @@ public class PVPManager implements Listener, CommandExecutor {
         if (source instanceof Player p) return p;
         if (source instanceof Projectile proj && proj.getShooter() instanceof Player p) return p;
         return null;
+    }
+
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        UUID id = event.getPlayer().getUniqueId();
+        combatMap.remove(id);
+        PlayerUtil.message(event.getPlayer(),"You may §bsafely§7 log out");
+        BossBar bar = combatBars.remove(id);
+        if (bar != null) bar.removeAll();
     }
 
     // --- Player logout ---
