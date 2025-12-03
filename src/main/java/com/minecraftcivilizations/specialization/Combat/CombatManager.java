@@ -408,9 +408,11 @@ public class CombatManager implements Listener {
         }
         if(event.getEntity() instanceof Player victim){
             //display player CHARGE - ENSURE damager is in survival for testing
+            double dmg = calculateTotalDamage(event);
             Debug.message(victim,
                     "damage",
-                    "<dark_red>📩 Damage: <red>"+Debug.formatDecimal(calculateTotalDamage(event))+extramsg,
+                    "<dark_red>📩 Damage: <red>"+Debug.formatDecimal(dmg)+extramsg
+                    +" Hits-To-Die: <red>"+(Math.round(victim.getMaxHealth()/dmg)),
                     "<red>Minimum Hit Required: </red>"+DAMAGE_MINIMUM+""+modifiers
             );
         }

@@ -311,8 +311,8 @@ public class MobManager implements Listener {
         new MobOverrideRule(100, ZOMBIE, HUSK, DROWNED, ZOMBIE_VILLAGER)
                 .addVariation(new MobVariation("zombie_variation")
                         .health(2)
-                        .damage(1.0, 1.35)
-                        .speed(1.5, 1.75)
+                        .damage(1.0, 1.5)
+                        .speed(1.25, 1.75)
                         .hunts(54)
                         .breaks(1.25)
                 );

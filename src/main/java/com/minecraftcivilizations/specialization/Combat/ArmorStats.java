@@ -169,13 +169,14 @@ public final class ArmorStats {
                 return new ArmorStats(5, 0,0,1);
 
             case CHAINMAIL_HELMET:
-                return new ArmorStats(1, 0,0,1);
+                return new ArmorStats(1, 1,0,1);
             case CHAINMAIL_BOOTS:
-                return new ArmorStats(2, 0,0,1);
+                return new ArmorStats(22, 1,0,1);
             case CHAINMAIL_LEGGINGS:
-                return new ArmorStats(4, 0,0,1);
+                return new ArmorStats(4, 1,0,1);
             case CHAINMAIL_CHESTPLATE:
-                return new ArmorStats(5, 0,0,1);
+                return new ArmorStats(5, 1,0,1);
+
 
             case IRON_HELMET:
                 return new ArmorStats(2, 1, 0, 1);

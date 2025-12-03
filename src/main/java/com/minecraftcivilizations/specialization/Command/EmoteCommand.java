@@ -285,7 +285,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
     public void onSit(Player player) {
 
         if (player.isInsideVehicle()) {
-            PlayerUtil.message(player ,"You cant do that right now");
+            PlayerUtil.message(player ,"You can't do that right now");
             return;
         }
 

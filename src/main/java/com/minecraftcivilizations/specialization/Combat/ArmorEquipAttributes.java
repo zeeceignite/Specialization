@@ -355,65 +355,108 @@ public class ArmorEquipAttributes implements Listener {
      */
     public static ItemStack applyArmorStats(ItemStack item, ArmorStatsCustom custom_stats_override, ChatColor color){
         ItemMeta meta = item.getItemMeta();
-        if(meta.getPersistentDataContainer().has(WEIGHT_KEY))return null; //returning null skips applying
 
 
+//        NamespacedKey key = new NamespacedKey(Specialization.getInstance(),"version");
+//        if(meta.getPersistentDataContainer().has(key)){
+//
+//        }
+
+//        Debug.broadcast("armor", "removing attribute modifiers and applying");
+
+        Collection<AttributeModifier> attributeModifiers = meta.getAttributeModifiers(Attribute.ARMOR);
+        if(attributeModifiers!=null) {
+            for (AttributeModifier mod : attributeModifiers) {
+                // handle armor modifier
+                meta.removeAttributeModifier(Attribute.ARMOR, mod);
+            }
+        }
+        attributeModifiers = meta.getAttributeModifiers(Attribute.ARMOR_TOUGHNESS);
+        if(attributeModifiers!=null) {
+            for (AttributeModifier mod : attributeModifiers) {
+                // handle armor modifier
+                meta.removeAttributeModifier(Attribute.ARMOR_TOUGHNESS, mod);
+            }
+        }
+//        meta.removeAttributeModifier(Attribute.ARMOR);
+//        meta.removeAttributeModifier(Attribute.ARMOR_TOUGHNESS);
+//        meta.removeAttributeModifier(Attribute.ARMOR);
+//
+//
+//        attributeModifiers = meta.getAttributeModifiers(Attribute.ARMOR_TOUGHNESS);
+//        if(attributeModifiers!=null) {
+//            for (AttributeModifier mod : meta.getAttributeModifiers(Attribute.ARMOR_TOUGHNESS)) {
+//                // handle toughness modifier
+//            }
+//        }
+//
+//        attributeModifiers = meta.getAttributeModifiers(Attribute.KNOCKBACK_RESISTANCE);
+//        if(attributeModifiers!=null) {
+//            for (AttributeModifier mod : attributeModifiers) {
+//                meta.removeAttributeModifier(Attribute.KNOCKBACK_RESISTANCE, mod);
+//                // handle knockback resistance modifier
+//            }
+//        }
 
         ArmorStats vanillaStats = ArmorStats.getVanillaStats(item.getType());
         // VANILLA ARMOR OVERRIDE
-//        if(item.getType().name().contains("IRON_")){
-            AttributeModifier mod_armor = new AttributeModifier(
-                    new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase()+"_armor"),
-                    vanillaStats.getArmor(),
-                    AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR);
-            meta.addAttributeModifier(Attribute.ARMOR, mod_armor);
+        AttributeModifier mod_armor = new AttributeModifier(
+                new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase()+"_armor"),
+                vanillaStats.getArmor(),
+                AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR);
+        meta.addAttributeModifier(Attribute.ARMOR, mod_armor);
         AttributeModifier mod_tough = new AttributeModifier(
                 new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase()+"_toughness"),
                 vanillaStats.getToughness(),
                 AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR);
         meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, mod_tough);
 
-
         if(custom_stats_override.getKnockback_resist()>0) {
             AttributeModifier mod_knockback = new AttributeModifier(
                     new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase() + "_knockback"),
                     custom_stats_override.getKnockback_resist(),
                     AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR);
+            meta.removeAttributeModifier(Attribute.KNOCKBACK_RESISTANCE, mod_knockback);
             meta.addAttributeModifier(Attribute.KNOCKBACK_RESISTANCE, mod_knockback);
         }
-        ArmorStats stats = ArmorStats.getVanillaStats(item.getType());
-
-        double weight; //weight to apply to the item
-        if(custom_stats_override.getWeight()!=-1) {
-            weight = custom_stats_override.getWeight(); //manually apply weight*
-        }else{
-            double material_weight = 0;
-            double slot_weight = 0;
-            EquipmentSlot slot = ArmorStats.getSlot(item.getType());
-            Material mat = ArmorStats.getMaterialType(item.getType());
-            if (mat == null) return item; //not compatible
-
-            material_weight = getMaterialWeight(mat);
-            slot_weight = getSlotModifier(slot);
-
-            weight = (material_weight * slot_weight);
-        }
-
-        //apply weight
-        meta.getPersistentDataContainer().set(WEIGHT_KEY, PersistentDataType.DOUBLE, weight);
-
-
-        double slowness_debuff = -weight / 1000;
-
-        AttributeModifier mod_water_weight = new AttributeModifier(
-                new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase() + "_weight_slowness"),
-                slowness_debuff,
-                AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.ARMOR);
-        meta.addAttributeModifier(Attribute.MOVEMENT_SPEED, mod_water_weight);
 
         item.setItemMeta(meta);
-        ItemStackUtils.setLoreLine(item, 0, color+"+"+weight+" Weight");
+
+        if(!meta.getPersistentDataContainer().has(WEIGHT_KEY)) {
+
+            double weight; //weight to apply to the item
+            if (custom_stats_override.getWeight() != -1) {
+                weight = custom_stats_override.getWeight(); //manually apply weight*
+            } else {
+                double material_weight = 0;
+                double slot_weight = 0;
+                EquipmentSlot slot = ArmorStats.getSlot(item.getType());
+                Material mat = ArmorStats.getMaterialType(item.getType());
+                if (mat == null) return item; //not compatible
+
+
+                material_weight = getMaterialWeight(mat);
+                slot_weight = getSlotModifier(slot);
+
+                weight = (material_weight * slot_weight);
+            }
+
+            //apply weight
+            meta.getPersistentDataContainer().set(WEIGHT_KEY, PersistentDataType.DOUBLE, weight);
+
+
+            double slowness_debuff = -weight / 1000;
+
+            AttributeModifier mod_water_weight = new AttributeModifier(
+                    new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase() + "_weight_slowness"),
+                    slowness_debuff,
+                    AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.ARMOR);
+            meta.addAttributeModifier(Attribute.MOVEMENT_SPEED, mod_water_weight);
+
+            item.setItemMeta(meta);
+            ItemStackUtils.setLoreLine(item, 0, color + "+" + weight + " Weight");
 //        Debug.broadcast("weight", "weight applied! "+BLUE+"MAT: "+material_weight+" "+GREEN+"SLOT: "+slot_weight);
+        }
         return item;
     }
 
