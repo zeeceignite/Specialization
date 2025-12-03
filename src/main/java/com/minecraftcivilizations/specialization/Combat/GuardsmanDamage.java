@@ -117,14 +117,17 @@ public class GuardsmanDamage implements Listener {
          */
         if(victim instanceof LivingEntity le){
             if(victim instanceof Enemy) {
-                multiplier *= 2; //Scales appropriate damage to most hostile mobs
+                // Hostile Mobs
+                multiplier *= 3.0; //Scales appropriate damage to most hostile mobs
             }else if(combatManager.getMobManager().isMobVariation(victim)){
+                // Mob Variations
                 MobVariation variation = combatManager.getMobManager().getMobVariation(victim);
                 if(variation.isAngry() || variation.doesHunting()){
-                    multiplier *= 2;
+                    multiplier *= 3.0;
                 }
             }else if(victim instanceof Mob){
-                multiplier = 1.0;
+                // Non hostile-mob
+                multiplier *= 3.0;
                 add = 0.0;
             }
         }

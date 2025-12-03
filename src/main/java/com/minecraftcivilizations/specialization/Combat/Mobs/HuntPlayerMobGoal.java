@@ -282,7 +282,9 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
                     .collect(Collectors.toSet());
 
             // Trigger instinct system (same behavior as previous BreakBlockMobGoal)
-            Instinct.onMobStartBreakingBlock((Monster) mob);
+            if(mob instanceof Monster mon) {
+                Instinct.onMobStartBreakingBlock(mon);
+            }
         }
 
         // If we have a block, increment break progress and show visuals

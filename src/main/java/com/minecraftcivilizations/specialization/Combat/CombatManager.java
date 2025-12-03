@@ -1,6 +1,7 @@
 package com.minecraftcivilizations.specialization.Combat;
 
 import com.google.gson.reflect.TypeToken;
+import com.minecraftcivilizations.specialization.Combat.Mobs.MobVariation;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Combat.Mobs.MobManager;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
@@ -11,6 +12,7 @@ import com.minecraftcivilizations.specialization.util.CoreUtil;
 import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import lombok.Getter;
 import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -113,6 +115,13 @@ public class CombatManager implements Listener {
                     }else{
                         //skeleton or mob
                         multiplier = 0.7;
+                        if(mobManager.isMobVariation(shooter)) {
+                            MobVariation mobVariation = mobManager.getMobVariation(shooter);
+                            if (shooter.getWorld().getEnvironment() == World.Environment.NORMAL) {
+                                multiplier *= shooter.getWorld().isDayTime() ? mobVariation.getDamageMultiplierDay() : mobVariation.getDamageMultiplierNight();
+                            } else {
+                                multiplier *= mobVariation.getDamageMultiplierNether();}
+                        }
                     }
                     break;
                 case CROSSBOW:
@@ -200,8 +209,10 @@ public class CombatManager implements Listener {
 //            if(event.getDamage(m)!=0)
                         modifiers += "\n<gray>" + m.name() + "</gray>: " + Debug.formatDecimal(event.getDamage(m));
                     }
-                    Debug.broadcast("damage", "Arrow Damage: <red>" + original_base + (event.isCritical() ? "<yellow>[CRIT]</yellow>" : "") +
-                            " <gold>[<gray>🏹</gray>x" + multiplier + "]</gold>" + "</red> Final: <red>" + Debug.formatDecimal(event.getFinalDamage()), modifiers);
+                    if (event.getEntity() instanceof Player p) {
+                        Debug.message(p, "damage", "Arrow Damage: <red>" + Debug.formatDecimal(original_base) + (event.isCritical() ? "<yellow>[CRIT]</yellow>" : "") +
+                                " <gold>[<gray>🏹</gray>x" + Debug.formatDecimal(multiplier) + "]</gold>" + "</red> Final: <red>" + Debug.formatDecimal(event.getFinalDamage()), modifiers);
+                    }
                 }
             }
         }
@@ -409,10 +420,11 @@ public class CombatManager implements Listener {
         if(event.getEntity() instanceof Player victim){
             //display player CHARGE - ENSURE damager is in survival for testing
             double dmg = calculateTotalDamage(event);
+            double maxhealth = victim.getAttribute(Attribute.MAX_HEALTH).getValue();
             Debug.message(victim,
                     "damage",
                     "<dark_red>📩 Damage: <red>"+Debug.formatDecimal(dmg)+extramsg
-                    +" Hits-To-Die: <red>"+(Math.round(victim.getMaxHealth()/dmg)),
+                    +" Hits-To-Die: <red>"+(Math.ceil(maxhealth/dmg)),
                     "<red>Minimum Hit Required: </red>"+DAMAGE_MINIMUM+""+modifiers
             );
         }

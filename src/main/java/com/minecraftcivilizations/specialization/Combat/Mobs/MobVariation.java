@@ -84,6 +84,8 @@ public class MobVariation {
     @Getter
     private double damageMultiplierNight = 1.0;
     @Getter
+    private double damageMultiplierNether = 1.0;
+    @Getter
     private double damageBaseDay = 0.0;
     @Getter
     private double damageBaseNight = 0.0;
@@ -168,12 +170,22 @@ public class MobVariation {
 
     public MobVariation damage(double multiplier){
         this.damageMultiplierDay = multiplier;
+        this.damageMultiplierNight = multiplier;
+        this.damageMultiplierNether = multiplier;
         return this;
     }
 
     public MobVariation damage(double multiplier_day, double multiplier_night){
         this.damageMultiplierDay = multiplier_day;
         this.damageMultiplierNight = multiplier_night;
+        this.damageMultiplierNether = multiplier_night;
+        return this;
+    }
+
+    public MobVariation damage(double multiplier_day, double multiplier_night, double multiplier_nether){
+        this.damageMultiplierDay = multiplier_day;
+        this.damageMultiplierNight = multiplier_night;
+        this.damageMultiplierNether = multiplier_nether;
         return this;
     }
 
