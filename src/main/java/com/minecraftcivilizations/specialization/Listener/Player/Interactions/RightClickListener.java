@@ -108,7 +108,7 @@ public class RightClickListener implements Listener {
         // Force feed: add 1 hunger
         // Only feed if target is not full
         if (!(target.getFoodLevel() < 20)) {
-            PlayerUtil.message(player, target.getName() + " cant handle more food", 1);
+            PlayerUtil.message(player, target.getName() + " can't handle more food", 1);
            return;
         }
 

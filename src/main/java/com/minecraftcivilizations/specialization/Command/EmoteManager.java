@@ -1,13 +1,15 @@
 package com.minecraftcivilizations.specialization.Command;
 
 import co.aikar.commands.BaseCommand;
-import co.aikar.commands.annotation.*;
+import co.aikar.commands.annotation.CommandAlias;
+import co.aikar.commands.annotation.Description;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.minecraftcivilizations.specialization.CustomItem.CustomItem;
 import com.minecraftcivilizations.specialization.CustomItem.CustomItemManager;
 import com.minecraftcivilizations.specialization.CustomItem.EmoteItem;
 import com.minecraftcivilizations.specialization.CustomItem.PacketListener;
+import com.minecraftcivilizations.specialization.Listener.Player.LocalChat;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import org.bukkit.*;
@@ -19,41 +21,42 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.entity.EntityDismountEvent;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
-import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
 
-/** @author Jfrogy*/
+/**
+ * @author Jfrogy
+ */
 
-public class EmoteCommand extends BaseCommand implements Listener {
+public class EmoteManager extends BaseCommand implements Listener {
 
     private final Map<Block, Interaction> seatBlocks = new HashMap<>();
     private final JavaPlugin plugin;
     private final ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
-
+    private final NamespacedKey sitKey = new NamespacedKey(Specialization.getInstance(), "sitemote");
+    private final Set<Player> silenced_players = new HashSet<>();
+    private final Map<UUID, ArmorStand> sittingStands = new HashMap<>();
+    // Track running cannonball tasks
+    private final Map<UUID, Integer> cannonTasks = new HashMap<>();
     public EmoteItem clap_item = new EmoteItem("clap_crossbow", "§bClap", EmoteItem.EmoteType.CLAP, "clap", this);
     public EmoteItem point_item = new EmoteItem("point_crossbow", "§bPoint", EmoteItem.EmoteType.POINT, "point", this);
-    private final NamespacedKey sitKey = new NamespacedKey(Specialization.getInstance(), "sitemote");
 
-    private final Set<Player> silenced_players = new HashSet<>();
-
-    public EmoteCommand(CustomItemManager customItemManager, JavaPlugin plugin) {
+    public EmoteManager(CustomItemManager customItemManager, JavaPlugin plugin) {
         this.plugin = plugin;
         Bukkit.getPluginManager().registerEvents(this, plugin);
         protocolManager.addPacketListener(new PacketListener(this));
@@ -68,32 +71,32 @@ public class EmoteCommand extends BaseCommand implements Listener {
 
         if (hand.getType().isAir()) {
             player.getInventory().setItemInMainHand(emoteItem.createItemStack(1, player));
-            PlayerUtil.message(player ,successMsg);
+            PlayerUtil.message(player, successMsg);
             return;
         }
 
         CustomItem current = CustomItemManager.getInstance().getCustomItem(hand);
         if (current instanceof EmoteItem) {
             player.getInventory().setItemInMainHand(emoteItem.createItemStack(1, player));
-            PlayerUtil.message(player ,successMsg);
+            PlayerUtil.message(player, successMsg);
             return;
         }
 
-        PlayerUtil.message(player ,"Main hand must be empty to emote");
+        PlayerUtil.message(player, "Main hand must be empty to emote");
     }
 
     @CommandAlias("emotes|e")
     @Description("Lists all emote-type custom items")
     public void onList(Player sender) {
-        PlayerUtil.message(sender ,"§7==== §eAvailable Emotes §7====");
-        PlayerUtil.message(sender ,"§9● §b Sit");
-        PlayerUtil.message(sender ,"§9● §b Cannonball");
-        PlayerUtil.message(sender ,"§9● §b Fart");
+        PlayerUtil.message(sender, "§7==== §eAvailable Emotes §7====");
+        PlayerUtil.message(sender, "§9● §b Sit");
+        PlayerUtil.message(sender, "§9● §b Cannonball");
+        PlayerUtil.message(sender, "§9● §b Fart");
         for (CustomItem item : CustomItemManager.getInstance().getCustomItems()) {
             if (!(item instanceof EmoteItem)) continue;
             boolean enabled = item.isEnabled();
             String icon = enabled ? "§9●" : "§8●";
-            PlayerUtil.message(sender ,icon + " §f" + " §7" + item.getDisplayName());
+            PlayerUtil.message(sender, icon + " §f" + " §7" + item.getDisplayName());
         }
     }
 
@@ -102,7 +105,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
         if (CustomItemManager.getInstance().getCustomItem("point_crossbow").isEnabled()) {
             giveEmote(player, point_item, "You are now pointing...");
         } else {
-            PlayerUtil.message(player ,"§cEmote is disabled");
+            PlayerUtil.message(player, "§cEmote is disabled");
         }
     }
 
@@ -111,7 +114,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
         if (CustomItemManager.getInstance().getCustomItem("clap_crossbow").isEnabled()) {
             giveEmote(player, clap_item, "§9You can now clap... (Tap Right-Click)");
         } else {
-            PlayerUtil.message(player ,"§cEmote is disabled");
+            PlayerUtil.message(player, "§cEmote is disabled");
         }
     }
 
@@ -134,7 +137,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
             return;
         }
         if (seatBlocks.containsKey(block)) {
-            PlayerUtil.message(player ,"§cSomeone is already sitting here.");
+            PlayerUtil.message(player, "§cSomeone is already sitting here.");
             return;
         }
         sit(player, block);
@@ -157,11 +160,28 @@ public class EmoteCommand extends BaseCommand implements Listener {
         }
     }
 
-    private boolean isPlayerSitting(Player player) {
+    public boolean isPlayerSitting(Player player) {
+        // Check custom Interaction seats
         for (Interaction seat : seatBlocks.values()) {
             if (seat.getPassengers().contains(player)) return true;
         }
+        // Check armor-stand based /sit
+        if (sittingStands.containsKey(player.getUniqueId())) {
+            ArmorStand seat = sittingStands.get(player.getUniqueId());
+            return seat.isValid() && seat.getPassengers().contains(player);
+        }
+
         return false;
+    }
+
+
+    @EventHandler
+    public void onSittingFoodLoss(FoodLevelChangeEvent e) {
+        if (e.getEntity() instanceof Player p) {
+            if (isPlayerSitting(p)) {
+                p.sendMessage("stopped food loss");
+            }
+        }
     }
 
     @EventHandler
@@ -176,6 +196,13 @@ public class EmoteCommand extends BaseCommand implements Listener {
     public void onQuit(PlayerQuitEvent e) {
         cancelSeat(e.getPlayer());
         cancelRide(e.getPlayer());
+    }
+
+    public void shutdown() {
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            cancelSeat(p);
+            cancelRide(p);
+        }
     }
 
     @EventHandler
@@ -198,12 +225,13 @@ public class EmoteCommand extends BaseCommand implements Listener {
             Interaction seat = entry.getValue();
             if (seat.getPassengers().contains(player)) {
                 toRemove = entry.getKey();
+                if (toRemove != null) seatBlocks.remove(toRemove);
+                if (player.isInsideVehicle()) player.leaveVehicle();
+
                 seat.remove();
                 break;
             }
         }
-        if (toRemove != null) seatBlocks.remove(toRemove);
-        if (player.isInsideVehicle()) player.leaveVehicle();
     }
 
     private boolean isValidSeatBlock(Block block) {
@@ -253,15 +281,15 @@ public class EmoteCommand extends BaseCommand implements Listener {
                 switch (dir.getFacing()) {
                     case NORTH -> zOffset = 0.02;
                     case SOUTH -> zOffset = -0.02;
-                    case WEST  -> xOffset = 0.02;
-                    case EAST  -> xOffset = -0.02;
+                    case WEST -> xOffset = 0.02;
+                    case EAST -> xOffset = -0.02;
                 }
 
                 loc.setYaw(switch (dir.getFacing()) {
                     case NORTH -> 180f;
                     case SOUTH -> 0f;
-                    case WEST  -> 90f;
-                    case EAST  -> -90f;
+                    case WEST -> 90f;
+                    case EAST -> -90f;
                     default -> 0f;
                 });
             }
@@ -279,19 +307,18 @@ public class EmoteCommand extends BaseCommand implements Listener {
         return loc;
     }
 
-    private final Map<Player, ArmorStand> sittingStands = new HashMap<>();
     @CommandAlias("sit|s")
     @Description("Sit anywhere using an invisible mini armor stand")
     public void onSit(Player player) {
 
         if (player.isInsideVehicle()) {
-            PlayerUtil.message(player ,"You cant do that right now");
+            PlayerUtil.message(player ,"You can't do that right now");
             return;
         }
 
         Block support = findSolidBlockBelow(player);
         if (support == null) {
-            PlayerUtil.message(player ,"No solid block below you");
+            PlayerUtil.message(player, "No solid block below you");
             return;
         }
 
@@ -308,9 +335,8 @@ public class EmoteCommand extends BaseCommand implements Listener {
         ArmorStand seat = spawnSitStand(player, spawnLoc);
 
         seat.addPassenger(player);
-        sittingStands.put(player, seat);
+        sittingStands.put(player.getUniqueId(), seat);
     }
-
 
     private ArmorStand spawnSitStand(Player player, Location loc) {
         World world = player.getWorld();
@@ -352,11 +378,12 @@ public class EmoteCommand extends BaseCommand implements Listener {
         return null;
     }
 
-
-
     private void cancelRide(Player player) {
-        ArmorStand seat = sittingStands.remove(player);
+        ArmorStand seat = sittingStands.remove(player.getUniqueId());
 
+        if (player.isInsideVehicle()) {
+            player.leaveVehicle();
+        }
         if (seat != null && seat.isValid()) {
             PersistentDataContainer pdc = seat.getPersistentDataContainer();
             Byte flag = pdc.get(sitKey, PersistentDataType.BYTE);
@@ -368,16 +395,13 @@ public class EmoteCommand extends BaseCommand implements Listener {
         Integer task = cannonTasks.remove(player.getUniqueId());
         if (task != null) Bukkit.getScheduler().cancelTask(task);
 
-        if (player.isInsideVehicle()) {
-            player.leaveVehicle();
-        }
     }
 
     @CommandAlias("cannonball|cb")
     @Description("Launch yourself like a cannonball")
     public void onCannonball(Player player) {
 
-        if (PlayerUtil.isOnCooldown(player,"cannonballemote")) {
+        if (PlayerUtil.isOnCooldown(player, "cannonballemote")) {
             PlayerUtil.message(player, "You need a break from that", 1);
             return;
         }
@@ -399,20 +423,24 @@ public class EmoteCommand extends BaseCommand implements Listener {
             return;
         }
 
+        if (Math.random() < 0.05) { // 5% chance
+            LocalChat.createBubble(player, "Cannonball!");
+        }
+
         Location spawnLoc = support.getLocation().add(0.5, 1.02, 0.5);
         spawnLoc.setYaw(player.getLocation().getYaw());
         spawnLoc.setPitch(0);
 
         // --- STARTUP PASSABILITY CHECK ---
         if (!hasPassableForward(player, player.getLocation())) {
-            PlayerUtil.message(player, "Not enough room to launch.");
+            PlayerUtil.message(player, "Not enough room to launch");
             return;
         }
 
         // Spawn seat
         ArmorStand seat = spawnSitStand(player, spawnLoc);
         seat.addPassenger(player);
-        sittingStands.put(player, seat);
+        sittingStands.put(player.getUniqueId(), seat);
 
         // Apply forward & upward velocity
         Vector dir = player.getLocation().getDirection().normalize().multiply(0.6);
@@ -445,33 +473,29 @@ public class EmoteCommand extends BaseCommand implements Listener {
         cannonTasks.put(id, task);
     }
 
-
-    // Track running cannonball tasks
-    private final Map<UUID, Integer> cannonTasks = new HashMap<>();
-
     private boolean hasPassableForward(Player player, Location loc) {
         World w = loc.getWorld();
         Vector dir = loc.getDirection().normalize();
+
         int x0 = loc.getBlockX();
         int y0 = loc.getBlockY();
         int z0 = loc.getBlockZ();
 
-        // Offset starting position 1 block forward
+        // Offset starting position 1 block forward in look direction
         x0 += (int) Math.round(dir.getX());
         z0 += (int) Math.round(dir.getZ());
 
-        for (int dx = -1; dx <= 1; dx++) {       // 3 blocks across X
-            for (int dy = 0; dy <= 2; dy++) {    // 3 blocks high
-                for (int dz = 0; dz <= 1; dz++) { // 2 blocks forward in look direction
-                    // Determine actual world position
-                    int checkX = x0 + dx;
-                    int checkY = y0 + dy;
-                    int checkZ = z0 + dz;
-                    Block b = w.getBlockAt(checkX, checkY, checkZ);
-                    if (!b.isPassable()) return false;
-                }
+        for (int dy = 0; dy <= 2; dy++) {     // 3 blocks high
+            for (int dz = 0; dz <= 1; dz++) { // 2 blocks forward
+                int checkX = x0;
+                int checkY = y0 + dy;
+                int checkZ = z0 + dz;
+
+                Block b = w.getBlockAt(checkX, checkY, checkZ);
+                if (!b.isPassable()) return false;
             }
         }
+
         return true;
     }
 
@@ -485,9 +509,9 @@ public class EmoteCommand extends BaseCommand implements Listener {
         double hh = 0.2; // vertical span height
 
         // 8 sample points (corners)
-        double[] xs = { -hw, hw };
-        double[] ys = { 0, hh };
-        double[] zs = { -hw, hw };
+        double[] xs = {-hw, hw};
+        double[] ys = {0, hh};
+        double[] zs = {-hw, hw};
 
         // Normalize ray direction
         Vector dir = velocity.clone().normalize();
@@ -497,7 +521,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
             for (double dy : ys) {
                 for (double dz : zs) {
 
-                    Location start = origin.clone().add(dx, dy+2, dz);
+                    Location start = origin.clone().add(dx, dy + 2, dz);
                     RayTraceResult result = w.rayTraceBlocks(start, dir, distance, FluidCollisionMode.NEVER);
 
                     // Debug particle
@@ -517,26 +541,28 @@ public class EmoteCommand extends BaseCommand implements Listener {
         if (!(event.getEntity() instanceof Player p)) return;
         if (!(event.getDismounted() instanceof ArmorStand seat)) return;
 
-        // Only cannonball seats
         Byte flag = seat.getPersistentDataContainer().get(sitKey, PersistentDataType.BYTE);
         if (flag == null || flag != (byte) 1) return;
 
-        // EXACT current velocity of the seat this tick
         Vector seatVel = seat.getVelocity().clone();
-
-        // Apply that velocity to the player right after dismount
-        Bukkit.getScheduler().runTask(plugin, () -> p.setVelocity(seatVel));
+        float seatFall = seat.getFallDistance();
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            // Apply the seat's velocity to the player
+            p.setVelocity(seatVel);
+            // Apply the seat's fall distance to the player
+            // (if seatFall is 0, you can compute manually if you tracked startY)
+            p.setFallDistance(seatFall);
+        });
     }
-
-
 
 
     // Cleanup
     private void stopCannonball(Player p) {
-        ArmorStand seat = sittingStands.remove(p);
+        p.sendMessage("removing");
+        ArmorStand seat = sittingStands.remove(p.getUniqueId());
         PlayerUtil.setCooldown(p, "cannonballemote", 50);
-        if (seat != null && seat.isValid()) seat.remove();
         if (p.isInsideVehicle()) p.leaveVehicle();
+        if (seat != null && seat.isValid()) seat.remove();
 
         Integer task = cannonTasks.remove(p.getUniqueId());
         if (task != null) Bukkit.getScheduler().cancelTask(task);
@@ -547,12 +573,10 @@ public class EmoteCommand extends BaseCommand implements Listener {
     @Description("Perform a stinky emote")
     public void onFart(Player player) {
 
-        if (player.isInsideVehicle()) {
-            PlayerUtil.message(player, "You struggle to rip one out right now...");
-            return;
+        if (!player.isInsideVehicle()) {
+        player.setSneaking(true);
         }
         // REAL sneaking start
-        player.setSneaking(true);
 
         // Fart in 1 second
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -567,7 +591,7 @@ public class EmoteCommand extends BaseCommand implements Listener {
                     20,
                     0.1, 0.1, 0.1,
                     0,
-                    new Particle.DustOptions(Color.fromRGB(0,155,0), 1f)
+                    new Particle.DustOptions(Color.fromRGB(0, 155, 0), 1f)
             );
 
             // Base pitch
@@ -576,9 +600,9 @@ public class EmoteCommand extends BaseCommand implements Listener {
             float variance = 0.2f;
 
             // Randomized pitch
-            float randomPitch = basePitch + (float)((Math.random() * 2 - 1) * variance);
+            float randomPitch = basePitch + (float) ((Math.random() * 2 - 1) * variance);
 
-            player.getWorld().playSound(loc, Sound.ENTITY_PIG_AMBIENT, SoundCategory.PLAYERS,0.1f, randomPitch);
+            player.getWorld().playSound(loc, Sound.ENTITY_PIG_AMBIENT, SoundCategory.PLAYERS, 0.1f, randomPitch);
             player.getWorld().playSound(loc, Sound.ENTITY_PARROT_IMITATE_PIGLIN, SoundCategory.PLAYERS, 0.5f, randomPitch);
 
         }, 20L);
@@ -588,4 +612,6 @@ public class EmoteCommand extends BaseCommand implements Listener {
             player.setSneaking(false);
         }, 25L);
     }
+
+
 }
