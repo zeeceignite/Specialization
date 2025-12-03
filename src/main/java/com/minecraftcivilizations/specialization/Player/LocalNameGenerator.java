@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.Player;
 
+import com.minecraftcivilizations.specialization.Combat.BlacksmithArmorTrim;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.PlayerUtil;
@@ -19,6 +20,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.meta.trim.TrimMaterial;
+import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.io.File;
@@ -44,6 +47,7 @@ public class LocalNameGenerator implements Listener {
     private static File fnFile;
     private static File lnFile;
 
+    BlacksmithArmorTrim blacksmithArmorTrim; //we'll reference this to access things like applyFirstName, etc.
 
     /**
      * @throws IOException if either file can't be read
@@ -51,32 +55,118 @@ public class LocalNameGenerator implements Listener {
     public LocalNameGenerator(Specialization specialization) throws IOException {
         if (specialization != null) {
             specialization.getServer().getPluginManager().registerEvents(this, specialization);
+            blacksmithArmorTrim = specialization.getArmorTrimSystem();
         }
         fnFile = new File(Specialization.getInstance().getDataFolder(), "first_names.txt");
         lnFile = new File(Specialization.getInstance().getDataFolder(), "last_names.txt");
         firstNames = new ArrayList<>();
         lastNames = new ArrayList<>();
-        for (String string : Files.readAllLines(fnFile.toPath())) {
-            if (string.isEmpty() || string.startsWith("#")) continue;
-            this.firstNames.add(string);
+        for (String rawLine : Files.readAllLines(fnFile.toPath())) {
+            if (rawLine.isEmpty() || rawLine.startsWith("#")) continue;
+
+            // detect optional "(TAG)" and remove it for storage/processing
+            java.util.regex.Matcher pm = Pattern.compile("\\(([^)]+)\\)").matcher(rawLine);
+            String cleanedLine = rawLine;
+            String tag = null;
+            if (pm.find()) {
+                tag = pm.group(1).trim();
+                // remove the (TAG) so it isn't baked into names
+                cleanedLine = cleanedLine.replaceAll("\\s*\\([^)]*\\)\\s*", "").trim();
+            }
+
+            // store the cleaned line for generation (no (TAG) inside)
+            this.firstNames.add(cleanedLine);
+
+            // Now parse and auto-apply mapping when tag is present
+            if (tag != null && blacksmithArmorTrim != null) {
+                String withoutGroups = cleanedLine.replaceAll("\\s*\\[[^\\]]+\\]\\s*", "").trim();
+                List<String> variants = expandBraces(withoutGroups);
+
+                // try as TrimPattern first (first-names likely map to patterns)
+                TrimPattern pattern = BlacksmithArmorTrim.getPatternOf(tag);
+                if (pattern != null && !variants.isEmpty()) {
+                    blacksmithArmorTrim.applyFirstName(pattern, variants.toArray(new String[0]));
+                    continue;
+                }
+
+                // fallback: try as TrimMaterial
+                TrimMaterial material = BlacksmithArmorTrim.getMaterialOf(tag);
+                if (material != null && !variants.isEmpty()) {
+                    blacksmithArmorTrim.applyLastName(material, variants.toArray(new String[0]));
+                }
+            }
         }
+
 
 
         for (String line : Files.readAllLines(lnFile.toPath())) {
             if (line.isEmpty() || line.startsWith("#")) continue;
 
             List<String> matches = getGroupPattern(line);
+            // Remove group tags for cleaned processing (we keep original line in grouping or defaults)
+            String cleanedLine = line.replaceAll("\\s*\\[[^\\]]+\\]\\s*", "").trim();
+
+            // detect optional (TAG) at end or anywhere
+            java.util.regex.Matcher pm = Pattern.compile("\\(([^)]+)\\)").matcher(line);
+            String tag = null;
+            if (pm.find()) {
+                tag = pm.group(1).trim();
+                // remove the (TAG) from cleaned form so expandBraces works cleanly
+                cleanedLine = cleanedLine.replaceAll("\\s*\\([^)]*\\)\\s*", "").trim();
+            }
+
             if (matches.isEmpty()) {
                 // Default (ungrouped) last name
                 lastNames.add(line.trim());
+
+                // If there's a tag, try to map it
+                if (tag != null && blacksmithArmorTrim != null) {
+                    List<String> variants = expandBraces(cleanedLine);
+                    if (!variants.isEmpty()) {
+                        // Prefer material mapping for last names
+                        try {
+                            TrimMaterial material = BlacksmithArmorTrim.getMaterialOf(tag);
+                            blacksmithArmorTrim.applyLastName(material, variants.toArray(new String[0]));
+                        } catch (IllegalArgumentException ignored) {
+                            // Not a material — try pattern as fallback
+                            try {
+                                TrimPattern pattern = BlacksmithArmorTrim.getPatternOf(tag);
+                                blacksmithArmorTrim.applyFirstName(pattern, variants.toArray(new String[0]));
+                            } catch (IllegalArgumentException ignored2) {
+                                // unknown tag — ignore
+                            }
+                        }
+                    }
+                }
+
             } else {
                 // Grouped entries
+                // add cleaned (without [tags] and without (TAG)) into grouping under each group key
                 for (String key : matches) {
                     grouping.computeIfAbsent(key, k -> new ArrayList<>());
 
-                    // Remove [tags] and trim
-                    String cleaned = line.replaceAll("\\s*\\[[^\\]]+\\]\\s*", "").trim();
+                    String cleaned = cleanedLine; // already removed [tags] and (TAG)
                     grouping.get(key).add(cleaned);
+
+                    // If there's a (TAG) present, apply mapping for these variants now
+                    if (tag != null && blacksmithArmorTrim != null) {
+                        List<String> variants = expandBraces(cleaned);
+                        if (!variants.isEmpty()) {
+                            // Prefer material mapping for last names
+                            try {
+                                TrimMaterial material = BlacksmithArmorTrim.getMaterialOf(tag);
+                                blacksmithArmorTrim.applyLastName(material, variants.toArray(new String[0]));
+                            } catch (IllegalArgumentException ignored) {
+                                // Not a material — try pattern
+                                try {
+                                    TrimPattern pattern = BlacksmithArmorTrim.getPatternOf(tag);
+                                    blacksmithArmorTrim.applyFirstName(pattern, variants.toArray(new String[0]));
+                                } catch (IllegalArgumentException ignored2) {
+                                    // unknown tag — ignore
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

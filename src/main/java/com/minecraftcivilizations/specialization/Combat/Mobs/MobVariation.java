@@ -3,15 +3,17 @@ package com.minecraftcivilizations.specialization.Combat.Mobs;
 
 import com.minecraftcivilizations.specialization.util.MathUtils;
 import lombok.Getter;
+import org.bukkit.Material;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
 
 /**
  * Allows for custom mob variations.
@@ -36,6 +38,9 @@ public class MobVariation {
 
     @Getter
     PotionEffect potionEffect;
+
+    @Getter
+    private Set<Material> removedDrops = new HashSet<Material>();
 
     /**
      * Must be called
@@ -79,6 +84,8 @@ public class MobVariation {
     @Getter
     private double damageMultiplierNight = 1.0;
     @Getter
+    private double damageMultiplierNether = 1.0;
+    @Getter
     private double damageBaseDay = 0.0;
     @Getter
     private double damageBaseNight = 0.0;
@@ -116,6 +123,8 @@ public class MobVariation {
     @Getter
     public double followRange = 42;
 
+    @Getter
+    public List<String> breed = null;
 
     private double xp_multiplier = 1.0;
 
@@ -141,6 +150,19 @@ public class MobVariation {
         return xp_multiplier;
     }
 
+    boolean deprecated = false;
+
+    public MobVariation deprecated(){
+        this.deprecated = true;
+        return this;
+    }
+
+    public MobVariation breeds(String...breeds){
+        this.breed = new ArrayList<String>();
+        Collections.addAll(breed, breeds);
+        return this;
+    }
+
     public MobVariation xpScale(double xp_multiplier){
         this.xp_multiplier = xp_multiplier;
         return this;
@@ -148,12 +170,22 @@ public class MobVariation {
 
     public MobVariation damage(double multiplier){
         this.damageMultiplierDay = multiplier;
+        this.damageMultiplierNight = multiplier;
+        this.damageMultiplierNether = multiplier;
         return this;
     }
 
     public MobVariation damage(double multiplier_day, double multiplier_night){
         this.damageMultiplierDay = multiplier_day;
         this.damageMultiplierNight = multiplier_night;
+        this.damageMultiplierNether = multiplier_night;
+        return this;
+    }
+
+    public MobVariation damage(double multiplier_day, double multiplier_night, double multiplier_nether){
+        this.damageMultiplierDay = multiplier_day;
+        this.damageMultiplierNight = multiplier_night;
+        this.damageMultiplierNether = multiplier_nether;
         return this;
     }
 
@@ -334,10 +366,85 @@ public class MobVariation {
         return this;
     }
 
+    public MobVariation removeDrop(Material mat){
+        this.removedDrops.add(mat);
+        return this;
+    }
+
     public MobVariation addImmunity(DamageType type) {
         immunity_types.add(type);
         return this;
     }
 
+
+    private static class ArmorRoll {
+        final Material material;
+        final int weight;
+        final double chance_per_slot;
+
+        ArmorRoll(Material material, int weight, double chance_per_slot) {
+            this.material = material;
+            this.weight = weight;
+            this.chance_per_slot = chance_per_slot;
+        }
+    }
+
+    private final List<ArmorRoll> armor_rolls = new ArrayList<>();
+    private int total_armor_weight = 0;
+
+    // Registers a weighted armor roll
+    public MobVariation armorChance(Material material, int weight, double chance_per_slot) {
+        armor_rolls.add(new ArmorRoll(material, weight, chance_per_slot));
+        total_armor_weight += weight;
+        return this;
+    }
+
+
+    // Call this when spawning the mob
+    public void applyRandomArmor(LivingEntity entity) {
+        if (armor_rolls.isEmpty()) return;
+
+        int roll = ThreadLocalRandom.current().nextInt(total_armor_weight);
+        ArmorRoll selected = null;
+
+        for (ArmorRoll entry : armor_rolls) {
+            roll -= entry.weight;
+            if (roll < 0) {
+                selected = entry;
+                break;
+            }
+        }
+
+        if (selected == null) return;
+
+        EntityEquipment eq = entity.getEquipment();
+        if (eq == null) return;
+
+        tryEquip(eq::setHelmet, selected.material, selected.chance_per_slot);
+        tryEquip(eq::setChestplate, selected.material, selected.chance_per_slot);
+        tryEquip(eq::setLeggings, selected.material, selected.chance_per_slot);
+        tryEquip(eq::setBoots, selected.material, selected.chance_per_slot);
+    }
+
+    private void tryEquip(Consumer<ItemStack> setter, Material base, double chance) {
+        if (ThreadLocalRandom.current().nextDouble() > chance) return;
+
+        Material piece = switch (base) {
+            case IRON_INGOT -> Material.IRON_HELMET;
+            case DIAMOND -> Material.DIAMOND_HELMET;
+            default -> null;
+        };
+
+        if (piece == null) return;
+
+        // swap by suffix
+        String name = piece.name();
+        if (setter.toString().contains("Chestplate")) piece = Material.valueOf(name.replace("HELMET", "CHESTPLATE"));
+        if (setter.toString().contains("Leggings"))  piece = Material.valueOf(name.replace("HELMET", "LEGGINGS"));
+        if (setter.toString().contains("Boots"))     piece = Material.valueOf(name.replace("HELMET", "BOOTS"));
+
+        setter.accept(new ItemStack(piece));
+
+}
 
 }

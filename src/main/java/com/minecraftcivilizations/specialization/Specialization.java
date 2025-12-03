@@ -87,8 +87,13 @@ public final class Specialization extends JavaPlugin {
     private CustomItemManager customItemManager;
     @Getter
     private CombatManager combatManager;
+    @Getter
+    private BlacksmithArmorTrim armorTrimSystem;
+    @Getter
     private PVPManager pvpManager;
     private XPMonitoringCommand xpMonitoringCommand;
+
+    @Getter
     private PlayerDownedListener playerDownedListener;
     private RecipeBlocker recipeBlocker;
     private EmoteManager emoteManager;
@@ -135,6 +140,7 @@ public final class Specialization extends JavaPlugin {
         emoteManager = new EmoteManager(customItemManager, this);
         pvpManager = new PVPManager(playerDownedListener, this);
         recipeBlocker = new RecipeBlocker();
+        armorTrimSystem = new BlacksmithArmorTrim();
 //      emoteListener = new EmoteListener(this);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, "civlabs:weathersync", new TimeSyncListener());
@@ -181,18 +187,21 @@ public final class Specialization extends JavaPlugin {
 
 
         //overworld game rules
-        World world = Bukkit.getWorlds().get(0);
-        world.setDifficulty(Difficulty.HARD);
-        world.setGameRule(GameRule.SPAWN_RADIUS, 350);
-        world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true);
-        world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
-        world.setGameRule(GameRule.NATURAL_REGENERATION, false);
-        world.setGameRule(GameRule.SHOW_DEATH_MESSAGES, false);
-        world.setGameRule(GameRule.LOCATOR_BAR, true);
-        world.setGameRule(GameRule.WATER_SOURCE_CONVERSION, false);
-        world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
-        world.setGameRule(GameRule.MINECART_MAX_SPEED, 24);
+        World overworld = Bukkit.getWorlds().get(0);
+//        World nether = Bukkit.getWorlds().get(1);
 
+        for(World world : Bukkit.getWorlds()) {
+            world.setGameRule(GameRule.SPAWN_RADIUS, 350);
+            world.setDifficulty(Difficulty.HARD);
+            world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true);
+            world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
+            world.setGameRule(GameRule.NATURAL_REGENERATION, false);
+            world.setGameRule(GameRule.SHOW_DEATH_MESSAGES, false);
+            world.setGameRule(GameRule.LOCATOR_BAR, true);
+            world.setGameRule(GameRule.WATER_SOURCE_CONVERSION, false);
+            world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
+            world.setGameRule(GameRule.MINECART_MAX_SPEED, 24);
+        }
 
         //global game rules
         Bukkit.getWorlds().forEach(w -> w.setGameRule(GameRule.NATURAL_REGENERATION, false));
