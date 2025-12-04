@@ -22,6 +22,7 @@ import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Bed;
 import org.bukkit.block.data.type.Door;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -55,7 +56,12 @@ public class BreakBlockListener implements Listener {
             nearbyPlayers.forEach(player -> player.sendBlockDamage(block.getLocation(), 0));
         }
 
-
+        ItemStack tool = event.getPlayer().getInventory().getItemInMainHand();
+        if (tool.getType().name().endsWith("_PICKAXE")) { // ensure it's a pickaxe
+            if (tool.containsEnchantment(Enchantment.SILK_TOUCH)) {
+                return; // Exit early: do not give miner XP
+            }
+        }
 
         AttributeInstance breakSpeedAttr = event.getPlayer().getAttribute(Attribute.BLOCK_BREAK_SPEED);
 

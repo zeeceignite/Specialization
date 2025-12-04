@@ -96,7 +96,7 @@ public class DefineCustomItems implements Listener {
                 "§6Hearty Soup",
                 Material.BEETROOT_SOUP,
                 PotionEffectType.REGENERATION,
-                20 * 5, 0, 50,
+                20 * 5, 1, 50,
                 List.of(Material.FERMENTED_SPIDER_EYE, Material.BOWL)
         ) {
             @Override

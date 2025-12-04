@@ -46,7 +46,7 @@ public class CustomItemCommand extends BaseCommand {
     @CommandCompletion("@customitems")
     public void onEnable(Player sender, String id) {
         boolean success = customItemManager.enableItem(id);
-        sender.sendMessage(success
+        sender.sendMessage(!success
                 ? "§aEnabled custom item: §f" + id
                 : "§cCustom item not found or already enabled: §f" + id);
     }
