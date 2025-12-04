@@ -74,6 +74,10 @@ public class PVPManager implements Listener, CommandExecutor {
     private boolean combatTaskRunning = false;
     private int combatTaskId = -1;
 
+    public boolean isInCombat(Player player){
+        return combatMap.containsKey(player.getUniqueId());
+    }
+
     public PVPManager(PlayerDownedListener playerDownedListener, JavaPlugin plugin) {
         this.plugin = plugin;
         this.playerDownedListener = playerDownedListener;
