@@ -1,5 +1,6 @@
 package com.minecraftcivilizations.specialization.CustomItem;
 
+import com.minecraftcivilizations.specialization.Combat.PVPManager;
 import com.minecraftcivilizations.specialization.Listener.Player.ReviveListener;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -164,21 +165,34 @@ public class Bandage extends CustomItem {
             return;
         }
 
+
+
+
+        PVPManager pvpManager = Specialization.getInstance().getPvpManager();
+        boolean healer_in_combat = pvpManager.combatMap.containsKey(healer.getUniqueId());
+        boolean self_heal = target.equals(healer);
+
+        double base_heal = 4.0;
+        if(healer_in_combat){
+            base_heal --;
+        }
+        if(self_heal){
+            base_heal --;
+        }
+
         int level = Math.min(lvl, 5);
         // heal: 4 at level 1, 10 at level 5
-        double heal_amount = 4.0 + (level - 1) * (6.0 / 4.0);
+        double heal_amount = base_heal + (level - 1) * 1.5;
         int xp = 15 + (int) ((level - 1) * (35.0 / 4.0));
         double new_health = Math.min(current_health + heal_amount, max_health);
-
 
         target.setHealth(new_health);
         healer.setFoodLevel(healer.getFoodLevel() - 3);
 
-
         //----- cooldowns-----//
 
         //healing themselves
-        if (target.equals(healer)) {
+        if (self_heal) {
             applyCooldown(healer, 500);
         } else {
             //healing another player

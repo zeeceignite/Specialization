@@ -334,9 +334,10 @@ public class CombatManager implements Listener {
                     if(charge_amount>0.5) {
                         target.setAbsorptionAmount(Math.max(0, absorption_hearts - 1));
                     }
-                    event.setDamage(BASE, event.getDamage(BASE)*0.25);
+                    event.setDamage(BASE, event.getDamage(BASE)*0);
                 }
             }
+
 
 //            absorption_to_remove = absorption / 2;
         }
@@ -410,10 +411,16 @@ public class CombatManager implements Listener {
                 }
             }
 
-
+            double dmg = calculateTotalDamage(event);
+            String ss = "";
+            if(event.getEntity() instanceof LivingEntity lv) {
+                double maxhealth = lv.getAttribute(Attribute.MAX_HEALTH).getValue();
+                ss = " Hits-To-Kill: <red>"+(Math.ceil(maxhealth/dmg));
+            }
             Debug.message(dmger,
                     "damage",
-                    "<dark_red>Final Damage: <red>"+Debug.formatDecimal(calculateTotalDamage(event))+extramsg,
+                    "<dark_red>Final Damage: <red>"+Debug.formatDecimal(calculateTotalDamage(event))+extramsg
+                    +ss,
                     "<red>Minimum Hit Required: </red>"+DAMAGE_MINIMUM+""+modifiers
             );
         }

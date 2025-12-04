@@ -70,10 +70,10 @@ public class ArmorDamageReduction {
         boolean pvp = (event.getDamager() instanceof Player);
 
 
-        double ARMOR_SCALE = (pvp ? 0.1 : 0.08); //0.075;
+        double ARMOR_SCALE = 0.08; //(pvp?0.075:0.08);// : 0.08); //0.075;
         double TOUGHNESS_SCALE = (pvp ? 0.12 : 0.125) + (pvp?0:(lvl * 0.005)); //+ (lvl*0.01); //0.2 - PVP gets no lvl benefit
         double TOUGHNESS_CUTOFF = 0.15 + (pvp?0:(lvl * 0.01)); //0.25 -  PVP gets no lvl benefit
-        double TOUGHNESS_HIGH_HIT_SCALE = 0.125 + (pvp?0:(lvl * 0.01)); //integrates vanilla's high hit negation - PVP gets no lvl benefit
+        double TOUGHNESS_HIGH_HIT_SCALE = (pvp?0:0.125+(lvl * 0.01)); //integrates vanilla's high hit negation - PVP gets no lvl benefit //(pvp?0:0.125) +
 
         double cutoff_final = (toughness * TOUGHNESS_CUTOFF);
 
@@ -129,7 +129,6 @@ public class ArmorDamageReduction {
         event.setDamage(ARMOR, -TOTAL_REDUCTION);
 //            return;
 //        }
-        return;
 
 //
 //    }else if(!(event.getDamager() instanceof Player)){

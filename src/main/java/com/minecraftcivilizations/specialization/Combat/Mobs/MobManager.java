@@ -241,12 +241,23 @@ public class MobManager implements Listener {
          */
         new MobOverrideRule(100,
                 GUARDIAN, ELDER_GUARDIAN,
-                PILLAGER, RAVAGER, ILLUSIONER, VINDICATOR, WITCH,
+                PILLAGER, RAVAGER, ILLUSIONER, VINDICATOR,
                 ENDERMITE, SHULKER)
                 .addVariation(new MobVariation("generic_variation")
                         .damage(2.0, 2.5)
                         .speed(1.25, 1.5)
                         .hunts()
+                        .breaks()
+                );
+
+
+        new MobOverrideRule(100, WITCH)
+                .addVariation(new MobVariation("witch")
+                        .health(1.0)
+                        .damage(1.0)
+                        .speed(1.0)
+                        .xpScale(0.25)
+                        .hunts(24)
                         .breaks()
                 );
 
@@ -391,6 +402,9 @@ public class MobManager implements Listener {
                         .hunts(32)
                         .breaks()
                 );
+
+
+
 //        new MobOverrideRule(25, ZOMBIE)
 //                .addVariation(new MobVariation("armored_zombie")
 //                        .health(2)
@@ -1084,6 +1098,12 @@ public class MobManager implements Listener {
     public void applyExp(EntityDamageByEntityEvent event, CustomPlayer customPlayer, LivingEntity victim) {
         if(event.getDamage()<0.1)return;
         if (victim instanceof Player px){
+            return;
+        }
+        if(victim instanceof ArmorStand){
+            return;
+        }
+        if(!(victim instanceof LivingEntity)){
             return;
         }
         double xp_scale = 1.0;

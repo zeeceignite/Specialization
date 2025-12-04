@@ -116,7 +116,7 @@ public class GuardsmanDamage implements Listener {
          * This allows for players to deal extra damage to friendly mobs if they're hostile
          */
         if(victim instanceof Player px){
-            multiplier *= 1.5;
+            multiplier *= 2.0;
         }else if(victim instanceof LivingEntity le){
             if(victim instanceof Enemy) {
                 // Hostile Mobs
