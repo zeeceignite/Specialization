@@ -334,7 +334,7 @@ public class CombatManager implements Listener {
                     if(charge_amount>0.5) {
                         target.setAbsorptionAmount(Math.max(0, absorption_hearts - 1));
                     }
-                    event.setDamage(BASE, 0);
+                    event.setDamage(BASE, event.getDamage(BASE)*0.25);
                 }
             }
 

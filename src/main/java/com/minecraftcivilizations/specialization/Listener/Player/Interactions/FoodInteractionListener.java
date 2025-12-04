@@ -212,22 +212,22 @@ public class FoodInteractionListener implements Listener {
         if (healerLevel >= SkillLevel.GRANDMASTER.getLevel()) {
             regenDurationTicks = 20 * 20;
             regenAmplifier = 0;
-            absorptionDurationTicks = 20 * 20;
-            absorptionAmplifier = 0;
+            absorptionDurationTicks = 50 * 20;
+            absorptionAmplifier = 2;
         } else if (healerLevel >= SkillLevel.MASTER.getLevel()) {
             regenDurationTicks = 15 * 20;
             regenAmplifier = 0;
-            absorptionDurationTicks = 15 * 20;
-            absorptionAmplifier = 0;
+            absorptionDurationTicks = 40 * 20;
+            absorptionAmplifier = 1;
         } else if (healerLevel >= SkillLevel.EXPERT.getLevel()) {
             regenDurationTicks = 10 * 20;
             regenAmplifier = 0;
-            absorptionDurationTicks = 10 * 20;
-            absorptionAmplifier = 0;
+            absorptionDurationTicks = 15 * 20;
+            absorptionAmplifier = 1;
         } else if (healerLevel >= SkillLevel.JOURNEYMAN.getLevel()) {
             regenDurationTicks = 5 * 20;
             regenAmplifier = 0;
-            absorptionDurationTicks = 5 * 20;
+            absorptionDurationTicks = 10 * 20;
             absorptionAmplifier = 0;
         } else {
             // Below Journeyman shouldn’t be able to bless; safe no-op
