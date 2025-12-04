@@ -117,7 +117,7 @@ public class LocalNameGenerator implements Listener {
 
             if (matches.isEmpty()) {
                 // Default (ungrouped) last name
-                lastNames.add(line.trim());
+                lastNames.add(cleanedLine);
 
                 // If there's a tag, try to map it
                 if (tag != null && blacksmithArmorTrim != null) {

@@ -179,7 +179,7 @@ public class EmoteManager extends BaseCommand implements Listener {
     public void onSittingFoodLoss(FoodLevelChangeEvent e) {
         if (e.getEntity() instanceof Player p) {
             if (isPlayerSitting(p)) {
-                p.sendMessage("stopped food loss");
+//                p.sendMessage("stopped food loss");
             }
         }
     }
