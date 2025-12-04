@@ -302,14 +302,14 @@ public class ArmorEquipAttributes implements Listener {
 
             if(previous_weight != weight) {
                 player.sendActionBar("Armor Weight: " + weightColor(weight) + weight);
-                weight_map.put(uuid, previous_weight);
+                weight_map.put(uuid, weight);
             }
 //            Debug.broadcast("armorstats", "<blue>Armor:</blue> "+stats.getArmor()+" <blue>Toughness:</blue> "+stats.getToughness());
 //        player.updateInventory();
 //            Debug.broadcast("armorstats", "Player's Water Move: "+player.getAttribute(Attribute.WATER_MOVEMENT_EFFICIENCY).getValue());
-//            }
+            }
 //            player_weight_history.put(uuid, weight);
-        }
+//        }
     }
 
     public final double weight_offset = -25; //baseline, a player can have up to this before weight becomes effective
