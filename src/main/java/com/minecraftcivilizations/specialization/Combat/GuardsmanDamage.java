@@ -120,6 +120,7 @@ public class GuardsmanDamage implements Listener {
         }else if(victim instanceof LivingEntity le){
             if(victim instanceof Enemy) {
                 // Hostile Mobs
+                multiplier *= 3.0;
             }else if(combatManager.getMobManager().isMobVariation(victim)){
                 // Mob Variations
                 MobVariation variation = combatManager.getMobManager().getMobVariation(victim);
