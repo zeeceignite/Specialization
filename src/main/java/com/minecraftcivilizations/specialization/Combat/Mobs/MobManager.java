@@ -304,20 +304,21 @@ public class MobManager implements Listener {
                 .spawnInPacks()
                 .addVariation(new MobVariation("evil_dolphin", DOLPHIN)
                         .anger(true)
-                        .damage(0.5, 0.75)
-                        .health(1.0)
+                        .damage(0.25, 0.5)
+                        .health(1.5)
                         .size(1.25,1.5)
                         .speed(1.0, 1.25)
-                        .hunts(32)
+                        .hunts(12)
+                        .xpScale(2.0)
                         .setGainsXpOverride(true)
                         .drops(0)
                 );
         new MobOverrideRule(100,
                 SLIME, MAGMA_CUBE)
                 .addVariation(new MobVariation("slime_variation")
-                        .damage(1.0, 1.5)
+                        .damage(1.0, 1.25)
                         .speed(1.25, 1.5)
-                        .xpScale(0.25)
+                        .xpScale(0.5)
                         .hunts()
                 );
         new MobOverrideRule(100,
@@ -427,19 +428,22 @@ public class MobManager implements Listener {
                                 .drops(1, 1)
                                 .removeDrop(Material.STRING)
                         , 100);
+
+
         MobVariation night_wolves = new MobVariation("night_wolf", WOLF)
                 .anger(true)
-                .damage(0.5, 0.75)
+                .damage(0.75, 1.0)
                 .health(1.5)
                 .speed(1.25, 1.5)
                 .setGainsXpOverride(true)
-                .hunts(40)
-                .breaks()
+                .hunts(24)
+                .breaks(0.5)
+                .stepheight(0.5)
                 .xpScale(2.5)
                 .spawnExtra(2)
                 .breeds("black", "black", "black") //,"chestnut", "woods", "striped")
                 .replaceOriginalMob();
-        new MobOverrideRule(2, SPIDER)
+        new MobOverrideRule(5, CREEPER)
                 .addVariation(night_wolves, 10).spawnInPacks();
 
         new MobOverrideRule(100, CREEPER)
@@ -449,8 +453,9 @@ public class MobManager implements Listener {
                                 .damage(1.0, 1.5)
                                 .speed(1.75)
                                 .hunts()
+                                .xpScale(1.25)
                                 .breaks(0.25)
-                        , 1000)
+                        , 100)
                 ;
 
 
@@ -495,7 +500,7 @@ public class MobManager implements Listener {
 
 
         setDefaultRuleSetChance(200, ENDERMAN);
-        new MobOverrideRule(25, ENDERMAN)
+        new MobOverrideRule(2, ENDERMAN)
                 .addVariation(new MobVariation("creaker", CREAKING)
                         .anger(true)
                         .invisible()
@@ -1078,6 +1083,9 @@ public class MobManager implements Listener {
 
     public void applyExp(EntityDamageByEntityEvent event, CustomPlayer customPlayer, LivingEntity victim) {
         if(event.getDamage()<0.1)return;
+        if (victim instanceof Player px){
+            return;
+        }
         double xp_scale = 1.0;
 
         int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
@@ -1097,8 +1105,6 @@ public class MobManager implements Listener {
                 default: xp_scale = 0;
                 break; //No xp to grant on passive mobs
             }
-        }else if (victim instanceof Player px){
-            return;
         }
 
         MobVariation mobStats = getMobVariation(victim);

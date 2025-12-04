@@ -6,6 +6,7 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Item.ItemUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -131,15 +133,37 @@ public class CraftingListener implements Listener {
             foodLevel=220; //for testing etc
         }
 
-        if(foodLevel < totalReduction || foodLevel < 1){
+        double anti_starvation_threshold = 2; //increase this to prevent causing a plyer to starve upon crafting
+
+        if(foodLevel - totalReduction < anti_starvation_threshold){
             event.setResult(Event.Result.DENY);
             event.setCancelled(true);
             player.playSound(player.getLocation(), Sound.BLOCK_CHORUS_FLOWER_GROW, 0.5f, 1.25f);
+
+
+            String hungry_msg = "<red>You're too hungry to craft</red>";
             if(craftedAmount>1){
-                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>You're too hungry to craft that many</red>"));
-            }else{
-                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>You're too hungry to craft</red>"));
+                hungry_msg = "<red>You're too hungry to craft that many</red>";
             }
+            if(ThreadLocalRandom.current().nextDouble()<0.0125){
+                // Fun Messages
+                String item_name = ItemUtils.getFriendlyName(event.getRecipe().getResult().getType());
+                switch(ThreadLocalRandom.current().nextInt(6)){
+                    case 0:
+                        hungry_msg = "<red>You're too craft to hungry</red>"; break;
+                    case 1:
+                        hungry_msg = "<red>Some food would be nice right about now</red>"; break;
+                    case 2:
+                        hungry_msg = "<red>"+item_name+" does sound nice, but so does food.</red>"; break;
+                    case 3:
+                        hungry_msg = "<red>You're hungry, go eat!</red>"; break;
+                    case 4:
+                        hungry_msg = "<red>You try to craft the "+ item_name+", but you're too hungry!</red>"; break;
+                    case 5:
+                        hungry_msg = "<red>"+item_name+" demands that you eat!</red>"; break;
+                }
+            }
+            player.sendActionBar(MiniMessage.miniMessage().deserialize(hungry_msg));
             return;
         }
 
@@ -188,26 +212,29 @@ public class CraftingListener implements Listener {
     }
 
     private double getFoodReduction(Material type) {
-        switch(type){
-            case STICK: return 0.5;
+        switch (type) {
+            case STICK:
+                return 0.25;
             case CRAFTING_TABLE:
+                return 1.0;
             case FURNACE:
             case SMOKER:
             case BLAST_FURNACE:
             case CHEST:
             case BARREL:
-                return 1.5;
             case ENCHANTING_TABLE:
             case ANVIL:
-                return 2.0;
+                return 1.25;
             case FLINT_AND_STEEL:
             case BUCKET:
             case SHEARS:
                 return 2.0;
         }
         String name = type.name();
-        if(name.contains("_PLANKS") || name.contains("_STAIRS") || name.contains("_FENCE") || name.contains("_SLAB")){
-            return 0.75;
+        if (name.contains("_PLANKS")){
+            return 0.25;
+        }else if(name.contains("_STAIRS") || name.contains("_FENCE") || name.contains("_SLAB") || name.contains("_WALL")){
+            return 0.5;
         }
 
         /**
@@ -224,7 +251,7 @@ public class CraftingListener implements Listener {
             value += 1.0;
         }
         if(name.contains("WOODEN_")) {
-            value *= 0.5;
+            value *= 0.35;
         }else if(name.contains("LEATHER_")){
             value *= 0.5;
         }else if(name.contains("STONE_")){
