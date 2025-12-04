@@ -217,6 +217,9 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
             return;
         }
 
+        double reach_distance = 3; //reach for breaking blocks
+
+
         // Occasional chance check before attempting to break anything.
         // Only run this check when we don't currently have a candidate block.
         if (block == null) {
@@ -233,11 +236,11 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
 
             Vector vectorToPlayer = current_target.getLocation().subtract(mob.getEyeLocation()).toVector().normalize().add(MathUtils.randomVectorCentered(0.25)).normalize();
             // Raytrace for a blocking block up to distance 5 from the mob's eye (like the previous logic)
-            RayTraceResult result = mob.getWorld().rayTrace(mob.getEyeLocation(), vectorToPlayer.normalize(), 3, FluidCollisionMode.NEVER, true, .15, entity -> false);
+            RayTraceResult result = mob.getWorld().rayTrace(mob.getEyeLocation(), vectorToPlayer.normalize(), reach_distance, FluidCollisionMode.NEVER, true, .15, entity -> false);
             if (result == null || result.getHitBlock() == null) {
                 Location leglocation = mob.getLocation().add(0,0.5,0);
                 vectorToPlayer = current_target.getLocation().subtract(leglocation).toVector();
-                result = mob.getWorld().rayTrace(leglocation, vectorToPlayer.normalize(), 3, FluidCollisionMode.NEVER, true, .15, entity -> false);
+                result = mob.getWorld().rayTrace(leglocation, vectorToPlayer.normalize(), reach_distance, FluidCollisionMode.NEVER, true, .15, entity -> false);
                 if (result == null || result.getHitBlock() == null) {
 //                    Debug.broadcast("huntplayer", "<#554400>Both blocks null");
                     return;
@@ -294,7 +297,7 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
              * Block validation, incase it was broken
              * Also checks if the mob has walked too far away from the block
              */
-            if (block.getType() == Material.AIR || block.getLocation().distance(mob.getLocation()) > 5) {
+            if (block.getType() == Material.AIR || block.getLocation().distance(mob.getLocation()) > reach_distance) {
                 if (nearbyPlayers != null && !nearbyPlayers.isEmpty()) {
                     nearbyPlayers.forEach(player -> player.sendBlockDamage(block.getLocation(), 0));
                 }

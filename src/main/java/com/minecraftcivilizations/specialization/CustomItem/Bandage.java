@@ -40,15 +40,15 @@ public class Bandage extends CustomItem {
      */
     public void init() {
 //        Bukkit.getRecipe()
-        if (Bukkit.getRecipe(RECIPE_KEY) != null) {
-            Bukkit.removeRecipe(RECIPE_KEY);
-        }
-
+        if (Bukkit.getRecipe(RECIPE_KEY) == null) {
         ShapelessRecipe bandage_recipe = new ShapelessRecipe(RECIPE_KEY, createItemStack(1));
         bandage_recipe.addIngredient(8, Material.PAPER);
         bandage_recipe.addIngredient(Material.SUGAR_CANE);
-
         Bukkit.addRecipe(bandage_recipe, true);
+        }
+
+//            Bukkit.removeRecipe(RECIPE_KEY);
+
     }
 
 
@@ -84,7 +84,7 @@ public class Bandage extends CustomItem {
 
             if (downed != null && downed == 1) {
 
-
+                if (isOnCooldown(healer)) return;
                 applyHeal(healer, pTarget, itemStack);
 
                 return;
@@ -133,40 +133,6 @@ public class Bandage extends CustomItem {
         int lvl = cHealer.getSkillLevel(SkillType.HEALER);
 
         if (lvl <= 0) return;
-
-        double current_health = target.getHealth();
-        double max_health = target.getAttribute(Attribute.MAX_HEALTH).getValue();
-        if (current_health >= max_health) {
-            Debug.broadcast("customitem", "<red>returned in maxheal");
-            return;
-        }
-
-        if (healer.getFoodLevel() < 3) {
-            PlayerUtil.message(healer,"You're too hungry to preform this action");
-            return;
-        }
-
-        int level = Math.min(lvl, 5);
-        double heal_amount = 3 + ((level - 1) * (8.0 / 4.0));
-        int xp = 15 + (int) ((level - 1) * (35.0 / 4.0));
-        double new_health = Math.min(current_health + heal_amount, max_health);
-        target.setHealth(new_health);
-        healer.setFoodLevel(healer.getFoodLevel() - 3);
-
-
-        //----- cooldowns-----//
-
-        //healing themselves
-        if (target.equals(healer)) {
-            applyCooldown(healer, 250);
-        } else {
-            //healing another player
-            applyCooldown(healer, 150);
-        }
-        //healing a friendly mob
-        if (!(target instanceof Enemy)) {
-            cHealer.addSkillXp(SkillType.HEALER, xp);
-        }
         //reviving player
         if (target instanceof Player pTarget) {
             Byte downed = pTarget.getPersistentDataContainer().get(
@@ -186,6 +152,43 @@ public class Bandage extends CustomItem {
 //            pTarget.getPersistentDataContainer().set(new NamespacedKey(Specialization.getInstance(), "is_downed"), PersistentDataType.BYTE, (byte) 0);
         }
 
+        double current_health = target.getHealth();
+        double max_health = target.getAttribute(Attribute.MAX_HEALTH).getValue();
+        if (current_health >= max_health) {
+            Debug.broadcast("customitem", "<red>player already max health");
+            return;
+        }
+
+        if (healer.getFoodLevel() < 3) {
+            PlayerUtil.message(healer,"You're too hungry to preform this action");
+            return;
+        }
+
+        int level = Math.min(lvl, 5);
+        // heal: 4 at level 1, 10 at level 5
+        double heal_amount = 4.0 + (level - 1) * (6.0 / 4.0);
+        int xp = 15 + (int) ((level - 1) * (35.0 / 4.0));
+        double new_health = Math.min(current_health + heal_amount, max_health);
+
+
+        target.setHealth(new_health);
+        healer.setFoodLevel(healer.getFoodLevel() - 3);
+
+
+        //----- cooldowns-----//
+
+        //healing themselves
+        if (target.equals(healer)) {
+            applyCooldown(healer, 500);
+        } else {
+            //healing another player
+            applyCooldown(healer, 150);
+        }
+        //healing a friendly mob
+        if (!(target instanceof Enemy)) {
+            cHealer.addSkillXp(SkillType.HEALER, xp);
+        }
+
         // Heart particles
         int particleCount = (int) Math.ceil(heal_amount / 2.0);
         World w = target.getWorld();
@@ -196,19 +199,41 @@ public class Bandage extends CustomItem {
 
         // Consume one Bandage
         bandage.setAmount(bandage.getAmount() - 1);
-
-        // Build hearts message
         double maxHealth = target.getAttribute(Attribute.MAX_HEALTH).getValue();
-        int totalHearts = (int) Math.ceil(maxHealth / 2.0);
-        int redHearts = (int) Math.ceil(new_health / 2.0);
-        int grayHearts = totalHearts - redHearts;
+        double hp = new_health;
 
-        String heartsMsg = "<red>❤</red>".repeat(Math.max(0, redHearts)) +
-                "<gray>❤</gray>".repeat(Math.max(0, grayHearts));
-        healer.sendMessage(MiniMessage.miniMessage().deserialize(heartsMsg));
+        // round down to nearest 0.5 hearts
+        double roundedHP = Math.floor(hp * 2) / 2.0;
+
+        // number of full hearts
+        int fullHearts = (int) roundedHP / 2;
+
+        // check for half heart
+        boolean hasHalfHeart = (roundedHP % 2) >= 0.5;
+
+        // total hearts
+        int totalHearts = (int) Math.ceil(maxHealth / 2.0);
+
+        // gray hearts
+        int grayHearts = totalHearts - fullHearts - (hasHalfHeart ? 1 : 0);
+        if (grayHearts < 0) grayHearts = 0;
+
+        // build string
+        StringBuilder sb = new StringBuilder();
+        sb.append("<dark_red>❤</dark_red>".repeat(fullHearts));
+        if (hasHalfHeart) sb.append("<#804040>❤</#804040>");
+        sb.append("<dark_gray>❤</dark_gray>".repeat(grayHearts));
+
+        PlayerUtil.message(healer, MiniMessage.miniMessage().deserialize(sb.toString()));
+
+
+
+
+
+
         //debug msg
         Debug.broadcast("customitem_" + healer.getName().toLowerCase(), "message of " + healer.getName());
-        Debug.message(healer, "customitem", ("<green>Used " + getDisplayName() + " on " + target.getName() + " for " + heal_amount + " HP. " + heartsMsg));
+        Debug.message(healer, "customitem", ("<green>Used " + getDisplayName() + " on " + target.getName() + " for " + heal_amount + " HP. " + sb));
     }
 
 

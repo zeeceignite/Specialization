@@ -305,7 +305,7 @@ public class ReviveListener implements Listener {
             int skillLevel = cHealer.getSkillLevel(SkillType.HEALER);
             int hearts = skillLevel * 2;
 
-            healer.setHealth(Math.round(hearts));
+            downed.setHealth(Math.round(hearts));
 
             endRevive(healer, downed);
         }

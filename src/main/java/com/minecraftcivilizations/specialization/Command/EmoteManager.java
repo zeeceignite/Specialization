@@ -11,6 +11,7 @@ import com.minecraftcivilizations.specialization.CustomItem.EmoteItem;
 import com.minecraftcivilizations.specialization.CustomItem.PacketListener;
 import com.minecraftcivilizations.specialization.Listener.Player.LocalChat;
 import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -177,10 +178,12 @@ public class EmoteManager extends BaseCommand implements Listener {
 
     @EventHandler
     public void onSittingFoodLoss(FoodLevelChangeEvent e) {
-        if (e.getEntity() instanceof Player p) {
-            if (isPlayerSitting(p)) {
-                p.sendMessage("stopped food loss");
-            }
+        if (!(e.getEntity() instanceof Player p)) return;
+
+        // Only cancel if the player is sitting and losing food
+        if (isPlayerSitting(p) && e.getFoodLevel() < p.getFoodLevel()) {
+            e.setCancelled(true);
+            Debug.broadcast("emote", "stopped food loss");
         }
     }
 
@@ -558,7 +561,6 @@ public class EmoteManager extends BaseCommand implements Listener {
 
     // Cleanup
     private void stopCannonball(Player p) {
-        p.sendMessage("removing");
         ArmorStand seat = sittingStands.remove(p.getUniqueId());
         PlayerUtil.setCooldown(p, "cannonballemote", 50);
         if (p.isInsideVehicle()) p.leaveVehicle();

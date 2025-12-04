@@ -231,7 +231,7 @@ public class BedListener implements Listener {
 
     //-----------BED HEALING ---------------------//
     private static final double NIGHT_HEAL_CAP = 5.0; // 2.5 hearts
-    private static final long BED_HEAL_INTERVAL = 1200L; // ticks between heals
+    private static final long BED_HEAL_INTERVAL = 900L; // ticks between heals
 
     private final Map<UUID, BedHealingTasks> bedHealTasks = new HashMap<>();
     private final Map<UUID, Long> lastHealDay = new HashMap<>();     // MC day index
@@ -246,10 +246,10 @@ public class BedListener implements Listener {
         World world = player.getWorld();
         long currentDay = world.getFullTime() / 24000L;
 
-        long storedDay = lastHealDay.getOrDefault(id, Long.MIN_VALUE);
+        long storedDay = lastHealDay.getOrDefault(id, -1L);
         double healedSoFar = healedThisDay.getOrDefault(id, 0.0);
 
-        player.sendMessage("stored day:" + storedDay + "current Day:" + currentDay);
+//        player.sendMessage("stored day:" + storedDay + "current Day:" + currentDay);
         // daily cap
         if (storedDay == currentDay && healedSoFar >= NIGHT_HEAL_CAP) {
             PlayerUtil.message(player, "You're fully rested");

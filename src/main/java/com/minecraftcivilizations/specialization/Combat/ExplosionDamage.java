@@ -1,13 +1,13 @@
 package com.minecraftcivilizations.specialization.Combat;
 
+import com.minecraftcivilizations.specialization.SmartEntity.SmartEntity;
+import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.PlayerUtil;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.BlockState;
 import org.bukkit.damage.DamageType;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -18,6 +18,7 @@ import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -60,7 +61,7 @@ public class ExplosionDamage implements Listener {
     public void onBlockBreak(BlockPlaceEvent event){
         Material mat = event.getBlockPlaced().getType();
         if(mat == Material.RESPAWN_ANCHOR){
-            event.getPlayer().setCooldown(Material.GLOWSTONE, 30);
+            event.getPlayer().setCooldown(Material.GLOWSTONE, 60);
             event.getPlayer().getWorld().playSound(event.getPlayer().getLocation(), Sound.BLOCK_END_PORTAL_FRAME_FILL, 1, 1);
         }else if(mat.name().contains("_BED")){
             Player player = event.getPlayer();
@@ -85,7 +86,7 @@ public class ExplosionDamage implements Listener {
                 if(u.isOnCooldown("respawn_anchor")) {
                     event.setCancelled(true);
                 }else{
-                    u.setCooldown("respawn_anchor", 3);
+                    u.setCooldown("respawn_anchor", 8);
                 }
             }else if(type.name().contains("_BED")){
 
@@ -166,7 +167,11 @@ public class ExplosionDamage implements Listener {
 
     @EventHandler
     public void onExplosionPrime(ExplosionPrimeEvent event){
-        Debug.broadcast("explosion", "explosion prime");
+        if(event.getEntityType() == EntityType.END_CRYSTAL) {
+//            event.getEntity().getPersistentDataContainer().set(new NamespacedKey(Specialization.getInstance(), "endcrystal"), PersistentDataType.LONG, time);
+//            event.setCancelled(true);
+//            SmartEntity sme = new SmartEntity(event.getEntity(), event.getEntity().getLocation());
+        }
     }
 
 
