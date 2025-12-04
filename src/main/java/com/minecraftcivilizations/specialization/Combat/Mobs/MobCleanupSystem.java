@@ -8,6 +8,7 @@ import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -41,13 +42,13 @@ public class MobCleanupSystem extends BukkitRunnable {
         // shuffle and pick up to 8 chunks
         List<Chunk> chunks = new ArrayList<>(Arrays.asList(loadedChunks));
         Collections.shuffle(chunks);
-        chunks = chunks.subList(0, Math.min(24, chunks.size()));
+        chunks = chunks.subList(0, Math.min(32, chunks.size()));
 
         // collect all LivingEntities from selected chunks
-        List<LivingEntity> entities = new ArrayList<>();
+        List<Mob> entities = new ArrayList<>();
         for (Chunk chunk : chunks) {
             for (Entity e : chunk.getEntities()) {
-                if (e instanceof LivingEntity le) entities.add(le);
+                if (e instanceof Mob le) entities.add(le);
             }
         }
 
@@ -57,22 +58,26 @@ public class MobCleanupSystem extends BukkitRunnable {
 
         int cleanedup = 0;
         for (int i = 0; i < limit; i++) {
-            LivingEntity entity = entities.get(i);
+            Mob entity = entities.get(i);
             MobVariation variation = getMobManager().getMobVariation(entity);
             if (variation == null || !variation.isDespawnFaraway()) continue;
 
-            double cutoff_sq = variation.followRange * variation.followRange;
-            boolean playerNear = world.getPlayers().stream()
-                    .anyMatch(p -> p.getLocation().distanceSquared(entity.getLocation()) <= cutoff_sq);
 
-            if (!playerNear) {
+            if(entity.getTarget()==null){
                 entity.remove();
                 cleanedup++;
-                Debug.broadcast("mob", "<red>mob despawned:</red> " + variation.getId());
+//                Debug.broadcast("mob", "<red>mob despawned:</red> " + variation.getId());
             }
+
+//            double cutoff_sq = variation.followRange * variation.followRange;
+//            boolean playerNear = world.getPlayers().stream()
+//                    .anyMatch(p -> p.getLocation().distanceSquared(entity.getLocation()) <= cutoff_sq);
+
+//            if (!playerNear) {
+//            }
         }
 
-        Debug.broadcast("mob", "<red>Cleaned up<white> " + cleanedup + "</white> variations");
+//        Debug.broadcast("mob", "<red>Cleaned up<white> " + cleanedup + "</white> variations");
     }
 
     public BukkitRunnable start() {
