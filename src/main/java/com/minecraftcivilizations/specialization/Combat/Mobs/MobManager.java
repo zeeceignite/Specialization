@@ -412,7 +412,7 @@ public class MobManager implements Listener {
                                 .waterspeed(1.5, 1.5)
                                 .breaks(1.5)
                                 .hunts()
-                                .drops(1, 1.5)
+                                .drops(1, 1)
                         , 100)
                 .addVariation(new MobVariation("spider_small")
                                 .health(0.25)
@@ -421,10 +421,10 @@ public class MobManager implements Listener {
                                 .speed(1.75)
                                 .waterspeed(4, 4)
                                 .size(0.66,0.66)
-                                .spawnExtra(8)
+                                .spawnExtra(5)
                                 .hunts()
                                 .breaks(0.25)
-                                .drops(1, 2)
+                                .drops(1, 1)
                                 .removeDrop(Material.STRING)
                         , 100);
         MobVariation night_wolves = new MobVariation("night_wolf", WOLF)
@@ -1097,6 +1097,8 @@ public class MobManager implements Listener {
                 default: xp_scale = 0;
                 break; //No xp to grant on passive mobs
             }
+        }else if (victim instanceof Player px){
+            return;
         }
 
         MobVariation mobStats = getMobVariation(victim);
