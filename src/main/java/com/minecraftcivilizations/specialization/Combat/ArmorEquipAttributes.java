@@ -165,7 +165,8 @@ public class ArmorEquipAttributes implements Listener {
 //        }
 
         double rng1 = ThreadLocalRandom.current().nextDouble();
-        Debug.broadcast("armortrim", "RNG Rolled: "+rng1);
+        double rng2 = ThreadLocalRandom.current().nextDouble();
+        Debug.broadcast("armortrim", "Rng1: "+Debug.formatDecimal(rng1)+ " <red>rng2: " +Debug.formatDecimal(rng2));
 
         /**
          * Roll weight
@@ -219,7 +220,7 @@ public class ArmorEquipAttributes implements Listener {
 
         boolean trimmed = false;
         String trimmed_msg = "";
-        if(ThreadLocalRandom.current().nextDouble() < armor_trim_chance){
+        if(rng2 < armor_trim_chance){
             BlacksmithArmorTrim armorTrimSystem = Specialization.getInstance().getArmorTrimSystem();
             if(armorTrimSystem!=null){
                 ArmorTrim trim = armorTrimSystem.applyArmorTrimToItem(player, current);

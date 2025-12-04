@@ -321,7 +321,7 @@ public class MobManager implements Listener {
                         .health(1.5)
                         .size(1.25,1.5)
                         .speed(1.0, 1.25)
-                        .hunts(12)
+                        .hunts(16)
                         .xpScale(2.0)
                         .setGainsXpOverride(true)
                         .drops(0)
@@ -456,12 +456,12 @@ public class MobManager implements Listener {
                 .breaks(0.5)
                 .stepheight(0.5)
                 .xpScale(2.5)
-                .spawnExtra(2)
+                .spawnExtra(3)
                 .breeds("black", "black", "black") //,"chestnut", "woods", "striped")
                 .replaceOriginalMob()
                 .despawnFaraway();
 
-        new MobOverrideRule(5, CREEPER)
+        new MobOverrideRule(3, CREEPER)
                 .addVariation(night_wolves, 10).spawnInPacks();
 
         new MobOverrideRule(100, CREEPER)
@@ -485,7 +485,7 @@ public class MobManager implements Listener {
 //                .addVariation(zombie_variation, 10000);
 //        MobVariation chaos = new MobVariation("chaos", SHEEP, PIG, COW, WOLF,PIGLIN, PIGLIN_BRUTE).damage(1.0).health(1.5).speed(1.25, 1.25);
 
-//                .addVariation(chaos, 20);
+//                .addVariation(chaos, 20);w
 
         MobVariation killer_bees = new MobVariation("killer_bees", BEE)
                 .deprecated()
