@@ -195,7 +195,7 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
             if (previousLevel < currentLevel) {
                 player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 100, 1);
                 PlayerUtil.message(player, LoreUtils.createLoreLine("You have leveled up " + skill_name + ", you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));
-                Debug.broadcast("levelup", player.getName()+" leveled up "+skill_name);
+                Debug.broadcast("levelup", player.getName()+" <gray>leveled up <yellow>"+skill_name+ "</yellow> to level <green>"+currentLevel);
             } else {
                 player.playSound(player, Sound.ITEM_BOTTLE_FILL_DRAGONBREATH, 100F, 1.5F);
                 PlayerUtil.message(player, LoreUtils.createLoreLine("Your " + skill_name + "ing ability has deteriorated, you are now " + SkillType.getDisplayName(skillType) + " " + SkillLevel.getDisplayName(currentLevel), NamedTextColor.WHITE));

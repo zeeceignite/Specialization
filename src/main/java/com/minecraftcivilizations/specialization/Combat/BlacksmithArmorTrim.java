@@ -13,6 +13,8 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static org.bukkit.inventory.meta.trim.TrimPattern.*;
+
 /**
  * Maps player first/last names to armor trim patterns & materials.
  * If no explicit mapping exists, falls back to a deterministic choice based on the
@@ -27,38 +29,39 @@ public class BlacksmithArmorTrim {
     private final Map<TrimMaterial, String> trim_mappings = new HashMap<>();
 
     public BlacksmithArmorTrim() {
-        TRIM_PATTERNS = Set.of(
-                TrimPattern.SENTRY,
-                TrimPattern.VEX,
-                TrimPattern.WILD,
-                TrimPattern.COAST,
-                TrimPattern.DUNE,
-                TrimPattern.WAYFINDER,
-                TrimPattern.RAISER,
-                TrimPattern.SHAPER,
-                TrimPattern.HOST,
-                TrimPattern.WARD,
-                TrimPattern.SILENCE,
-                TrimPattern.TIDE,
-                TrimPattern.SNOUT,
-                TrimPattern.RIB,
-                TrimPattern.EYE,
-                TrimPattern.SPIRE,
-                TrimPattern.FLOW,
-                TrimPattern.BOLT
-        );
-        TRIM_MATERIALS = Set.of(
-                TrimMaterial.AMETHYST,
-                TrimMaterial.COPPER,
-                TrimMaterial.DIAMOND,
-                TrimMaterial.EMERALD,
-                TrimMaterial.GOLD,
-                TrimMaterial.IRON,
-                TrimMaterial.LAPIS,
-                TrimMaterial.QUARTZ,
-                TrimMaterial.NETHERITE,
-                TrimMaterial.REDSTONE,
-                TrimMaterial.RESIN);
+        TRIM_PATTERNS = new ArrayList<>();
+        TRIM_MATERIALS = new ArrayList<>();
+
+        TRIM_PATTERNS.add(SENTRY);
+        TRIM_PATTERNS.add(VEX);
+        TRIM_PATTERNS.add(WILD);
+        TRIM_PATTERNS.add(COAST);
+        TRIM_PATTERNS.add(DUNE);
+        TRIM_PATTERNS.add(WAYFINDER);
+        TRIM_PATTERNS.add(RAISER);
+        TRIM_PATTERNS.add(SHAPER);
+        TRIM_PATTERNS.add(HOST);
+        TRIM_PATTERNS.add(WARD);
+        TRIM_PATTERNS.add(SILENCE);
+        TRIM_PATTERNS.add(TIDE);
+        TRIM_PATTERNS.add(SNOUT);
+        TRIM_PATTERNS.add(RIB);
+        TRIM_PATTERNS.add(EYE);
+        TRIM_PATTERNS.add(SPIRE);
+        TRIM_PATTERNS.add(FLOW);
+        TRIM_PATTERNS.add(BOLT);
+
+        TRIM_MATERIALS.add(TrimMaterial.AMETHYST);
+        TRIM_MATERIALS.add(TrimMaterial.COPPER);
+        TRIM_MATERIALS.add(TrimMaterial.DIAMOND);
+        TRIM_MATERIALS.add(TrimMaterial.EMERALD);
+        TRIM_MATERIALS.add(TrimMaterial.GOLD);
+        TRIM_MATERIALS.add(TrimMaterial.IRON);
+        TRIM_MATERIALS.add(TrimMaterial.LAPIS);
+        TRIM_MATERIALS.add(TrimMaterial.QUARTZ);
+        TRIM_MATERIALS.add(TrimMaterial.NETHERITE);
+        TRIM_MATERIALS.add(TrimMaterial.REDSTONE);
+        TRIM_MATERIALS.add(TrimMaterial.RESIN);
 //        populateNameMappings();
     }
 
@@ -79,8 +82,8 @@ public class BlacksmithArmorTrim {
     }
 
     // assume these exist and you will populate them somewhere else:
-    public Set<TrimMaterial> TRIM_MATERIALS;    // supply TrimMaterial choices
-    public Set<TrimPattern> TRIM_PATTERNS;  // supply TrimPattern choices
+    public List<TrimMaterial> TRIM_MATERIALS;    // supply TrimMaterial choices
+    public List<TrimPattern> TRIM_PATTERNS;  // supply TrimPattern choices
 
     /**
      * Return an ArmorTrim for the player using explicit name mappings if present,

@@ -34,6 +34,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import java.security.Guard;
@@ -77,6 +78,7 @@ public class MobManager implements Listener {
         WATER_SPEED_KEY = new NamespacedKey(plugin, "custom_water_speed");
         STEP_HEIGHT_KEY = new NamespacedKey(plugin, "custom_step_height");
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        BukkitRunnable cleanupTask = new MobCleanupSystem(this).start();
     }
 
 
@@ -456,7 +458,9 @@ public class MobManager implements Listener {
                 .xpScale(2.5)
                 .spawnExtra(2)
                 .breeds("black", "black", "black") //,"chestnut", "woods", "striped")
-                .replaceOriginalMob();
+                .replaceOriginalMob()
+                .despawnFaraway();
+
         new MobOverrideRule(5, CREEPER)
                 .addVariation(night_wolves, 10).spawnInPacks();
 
@@ -494,8 +498,8 @@ public class MobManager implements Listener {
                 .setGainsXpOverride(true)
                 .spawnExtra(2);
 
-        MobVariation deprecated_wolf_pack = new MobVariation("wolf_pack", WOLF)
-                .deprecated();
+//        MobVariation deprecated_wolf_pack = new MobVariation("wolf_pack", WOLF)
+//                .deprecated();
 
         setDefaultRuleSetChance(100, PIG, SHEEP, HORSE, WOLF);
 
@@ -529,8 +533,8 @@ public class MobManager implements Listener {
 
 
         // wolf
-        new MobOverrideRule(20, WOLF).spawnInPacks()
-                .addVariation(deprecated_wolf_pack);
+//        new MobOverrideRule(20, WOLF).spawnInPacks()
+//                .addVariation(deprecated_wolf_pack);
 
         new MobOverrideRule(20, TURTLE).addVariation(new MobVariation("creepo", CREEPER).hunts(32).speed(2,2), 100);
 
@@ -659,6 +663,9 @@ public class MobManager implements Listener {
 
         if (event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.CUSTOM) {
             //THIS IS A NATURAL GAME SPAWN
+            if(isMobVariation(event.getEntity())){
+                return;
+            }
             MobOverrideRule rule = rollMobOverrideRule(type);
             if (rule != null) {
                 MobVariation variation = rule.rollVariation();
@@ -692,7 +699,7 @@ public class MobManager implements Listener {
                             MobVariation mount_variation = variation.getMount();
                             if (mount_variation != null) {
                                 if (variation.getMountChance() > ThreadLocalRandom.current().nextDouble()) {
-                                    Entity ee = loc.getWorld().spawnEntity(loc, mount_variation.rollType(), CreatureSpawnEvent.SpawnReason.CUSTOM);
+                                    Entity ee = loc.getWorld().spawnEntity(loc, mount_variation.rollType(), CreatureSpawnEvent.SpawnReason.NATURAL);
                                     convertEntityToVariation(ee, mount_variation);
                                     le.addPassenger(ee);
                                 }
@@ -887,6 +894,11 @@ public class MobManager implements Listener {
         }
 
 
+        if(stats.isDespawnFaraway()){
+            entity.setRemoveWhenFarAway(true);
+            entity.setPersistent(false);
+            Debug.broadcast("mob", "despawning when faraway");
+        }
 
         /**
          * This logic is a hybrid of target acquisition and block breaking. The break logic is better.

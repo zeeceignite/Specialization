@@ -132,7 +132,7 @@ public class ArmorEquipAttributes implements Listener {
                 weight_mod_low = 0.75;
                 weight_mod_high = 0.8;
                 knockback_chance = 0.05;
-                armor_trim_chance = 0.25;
+                armor_trim_chance = 0.175;
                 break;
             case 5:
                 base_chance = 0.5; // 1 in 2
@@ -140,7 +140,7 @@ public class ArmorEquipAttributes implements Listener {
                 weight_mod_low = 0.6;
                 weight_mod_high = 0.8;
                 knockback_chance = 0.125;
-                armor_trim_chance = 0.425;
+                armor_trim_chance = 0.25;
                 break;
         }
         double knockback_roll = 0;
@@ -163,10 +163,14 @@ public class ArmorEquipAttributes implements Listener {
 //                    break;
 //            }
 //        }
+
+        double rng1 = ThreadLocalRandom.current().nextDouble();
+        Debug.broadcast("armortrim", "RNG Rolled: "+rng1);
+
         /**
          * Roll weight
          */
-        if(ThreadLocalRandom.current().nextDouble()<base_chance) {
+        if(rng1 < base_chance) {
             switch(item_type){
                 case IRON_INGOT -> {
                     if(ThreadLocalRandom.current().nextDouble()<rare_chance) {
@@ -215,7 +219,7 @@ public class ArmorEquipAttributes implements Listener {
 
         boolean trimmed = false;
         String trimmed_msg = "";
-        if(ThreadLocalRandom.current().nextDouble()<armor_trim_chance){
+        if(ThreadLocalRandom.current().nextDouble() < armor_trim_chance){
             BlacksmithArmorTrim armorTrimSystem = Specialization.getInstance().getArmorTrimSystem();
             if(armorTrimSystem!=null){
                 ArmorTrim trim = armorTrimSystem.applyArmorTrimToItem(player, current);

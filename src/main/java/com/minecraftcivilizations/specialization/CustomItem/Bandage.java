@@ -169,7 +169,7 @@ public class Bandage extends CustomItem {
 
 
         PVPManager pvpManager = Specialization.getInstance().getPvpManager();
-        boolean healer_in_combat = pvpManager.combatMap.containsKey(healer.getUniqueId());
+        boolean healer_in_combat = pvpManager.isInCombat(healer);
         boolean self_heal = target.equals(healer);
 
         double base_heal = 4.0;
