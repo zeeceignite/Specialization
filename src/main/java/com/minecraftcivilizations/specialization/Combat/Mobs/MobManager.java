@@ -36,6 +36,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
+import java.security.Guard;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -420,7 +421,7 @@ public class MobManager implements Listener {
                                 .speed(1.75)
                                 .waterspeed(4, 4)
                                 .size(0.66,0.66)
-                                .spawnExtra(8)
+                                .spawnExtra(5)
                                 .hunts()
                                 .breaks(0.25)
                                 .drops(1, 1)
@@ -438,7 +439,7 @@ public class MobManager implements Listener {
                 .spawnExtra(2)
                 .breeds("black", "black", "black") //,"chestnut", "woods", "striped")
                 .replaceOriginalMob();
-        new MobOverrideRule(10, SPIDER)
+        new MobOverrideRule(2, SPIDER)
                 .addVariation(night_wolves, 10).spawnInPacks();
 
         new MobOverrideRule(100, CREEPER)
@@ -1077,28 +1078,54 @@ public class MobManager implements Listener {
 
     public void applyExp(EntityDamageByEntityEvent event, CustomPlayer customPlayer, LivingEntity victim) {
         if(event.getDamage()<0.1)return;
-        boolean does_grant_exp = true;
+        double xp_scale = 1.0;
 
+        int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
 
-        MobVariation mobStats = getMobVariation(victim);
-        if(victim.getPersistentDataContainer().has(EXP_GAIN_OVERRIDE_KEY)){
-            does_grant_exp = victim.getPersistentDataContainer().get(EXP_GAIN_OVERRIDE_KEY, PersistentDataType.BOOLEAN);
-        }else {
-            if(mobStats.isXpGainOverrideActive()) {
-                does_grant_exp = mobStats.getXpGainOverrideState();
-             }else if(victim instanceof Enemy){
-                does_grant_exp = true;
-            }else{
-                does_grant_exp = false;
+        if(!(victim instanceof Enemy)) {
+            //Passive Mob XP Reduction
+            switch (lvl) {
+                case 0:
+                    xp_scale = 0.75;
+                    break;
+                case 1:
+                    xp_scale = 0.5;
+                    break;
+                case 2:
+                    xp_scale = 0.25;
+                    break;
+                default: xp_scale = 0;
+                break; //No xp to grant on passive mobs
             }
-        }
-
-        // if entity does not grant exp, exit
-        if(!does_grant_exp){
+        }else if (victim instanceof Player px){
             return;
         }
 
-        double xp_multiplier = mobStats.getXpScale();
+        MobVariation mobStats = getMobVariation(victim);
+        if(victim.getPersistentDataContainer().has(EXP_GAIN_OVERRIDE_KEY)){
+            if(victim.getPersistentDataContainer().get(EXP_GAIN_OVERRIDE_KEY, PersistentDataType.BOOLEAN)){
+                xp_scale = 1.0;
+            }
+        }
+        if(xp_scale == 0){
+            return;
+        }
+//            does_grant_exp = true;
+//            if(mobStats.isXpGainOverrideActive()) {
+//                does_grant_exp = mobStats.getXpGainOverrideState();
+//             }else if(victim instanceof Enemy){
+//                does_grant_exp = true;
+//            }else{
+//                does_grant_exp = false;
+//            }
+//        }
+
+        // if entity does not grant exp, exit
+//        if(!does_grant_exp){
+//            return;
+//        }
+
+        double xp_multiplier = mobStats.getXpScale() * xp_scale;
         if (xp_multiplier>0) {
             LivingEntity le = (LivingEntity) victim;
             double xp = event.getDamage();

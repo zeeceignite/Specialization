@@ -115,10 +115,11 @@ public class GuardsmanDamage implements Listener {
          * This determines how a player deals damage to a mob
          * This allows for players to deal extra damage to friendly mobs if they're hostile
          */
-        if(victim instanceof LivingEntity le){
+        if(victim instanceof Player px){
+            multiplier *= 1.5;
+        }else if(victim instanceof LivingEntity le){
             if(victim instanceof Enemy) {
                 // Hostile Mobs
-                multiplier *= 3.0; //Scales appropriate damage to most hostile mobs
             }else if(combatManager.getMobManager().isMobVariation(victim)){
                 // Mob Variations
                 MobVariation variation = combatManager.getMobManager().getMobVariation(victim);
@@ -132,7 +133,16 @@ public class GuardsmanDamage implements Listener {
             }
         }
 
-        double new_damage = new_damage = ((original_damage) * multiplier)+add;
+        double charge_amount = damager.getAttackCooldown();
+        double charge_reduction = ((charge_amount));
+
+        if(charge_amount<0.2){
+            event.setCancelled(true);
+        }else if(charge_amount < 0.848){
+            charge_reduction *= 0.5;
+        }
+
+        double new_damage = (((original_damage) * multiplier) + add);
         /**
          * Guardsman Extra Mob Damage Bonus
          */

@@ -342,7 +342,6 @@ public class CombatManager implements Listener {
         }
 
 
-
         //Finally, apply GLOBAL armor reduction
         if(event.getEntity() instanceof LivingEntity le) {
             if(event.isApplicable(ARMOR)) {
@@ -363,12 +362,13 @@ public class CombatManager implements Listener {
         }
 
 
+
         /**
-         * MINIMUM HIT SYSTEM
+         * ZERO HIT MITIGATION SYSTEM
          * TODO consider making minimum hit 0 if barehanded punch
          */
         double DAMAGE_MINIMUM = 0;
-        if(damager instanceof Player) { //Mobs have a chance to hit zero with this cast
+        if(damager instanceof Player player) { //Mobs have a chance to hit zero with this cast
             DAMAGE_MINIMUM = (0.075 * original_base) * (event.isCritical()?1.5:1.0);
             double total_final = calculateTotalDamage(event);
 //        Debug.broadcast("damage", "Pre-Minimu calculation: "+total_final);
