@@ -2,6 +2,7 @@ package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.minecraftcivilizations.specialization.Command.EmoteManager;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -140,7 +141,7 @@ public class HungerSystemListener implements Listener {
             return;
         }
 
-        if (emoteCommand.isPlayerSitting(player)) {
+        if (emoteCommand.isPlayerSitting(player) || player.getGameMode() == GameMode.CREATIVE) {
             return;
         }
 

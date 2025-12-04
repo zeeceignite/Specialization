@@ -107,6 +107,8 @@ public class MobVariation {
     private double fuseTime = 1.0;
     @Getter
     private double stepHeight = 0.0;
+    @Getter
+    private boolean despawnFaraway = false;
 
     private boolean random_scale_enabled = false;
 
@@ -373,6 +375,11 @@ public class MobVariation {
 
     public MobVariation addImmunity(DamageType type) {
         immunity_types.add(type);
+        return this;
+    }
+
+    public MobVariation despawnFaraway() {
+        this.despawnFaraway = true;
         return this;
     }
 
