@@ -9,6 +9,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -62,12 +63,14 @@ public class PlayerDownedListener implements Listener {
 
     private static final int DOWNED_DURATION_TICKS = 60 * 20; // 60 seconds
     private final JavaPlugin plugin;
-    private final NamespacedKey downedKey;
     private final Map<UUID, BukkitTask> downTimers = new HashMap<>();
     private final Map<UUID, Entity> downStands = new HashMap<>();
     private final Map<UUID, BossBar> bossBars = new HashMap<>();
     // --- Add NamespacedKey for remaining ticks ---
     private final NamespacedKey downedTicksKey;
+    private final NamespacedKey downedKey;
+    private final NamespacedKey downedByPlayerKey;
+
     private final Map<UUID, Integer> downTicksRemaining = new HashMap<>();
     private final Map<UUID, BukkitTask> darknessTasks = new HashMap<>();
 
@@ -77,6 +80,7 @@ public class PlayerDownedListener implements Listener {
         this.plugin = plugin;
         this.downedKey = new NamespacedKey(plugin, "is_downed");
         this.downedTicksKey = new NamespacedKey(plugin, "downed_ticks");
+        this.downedByPlayerKey = new NamespacedKey(plugin, "playerdowned");
     }
 
 
@@ -106,7 +110,7 @@ public class PlayerDownedListener implements Listener {
         pdc.set(downedKey, PersistentDataType.BYTE, (byte) (new_downed ? 1 : 0));
 
         if (!new_downed) {
-            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] setDowned=false → clearDowned called");
+//            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] setDowned=false → clearDowned called");
             clearDowned(player);
         } else {
             startDowned(player, health, DOWNED_DURATION_TICKS);
@@ -118,25 +122,25 @@ public class PlayerDownedListener implements Listener {
 
     // --- Clear downed state ---
     private void clearDowned(Player player) {
-        Debug.broadcast("down", "<gray>[DOWNED-DEBUG] clearDowned(" + player.getName() + ")");
+//        Debug.broadcast("down", "<gray>[DOWNED-DEBUG] clearDowned(" + player.getName() + ")");
 
         UUID uuid = player.getUniqueId();
 
         BossBar bar = bossBars.remove(uuid);
         if (bar != null) {
-            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Removed boss bar");
+//            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Removed boss bar");
             bar.removePlayer(player);
         }
 
         BukkitTask task = downTimers.remove(uuid);
         if (task != null) {
-            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Cancelled bleedout timer");
+//            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Cancelled bleedout timer");
             task.cancel();
         }
 
         Entity e = downStands.remove(uuid);
         if (e != null) {
-            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Removing downed stand entity");
+//            Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Removing downed stand entity");
             e.remove();
         }
 
@@ -145,6 +149,8 @@ public class PlayerDownedListener implements Listener {
             darknessTask.cancel();
         }
         player.removePotionEffect(PotionEffectType.DARKNESS);
+
+        player.getPersistentDataContainer().remove(downedByPlayerKey);
 
 
         clearMount(player);
@@ -170,6 +176,7 @@ public class PlayerDownedListener implements Listener {
         if (isDowned(player)) {
             setDowned(player, false, 0);
         }
+        Debug.broadcast("death", Component.text(player.getName()+" died 💀 ").color(TextColor.color(122,88,88)).append(Debug.formatLocationClickable(event.getPlayer().getLocation(), false)));
     }
 
     public void clearMount(Player player) {
@@ -262,7 +269,37 @@ public class PlayerDownedListener implements Listener {
             }
             Debug.broadcast("down", "<gray>[DOWNED-DEBUG] Cancelling lethal dmg → triggering downed state.");
 
+            Entity damager = event.getEntity();
+            boolean playerCuased = false;
+
+            if (damager instanceof Player p) {
+                if (p.getPlayer() != player.getPlayer()){
+                playerCuased = true;
+                }
+
+            } else if (damager instanceof Projectile proj &&
+                    proj.getShooter() instanceof Player) {
+                playerCuased = true;
+            }
+
+            if (playerCuased) {
+                player.getPersistentDataContainer().set(
+                        downedByPlayerKey,
+                        PersistentDataType.BYTE,
+                        (byte) 1
+                );
+            }
+
             event.setCancelled(true);
+            Location loc = player.getLocation();
+            World world = loc.getWorld();
+
+            float pitch = 0.6f;    // low, heavy
+            float volume = 1.0f;
+
+            world.playSound(loc, Sound.ENTITY_IRON_GOLEM_ATTACK, SoundCategory.PLAYERS, volume, pitch);
+            world.playSound(loc, Sound.ENTITY_PLAYER_HURT, SoundCategory.PLAYERS, volume, pitch);
+
             setDowned(player, true, 10 + finalHealth);
         }
     }

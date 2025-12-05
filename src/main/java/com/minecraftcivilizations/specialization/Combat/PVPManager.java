@@ -18,6 +18,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
@@ -59,7 +60,7 @@ public class PVPManager implements Listener, CommandExecutor {
     private static final long COMBAT_COOLDOWN = 30_000L;
     private static final long ZOMBIE_LIFETIME = 15_000L; // 15s
     private final JavaPlugin plugin;
-    private final Map<UUID, Long> combatMap = new ConcurrentHashMap<>();
+    public final Map<UUID, Long> combatMap = new ConcurrentHashMap<>();
     private final Map<UUID, UUID> zombieMap = new ConcurrentHashMap<>();
     private final Map<UUID, BukkitRunnable> zombieTimers = new ConcurrentHashMap<>();
     private final Map<UUID, BossBar> combatBars = new HashMap<>();
@@ -72,6 +73,10 @@ public class PVPManager implements Listener, CommandExecutor {
     private final PlayerDownedListener playerDownedListener;
     private boolean combatTaskRunning = false;
     private int combatTaskId = -1;
+
+    public boolean isInCombat(Player player){
+        return combatMap.containsKey(player.getUniqueId());
+    }
 
     public PVPManager(PlayerDownedListener playerDownedListener, JavaPlugin plugin) {
         this.plugin = plugin;
@@ -198,6 +203,15 @@ public class PVPManager implements Listener, CommandExecutor {
         return null;
     }
 
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        UUID id = event.getPlayer().getUniqueId();
+        combatMap.remove(id);
+        PlayerUtil.message(event.getPlayer(),"You may §bsafely§7 log out");
+        BossBar bar = combatBars.remove(id);
+        if (bar != null) bar.removeAll();
+    }
+
     // --- Player logout ---
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
@@ -302,7 +316,7 @@ public class PVPManager implements Listener, CommandExecutor {
             return;
         }
 
-        Debug.broadcast("combatlog", "<grey>[Login] Marker found: " + marker + " for " + player.getName());
+        Debug.broadcast("combatlog", "<grey>[Login] Marker found: " + marker.getName() + " for " + player.getName());
 
         int deadFlag = marker.getPersistentDataContainer().getOrDefault(DEAD_KEY, PersistentDataType.INTEGER, 0);
         byte[] invBytes = marker.getPersistentDataContainer().get(INVENTORY_KEY, PersistentDataType.BYTE_ARRAY);
@@ -415,7 +429,7 @@ public class PVPManager implements Listener, CommandExecutor {
                 ItemSerialization.toBytes(zombie.getEquipment().getArmorContents()));
         zombie.getWorld().playSound(zombie.getLocation(), Sound.ENTITY_PLAYER_HURT, SoundCategory.PLAYERS, 1f, 1f);
         Debug.broadcast("combatlog", "<grey>[ZombieDamage] Zombie " + zombie.getCustomName() +
-                " took damage, health updated to " + currentHealth + " in marker");
+                " took damage, health updated to <red>" + Debug.formatDecimal(currentHealth) + "</red> in marker");
     }
 
 

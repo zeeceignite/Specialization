@@ -1,6 +1,8 @@
 package com.minecraftcivilizations.specialization.Listener.Player;
 
+import com.minecraftcivilizations.specialization.Command.EmoteManager;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -30,9 +32,11 @@ public class HungerSystemListener implements Listener {
 
     private static final long DRAIN_INTERVAL = SpecializationConfig.getHungerConfig().get("DRAIN_INTERVAL_IN_TICKS", Long.class);
     private static final long IDLE_CHECK_TIME = SpecializationConfig.getHungerConfig().get("IDLE_CHECK_TIME_IN_TICKS", Long.class);
+    private final EmoteManager emoteCommand;
 
-    public HungerSystemListener(JavaPlugin plugin) {
+    public HungerSystemListener(JavaPlugin plugin, EmoteManager emoteCommand) {
         this.plugin = plugin;
+        this.emoteCommand = emoteCommand;
         startHungerDrainTask();
     }
 
@@ -132,29 +136,39 @@ public class HungerSystemListener implements Listener {
     }
 
     private void drainHunger(Player player, PlayerActivity activity) {
+        // Prevent hunger drain while sleeping
+        if (player.isSleeping()){
+            return;
+        }
+
+        if (emoteCommand.isPlayerSitting(player) || player.getGameMode() == GameMode.CREATIVE) {
+            return;
+        }
+
         UUID playerId = player.getUniqueId();
         double currentFoodLevel = player.getFoodLevel();
         double drainAmount = getDrainAmount(activity);
 
         // Get or initialize the player's hunger buffer
         double hungerBuffer = playerHungerBuffer.getOrDefault(playerId, 0.0);
-        
+
         // Add the drain amount to the buffer
         hungerBuffer += drainAmount;
-        
+
         // Check if we have accumulated enough to drain at least 1 hunger point
         if (hungerBuffer >= 1.0) {
             int hungerPointsToDrain = (int) hungerBuffer;
             double newFoodLevel = Math.max(0, currentFoodLevel - hungerPointsToDrain);
             player.setFoodLevel((int) newFoodLevel);
-            
+
             // Subtract the drained amount from buffer, keeping the remainder
             hungerBuffer -= hungerPointsToDrain;
         }
-        
+
         // Store the updated buffer
         playerHungerBuffer.put(playerId, hungerBuffer);
     }
+
 
     private double getDrainAmount(PlayerActivity activity) {
         switch (activity) {

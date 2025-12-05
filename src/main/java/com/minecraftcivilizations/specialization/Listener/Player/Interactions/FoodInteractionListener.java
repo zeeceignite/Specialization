@@ -35,7 +35,7 @@ public class FoodInteractionListener implements Listener {
 
     NamespacedKey BLESSED_FOOD_KEY;
 
-    public FoodInteractionListener(Specialization plugin){
+    public FoodInteractionListener(Specialization plugin) {
         this.plugin = plugin;
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         BLESSED_FOOD_KEY = new NamespacedKey(plugin, "BLESSED_FOOD");
@@ -54,13 +54,19 @@ public class FoodInteractionListener implements Listener {
 
                     // Prevent blessing of golden apples and enchanted golden apples
                     if (item.getType() == Material.GOLDEN_APPLE || item.getType() == Material.ENCHANTED_GOLDEN_APPLE) {
-                        PlayerUtil.message(player,ChatColor.RED + "Golden apples cannot be blessed!");
+                        PlayerUtil.message(player, ChatColor.RED + "This food is too holy for this...");
+                        event.setCancelled(true);
+                        return;
+                    }
+
+                    if (item.getType() == Material.ROTTEN_FLESH || item.getType() == Material.KELP) {
+                        PlayerUtil.message(player, ChatColor.RED + "This food is too filthy for that...");
                         event.setCancelled(true);
                         return;
                     }
 
                     if (player.getFoodLevel() < 10) {
-                        PlayerUtil.message(player,ChatColor.RED + "You need more hunger to bless food");
+                        PlayerUtil.message(player, ChatColor.RED + "You're too hungry to do that...", 1);
                         event.setCancelled(true);
                         return;
                     }
@@ -71,7 +77,7 @@ public class FoodInteractionListener implements Listener {
                         if (meta != null && meta.hasLore()) {
                             for (String line : meta.getLore()) {
                                 if (ChatColor.stripColor(line).toLowerCase().contains("blessed")) {
-                                    PlayerUtil.message(player,ChatColor.RED + "This food is already blessed!");
+                                    PlayerUtil.message(player, ChatColor.RED + "This is already #blessed", 1);
                                     event.setCancelled(true);
                                     return;
                                 }
@@ -90,10 +96,10 @@ public class FoodInteractionListener implements Listener {
                             player.getInventory().addItem(singleItem);
                         } else {
                             player.getWorld().dropItemNaturally(player.getLocation(), singleItem);
-                            PlayerUtil.message(player,ChatColor.YELLOW + "Your inventory is full! The blessed food was dropped.");
+                            PlayerUtil.message(player, ChatColor.YELLOW + "Your pockets are full. You dropped it");
                         }
                         customPlayer.addSkillXp(SkillType.HEALER, blessXp);
-                        PlayerUtil.message(player,ChatColor.GOLD + "You have blessed one " + getItemName(singleItem));
+//                        PlayerUtil.message(player,ChatColor.GOLD + "You have blessed one " + getItemName(singleItem));
                     }
 
                     event.setCancelled(true);
@@ -105,34 +111,49 @@ public class FoodInteractionListener implements Listener {
     @EventHandler
     public void onPlayerConsume(PlayerItemConsumeEvent event) {
         Player player = event.getPlayer();
-        CustomPlayer  customPlayer = CoreUtil.getPlayer(player.getUniqueId());
-        ItemStack item = event.getItem();
+        ItemStack consumed = event.getItem();
+        CustomPlayer customPlayer = CoreUtil.getPlayer(player.getUniqueId());
+        if (customPlayer == null) return;
 
-        if (isBlessedFood(item)) {
-            int healerLevel = getBlessedFoodLevel(item);
-            applyBlessedFoodEffects(player, healerLevel, item.getType());
+        if (isBlessedFood(consumed)) {
+            int cooldownTicks = 800;
+
+            // Check if any blessed food is on cooldown
+            for (ItemStack invItem : player.getInventory().getContents()) {
+                if (invItem != null && isBlessedFood(invItem) && player.hasCooldown(invItem.getType())) {
+                    PlayerUtil.message(player, ChatColor.RED + "You must wait before consuming another blessed food...", 1);
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+
+            // Apply blessed food effects
+            int healerLevel = getBlessedFoodLevel(consumed);
+            applyBlessedFoodEffects(player, healerLevel, consumed.getType());
+
+            // Set cooldown **only on items that are actually blessed food**
+            for (ItemStack invItem : player.getInventory().getContents()) {
+                if (isBlessedFood(invItem)) {
+                    player.setCooldown(invItem.getType(), cooldownTicks);
+                }
+            }
+
+            // Also ensure the consumed item itself has the cooldown
+            player.setCooldown(consumed.getType(), cooldownTicks);
         }
 
-        if(!customPlayer.eatFood(event.getItem().getType())){
+        // Existing custom food logic
+        if (!customPlayer.eatFood(consumed.getType())) {
             int reduction = SpecializationConfig.getHungerConfig().get("HUNGER_REDUCTION_ON_NON_UNIQUE_CONSECUTIVE_FOOD", Integer.class);
-            player.setSaturation(event.getPlayer().getSaturation() - reduction);
+            player.setSaturation(player.getSaturation() - reduction);
         }
 
-        if (customPlayer != null && customPlayer.isDowned() && isBlessedFood(item)) {
-            int healerLevel = getBlessedFoodLevel(item);
-            applyBlessedFoodEffects(player, healerLevel, item.getType());
-            player.removePotionEffect(PotionEffectType.WITHER);
-        }
-
-        if (item.getType().equals(Material.DRIED_KELP)) {
-            giveKelpEffects(player);
-        }
-
-        if(item.getType().equals(Material.GOLDEN_APPLE)) {
-            giveGoldenAppleEffects(player);
-        }
-
+        if (consumed.getType().equals(Material.DRIED_KELP)) giveKelpEffects(player);
+        if (consumed.getType().equals(Material.GOLDEN_APPLE)) giveGoldenAppleEffects(player);
     }
+
+
+
 
     private void giveKelpEffects(Player player){
         if(new Random().nextDouble() < .1) {
@@ -191,24 +212,25 @@ public class FoodInteractionListener implements Listener {
         if (healerLevel >= SkillLevel.GRANDMASTER.getLevel()) {
             regenDurationTicks = 20 * 20;
             regenAmplifier = 0;
-            absorptionDurationTicks = 20 * 20;
-            absorptionAmplifier = 0;
+            absorptionDurationTicks = 50 * 20;
+            absorptionAmplifier = 1;
         } else if (healerLevel >= SkillLevel.MASTER.getLevel()) {
             regenDurationTicks = 15 * 20;
             regenAmplifier = 0;
-            absorptionDurationTicks = 15 * 20;
+            absorptionDurationTicks = 40 * 20;
             absorptionAmplifier = 0;
         } else if (healerLevel >= SkillLevel.EXPERT.getLevel()) {
             regenDurationTicks = 10 * 20;
             regenAmplifier = 0;
-            absorptionDurationTicks = 10 * 20;
+            absorptionDurationTicks = 15 * 20;
             absorptionAmplifier = 0;
         } else if (healerLevel >= SkillLevel.JOURNEYMAN.getLevel()) {
             regenDurationTicks = 5 * 20;
             regenAmplifier = 0;
-            absorptionDurationTicks = 5 * 20;
+            absorptionDurationTicks = 10 * 20;
             absorptionAmplifier = 0;
         } else {
+
             // Below Journeyman shouldn’t be able to bless; safe no-op
             return;
         }

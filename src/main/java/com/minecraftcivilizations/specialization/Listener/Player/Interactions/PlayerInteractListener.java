@@ -12,58 +12,60 @@ import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemLore;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.event.player.PlayerBucketEmptyEvent;
-import org.bukkit.event.player.PlayerBucketFillEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.view.AnvilView;
-import org.bukkit.ChatColor;
-import java.util.regex.Pattern;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class PlayerInteractListener implements Listener {
 
+    private final Set<UUID> cascadingSugarcane = new HashSet<>();
+
     @EventHandler
     public void onOpenBlockInventory(InventoryOpenEvent e) {
-        if(e.getPlayer().isOp()) return;
+        if (e.getPlayer().isOp()) return;
 
         InventoryType type = e.getInventory().getType();
-        List<InventoryType> defaultAllow = SpecializationConfig.getCanUseBlockConfig().get("default", new TypeToken<>(){});
-        if(defaultAllow.contains(type)) return;
+        List<InventoryType> defaultAllow = SpecializationConfig.getCanUseBlockConfig().get("default", new TypeToken<>() {});
+        if (defaultAllow.contains(type)) return;
 
         CustomPlayer player = CoreUtil.getPlayer(e.getPlayer());
         for (Skill skill : player.getSkills()) {
-            // Check all skill levels from NOVICE up to the player's current level
             SkillType skillType = skill.getSkillType();
             int playerSkillLevel = player.getSkillLevel(skillType);
 
             for (SkillLevel skillLevel : SkillLevel.values()) {
                 if (skillLevel.getLevel() <= playerSkillLevel) {
                     String configKey = skillType + "_" + skillLevel;
-                    List<InventoryType> types = SpecializationConfig.getCanUseBlockConfig().get(configKey, new TypeToken<>(){});
+                    List<InventoryType> types = SpecializationConfig.getCanUseBlockConfig().get(configKey, new TypeToken<>() {});
                     if (types != null && types.contains(type)) {
-                        return; // Player has access through this skill level
+                        return;
                     }
                 }
             }
@@ -72,16 +74,16 @@ public class PlayerInteractListener implements Listener {
     }
 
     @EventHandler
-    public void onWaterSmushCrop(BlockFromToEvent e){
-        if(e.getToBlock().getBlockData() instanceof Ageable){
+    public void onWaterSmushCrop(BlockFromToEvent e) {
+        if (e.getToBlock().getBlockData() instanceof Ageable) {
             e.getToBlock().setType(Material.AIR);
             e.setCancelled(true);
         }
     }
 
     @EventHandler
-    public void onPlayerDestoryFarmland(BlockBreakEvent e){
-        if(e.getBlock().getType().equals(Material.FARMLAND)){
+    public void onPlayerDestoryFarmland(BlockBreakEvent e) {
+        if (e.getBlock().getType().equals(Material.FARMLAND)) {
             e.getBlock().getRelative(BlockFace.UP).setType(Material.AIR);
             e.getBlock().setType(Material.AIR);
             e.setCancelled(true);
@@ -89,23 +91,13 @@ public class PlayerInteractListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerDestroySugarcaneSource(BlockBreakEvent e){
-        Block nextBlock = e.getBlock().getRelative(BlockFace.UP);
-        if(e.getBlock().getType().equals(Material.SUGAR_CANE)) return;
-        while(nextBlock.getType().equals(Material.SUGAR_CANE)){
-            nextBlock.setType(Material.AIR);
-            nextBlock = nextBlock.getRelative(BlockFace.UP);
-        }
-    }
-
-    @EventHandler
-    public void onPlayerSmushCrop(PlayerInteractEvent e){
-        if(e.getAction().equals(Action.PHYSICAL)){
-            if(e.getClickedBlock() == null){
+    public void onPlayerSmushCrop(PlayerInteractEvent e) {
+        if (e.getAction().equals(Action.PHYSICAL)) {
+            if (e.getClickedBlock() == null) {
                 return;
             }
 
-            if(e.getClickedBlock().getType().equals(Material.FARMLAND)){
+            if (e.getClickedBlock().getType().equals(Material.FARMLAND)) {
                 e.setCancelled(true);
                 e.getClickedBlock().setType(Material.DIRT);
                 e.getClickedBlock().getRelative(BlockFace.UP).setType(Material.AIR);
@@ -134,7 +126,6 @@ public class PlayerInteractListener implements Listener {
         ItemMeta meta = e.getItem().getItemMeta();
         if (meta == null) return;
 
-        // ✅ Prevent blessing if item already has any enchantments
         if (!e.getItem().getEnchantments().isEmpty()) {
             PlayerUtil.message(e.getPlayer(), ChatColor.RED + "This item has already been blessed.");
             return;
@@ -181,23 +172,86 @@ public class PlayerInteractListener implements Listener {
         PlayerUtil.message(e.getPlayer(), ChatColor.GOLD + "✨ Your " + typeName.replace("_", " ") + " has been blessed with " + enchantDisplay + " " + finalLevel + "!");
     }
 
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void onSweetBerryHarvest(PlayerHarvestBlockEvent e) {
+        if (e.getHarvestedBlock().getType() != Material.SWEET_BERRY_BUSH) return;
+        boolean producedBerries = e.getItemsHarvested().stream()
+                .anyMatch(item -> item.getType() == Material.SWEET_BERRIES);
+        if (!producedBerries) return;
 
-    @EventHandler
-    public void onHarvestSweetBerries(PlayerInteractEvent e) {
-        // main-hand right click on a fully-grown sweet-berry bush
-        if (!e.getAction().isRightClick() || e.getHand() == EquipmentSlot.OFF_HAND) return;
-        Block clicked = e.getClickedBlock();
-        if (clicked == null || clicked.getType() != Material.SWEET_BERRY_BUSH) return;
-
-        org.bukkit.block.data.BlockData data = clicked.getBlockData();
-        if (data instanceof Ageable age && age.getAge() == age.getMaximumAge()) {
-            CustomPlayer cp = CoreUtil.getPlayer(e.getPlayer());
-            if (cp != null) {
-                // tweak value if you like; 1 is a safe default
-                cp.addSkillXp(SkillType.FARMER, 3);
-            }
+        Player player = e.getPlayer();
+        CustomPlayer cp = CoreUtil.getPlayer(player);
+        if (cp != null) {
+            cp.addSkillXp(SkillType.FARMER, 3);
         }
     }
+
+    @EventHandler
+    public void onSugarcaneBreak(BlockBreakEvent e) {
+        if (e.getBlock().getType() != Material.SUGAR_CANE) return;
+
+        CustomPlayer cp = CoreUtil.getPlayer(e.getPlayer());
+        if (cp == null) return;
+
+        Pair<SkillType, Double> pair =
+                SpecializationConfig.getXpGainFromBreakingConfig()
+                        .get(Material.SUGAR_CANE, new TypeToken<Pair<SkillType, Double>>() {});
+        double xpPer = pair != null && pair.secondValue() != null ? pair.secondValue() : 0d;
+
+        if (cascadingSugarcane.contains(e.getPlayer().getUniqueId())) {
+            if (xpPer > 0) cp.addSkillXp(SkillType.FARMER, xpPer);
+            return;
+        }
+
+        cascadingSugarcane.add(e.getPlayer().getUniqueId());
+        try {
+            if (xpPer > 0) cp.addSkillXp(SkillType.FARMER, xpPer);
+
+            List<Block> stack = new ArrayList<>();
+            Block b = e.getBlock().getRelative(BlockFace.UP);
+            while (b.getType() == Material.SUGAR_CANE) {
+                stack.add(b);
+                b = b.getRelative(BlockFace.UP);
+            }
+
+            Collections.reverse(stack);
+            for (Block cane : stack) {
+                e.getPlayer().breakBlock(cane);
+            }
+        } finally {
+            cascadingSugarcane.remove(e.getPlayer().getUniqueId());
+        }
+    }
+
+    @EventHandler
+    public void onSugarcanePhysics(BlockPhysicsEvent e) {
+        if (e.getBlock().getType() != Material.SUGAR_CANE) return;
+
+        Block base = e.getBlock();
+        Block below = base.getRelative(BlockFace.DOWN);
+        if (below.getType() == Material.SUGAR_CANE) return;
+        if (hasAdjacentWaterOrWaterlogged(below)) return;
+
+        Block b = base;
+        while (b.getType() == Material.SUGAR_CANE) {
+            b.setType(Material.AIR, false);
+            b = b.getRelative(BlockFace.UP);
+        }
+
+        e.setCancelled(true);
+    }
+
+    private boolean hasAdjacentWaterOrWaterlogged(Block block) {
+        BlockFace[] faces = new BlockFace[]{BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST};
+        for (BlockFace face : faces) {
+            Block adj = block.getRelative(face);
+            if (adj.getType() == Material.WATER) return true;
+            org.bukkit.block.data.BlockData data = adj.getBlockData();
+            if (data instanceof org.bukkit.block.data.Waterlogged wl && wl.isWaterlogged()) return true;
+        }
+        return false;
+    }
+
     @EventHandler
     public void onHarvestGlowBerries(PlayerInteractEvent e) {
         if (!e.getAction().isRightClick() || e.getHand() == EquipmentSlot.OFF_HAND) return;
@@ -208,11 +262,11 @@ public class PlayerInteractListener implements Listener {
         if (type != Material.CAVE_VINES && type != Material.CAVE_VINES_PLANT) return;
 
         String data = clicked.getBlockData().getAsString();
-        if (!data.contains("berries=true")) return; // only when berries are actually present
+        if (!data.contains("berries=true")) return;
 
         CustomPlayer cp = CoreUtil.getPlayer(e.getPlayer());
         if (cp != null) {
-            cp.addSkillXp(SkillType.FARMER, 1); // adjust XP if you like
+            cp.addSkillXp(SkillType.FARMER, 1);
         }
     }
 
@@ -220,13 +274,12 @@ public class PlayerInteractListener implements Listener {
     public void onMilk(PlayerItemConsumeEvent e) {
         if (e.getItem().getType() != Material.MILK_BUCKET) return;
 
-        // milk clears potion effects; re-apply class passives next tick
         Bukkit.getScheduler().runTaskLater(
                 com.minecraftcivilizations.specialization.Specialization.getInstance(),
                 () -> {
                     CustomPlayer cp = CoreUtil.getPlayer(e.getPlayer());
                     if (cp != null) {
-//                        cp.applyEffects(); // your existing method that reapplies class bonus effects
+//                        cp.applyEffects();
                     }
                 },
                 1L
@@ -235,16 +288,16 @@ public class PlayerInteractListener implements Listener {
 
     @EventHandler
     public void onAnvilFinish(InventoryClickEvent e) {
-        if(e.getView() instanceof AnvilView view){
+        if (e.getView() instanceof AnvilView view) {
             String renameText = view.getRenameText();
-            if(renameText != null && renameText.matches("^\\[lore [0-9]].*")){
+            if (renameText != null && renameText.matches("^\\[lore [0-9]].*")) {
                 CustomPlayer player = CoreUtil.getPlayer(e.getWhoClicked());
                 int level = SpecializationConfig.getLibrarianConfig().get("ITEM_LORE_LIBRARIAN_LEVEL", Integer.class);
-                if(player.getSkillLevel(SkillType.LIBRARIAN) < level) return;
+                if (player.getSkillLevel(SkillType.LIBRARIAN) < level) return;
 
                 int number = Integer.parseInt(String.valueOf(renameText.charAt(6)));
                 ItemStack result = view.getTopInventory().getResult();
-                if(result == null) return;
+                if (result == null) return;
                 ItemStack oldItem = view.getTopInventory().getFirstItem();
                 if (oldItem.hasData(DataComponentTypes.CUSTOM_NAME))
                     result.setData(DataComponentTypes.CUSTOM_NAME, view.getTopInventory().getFirstItem().getData(DataComponentTypes.CUSTOM_NAME));
@@ -252,7 +305,7 @@ public class PlayerInteractListener implements Listener {
                     result.unsetData(DataComponentTypes.CUSTOM_NAME);
                 }
                 ArrayList<Component> lines = new ArrayList<>(result.getData(DataComponentTypes.LORE).lines());
-                if(lines.size() < number) {
+                if (lines.size() < number) {
                     for (int i = 0; i < number - lines.size() + 1; i++) lines.add(Component.empty());
                 }
                 lines.set(number - 1, Component.text(renameText.substring(8).trim()));
@@ -262,12 +315,11 @@ public class PlayerInteractListener implements Listener {
         }
     }
 
-
     @EventHandler
     public void anvilRenameEvent(InventoryClickEvent e) {
-        if(e.getView() instanceof AnvilView view){
+        if (e.getView() instanceof AnvilView view) {
             String renameText = view.getRenameText();
-            if(renameText != null && renameText.matches("^\\[lore [0-9]]")){
+            if (renameText != null && renameText.matches("^\\[lore [0-9]]")) {
                 int number = renameText.charAt(7);
                 ItemStack result = view.getTopInventory().getResult();
                 result.unsetData(DataComponentTypes.CUSTOM_NAME);
@@ -277,21 +329,18 @@ public class PlayerInteractListener implements Listener {
     }
 
     @EventHandler
-    public void onBucketEmpty(PlayerBucketEmptyEvent e ) {
-        if(e.getBucket().equals(Material.LAVA_BUCKET)){
+    public void onBucketEmpty(PlayerBucketEmptyEvent e) {
+        if (e.getBucket().equals(Material.LAVA_BUCKET)) {
             CustomPlayer player = CoreUtil.getPlayer(e);
-            if(player.getSkillLevel(SkillType.BLACKSMITH) < SkillLevel.EXPERT.getLevel()) e.setCancelled(true);
+            if (player.getSkillLevel(SkillType.BLACKSMITH) < SkillLevel.EXPERT.getLevel()) e.setCancelled(true);
         }
     }
 
     @EventHandler
-    public void onBucketFill(PlayerBucketFillEvent e ) {
-        if(e.getBucket().equals(Material.LAVA_BUCKET)){
+    public void onBucketFill(PlayerBucketFillEvent e) {
+        if (e.getBucket().equals(Material.LAVA_BUCKET)) {
             CustomPlayer player = CoreUtil.getPlayer(e);
-            if(player.getSkillLevel(SkillType.BLACKSMITH) < SkillLevel.EXPERT.getLevel()) e.setCancelled(true);
+            if (player.getSkillLevel(SkillType.BLACKSMITH) < SkillLevel.EXPERT.getLevel()) e.setCancelled(true);
         }
     }
-
-
-
 }

@@ -6,6 +6,7 @@ import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
+import minecraftcivilizations.com.minecraftCivilizationsCore.Item.ItemUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -22,11 +23,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -105,13 +108,8 @@ public class CraftingListener implements Listener {
 
         int craftedAmount = getCraftedAmount(event);
 
-        String amtstring = "<gold>x"+craftedAmount+"</gold>";
+        String amtstring = craftedAmount+"x ";
         if(craftedAmount==1)amtstring = "";
-
-        Debug.broadcast("craft",
-                "<gray>🎬:</gray> "+event.getAction().name() + " "+amtstring+" <blue>📦: "+event.getCurrentItem().getType().name()+"</blue> <green>🖱:"+event.getCursor().getType().name(),
-                "<blue>Current Item: </blue>"+event.getCurrentItem().getType().name()+"\n"
-                +"<green>Cursor Item: </green>"+event.getCursor().getType().name());
 
 
 
@@ -119,28 +117,53 @@ public class CraftingListener implements Listener {
         CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(player.getUniqueId());
 
 
-        int lvl = customPlayer.getSkillLevel(xp_gain_pair.firstValue());
-        double xpGainBenefit = (5-((double)lvl)/1.5);
+        int lvl = (int)Math.max((double)customPlayer.getSkillLevel(xp_gain_pair.firstValue()), (double)customPlayer.getSkillLevel(SkillType.BLACKSMITH)*1.5);
+        if(lvl>5)lvl = 5;
+        double skill_benefit = (5-((double)lvl)/1.5);
+        double base_reduction = getFoodReduction(crafted.getType());
         // Reduction based on Skill Level and Amount Crafted
-        int totalReduction = (int) (xpGainBenefit *  (craftedAmount));
-        totalReduction = Math.max(1, totalReduction);//Math.max(0, totalReduction - (int) (Math.random() * 3));
+        double food_reduction_formula = base_reduction * (skill_benefit * craftedAmount);
+
+        double divider = event.getRecipe().getResult().getAmount();
+
+        int totalReduction = (int) Math.max(1.0, food_reduction_formula / divider); //Math.max(0, totalReduction - (int) (Math.random() * 3));
 
         int foodLevel = player.getFoodLevel();
         if(player.getGameMode()==GameMode.CREATIVE){
-            foodLevel=220;
+            foodLevel=220; //for testing etc
         }
 
-        Debug.broadcast("craft", "<red>Food Level: </red>"+foodLevel+" <gold>Reduction:</gold> "+totalReduction);
+        double anti_starvation_threshold = 2; //increase this to prevent causing a plyer to starve upon crafting
 
-        if(foodLevel < totalReduction || foodLevel < 1){
+        if(foodLevel - totalReduction < anti_starvation_threshold){
             event.setResult(Event.Result.DENY);
             event.setCancelled(true);
             player.playSound(player.getLocation(), Sound.BLOCK_CHORUS_FLOWER_GROW, 0.5f, 1.25f);
+
+
+            String hungry_msg = "<red>You're too hungry to craft</red>";
             if(craftedAmount>1){
-                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>You're too hungry to craft that many</red>"));
-            }else{
-                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>You're too hungry to craft</red>"));
+                hungry_msg = "<red>You're too hungry to craft that many</red>";
             }
+            if(ThreadLocalRandom.current().nextDouble()<0.0125){
+                // Fun Messages
+                String item_name = ItemUtils.getFriendlyName(event.getRecipe().getResult().getType());
+                switch(ThreadLocalRandom.current().nextInt(6)){
+                    case 0:
+                        hungry_msg = "<red>You're too craft to hungry</red>"; break;
+                    case 1:
+                        hungry_msg = "<red>Some food would be nice right about now</red>"; break;
+                    case 2:
+                        hungry_msg = "<red>"+item_name+" does sound nice, but so does food.</red>"; break;
+                    case 3:
+                        hungry_msg = "<red>You're hungry, go eat!</red>"; break;
+                    case 4:
+                        hungry_msg = "<red>You try to craft the "+ item_name+", but you're too hungry!</red>"; break;
+                    case 5:
+                        hungry_msg = "<red>"+item_name+" demands that you eat!</red>"; break;
+                }
+            }
+            player.sendActionBar(MiniMessage.miniMessage().deserialize(hungry_msg));
             return;
         }
 
@@ -155,6 +178,17 @@ public class CraftingListener implements Listener {
             }
         }
 
+
+        Debug.broadcast("craft",
+                player.getName()+"<gray> crafted</gray> "+amtstring+getItemNameFormat(event.getCurrentItem().getType())+" <red>🍖"+totalReduction+"</red>",
+
+                "<gray>🎬:"+event.getAction().name()+"\n"
+                        +"<green>Current Item: </green>"+event.getCurrentItem().getType().name()+"\n"
+                        +"<blue>Cursor Item: </blue>"+event.getCursor().getType().name()+"\n"
+                        +"<red>🍖 Type Base Reduction: </red>"+base_reduction+"\n"
+                        +"<red>🍖 Skill Benefit: </red>"+skill_benefit+"\n"
+                        +"<red>🍖 Food Level: </red>"+foodLevel+" <gold>🍖 Reduction:</gold> "+totalReduction
+        );
 
         SpecializationCraftItemEvent new_event = new SpecializationCraftItemEvent(event, player, craftedAmount, totalReduction, xp_gain_pair.firstValue(), lvl);
         Bukkit.getPluginManager().callEvent(new_event);
@@ -175,6 +209,82 @@ public class CraftingListener implements Listener {
             }, 1L);
         }
 
+    }
+
+    private double getFoodReduction(Material type) {
+        switch (type) {
+            case STICK:
+                return 0.25;
+            case CRAFTING_TABLE:
+                return 1.0;
+            case FURNACE:
+            case SMOKER:
+            case BLAST_FURNACE:
+            case CHEST:
+            case BARREL:
+            case ENCHANTING_TABLE:
+            case ANVIL:
+                return 1.25;
+            case FLINT_AND_STEEL:
+            case BUCKET:
+            case SHEARS:
+                return 2.0;
+        }
+        String name = type.name();
+        if (name.contains("_PLANKS")){
+            return 0.25;
+        }else if(name.contains("_STAIRS") || name.contains("_FENCE") || name.contains("_SLAB") || name.contains("_WALL")){
+            return 0.5;
+        }
+
+        /**
+         * Complex values for tools
+         */
+        double value = 1.0;
+        if(name.contains("_HELMET") || name.contains("_BOOTS")){
+            value += 0.5;
+        }else if(name.contains("_LEGGINGS") || name.contains("_CHESTPLATE")){
+            value += 1.5;
+        }else if(name.contains("_AXE") || name.contains("_SWORD")){
+            value += 1.0;
+        }else if(name.contains("_PICKAXE") || name.contains("_SHOVEL") || name.contains("_HOE")){
+            value += 1.0;
+        }
+        if(name.contains("WOODEN_")) {
+            value *= 0.35;
+        }else if(name.contains("LEATHER_")){
+            value *= 0.5;
+        }else if(name.contains("STONE_")){
+            value *= 0.75;
+        }else if(name.contains("IRON_")){
+            value *= 1.25;
+        }else if(name.contains("DIAMOND_")){
+            value *= 2.0;
+        }
+        return value;
+    }
+
+    private String getItemNameFormat(Material type) {
+        String color = "gray";
+        if(type.name().contains("IRON_")){
+            color = "green";
+        }else if(type.name().contains("DIAMOND_")){
+            color = "aqua";
+        }else{
+
+            switch(type){
+                case TNT:
+                case RESPAWN_ANCHOR:
+                    color = "dark_red";
+                    break;
+                case ANVIL:
+                case ENCHANTING_TABLE:
+                    color = "yellow";
+                    break;
+
+            }
+        }
+        return "<"+color+">"+type.name()+"</"+color+">";
     }
 
     /**

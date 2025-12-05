@@ -57,7 +57,7 @@ public class MobOverrideRule {
     public MobVariation rollVariation() {
         calculateTotalRoll(); // now total_roll == sum(variations) only
         if (total_roll <= 0) {
-            Debug.broadcast("mobrule", "<blue>rollVariation</blue> total_roll <= 0 -> null");
+//            Debug.broadcast("mobrule", "<blue>rollVariation</blue> total_roll <= 0 -> null");
             return null;
         }
 
@@ -67,12 +67,12 @@ public class MobOverrideRule {
         for (Map.Entry<MobVariation, Integer> entry : variation_mapping.entrySet()) {
             accum += entry.getValue();
             if (roll < accum) {
-                Debug.broadcast("mobrule", "<blue>rollVariation</blue> returns " + entry.getKey().getId());
+//                Debug.broadcast("mobrule", "<blue>rollVariation</blue> returns " + entry.getKey().getId());
                 return entry.getKey();
             }
         }
 
-        Debug.broadcast("mobrule", "<blue>rollVariation</blue> returns null as fallback");
+//        Debug.broadcast("mobrule", "<blue>rollVariation</blue> returns null as fallback");
         return null;
     }
 

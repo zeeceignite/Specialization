@@ -22,6 +22,8 @@ import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Bed;
 import org.bukkit.block.data.type.Door;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -30,7 +32,9 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager.*;
 
@@ -38,6 +42,27 @@ public class BreakBlockListener implements Listener {
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
+
+
+        /**
+         * This resets the block break progress done by mobs
+         */
+        Block block = event.getBlock();
+        Collection<Player> nearbyPlayers = block.getLocation().getNearbyPlayers(16);
+        nearbyPlayers.stream()
+                .filter(player -> player.getGameMode().equals(GameMode.SURVIVAL))
+                .collect(Collectors.toSet());
+        if (nearbyPlayers != null && !nearbyPlayers.isEmpty()) {
+            nearbyPlayers.forEach(player -> player.sendBlockDamage(block.getLocation(), 0));
+        }
+
+        ItemStack tool = event.getPlayer().getInventory().getItemInMainHand();
+        if (tool.getType().name().endsWith("_PICKAXE")) { // ensure it's a pickaxe
+            if (tool.containsEnchantment(Enchantment.SILK_TOUCH)) {
+                return; // Exit early: do not give miner XP
+            }
+        }
+
         AttributeInstance breakSpeedAttr = event.getPlayer().getAttribute(Attribute.BLOCK_BREAK_SPEED);
 
         if (breakSpeedAttr != null) {

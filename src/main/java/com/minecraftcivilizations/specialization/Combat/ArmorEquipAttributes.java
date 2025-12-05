@@ -20,11 +20,9 @@ import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.CraftItemEvent;
-import org.bukkit.inventory.EntityEquipment;
-import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.EquipmentSlotGroup;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -32,7 +30,6 @@ import org.bukkit.util.Vector;
 
 import static net.md_5.bungee.api.ChatColor.*;
 
-import java.awt.*;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -47,6 +44,10 @@ public class ArmorEquipAttributes implements Listener {
 
 
     public static NamespacedKey WEIGHT_KEY;
+
+
+    //Used for previous values
+    Map<UUID, Double> weight_map = new HashMap<UUID, Double>();
 
     public ArmorEquipAttributes(CombatManager manager){
         this.manager = manager;
@@ -86,17 +87,28 @@ public class ArmorEquipAttributes implements Listener {
         Material mat = ArmorStats.getMaterialType(current.getType());
         if (mat == null) return; //not compatible
 
+        Material item_type = null;
+        if (current.getType().name().contains("IRON_")) {
+            item_type = Material.IRON_INGOT;
+        }else if(current.getType().name().contains("DIAMOND_")){
+            item_type = Material.DIAMOND;
+        }else if(current.getType().name().contains("GOLDEN_")){
+            item_type = Material.GOLD_INGOT;
+        }
+
         material_weight = getMaterialWeight(mat);
         slot_weight = getSlotModifier(slot);
 
         boolean luck = player.hasPotionEffect(PotionEffectType.LUCK);
-
         weight = (material_weight * slot_weight);
         ChatColor color = BLUE;
         double base_chance = 0.25;
         double rare_chance = 0.125;
         double weight_mod_low = 0.75;
         double weight_mod_high = 0.75;
+        double knockback_chance = 0.0;
+        double armor_trim_chance = 0.0;
+
         boolean best = false;
         switch(lvl){
             case 2:
@@ -104,64 +116,135 @@ public class ArmorEquipAttributes implements Listener {
                 rare_chance = 0.00;
                 weight_mod_low = 0.8;
                 weight_mod_high = 0.95;
+                armor_trim_chance = 0.05;
                 break;
             case 3:
                 base_chance = 0.25; // 1 in 4
-                rare_chance = (luck?0.03:0.02); // ~0.5% chance of crafting best
+                rare_chance = 0.025; // ~0.5% chance of crafting best
                 weight_mod_low = 0.7;
                 weight_mod_high = 0.9;
+                knockback_chance = 0.025;
+                armor_trim_chance = 0.125;
                 break;
             case 4:
                 base_chance = 0.33; // 1 in 3
-                rare_chance = (luck?0.07:0.03); // ~2.0% chance of crafting best
+                rare_chance = 0.05; // ~5.0% chance of crafting best
                 weight_mod_low = 0.75;
                 weight_mod_high = 0.8;
+                knockback_chance = 0.05;
+                armor_trim_chance = 0.175;
                 break;
             case 5:
                 base_chance = 0.5; // 1 in 2
-                rare_chance = (luck?0.1:0.05); // ~5.0% chance of crafting best
+                rare_chance = 0.1; // ~10.0% chance of crafting best
                 weight_mod_low = 0.6;
                 weight_mod_high = 0.8;
+                knockback_chance = 0.125;
+                armor_trim_chance = 0.25;
                 break;
         }
-        if(ThreadLocalRandom.current().nextDouble()<base_chance) {
-            if (current.getType().name().contains("IRON_")) {
-                if(ThreadLocalRandom.current().nextDouble()<rare_chance) {
-                    color = WHITE;
-                    weight_modifier = 0.425;
-                    best = true;
-                }else{
-                    weight_modifier = MathUtils.random(weight_mod_low,weight_mod_high);
+        double knockback_roll = 0;
+        /**
+         * Roll knockback resist
+         */
+//        if(ThreadLocalRandom.current().nextDouble()<knockback_chance){
+//            switch(item_type){
+//                case IRON_INGOT:
+//                    knockback_roll = 0.1;
+//                    if(lvl == 5 && Math.random()>0.5){
+//                        knockback_roll += 0.1;
+//                    }
+//                    break;
+//                case GOLD_INGOT:
+//                    knockback_roll = 0.05;
+//                    break;
+//                case DIAMOND:
+//                    knockback_roll = 0.1;
+//                    break;
+//            }
+//        }
+
+        double rng1 = ThreadLocalRandom.current().nextDouble();
+        double rng2 = ThreadLocalRandom.current().nextDouble();
+        Debug.broadcast("armortrim", "Rng1: "+Debug.formatDecimal(rng1)+ " <red>rng2: " +Debug.formatDecimal(rng2));
+
+        /**
+         * Roll weight
+         */
+        if(rng1 < base_chance) {
+            switch(item_type){
+                case IRON_INGOT -> {
+                    if(ThreadLocalRandom.current().nextDouble()<rare_chance) {
+                        color = ChatColor.of("#ECECEC");
+                        weight_modifier = 0.425;
+                        best = true;
+                    }else{
+                        weight_modifier = MathUtils.random(weight_mod_low,weight_mod_high);
+                    }
                 }
-            }else if(current.getType().name().contains("DIAMOND_")){
-                if(ThreadLocalRandom.current().nextDouble()<rare_chance) {
-                    color = AQUA;
-                    weight_modifier = 0.5;
-                    best = true;
-                }else{
-                    weight_modifier = MathUtils.random(weight_mod_low, weight_mod_high);
+                case GOLD_INGOT -> {
+                    if(ThreadLocalRandom.current().nextDouble()<rare_chance) {
+                        color = ChatColor.of("#DEB12D");
+                        weight_modifier = 0.25;
+                        best = true;
+                    }else{
+                        weight_modifier = 0.5 * MathUtils.random(weight_mod_low, weight_mod_high);
+                    }
                 }
-            }else if(current.getType().name().contains("GOLDEN_")){
-                if(ThreadLocalRandom.current().nextDouble()<rare_chance) {
-                    color = GOLD;
-                    weight_modifier = 0.25;
-                    best = true;
-                }else{
-                    weight_modifier = 0.5 * MathUtils.random(weight_mod_low, weight_mod_high);
+                case DIAMOND -> {
+                    if(ThreadLocalRandom.current().nextDouble()<rare_chance) {
+                        color = ChatColor.of("#6EECD2");
+                        weight_modifier = 0.5;
+                        best = true;
+                    }else{
+                        weight_modifier = MathUtils.random(weight_mod_low, weight_mod_high);
+                    }
                 }
             }
-
-            current = ArmorEquipAttributes.applyArmorStats(modified, (int) (weight * weight_modifier), color);
+            current = ArmorEquipAttributes.applyArmorStats(modified, new ArmorStatsCustom((int) (weight * weight_modifier), knockback_roll), color);
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_WORK_TOOLSMITH, 0.2f, 0.9f);
             if(best){
-                player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.22f, 1.1f);
                 meta = current.getItemMeta();
-//                ItemStackUtils.setLoreLine(meta, 2, DARK_GRAY+"Crafted by "+GRAY+player.getName());
                 current.setItemMeta(meta);
-                PlayerUtil.message(player,"You've crafted extra light-weight armor!");
             }
         }else{
-            current = ArmorEquipAttributes.applyArmorStats(modified, -1, BLUE);
+            current = ArmorEquipAttributes.applyArmorStats(modified, new ArmorStatsCustom(-1, knockback_roll), BLUE);
+        }
+
+        /**
+         * Roll armor trim
+         */
+        if(best){
+            armor_trim_chance *= 1.5; //increase chance of trim if lightest armor
+        }
+
+        boolean trimmed = false;
+        String trimmed_msg = "";
+        if(rng2 < armor_trim_chance){
+            BlacksmithArmorTrim armorTrimSystem = Specialization.getInstance().getArmorTrimSystem();
+            if(armorTrimSystem!=null){
+                ArmorTrim trim = armorTrimSystem.applyArmorTrimToItem(player, current);
+                if(trim!=null) {
+                    player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.25f, 1.1f);
+                    trimmed = true;
+                    String trimmed_color = BlacksmithArmorTrim.getMaterialColor(trim.getMaterial());
+                    trimmed_msg = "<" + trimmed_color + ">" +
+                            "signature"
+                            + "</" + trimmed_color + "> ";
+                    String hex_string = ChatColor.of(trimmed_color).toString();
+                    meta = current.getItemMeta();
+                    ItemStackUtils.setLoreLine(
+                            meta,
+                            2,
+                            ChatColor.DARK_GRAY + "Crafted by " + hex_string + player.getName()
+                    );
+                    meta.addItemFlags(ItemFlag.HIDE_ARMOR_TRIM);
+                    current.setItemMeta(meta);
+                }
+            }
+        }
+        if(best || trimmed){
+            PlayerUtil.message(player,"You've crafted a "+(best?"<white>perfect</white> ":"")+trimmed_msg+"piece of armor!");
         }
         event.setCurrentItem(current);
     }
@@ -215,16 +298,23 @@ public class ArmorEquipAttributes implements Listener {
 
         if(armor_swap) {
             double weight = calculateWeight(player);
-//            if (old_weight != weight) {
-//        Debug.broadcast("weight", "New Weight: "+weightColor(weight)+weight);
-            player.sendActionBar("Armor Weight: " + weightColor(weight) + weight);
-            ArmorStats stats = ArmorStats.getArmorStats(player.getEquipment());
+            double previous_weight = -25;
+            UUID uuid = player.getUniqueId();
+            if(weight_map.containsKey(uuid)) {
+                previous_weight = weight_map.get(uuid);
+            }
+
+
+            if(previous_weight != weight) {
+                player.sendActionBar("Armor Weight: " + weightColor(weight) + weight);
+                weight_map.put(uuid, weight);
+            }
 //            Debug.broadcast("armorstats", "<blue>Armor:</blue> "+stats.getArmor()+" <blue>Toughness:</blue> "+stats.getToughness());
 //        player.updateInventory();
 //            Debug.broadcast("armorstats", "Player's Water Move: "+player.getAttribute(Attribute.WATER_MOVEMENT_EFFICIENCY).getValue());
-//            }
+            }
 //            player_weight_history.put(uuid, weight);
-        }
+//        }
     }
 
     public final double weight_offset = -25; //baseline, a player can have up to this before weight becomes effective
@@ -260,7 +350,7 @@ public class ArmorEquipAttributes implements Listener {
      * Used for default armor
      */
     public ItemStack applyStats(ItemStack item){
-        item = applyArmorStats(item, -1, BLUE);
+        item = applyArmorStats(item, new ArmorStatsCustom(-1, 0), BLUE);
         return item;
     }
 
@@ -268,57 +358,110 @@ public class ArmorEquipAttributes implements Listener {
      * Applies weight to an armor piece with a custom weight override
      * Used for custom blacksmith armor
      */
-    public static ItemStack applyArmorStats(ItemStack item, double custom_weight, ChatColor color){
+    public static ItemStack applyArmorStats(ItemStack item, ArmorStatsCustom custom_stats_override, ChatColor color){
         ItemMeta meta = item.getItemMeta();
-        if(meta.getPersistentDataContainer().has(WEIGHT_KEY))return null; //returning null skips applying
 
+
+//        NamespacedKey key = new NamespacedKey(Specialization.getInstance(),"version");
+//        if(meta.getPersistentDataContainer().has(key)){
+//
+//        }
+
+//        Debug.broadcast("armor", "removing attribute modifiers and applying");
+
+        Collection<AttributeModifier> attributeModifiers = meta.getAttributeModifiers(Attribute.ARMOR);
+        if(attributeModifiers!=null) {
+            for (AttributeModifier mod : attributeModifiers) {
+                // handle armor modifier
+                meta.removeAttributeModifier(Attribute.ARMOR, mod);
+            }
+        }
+        attributeModifiers = meta.getAttributeModifiers(Attribute.ARMOR_TOUGHNESS);
+        if(attributeModifiers!=null) {
+            for (AttributeModifier mod : attributeModifiers) {
+                // handle armor modifier
+                meta.removeAttributeModifier(Attribute.ARMOR_TOUGHNESS, mod);
+            }
+        }
+//        meta.removeAttributeModifier(Attribute.ARMOR);
+//        meta.removeAttributeModifier(Attribute.ARMOR_TOUGHNESS);
+//        meta.removeAttributeModifier(Attribute.ARMOR);
+//
+//
+//        attributeModifiers = meta.getAttributeModifiers(Attribute.ARMOR_TOUGHNESS);
+//        if(attributeModifiers!=null) {
+//            for (AttributeModifier mod : meta.getAttributeModifiers(Attribute.ARMOR_TOUGHNESS)) {
+//                // handle toughness modifier
+//            }
+//        }
+//
+//        attributeModifiers = meta.getAttributeModifiers(Attribute.KNOCKBACK_RESISTANCE);
+//        if(attributeModifiers!=null) {
+//            for (AttributeModifier mod : attributeModifiers) {
+//                meta.removeAttributeModifier(Attribute.KNOCKBACK_RESISTANCE, mod);
+//                // handle knockback resistance modifier
+//            }
+//        }
 
         ArmorStats vanillaStats = ArmorStats.getVanillaStats(item.getType());
         // VANILLA ARMOR OVERRIDE
-//        if(item.getType().name().contains("IRON_")){
-            AttributeModifier mod_armor = new AttributeModifier(
-                    new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase()+"_armor"),
-                    vanillaStats.getArmor(),
-                    AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR);
-            meta.addAttributeModifier(Attribute.ARMOR, mod_armor);
+        AttributeModifier mod_armor = new AttributeModifier(
+                new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase()+"_armor"),
+                vanillaStats.getArmor(),
+                AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR);
+        meta.addAttributeModifier(Attribute.ARMOR, mod_armor);
         AttributeModifier mod_tough = new AttributeModifier(
                 new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase()+"_toughness"),
                 vanillaStats.getToughness(),
                 AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR);
         meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, mod_tough);
-        ArmorStats stats = ArmorStats.getVanillaStats(item.getType());
 
-        double weight; //weight to apply to the item
-        if(custom_weight!=-1) {
-            weight = custom_weight; //manually apply weight
-        }else{
-            double material_weight = 0;
-            double slot_weight = 0;
-            EquipmentSlot slot = ArmorStats.getSlot(item.getType());
-            Material mat = ArmorStats.getMaterialType(item.getType());
-            if (mat == null) return item; //not compatible
-
-            material_weight = getMaterialWeight(mat);
-            slot_weight = getSlotModifier(slot);
-
-            weight = (material_weight * slot_weight);
+        if(custom_stats_override.getKnockback_resist()>0) {
+            AttributeModifier mod_knockback = new AttributeModifier(
+                    new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase() + "_knockback"),
+                    custom_stats_override.getKnockback_resist(),
+                    AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR);
+            meta.removeAttributeModifier(Attribute.KNOCKBACK_RESISTANCE, mod_knockback);
+            meta.addAttributeModifier(Attribute.KNOCKBACK_RESISTANCE, mod_knockback);
         }
 
-        //apply weight
-        meta.getPersistentDataContainer().set(WEIGHT_KEY, PersistentDataType.DOUBLE, weight);
-
-
-        double slowness_debuff = -weight / 1000;
-
-        AttributeModifier mod_water_weight = new AttributeModifier(
-                new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase() + "_weight_slowness"),
-                slowness_debuff,
-                AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.ARMOR);
-        meta.addAttributeModifier(Attribute.MOVEMENT_SPEED, mod_water_weight);
-
         item.setItemMeta(meta);
-        ItemStackUtils.setLoreLine(item, 0, color+"+"+weight+" Weight");
+
+        if(!meta.getPersistentDataContainer().has(WEIGHT_KEY)) {
+
+            double weight; //weight to apply to the item
+            if (custom_stats_override.getWeight() != -1) {
+                weight = custom_stats_override.getWeight(); //manually apply weight*
+            } else {
+                double material_weight = 0;
+                double slot_weight = 0;
+                EquipmentSlot slot = ArmorStats.getSlot(item.getType());
+                Material mat = ArmorStats.getMaterialType(item.getType());
+                if (mat == null) return item; //not compatible
+
+
+                material_weight = getMaterialWeight(mat);
+                slot_weight = getSlotModifier(slot);
+
+                weight = (material_weight * slot_weight);
+            }
+
+            //apply weight
+            meta.getPersistentDataContainer().set(WEIGHT_KEY, PersistentDataType.DOUBLE, weight);
+
+
+            double slowness_debuff = -weight / 1000;
+
+            AttributeModifier mod_water_weight = new AttributeModifier(
+                    new NamespacedKey(Specialization.getInstance(), item.getType().name().toLowerCase() + "_weight_slowness"),
+                    slowness_debuff,
+                    AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.ARMOR);
+            meta.addAttributeModifier(Attribute.MOVEMENT_SPEED, mod_water_weight);
+
+            item.setItemMeta(meta);
+            ItemStackUtils.setLoreLine(item, 0, color + "+" + weight + " Weight");
 //        Debug.broadcast("weight", "weight applied! "+BLUE+"MAT: "+material_weight+" "+GREEN+"SLOT: "+slot_weight);
+        }
         return item;
     }
 

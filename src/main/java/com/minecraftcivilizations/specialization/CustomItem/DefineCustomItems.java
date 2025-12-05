@@ -31,7 +31,7 @@ public class DefineCustomItems implements Listener {
 
     public Bandage bandage;
     public DefineCustomItems(Specialization plugin) {
-        this.bandage = new Bandage("bandage", "Bandage");
+        this.bandage = new Bandage("custombandage", "Bandage");
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
@@ -96,7 +96,7 @@ public class DefineCustomItems implements Listener {
                 "§6Hearty Soup",
                 Material.BEETROOT_SOUP,
                 PotionEffectType.REGENERATION,
-                20 * 5, 0, 50,
+                20 * 5, 1, 50,
                 List.of(Material.FERMENTED_SPIDER_EYE, Material.BOWL)
         ) {
             @Override

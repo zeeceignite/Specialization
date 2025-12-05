@@ -7,6 +7,7 @@ import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
+import net.minecraft.world.entity.animal.Animal;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -90,13 +91,13 @@ public class GuardsmanDamage implements Listener {
                 add = 0.5;
             }
             case EXPERT ->  {
-                multiplier = 0.425;
+                multiplier = 0.45;
                 add = 0.6;
             }
             case MASTER ->  {
                 multiplier = 0.475;
                 add = 0.8;
-            } //1.4
+            }
             case GRANDMASTER -> {
                 multiplier = 0.5;
                 add = 1.0;
@@ -114,18 +115,35 @@ public class GuardsmanDamage implements Listener {
          * This determines how a player deals damage to a mob
          * This allows for players to deal extra damage to friendly mobs if they're hostile
          */
-        if(victim instanceof LivingEntity le){
+        if(victim instanceof Player px){
+            multiplier *= 2.0;
+        }else if(victim instanceof LivingEntity le){
             if(victim instanceof Enemy) {
-                multiplier *= 2; //Scales appropriate damage to most hostile mobs
+                // Hostile Mobs
+                multiplier *= 3.0;
             }else if(combatManager.getMobManager().isMobVariation(victim)){
+                // Mob Variations
                 MobVariation variation = combatManager.getMobManager().getMobVariation(victim);
                 if(variation.isAngry() || variation.doesHunting()){
-                    multiplier *= 2;
+                    multiplier *= 3.0;
                 }
+            }else if(victim instanceof Mob){
+                // Non hostile-mob
+                multiplier *= 3.0;
+                add = 0.0;
             }
         }
 
-        double new_damage = new_damage = ((original_damage) * multiplier)+add;
+        double charge_amount = damager.getAttackCooldown();
+        double charge_reduction = ((charge_amount));
+
+        if(charge_amount<0.2){
+            event.setCancelled(true);
+        }else if(charge_amount < 0.848){
+            charge_reduction *= 0.5;
+        }
+
+        double new_damage = (((original_damage) * multiplier) + add);
         /**
          * Guardsman Extra Mob Damage Bonus
          */
@@ -167,20 +185,20 @@ public class GuardsmanDamage implements Listener {
 //        event.setDamage(RESISTANCE, 0);
 
 
-        if (Debug.isAnyoneListening("damage", true)) {
+        if(Debug.isListeningToChannel(damager, "damage")) {
             String modifiers = "";
 
             for (EntityDamageEvent.DamageModifier m : EntityDamageEvent.DamageModifier.values()) {
                 if (event.getDamage(m) != 0)
                     modifiers += "\n<gray>" + m.name() + "</gray>: " + Debug.formatDecimal(event.getDamage(m));
             }
-            Debug.broadcast(
+            Debug.message(damager,
                     "damage",
-                     "<dark_red>Guardsman: <red>"+Debug.formatDecimal(original_damage) +"</red>"+
+                    "<dark_red>Guard: <red>" + Debug.formatDecimal(original_damage) + "</red>" +
                             (reduction_msg)
                             + " <red>[❤ " + Debug.formatDecimal(event.getDamage(BASE)) + "]</red>",
                     "<gray>This output displays the calculated Guardsman Damage\nas if Vanilla Armor was being utilized\n"
-                            +"[" + damager.getName() + " is GuardMan lvl " + lvl + "]" + "\n" +
+                            + "[" + damager.getName() + " is GuardMan lvl " + lvl + "]" + "\n" +
                             "Attacker: " + damager.getName() + modifiers
             );
         }

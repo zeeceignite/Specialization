@@ -1,6 +1,8 @@
 package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.minecraftcivilizations.specialization.CustomItem.CustomItem;
+import com.minecraftcivilizations.specialization.CustomItem.CustomItemManager;
+import com.minecraftcivilizations.specialization.CustomItem.DefineCustomItems;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
@@ -303,7 +305,7 @@ public class ReviveListener implements Listener {
             int skillLevel = cHealer.getSkillLevel(SkillType.HEALER);
             int hearts = skillLevel * 2;
 
-            healer.setHealth(Math.round(hearts));
+            downed.setHealth(Math.round(hearts));
 
             endRevive(healer, downed);
         }
@@ -391,7 +393,7 @@ public class ReviveListener implements Listener {
                 ? CustomItem.getManager().getCustomItem(main)
                 : CustomItem.getManager().getCustomItem(off);
 
-        if (used != null && used.getId().equals("bandage")) {
+        if (used != null && CustomItemManager.getInstance().getDefinitions().bandage.equals(used)) {
             return; // They interacted with the bandage → block passenger pickup
         }
         if (main.getType() == Material.LEAD || off.getType() == Material.LEAD) return;
@@ -417,7 +419,7 @@ public class ReviveListener implements Listener {
 //            healerSlowModifiers.put(healer.getUniqueId(), slow);
         }
 
-        Debug.broadcast("revive", "§7You are now carrying " + target.getName());
+        Debug.broadcast("revive", healer.getName()+"§7is now carrying " + target.getName());
     }
 
 

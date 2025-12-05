@@ -1,15 +1,10 @@
 package com.minecraftcivilizations.specialization.CustomItem;
 
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.events.PacketListener;
-import com.minecraftcivilizations.specialization.Command.EmoteCommand;
+import com.minecraftcivilizations.specialization.Command.EmoteManager;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import io.papermc.paper.event.entity.EntityLoadCrossbowEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
@@ -37,9 +32,9 @@ public class EmoteItem extends CustomItem implements Listener {
 
     EmoteType emote_type;
     Specialization plugin;
-    EmoteCommand emoteCommand;
+    EmoteManager emoteCommand;
 
-    public EmoteItem(String id, String display_name, EmoteType type, String model_data, EmoteCommand emoteCommand) {
+    public EmoteItem(String id, String display_name, EmoteType type, String model_data, EmoteManager emoteCommand) {
         super(id, display_name, org.bukkit.Material.CROSSBOW, model_data, -1, true, false);
         this.emoteCommand = emoteCommand;
         emote_type = type;

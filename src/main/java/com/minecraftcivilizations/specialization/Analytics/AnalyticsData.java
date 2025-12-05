@@ -3,9 +3,11 @@ package com.minecraftcivilizations.specialization.Analytics;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.google.common.util.concurrent.AtomicDouble;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Data.MongoConnection;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
+import com.minecraftcivilizations.specialization.Skill.Skill;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
@@ -22,16 +24,19 @@ import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public record AnalyticsData(
     Timestamp timestamp,
     String serverName,
-    
     // Server-wide metrics
     int serverPopulation,
     int serverDeathsInPeriod,
     int serverComplexItemsCraftedInPeriod,
+    double gini,
+    double invertShannon,
+    int playersWithZeroXP,
     Map<String, Integer> serverComplexItemsCraftedDetailsInPeriod,
     Map<SkillType, Integer> serverClassPopulation,
     Map<SkillType, Map<Integer, Integer>> serverPlayersPerSkillLevel,
@@ -128,11 +133,58 @@ private static AnalyticsData poll(){
     // Town-specific data
     Map<String, TownSpecificData> townSpecificData = getTownSpecificData(allPlayers);
 
+
+    List<Double> giniList = new ArrayList<>();
+    List<Double> shannonList = new ArrayList<>();
+    int playersWithZeroXP = 0;
+
+    //for all players
+    for(CustomPlayer player: allPlayers){
+        double gini;
+        double inverted;
+
+        if(player.getTotalXp() == 0) {
+            playersWithZeroXP++;
+            continue;
+        }
+
+        int i = 1;
+        double weightedSum = 0D;
+        double H = 0D;
+
+        List<Skill> toSort = new ArrayList<>(player.getSkills());
+        toSort.sort(Comparator.comparingDouble(Skill::getXp)); // sorted list of skills
+
+        for (Skill skill : toSort) {
+            weightedSum += skill.getXp() * i; // this is the sum at the top of the gini fraction
+            double Pi = skill.getXp() / player.getTotalXp(); // Pi value for shannon
+            if (Pi > 0) {
+                H += Pi * Math.log(Pi); // H value for shannon
+            }
+            i++;
+        }
+        gini = (2 * weightedSum / (7 * player.getTotalXp())) - ((double) 8 / 7);
+        double normalizedH = -H / Math.log(7);
+        inverted = 1 - normalizedH;
+
+
+        giniList.add(gini);
+        shannonList.add(inverted);
+    }
+
+    double gini = giniList.stream().mapToDouble(Double::doubleValue).average().getAsDouble();
+    double shannon = shannonList.stream().mapToDouble(Double::doubleValue).average().getAsDouble();
+
+
+
     return new AnalyticsData(now,
             serverName,
             serverPopulation,
             serverDeathsInPeriod,
             serverComplexItemsCraftedInPeriod,
+            gini,
+            shannon,
+            playersWithZeroXP,
             serverComplexItemsCraftedDetailsInPeriod,
             serverClassPopulation,
             serverPlayersPerSkillLevel,

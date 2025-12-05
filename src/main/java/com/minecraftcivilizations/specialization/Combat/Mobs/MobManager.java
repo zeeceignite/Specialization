@@ -1,40 +1,43 @@
 package com.minecraftcivilizations.specialization.Combat.Mobs;
 
 import com.minecraftcivilizations.specialization.Combat.CombatManager;
-import com.minecraftcivilizations.specialization.MobGoals.BreakBlockMobGoal;
-import com.minecraftcivilizations.specialization.MobGoals.TargetPlayerMobGoal;
+import com.minecraftcivilizations.specialization.Listener.Player.PlayerDownedListener;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import com.minecraftcivilizations.specialization.util.WorldUtils;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.*;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.event.world.ChunkPopulateEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
+import java.security.Guard;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -60,6 +63,7 @@ public class MobManager implements Listener {
     private final NamespacedKey SCALE_KEY;
     private final NamespacedKey MOVE_SPEED_KEY;
     private final NamespacedKey WATER_SPEED_KEY;
+    private final NamespacedKey STEP_HEIGHT_KEY;
 
     public static MobManager getInstance(){
         return CombatManager.getInstance().getMobManager();
@@ -72,8 +76,53 @@ public class MobManager implements Listener {
         SCALE_KEY = new NamespacedKey(plugin, "custom_scale");
         MOVE_SPEED_KEY = new NamespacedKey(plugin, "custom_move_speed");
         WATER_SPEED_KEY = new NamespacedKey(plugin, "custom_water_speed");
-        combatManager.getPlugin().getServer().getPluginManager().registerEvents(this, combatManager.getPlugin());
+        STEP_HEIGHT_KEY = new NamespacedKey(plugin, "custom_step_height");
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        BukkitRunnable cleanupTask = new MobCleanupSystem(this).start();
     }
+
+
+
+//    @EventHandler(priority = EventPriority.LOWEST)
+//    public void onMooshroom(PlayerInteractEntityEvent event) {
+//        if (!(event.getRightClicked() instanceof MushroomCow mooshroom)) return;
+//
+//        Player player = event.getPlayer();
+//        ItemStack item = player.getInventory().getItem(event.getHand());
+//        if (item.getType() != Material.BOWL) return;
+//
+//        CustomPlayer pp = CoreUtil.getPlayer(player);
+//        int lvl = pp.getSkillLevel(SkillType.FARMER);
+//
+//        // Minimum level to milk
+//        if (lvl < 2) {
+//            event.setCancelled(true);
+//            PlayerUtil.message(player, "You need to be better at farming to do that");
+//            return;
+//        }
+//
+//        // Calculate cooldown scaling
+//        // Example: lvl 1 = 60s, lvl 10+ = 10s
+//        int maxCooldownTicks = 20 * 130; // 90 seconds
+//        int minCooldownTicks = 20 * 45; // 45 seconds
+//        int maxLevel = 5;
+//
+//        int scaledCooldown = maxCooldownTicks - ((lvl - 1) * (maxCooldownTicks - minCooldownTicks) / (maxLevel - 1));
+//        if (scaledCooldown < minCooldownTicks) scaledCooldown = minCooldownTicks;
+//
+//        // Cooldown check
+//        if (player.hasCooldown(Material.BOWL)) {
+//            event.setCancelled(true);
+//            PlayerUtil.message(player, "You're still tired from last milking.");
+//            return;
+//        }
+//
+//        // Grant XP
+////        pp.addSkillXp(SkillType.FARMER, 10);
+//
+//        // Apply scaled cooldown
+//        player.setCooldown(Material.BOWL, scaledCooldown);
+//    }
 
 
     Map<EntityType, MobOverrideRuleSet> rule_mappings = new HashMap<>();
@@ -132,7 +181,7 @@ public class MobManager implements Listener {
      */
     public MobOverrideRule rollMobOverrideRule(EntityType type){
         if(rule_mappings.containsKey(type)) {
-            Debug.broadcast("mobrule", "<gray>mob rolling for <aqua>"+type+"</aqua>");
+//            Debug.broadcast("mobrule", "<gray>mob rolling for <aqua>"+type+"</aqua>");
             return rule_mappings.get(type).rollRule();
         }
         return null;
@@ -145,59 +194,289 @@ public class MobManager implements Listener {
     /**
      * MobOverrideRule establishes the conditions and rules for which MobVariations get added to the game
      * MobVariations creates a new classification for Custom Mob Variants
+     *
+     * NOTE: If you add or modify these values, ensure the BASE chance for that mob override rule
+     * For example: setDefaultRuleSetChance(10, RABBIT);  // this sets the chance of unaffected rabbits to weight 10
+     *
      */
     public void populateEntityMappings(){
 //        MobOverrideRule.setGlobalChance(100); // This sets the BASE weight chance for ALL entity types, which will avoid rolling for a MobOverrideRule
         //THESE EXIST PRIMARILY FOR REFRESHING
         rule_mappings = new HashMap<>();
         mob_variations = new HashMap<>();
-        default_mob_variation = new MobVariation("default_mob").damage(1.5).health(2.0).speed(1.25, 1.25);
+
+        //TODO looks like this doesn't work right now, leaving it anyway
+        default_mob_variation = new MobVariation("default_mob").damage(1.5).health(2.0).speed(1.5, 2.0);
+
+
         //END OF PRIMARY REFRESH
-        setDefaultRuleSetChance(0, ZOMBIE, HUSK, DROWNED, SKELETON, CREEPER, SPIDER); //always override these mobs
-//        setDefaultRuleSetChance(10, MAGMA_CUBE, PIGLIN, PIGLIN_BRUTE, HOGLIN, GHAST, BLAZE, WITHER_SKELETON);
+//        setDefaultRuleSetChance(0, ZOMBIE, HUSK, DROWNED,
+//                SKELETON, CREEPER, SPIDER,
+//                CAVE_SPIDER,
+//        ); //always override these mobs
+
+        /**
+         *    NOTE: If you add any mob variations, add it to this list
+         */
+//        for(EntityType type : EntityType.values()){
+//            if(type) {
+//                setDefaultRuleSetChance(0, type);
+//            }
+//        }
+
+        /**
+         * These mobs will have a 100% chance of spawning
+         */
+        setDefaultRuleSetChance(0,
+                ZOMBIE, HUSK, DROWNED, ZOMBIE_VILLAGER,
+                SKELETON, BOGGED, STRAY,
+                CREEPER, SPIDER, CAVE_SPIDER,
+                SLIME, MAGMA_CUBE,
+                BREEZE,
+                GUARDIAN, ELDER_GUARDIAN,
+                PILLAGER, RAVAGER, ILLUSIONER, VINDICATOR, WITCH,
+                SILVERFISH, ENDERMITE, SHULKER,
+                BLAZE, GHAST, PIGLIN, PIGLIN_BRUTE, HOGLIN, ZOGLIN, WITHER_SKELETON, ZOMBIFIED_PIGLIN);
+
+        /**
+         * This covers miscelanious mobs
+         */
+        new MobOverrideRule(100,
+                GUARDIAN, ELDER_GUARDIAN,
+                PILLAGER, RAVAGER, ILLUSIONER, VINDICATOR,
+                ENDERMITE, SHULKER)
+                .addVariation(new MobVariation("generic_variation")
+                        .damage(2.0, 2.5)
+                        .speed(1.25, 1.5)
+                        .hunts()
+                        .breaks()
+                );
 
 
-        new MobOverrideRule(100, ZOMBIE, HUSK, DROWNED)
+        new MobOverrideRule(100, WITCH)
+                .addVariation(new MobVariation("witch")
+                        .health(1.0)
+                        .damage(1.0)
+                        .speed(1.0)
+                        .xpScale(0.25)
+                        .hunts(24)
+                        .breaks()
+                );
+
+        new MobOverrideRule(100, ZOMBIE, HUSK, DROWNED, ZOMBIE_VILLAGER)
                 .addVariation(new MobVariation("zombie_variation")
                         .health(2)
-                        .damage(1.5, 2.0)
+                        .damage(1.0, 1.35)
+                        .speed(1.25, 1.75)
+                        .stepheight(0.5)
+                        .hunts(54)
+                        .breaks(1.25)
+                );
+
+        new MobOverrideRule(100, SKELETON)
+                .addVariation(new MobVariation("skeleton_standard", SKELETON)
+                        .health(2)
+                        .damage(1, 1.3, 2.0)
+                        .speed(1.25, 1.75)
+                        .stepheight(0.5)
+                        .hunts(36)
+                        .breaks(0.75)
+                                .replaceOriginalMob()
+                , 250
+                ).addVariation(new MobVariation("skeleton_bogged", BOGGED)
+                        .health(1.5)
+                        .damage(0.5, 0.8, 2.0)
                         .speed(1.25, 1.5)
-                        .hunts(64)
+                        .stepheight(0.5)
+                        .hunts(32)
+                        .breaks(0.5)
+                        .removeDrop(Material.TIPPED_ARROW)
+                        .xpScale(1.5)
+                        .replaceOriginalMob()
+                , 2)
+                .addVariation(new MobVariation("skeleton_stray", STRAY)
+                        .health(2)
+                        .damage(0.5, 0.8, 2.0)
+                        .speed(1.25, 1.5)
+                        .stepheight(0.5)
+                        .hunts(32)
+                        .breaks(0.5)
+                        .removeDrop(Material.TIPPED_ARROW)
+                        .xpScale(1.5)
+                        .replaceOriginalMob()
+                , 2
+                );
+
+        /**
+         * Example:
+         * 95% of normal dolphin
+         * 5% of special dolphin
+         */
+        setDefaultRuleSetChance(75, DOLPHIN);
+        new MobOverrideRule(25, DOLPHIN)
+                .spawnInPacks()
+                .addVariation(new MobVariation("evil_dolphin", DOLPHIN)
+                        .anger(true)
+                        .damage(0.25, 0.5)
+                        .health(1.5)
+                        .size(1.25,1.5)
+                        .speed(1.0, 1.25)
+                        .hunts(16)
+                        .xpScale(2.0)
+                        .setGainsXpOverride(true)
+                        .drops(0)
+                );
+        new MobOverrideRule(100,
+                SLIME, MAGMA_CUBE)
+                .addVariation(new MobVariation("slime_variation")
+                        .damage(1.0, 1.25)
+                        .speed(1.25, 1.5)
+                        .xpScale(0.5)
+                        .hunts()
+                );
+        new MobOverrideRule(100,
+                SILVERFISH)
+                .addVariation(new MobVariation("silverfish")
+                        .damage(1.0, 1.5)
+                        .speed(1.5, 2.0)
+                        .hunts(16)
+                        .xpScale(0.25)
+                );
+
+
+
+        new MobOverrideRule(100,
+                BLAZE, GHAST, PIGLIN)
+                .addVariation(new MobVariation("nether_variation")
+                        .health(2)
+                        .damage(2.0)
+                        .speed(1.5)
+                        .xpScale(1.5)
+                        .hunts()
                         .breaks()
-                        );
+                );
+
+        new MobOverrideRule(100,
+                WITHER_SKELETON)
+                .addVariation(new MobVariation("wither_skeleton")
+                        .health(2)
+                        .damage(1.5)
+                        .speed(1.75)
+                        .stepheight(1)
+                        .xpScale(1.5)
+                        .hunts()
+                        .breaks()
+                );
+
+        new MobOverrideRule(100,
+                PIGLIN_BRUTE)
+                .addVariation(new MobVariation("piglin_brute")
+                        .health(1.5)
+                        .damage(    1.5)
+                        .speed(1.75)
+                        .xpScale(1.5)
+                        .hunts(32)
+                        .stepheight(0.25)
+                        .breaks(1)
+                        .drops(0)
+                );
+
+        new MobOverrideRule(100,
+                ZOMBIFIED_PIGLIN)
+                .addVariation(new MobVariation("zombie_piglin")
+                        .health(1.5)
+                        .damage(    1.5)
+                        .speed(1.8)
+                        .xpScale(0.5)
+                        .hunts(62)
+                        .stepheight(1)
+                        .breaks(2)
+                        .drops(0)
+                );
+
+        new MobOverrideRule(100,
+                HOGLIN, ZOGLIN)
+                .addVariation(new MobVariation("hoglin")
+                        .health(1.5)
+                        .damage(1)
+                        .speed(1.25)
+                        .xpScale(0.5)
+                        .hunts(32)
+                        .breaks()
+                );
+
+
+
+//        new MobOverrideRule(25, ZOMBIE)
+//                .addVariation(new MobVariation("armored_zombie")
+//                        .health(2)
+//                        .armorChance(Material.LEATHER, 100, 0.9)
+//                        .armorChance(Material.IRON_INGOT, 50, 0.5)
+//                        .armorChance(Material.DIAMOND, 25, 0.1)
+//                        .damage(1.0, 1.35)
+//                        .speed(1.5, 1.75)
+//                        .hunts(54)
+//                        .breaks(1.2)
+//                        .drops(0)
+//                );
+
+        new MobOverrideRule(100, SPIDER)
+                .addVariation(new MobVariation("spider")
+                                .damage(1.75, 1.75)
+                                .speed(1.5)
+                                .health(2.0)
+                                .stepheight(1.0)
+                                .waterspeed(1.5, 1.5)
+                                .breaks(1.5)
+                                .hunts()
+                                .drops(1, 1)
+                        , 100)
+                .addVariation(new MobVariation("spider_small")
+                                .health(0.25)
+                                .damage(0.75, 0.75)
+                                .stepheight(0.5)
+                                .speed(1.75)
+                                .waterspeed(4, 4)
+                                .size(0.66,0.66)
+                                .spawnExtra(5)
+                                .hunts()
+                                .breaks(0.25)
+                                .drops(1, 1)
+                                .removeDrop(Material.STRING)
+                        , 100);
+
+
+        MobVariation night_wolves = new MobVariation("night_wolf", WOLF)
+                .anger(true)
+                .damage(0.75, 1.0)
+                .health(1.5)
+                .speed(1.25, 1.5)
+                .setGainsXpOverride(true)
+                .hunts(24)
+                .breaks(0.5)
+                .stepheight(0.5)
+                .xpScale(2.5)
+                .spawnExtra(3)
+                .breeds("black", "black", "black") //,"chestnut", "woods", "striped")
+                .replaceOriginalMob()
+                .despawnFaraway();
+
+        new MobOverrideRule(3, CREEPER)
+                .addVariation(night_wolves, 10).spawnInPacks();
 
         new MobOverrideRule(100, CREEPER)
                 .addVariation(new MobVariation("creeper")
                                 .xpScale(1.25)
-                                .damage(1.0)
-                                .speed(1.5, 1.5)
+                                .health(2.0)
+                                .damage(1.0, 1.5)
+                                .speed(1.75)
                                 .hunts()
-                        , 1000)
-                .addVariation(new MobVariation("quick_creeper")
-                        .xpScale(1.5)
-                        .damage(1.0)
-                        .speed(1.5, 1.75)
-                        .hunts()
-                , 200);
-
-
-        new MobOverrideRule(100, SPIDER)
-                .addVariation(new MobVariation("spider_small")
-                                .health(0.3)
-                                .damage(1.5)
-                                .speed(1.5, 1.5)
-                                .waterspeed(4, 4)
-                                .size(0.5,0.5)
-                                .spawnExtra(8)
-                                .hunts()
-                                .drops(0)
+                                .xpScale(1.25)
+                                .breaks(0.25)
                         , 100)
-                .addVariation(new MobVariation("spider").damage(1.5)
-                                .speed(1.5, 1.5)
-                                .stepheight(2.0)
-                                .waterspeed(1.5, 1.5)
-                                .hunts().drops(0.5, 0.5)
-                        , 100);
+                ;
+
+
 //                .addVariation(new MobVariation("spider_large", CAVE_SPIDER).health(4).damage(2.0).speed(0.5, 0.75).addImmunity(DamageType.ARROW).size(2.5,2.5).hunts(64).drops(1.0, 2.0).xpScale(1.5)
 //                        , 100);
 
@@ -206,41 +485,46 @@ public class MobManager implements Listener {
 //                .addVariation(zombie_variation, 10000);
 //        MobVariation chaos = new MobVariation("chaos", SHEEP, PIG, COW, WOLF,PIGLIN, PIGLIN_BRUTE).damage(1.0).health(1.5).speed(1.25, 1.25);
 
-//                .addVariation(chaos, 20);
+//                .addVariation(chaos, 20);w
 
         MobVariation killer_bees = new MobVariation("killer_bees", BEE)
+                .deprecated()
                 .anger(true)
-                .hunts(32)
-                .damage(0.125)
+                .damage(0.25)
                 .health(0.125)
                 .speed(2.0, 2.0)
-                .size(0.33, 0.44)
-                .setGainsXpOverride(true).spawnExtra(2);
-
-        MobVariation wolf_pack = new MobVariation("wolf_pack", WOLF)
-                .anger(true)
-                .hunts(64)
-                .damage(1.0)
-                .health(1.5)
-                .speed(1.5, 1.5)
+                .size(0.5, 0.5)
+                .hunts(32)
                 .setGainsXpOverride(true)
-                .xpScale(1.5).replaceOriginalMob();
+                .spawnExtra(2);
 
+//        MobVariation deprecated_wolf_pack = new MobVariation("wolf_pack", WOLF)
+//                .deprecated();
+
+        setDefaultRuleSetChance(100, PIG, SHEEP, HORSE, WOLF);
 
         // field spawn
-        new MobOverrideRule(5, COW, HORSE)
-                .addVariation(killer_bees, 10);
+//        new MobOverrideRule(1, HORSE)
+//                .addVariation(killer_bees, 4);
+//        new MobOverrideRule(3, PIG)
+//                .addVariation(night_wolves, 10).spawnInPacks();
+//        new MobOverrideRule(10, WOLF)
+//                .addVariation(night_wolves, 10).spawnInPacks();
 
-        new MobOverrideRule(100, COW, HORSE)
-                .addVariation(wolf_pack, 10);
+
+        setDefaultRuleSetChance(25, POLAR_BEAR);
+        new MobOverrideRule(25, POLAR_BEAR)
+                .addVariation(new MobVariation("mean_polar_bear", POLAR_BEAR).anger(true).speed(1.2,1.2).health(2).hunts(64).breaks(2));
 
 
-        setDefaultRuleSetChance(0, POLAR_BEAR);
-        new MobOverrideRule(100, POLAR_BEAR)
-                .addVariation(new MobVariation("mean_polar_bear", POLAR_BEAR).anger(true).speed(1.2,1.2).health(2).hunts(64));
-
-        new MobOverrideRule(50, ENDERMAN)
-                .addVariation(new MobVariation("creaker", CREAKING).anger(true).invisible().health(0.1).hunts(64).replaceOriginalMob());
+        setDefaultRuleSetChance(200, ENDERMAN);
+        new MobOverrideRule(2, ENDERMAN)
+                .addVariation(new MobVariation("creaker", CREAKING)
+                        .anger(true)
+                        .invisible()
+                        .health(0.1)
+                        .hunts(64)
+                        .replaceOriginalMob());
 
         // bee DONT DO THIS
 //        new MobOverrideRule(100, BEE).spawnInPacks()
@@ -249,80 +533,22 @@ public class MobManager implements Listener {
 
 
         // wolf
-        new MobOverrideRule(150, WOLF).spawnInPacks()
-                .addVariation(wolf_pack);
+//        new MobOverrideRule(20, WOLF).spawnInPacks()
+//                .addVariation(deprecated_wolf_pack);
 
-        new MobOverrideRule(100, TURTLE).addVariation(new MobVariation("creepo", CREEPER).hunts(32).speed(2,2), 100);
-
-//        new MobOverrideRule(50, ENDERMAN).addVariation(new MobVariation("creakerman", CREAKING).invisible().hunts(32).health(1), 100);
+        new MobOverrideRule(20, TURTLE).addVariation(new MobVariation("creepo", CREEPER).hunts(32).speed(2,2), 100);
 
 
 
-//        MobVariation dolphin_rider = new MobVariation("trident_guy", ZOMBIE, DROWNED, CREEPER)
-//                .hunts()
-//                .anger(true)
-//                .health(2)
-//                .setGainsXpOverride(false)
-//                .setPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 100000000, 2, false, false, false));
-
-        new MobOverrideRule(50, DOLPHIN, SQUID)
-                .spawnInPacks()
-                .addVariation(new MobVariation("evil_dolphin", DOLPHIN)
-                        .anger(true)
-                        .hunts(64)
-                        .damage(0.5)
-                        .health(4.0)
-                        .size(1.25,1.5)
-                        .speed(0.75, 1.25)
-                        );
-
-//        mob_overrides.put(HORSE, new MobOverrideRule(10).add(BEE, 3).spawnInPacks());
-//        mob_overrides.put(COW, new MobOverrideRule(10).add(BEE, 2));
-//        mob_overrides.put(PIG, new MobOverrideRule(10).add(WOLF, 10));
-//        mob_overrides.put(SQUID, new MobOverrideRule(-*10).add(DOLPHIN, 8));
-//        mob_overrides.put(GLOW_SQUID, new MobOverrideRule(10).add(DROWNED, 2).add(DOLPHIN, 8));
-//        mob_overrides.put(DOLPHIN, new MobOverrideRule(10).add(GUARDIAN, 2));
-//        mob_overrides.put(WITCH, new MobOverrideRule(10).add(ILLUSIONER, 1).add(VINDICATOR, 1));
-//        mob_overrides.put(TURTLE, new MobOverrideRule(10).add(CREEPER, 1));
-//        mob_overrides.put(ENDERMAN, new MobOverrideRule(10).add(CREAKING, 100));
-//
-//
-//        override_stat_mappings.put(BEE, new MobVariation().health(0.125).size(0.3,0.33).hunts().anger(true).allowXpGainForNonEnemy().xp(2));
-//        override_stat_mappings.put(WOLF, new MobVariation().anger(true).hunts().size(1.125f,1.225f).waterspeed(1.5f,1.5f).speed(1.25f,1.25f).allowXpGainForNonEnemy().xp(2));
-//        override_stat_mappings.put(DOLPHIN, new MobVariation().anger(true).damage(1).speed(1.5f,1.5f).xp(2).allowXpGainForNonEnemy());
-//        override_stat_mappings.put(GUARDIAN, new MobVariation().health(1.0f));
-//        override_stat_mappings.put(CREAKING, new MobVariation().damage(2).invisible().xp(10));
-//
-//
-//        vanilla_stat_mappings.put(SKELETON, skeleton_stats);
-//        vanilla_stat_mappings.put(BOGGED, skeleton_stats);
-//        vanilla_stat_mappings.put(STRAY, skeleton_stats);
-//        vanilla_stat_mappings.put(ZOMBIE, zombie_stats);
-//        vanilla_stat_mappings.put(DROWNED, zombie_stats);
-//        vanilla_stat_mappings.put(HUSK, zombie_stats);
 
 
-//        vanilla_stat_mappings.put(GHAST, new MobStats().hunts().health(2));
 
-//        vanilla_stat_mappings.put(CREEPER, new MobVariation().damage(1.0).speed(2.0, 1.5));
-//        vanilla_stat_mappings.put(SPIDER, new MobVariation().damage(1.5).speed(1.5, 1.5).waterspeed(1.5,2).size(0.9, 1.0));
-//        vanilla_stat_mappings.put(CAVE_SPIDER, new MobVariation().damage(1.0).speed(1.5, 1.5).size(0.5, 1.0));
+
+
+
+
     }
 
-
-//    public MobVariation getOverrideMobStats(EntityType type) {
-//        if(override_stat_mappings.containsKey(type)){
-//            return override_stat_mappings.get(type);
-//        }
-//        return mob_stat_default;
-//    }
-//
-//    public MobVariation getVanillaMobStats(EntityType type) {
-//        if(vanilla_stat_mappings.containsKey(type)){
-//            return vanilla_stat_mappings.get(type);
-//        }
-//        return mob_stat_default;
-//    }
 
     @EventHandler(priority = EventPriority.HIGH) //(ignoreCancelled = true)
     public void onChunkPopulate(ChunkPopulateEvent event) {
@@ -380,7 +606,7 @@ public class MobManager implements Listener {
                 if(new_type == null){
                     //apply the stats now, as we do not override type
                     convertEntityToVariation(living, variation);
-                    Debug.broadcast("mob", MiniMessage.miniMessage().deserialize("<blue>[CHNK_NULL]</blue> <yellow>["+variation.getId()+"]</yellow> applying to <gray>"+living.getName()+"</gray> at ").append(Debug.formatLocationClickable(living.getLocation(),true)));
+//                    Debug.broadcast("mob", MiniMessage.miniMessage().deserialize("<blue>[CHNK_NULL]</blue> <yellow>["+variation.getId()+"]</yellow> applying to <gray>"+living.getName()+"</gray> at ").append(Debug.formatLocationClickable(living.getLocation(),true)));
                 }else{
                     if(variation.doesReplaceOriginalMob()) {
                         living.remove(); // this deletes the existing mob
@@ -391,9 +617,13 @@ public class MobManager implements Listener {
 
                     //Spawn a new mob with the variation settings
                     Entity e = loc.getWorld().spawnEntity(loc, new_type, CreatureSpawnEvent.SpawnReason.CUSTOM);
+                    if(Debug.isAnyoneListening("mob", false)){
+                    Debug.broadcast("mob", MiniMessage.miniMessage().deserialize("<light_purple>🏔</light_purple>"+e.getName()+" <gray>applied: <green>"+variation.getId()+" ")
+                            .append(Debug.formatLocationClickable(e.getLocation(), true)));
+                    }
                     convertEntityToVariation(e, variation);
 
-                    Debug.broadcast("mob", MiniMessage.miniMessage().deserialize("<light_purple>[CHNK_VALID]</light_purple> <yellow>["+variation.getId()+"]</yellow> <gray>"+living.getName()+"</gray> to <gray>"+e.getName()+"</gray> at ").append(Debug.formatLocationClickable(e.getLocation(),true)));
+//                    Debug.broadcast("mob", MiniMessage.miniMessage().deserialize("<light_purple>[CHNK_VALID]</light_purple> <yellow>["+variation.getId()+"]</yellow> <gray>"+living.getName()+"</gray> to <gray>"+e.getName()+"</gray> at ").append(Debug.formatLocationClickable(e.getLocation(),true)));
 
                 }
 //                Debug.broadcast("mob", "Chunk Gen Override:<light_purple>" + type_original.name() +
@@ -404,9 +634,28 @@ public class MobManager implements Listener {
 
 
     @EventHandler
-    public void onCreatureSpawn(CreatureSpawnEvent event) {
+    public void onMob(EntityDismountEvent event){
 
+    }
+
+    @EventHandler
+    public void onMobMount(VehicleEnterEvent event){
+        if(event.getEntered().getType()==DOLPHIN){
+            event.setCancelled(true);
+        }
+//        Debug.broadcast("mob", "dolphin entered");
+    }
+
+
+    @EventHandler
+    public void onCreatureSpawn(CreatureSpawnEvent event) {
+//        Debug.broadcast("mobspawn", "Attempting <green>"+event.getEntity().getType().name()+"</green> spawn at "+event.getLocation().getBlock().getBiome().toString());
         if(event.isCancelled())return;
+
+        if (Debug.isAnyoneListening("mob", false) || Debug.isAnyoneListening("mobrule", false)) {
+            populateEntityMappings();
+//                Debug.broadcast("mob", "repopulating mob stats!");
+        }
         LivingEntity entity = event.getEntity();
         EntityType type = entity.getType();
 //        Debug.broadcast("mob","summoning "+event.getSpawnReason().name());
@@ -414,6 +663,9 @@ public class MobManager implements Listener {
 
         if (event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.CUSTOM) {
             //THIS IS A NATURAL GAME SPAWN
+            if(isMobVariation(event.getEntity())){
+                return;
+            }
             MobOverrideRule rule = rollMobOverrideRule(type);
             if (rule != null) {
                 MobVariation variation = rule.rollVariation();
@@ -422,8 +674,12 @@ public class MobManager implements Listener {
                     Location loc = entity.getLocation();
                     if (new_type == null) {
                         //apply the stats now, as we do not override type
+                        if(Debug.isAnyoneListening("mob", false)) {
+                            Debug.broadcast("mob", MiniMessage.miniMessage().deserialize("<green>🔌</green> " + "<white>" + entity.getName() + " <gray>applied: <green>" + variation.getId() + " ")
+                                    .append(Debug.formatLocationClickable(entity.getLocation(), true)));
+                        }
                         convertEntityToVariation(entity, variation);
-                        Debug.broadcast("mob", MiniMessage.miniMessage().deserialize("<DARK_GREEN>[CS_NULL]</DARK_GREEN> <yellow>[" + variation.getId() + "]</yellow> to <gray>" + entity.getName() + "</gray> at ").append(Debug.formatLocationClickable(entity.getLocation(), true)));
+//                        Debug.broadcast("mob", MiniMessage.miniMessage().deserialize("<DARK_GREEN>[CS_NULL]</DARK_GREEN> <yellow>[" + variation.getId() + "]</yellow> to <gray>" + entity.getName() + "</gray> at ").append(Debug.formatLocationClickable(entity.getLocation(), true)));
                     } else {
                         if (variation.doesReplaceOriginalMob()) {
                             event.setCancelled(true);
@@ -435,11 +691,15 @@ public class MobManager implements Listener {
                         Entity e = loc.getWorld().spawnEntity(loc, new_type, CreatureSpawnEvent.SpawnReason.CUSTOM);
                         if (e instanceof LivingEntity le) {
                             convertEntityToVariation(le, variation);
-                            Debug.broadcast("mob", MiniMessage.miniMessage().deserialize("<green>[CS_VALID]</green> <yellow>[" + variation.getId() + "]</yellow> <gray>" + entity.getName() + "</gray> to <gray>" + e.getName() + "</gray> at ").append(Debug.formatLocationClickable(entity.getLocation(), true)));
+                            if(Debug.isAnyoneListening("mob", false)) {
+                                Debug.broadcast("mob", MiniMessage.miniMessage().deserialize("<green>📲</green> " + "<white>" + entity.getName() + " <gray>converted: <green>" + variation.getId() + " ")
+                                        .append(Debug.formatLocationClickable(entity.getLocation(), true)));
+                            }
+//                            Debug.broadcast("mob", MiniMessage.miniMessage().deserialize("<green>[CS_VALID]</green> <yellow>[" + variation.getId() + "]</yellow> <gray>" + entity.getName() + "</gray> to <gray>" + e.getName() + "</gray> at ").append(Debug.formatLocationClickable(entity.getLocation(), true)));
                             MobVariation mount_variation = variation.getMount();
                             if (mount_variation != null) {
                                 if (variation.getMountChance() > ThreadLocalRandom.current().nextDouble()) {
-                                    Entity ee = loc.getWorld().spawnEntity(loc, mount_variation.rollType(), CreatureSpawnEvent.SpawnReason.CUSTOM);
+                                    Entity ee = loc.getWorld().spawnEntity(loc, mount_variation.rollType(), CreatureSpawnEvent.SpawnReason.NATURAL);
                                     convertEntityToVariation(ee, mount_variation);
                                     le.addPassenger(ee);
                                 }
@@ -457,14 +717,7 @@ public class MobManager implements Listener {
         }else{
 
         }
-
-        if (Debug.isAnyoneListening("mob", false) || Debug.isAnyoneListening("mobrule", false)) {
-            populateEntityMappings();
-//                Debug.broadcast("mob", "repopulating mob stats!");
-        }
     }
-
-
 
 
         /**
@@ -475,7 +728,7 @@ public class MobManager implements Listener {
      * Explicitly adds the stats to an entity
      */
     public void applyStatsToEntity(LivingEntity entity, MobVariation stats) {
-        entity.setPersistent(true);
+        entity.setPersistent(false);
         boolean is_day_time = entity.getWorld().isDayTime();
 
         AttributeInstance attribute = entity.getAttribute(Attribute.MAX_HEALTH);
@@ -538,19 +791,93 @@ public class MobManager implements Listener {
                     AttributeModifier.Operation.ADD_SCALAR
             ));
         }
+
+
+        // MOVEMENT SPEED
+        AttributeInstance step_attr = entity.getAttribute(Attribute.STEP_HEIGHT);
+        if (step_attr != null) {
+//            double mult = applyspeed_modifier *
+//                    (is_day_time ? stats.getSpeedMultiplierDay() : stats.getSpeedMultiplierNight());
+            double amount = stats.getStepHeight();
+
+            step_attr.removeModifier(STEP_HEIGHT_KEY);
+            step_attr.addModifier(new AttributeModifier(
+                    STEP_HEIGHT_KEY,
+                    amount,
+                    AttributeModifier.Operation.ADD_NUMBER
+            ));
+        }
+
         if(stats.isInvisible()){
             entity.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false, false));
         }
         if(stats.potionEffect!=null) {
             entity.addPotionEffect(stats.potionEffect);
         }
+        if(stats.getBreed()!=null && !stats.getBreed().isEmpty()){
+            applyBreedSettings(entity, stats);
+        }
+        stats.applyRandomArmor(entity);
+
         applyLogicToMob(entity, stats);
     }
+
+    private static void applyBreedSettings(LivingEntity entity, MobVariation stats) {
+        int x = ThreadLocalRandom.current().nextInt(stats.getBreed().size());
+        String breedname = stats.getBreed().get(x);
+        switch(entity.getType()) {
+            case EntityType.WOLF -> {
+                Wolf wolf = (Wolf) entity;
+                Wolf.Variant v = null;
+                switch (breedname.toLowerCase().trim()) {
+                    case "ashen":
+                        v = Wolf.Variant.ASHEN;
+                        break;
+                    case "black":
+                        v = Wolf.Variant.BLACK;
+                        break;
+                    case "chestnut":
+                        v = Wolf.Variant.CHESTNUT;
+                        break;
+                    case "pale":
+                        v = Wolf.Variant.PALE;
+                        break;
+                    case "rusty":
+                        v = Wolf.Variant.RUSTY;
+                        break;
+                    case "snowy":
+                        v = Wolf.Variant.SNOWY;
+                        break;
+                    case "spotted":
+                        v = Wolf.Variant.SPOTTED;
+                        break;
+                    case "striped":
+                        v = Wolf.Variant.STRIPED;
+                        break;
+                    case "woods":
+                        v = Wolf.Variant.WOODS;
+                        break;
+                    default:
+                        v = Wolf.Variant.WOODS; // safe fallback
+                        break;
+                }
+                if (v != null) {
+                    wolf.setVariant(v);
+                }
+            }
+        }
+    }
+
 
     /**
      * Called on mob creation AND on mob load to reapply logic
      */
     private static void applyLogicToMob(LivingEntity entity, MobVariation stats) {
+        if(stats.deprecated){
+            Debug.broadcast("mob", "<red>removed "+entity.getName()+" by deprecation");
+            entity.remove();
+        }else{
+        }
         if(stats.isAngry()) {
             if (entity instanceof Bee bee) {
                 bee.setAnger(1000000);
@@ -565,18 +892,35 @@ public class MobManager implements Listener {
                 mob.setAggressive(true);
             }
         }
-        if(stats.doesBreaking()) {
-            if (entity instanceof Monster monster) {
-                Bukkit.getMobGoals().addGoal(monster, 3, new BreakBlockMobGoal(monster));
-            }
+
+
+        if(stats.isDespawnFaraway()){
+            entity.setRemoveWhenFarAway(true);
+            entity.setPersistent(false);
+            Debug.broadcast("mob", "despawning when faraway");
         }
+
+        /**
+         * This logic is a hybrid of target acquisition and block breaking. The break logic is better.
+         * If we need old Mob Goals back, Comment out this logic and uncomment the two originals below
+         * - Alec
+         */
         if(stats.doesHunting()) {
             if (entity instanceof Mob mob) {
-                Bukkit.getMobGoals().addGoal(mob, 0, new TargetPlayerMobGoal(mob, stats.getFollowRange()));
+                Bukkit.getMobGoals().addGoal(mob, 0, new HuntPlayerMobGoal(mob, stats.getFollowRange(), stats.doesBreaking(), stats.getBreakScalar()));
             }
         }
+//        if(stats.doesBreaking()) {
+//            if (entity instanceof Monster monster) {
+//                Bukkit.getMobGoals().addGoal(monster, 3, new BreakBlockMobGoal(monster));
+//            }
+//        }
+//        if(stats.doesHunting()) {
+//            if (entity instanceof Monster mob) {
+//                Bukkit.getMobGoals().addGoal(mob, 0, new TargetPlayerMobGoal(mob));
+//            }
+//        }
     }
-
 
     @EventHandler
     public void onEntityLoad(EntitiesLoadEvent event){
@@ -595,7 +939,6 @@ public class MobManager implements Listener {
     public void onDamage(EntityDamageByEntityEvent event){
         Entity damager = event.getDamager();
         Entity victim = event.getEntity();
-
         if(isMobVariation(victim)){
             MobVariation variation = getMobVariation(victim);
             DamageType event_type = event.getDamageSource().getDamageType();
@@ -605,9 +948,18 @@ public class MobManager implements Listener {
                     return;
                 }
             }
-//            Debug.broadcast("mob", "Mob is Variation: <green>"+variation.getId()+"");
         }
-
+        if(damager instanceof Player px){
+            if(victim instanceof Mob mob){
+                if(mob.getTarget()!=null){
+                    if(!mob.getTarget().equals(px)) {
+                        if(ThreadLocalRandom.current().nextDouble() < 0.90) {
+                            mob.setTarget(px);
+                        }
+                    }
+                }
+            }
+        }
 
         // MOB TAKE DAMAGE
         switch(victim.getType()){
@@ -641,18 +993,31 @@ public class MobManager implements Listener {
         switch(damager.getType()){
             case BEE:
                 if(isMobVariation(damager)) {
-                    Bee bee = (Bee) event.getDamager();
-                    bee.setHasStung(false);
-                    bee.getServer().getScheduler().scheduleSyncDelayedTask(Specialization.getInstance(), new Runnable() {
-                        @Override
-                        public void run() {
-                            unsetBee(bee);
+                    if(ThreadLocalRandom.current().nextBoolean()) {
+                        ((Bee) damager).damage(10);
+                    }
+                    if(event.getDamageSource().getDamageType()!=DamageType.SPIT) {
+                        Bee bee = (Bee) event.getDamager();
+                        bee.setHasStung(false);
+                        bee.getServer().getScheduler().scheduleSyncDelayedTask(Specialization.getInstance(), new Runnable() {
+                            @Override
+                            public void run() {
+                                unsetBee(bee);
+                            }
+                        });
+                        event.setCancelled(true);
+                        if (victim instanceof LivingEntity le) {
+                            le.damage(0.5, DamageSource.builder(DamageType.SPIT).build());
+//                        Debug.broadcast("bee", ""+event.getDamageSource().getDamageType());
                         }
-                    });
+                    }
                 }
                 break;
         }
     }
+
+//    public void on(EntityPotionEffectEvent le){
+//    }
 
     private void unsetBee(Bee bee) {
 //        Debug.broadcast("mob", "Be has stung = false");
@@ -674,8 +1039,16 @@ public class MobManager implements Listener {
          * Scales mob damage based on their day/night settings
          */
         double newDamage = event.getDamage(BASE);
-        double mob_damage = entity.getWorld().isDayTime()?stats.getDamageMultiplierDay():stats.getDamageMultiplierNight();
-        event.setDamage(BASE, newDamage * mob_damage);
+        double mob_damage_multiplier;
+
+
+        if(entity.getWorld().getEnvironment()== World.Environment.NORMAL){
+            mob_damage_multiplier = entity.getWorld().isDayTime()?stats.getDamageMultiplierDay():stats.getDamageMultiplierNight();
+        }else{
+            mob_damage_multiplier = stats.getDamageMultiplierNether();
+        }
+        double mob_damage_base_increase = entity.getWorld().isDayTime()?stats.getDamageBaseDay():stats.getDamageBaseNight();
+        event.setDamage(BASE, (newDamage * mob_damage_multiplier) + mob_damage_base_increase);
 
 //      BACKUP PLAN FOR MOB DAMAGE:
 //        Ensure this method is called after CombatManager's ArmorReduction.
@@ -709,6 +1082,15 @@ public class MobManager implements Listener {
             if(variation.dropChance != -1){
                 if(variation.dropChance > ThreadLocalRandom.current().nextDouble()) {
                     //get the drop
+                    if (!variation.getRemovedDrops().isEmpty() && !event.getDrops().isEmpty()) {
+                        List<ItemStack> drops_copy = new ArrayList<>(event.getDrops());
+                        for (ItemStack is : drops_copy) {
+                            if (variation.getRemovedDrops().contains(is.getType())) {
+                                event.getDrops().remove(is);
+                                Debug.broadcast("mobdrop", "removed " + is.getType().name() + " from " + variation.getId() + "'s drops");
+                            }
+                        }
+                    }
                 }else{
                     event.getDrops().clear();
                     return;
@@ -727,39 +1109,72 @@ public class MobManager implements Listener {
 
     public void applyExp(EntityDamageByEntityEvent event, CustomPlayer customPlayer, LivingEntity victim) {
         if(event.getDamage()<0.1)return;
+        if (victim instanceof Player px){
+            return;
+        }
+        if(victim instanceof ArmorStand){
+            return;
+        }
+        if(!(victim instanceof LivingEntity)){
+            return;
+        }
+        double xp_scale = 1.0;
 
-        boolean does_grant_exp = true;
+        int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
 
-        MobVariation mobStats = getMobVariation(victim);
-        if(victim.getPersistentDataContainer().has(EXP_GAIN_OVERRIDE_KEY)){
-            Debug.broadcast("mobxp", "grant exp from PDC");
-            does_grant_exp = victim.getPersistentDataContainer().get(EXP_GAIN_OVERRIDE_KEY, PersistentDataType.BOOLEAN);
-        }else {
-            if(mobStats.isXpGainOverrideActive()) {
-                Debug.broadcast("mobxp", "grant exp OVERRIDE ACTIVE");
-                does_grant_exp = mobStats.getXpGainOverrideState();
-             }else if(victim instanceof  Enemy){
-                Debug.broadcast("mobxp", "grant exp because is enemy");
-                does_grant_exp = true;
-            }else{
-                does_grant_exp = false;
+        if(!(victim instanceof Enemy)) {
+            //Passive Mob XP Reduction
+            switch (lvl) {
+                case 0:
+                    xp_scale = 0.75;
+                    break;
+                case 1:
+                    xp_scale = 0.5;
+                    break;
+                case 2:
+                    xp_scale = 0.25;
+                    break;
+                default: xp_scale = 0;
+                break; //No xp to grant on passive mobs
             }
         }
 
-        // if entity does not grant exp, exit
-        if(!does_grant_exp){
+        MobVariation mobStats = getMobVariation(victim);
+        if(victim.getPersistentDataContainer().has(EXP_GAIN_OVERRIDE_KEY)){
+            if(victim.getPersistentDataContainer().get(EXP_GAIN_OVERRIDE_KEY, PersistentDataType.BOOLEAN)){
+                xp_scale = 1.0;
+            }
+        }
+        if(xp_scale == 0){
             return;
         }
+//            does_grant_exp = true;
+//            if(mobStats.isXpGainOverrideActive()) {
+//                does_grant_exp = mobStats.getXpGainOverrideState();
+//             }else if(victim instanceof Enemy){
+//                does_grant_exp = true;
+//            }else{
+//                does_grant_exp = false;
+//            }
+//        }
 
-        Debug.broadcast("mobxp", "APPLYING EXP");
+        // if entity does not grant exp, exit
+//        if(!does_grant_exp){
+//            return;
+//        }
 
-        double xp_multiplier = mobStats.getXpScale();
+        double xp_multiplier = mobStats.getXpScale() * xp_scale;
         if (xp_multiplier>0) {
             LivingEntity le = (LivingEntity) victim;
             double xp = event.getDamage();
             if (xp > le.getHealth()) {
-                xp = le.getHealth();
+                xp = Math.max(1, le.getHealth());
             }
+
+//            Debug.broadcast("xp", "XP formula 1: "+CombatManager.calculateTotalDamage(event));
+//            Debug.broadcast("xp", "XP formula 2: "+event.getDamage());
+//            Debug.broadcast("xp", "XP formula 3: "+event.getFinalDamage());
+//            customPlayer.addSkillXp(SkillType.GUARDSMAN, (int) Math.max(1, (xp * xp_multiplier)), true); // USE THIS if we want xp gained on each low hit (account for sweeping edge)
             customPlayer.addSkillXp(SkillType.GUARDSMAN, (int) (xp * xp_multiplier), true);
         }
     }

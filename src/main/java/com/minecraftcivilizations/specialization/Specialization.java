@@ -54,10 +54,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import net.minecraft.server.level.ServerPlayer;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.GameRule;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -81,7 +78,8 @@ public final class Specialization extends JavaPlugin {
     private Debug debug;
     private PhantomRideListener phantomRideListener;
     //    private EmoteListener emoteListener;
-    private LocalChat localChat;
+    @Getter
+    public LocalChat localChat;
     //follow this pattern from now on
     @Getter
     private SmartEntityManager smart_entity_manager;
@@ -89,10 +87,16 @@ public final class Specialization extends JavaPlugin {
     private CustomItemManager customItemManager;
     @Getter
     private CombatManager combatManager;
+    @Getter
+    private BlacksmithArmorTrim armorTrimSystem;
+    @Getter
     private PVPManager pvpManager;
     private XPMonitoringCommand xpMonitoringCommand;
+
+    @Getter
     private PlayerDownedListener playerDownedListener;
     private RecipeBlocker recipeBlocker;
+    private EmoteManager emoteManager;
 
     public static void notify(Player player, String msg) {
         message(player, msg);
@@ -117,8 +121,8 @@ public final class Specialization extends JavaPlugin {
 
         Skill.InitCacheXPLevelFormula();
         debug = new Debug(this);
-        saveResource("first_names.txt", false);
-        saveResource("last_names.txt", false);
+        saveResource("first_names.txt", true);
+        saveResource("last_names.txt", true);
         SpecializationConfig.initialize();
         MongoConnection.startDBConnection();
         // TODO PDC-xp-hotfix
@@ -133,12 +137,15 @@ public final class Specialization extends JavaPlugin {
         customItemManager.initializeCustomItems();
         phantomRideListener = new PhantomRideListener(this);
         xpMonitoringCommand = new XPMonitoringCommand();
+        emoteManager = new EmoteManager(customItemManager, this);
         pvpManager = new PVPManager(playerDownedListener, this);
         recipeBlocker = new RecipeBlocker();
+        armorTrimSystem = new BlacksmithArmorTrim();
 //      emoteListener = new EmoteListener(this);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, "civlabs:weathersync", new TimeSyncListener());
 
+        //commands registered here
         setupCommands();
 
         getServer().getPluginManager().registerEvents(new PlayerMineListener(), this);
@@ -152,7 +159,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new FishingListener(), this);
         combatManager = new CombatManager(this); // Guardsman Damage Output
         new FoodInteractionListener(this);
-        getServer().getPluginManager().registerEvents(new HungerSystemListener(this), this);
+        getServer().getPluginManager().registerEvents(new HungerSystemListener(this, emoteManager), this);
         getServer().getPluginManager().registerEvents(new LeashListener(), this);
         getServer().getPluginManager().registerEvents(new BedListener(), this);
         getServer().getPluginManager().registerEvents(new LocatorBarManager(this), this);
@@ -180,16 +187,21 @@ public final class Specialization extends JavaPlugin {
 
 
         //overworld game rules
-        World world = Bukkit.getWorlds().get(0);
-        world.setGameRule(GameRule.SPAWN_RADIUS, 350);
-        world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true);
-        world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
-        world.setGameRule(GameRule.NATURAL_REGENERATION, false);
-        world.setGameRule(GameRule.SHOW_DEATH_MESSAGES, false);
-        world.setGameRule(GameRule.LOCATOR_BAR, true);
-        world.setGameRule(GameRule.WATER_SOURCE_CONVERSION, false);
-        world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
-        world.setGameRule(GameRule.MINECART_MAX_SPEED, 24);
+        World overworld = Bukkit.getWorlds().get(0);
+//        World nether = Bukkit.getWorlds().get(1);
+
+        for(World world : Bukkit.getWorlds()) {
+            world.setGameRule(GameRule.SPAWN_RADIUS, 350);
+            world.setDifficulty(Difficulty.HARD);
+            world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true);
+            world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
+            world.setGameRule(GameRule.NATURAL_REGENERATION, false);
+            world.setGameRule(GameRule.SHOW_DEATH_MESSAGES, false);
+            world.setGameRule(GameRule.LOCATOR_BAR, true);
+            world.setGameRule(GameRule.WATER_SOURCE_CONVERSION, false);
+            world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
+            world.setGameRule(GameRule.MINECART_MAX_SPEED, 24);
+        }
 
         //global game rules
         Bukkit.getWorlds().forEach(w -> w.setGameRule(GameRule.NATURAL_REGENERATION, false));
@@ -244,34 +256,14 @@ public final class Specialization extends JavaPlugin {
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerJoin(playerJoinEvent -> {
             CustomPlayer customPlayer = (CustomPlayer) MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().getCustomPlayer(playerJoinEvent.getUniqueId());
             applyCustomName(playerJoinEvent.getPlayer(), customPlayer.getName());
-//            customPlayer.applyEffects();
 
-            // We don't really need this anymore right? -Alec
-            // Migrate old bandages to new format
-//            Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
-//                migrateLegacyItems(playerJoinEvent.getPlayer());
-//            }, 10L);
 
             // TODO PDC-xp-hotfix for later if we need it
             //  customPlayer.reloadSkillsXp(playerJoinEvent.getPlayer());
 
             // Assign player to team based on their highest skill
-
 //            TeamManager.setTeam(playerJoinEvent.getPlayer());
 
-            // Restore downed state if they were downed when they logged out
-            if (customPlayer.isWasDownedOnLogout()) {
-                // Use Bukkit.getScheduler() to delay this until after the player has fully joined
-                Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
-                    Player player = playerJoinEvent.getPlayer();
-                    if (player != null && player.isOnline()) {
-                        // Restore downed state without starting the death timer
-//                        playerDeathListener.setDowned(player, true);
-                        // Clear the flag since we've restored the state
-                        customPlayer.setWasDownedOnLogout(false);
-                    }
-                }, 5L); // 5 ticks delay to ensure player is fully loaded
-            }
         });
 
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().setOnPlayerQuit(playerQuitEvent -> {
@@ -313,6 +305,7 @@ public final class Specialization extends JavaPlugin {
         for (Player p : Bukkit.getOnlinePlayers()) {
             phantomRideListener.PhantomStateSave(p);
         }
+        emoteManager.shutdown();
         smart_entity_manager.shutdown();
         DataManager.getScheduler().shutdown();
         MinecraftCivilizationsCore.getInstance().getCustomPlayerManager().saveAll();
@@ -327,10 +320,10 @@ public final class Specialization extends JavaPlugin {
             throw new RuntimeException(e);
         }
 
-        // Cleans up optional names held in temp reserves
+        // Cleans up optional names held in temp reserves if a name was chosen
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             localNameGenerator.cleanupExpiredTemps();
-        }, 0L, 10 * 60 * 20L); // every 10 minutes
+        }, 0L, 1 * 60 * 20L); // every 1 minute
 
 
         commandManager = new PaperCommandManager(this);
@@ -357,7 +350,7 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new SetXpCommand());
         commandManager.registerCommand(new SetLoreCommand());
         commandManager.registerCommand(new TownsCommand());
-        commandManager.registerCommand(new SuicideCommand(playerDownedListener));
+        commandManager.registerCommand(new SuicideCommand(playerDownedListener, pvpManager, this));
         commandManager.registerCommand(new AnalyticsCommand());
         commandManager.registerCommand(new RestoreHealthCommand());
         commandManager.registerCommand(new NotifyRestartCommand());
@@ -367,11 +360,11 @@ public final class Specialization extends JavaPlugin {
         commandManager.registerCommand(new RerollNameCommand(localNameGenerator));
         commandManager.registerCommand(new NameChoiceCommand(localNameGenerator));
         commandManager.registerCommand(new XPLeaderboardCommand());
-        commandManager.registerCommand(new EmoteCommand(customItemManager, this));
         commandManager.registerCommand(new CustomItemCommand(customItemManager));
         commandManager.registerCommand(new SudoChatCommand(localChat));
         commandManager.registerCommand(new XPMonitoringCommand());
         commandManager.registerCommand(new RecipeRefreshCommand());
+        commandManager.registerCommand(emoteManager);
         new DebugListenCommand(commandManager);
 
 

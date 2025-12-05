@@ -39,6 +39,11 @@ public class Debug implements Listener {
     private List<String> debug_channels = new ArrayList<String>(); //used by command suggestions
 
 
+
+
+    public static boolean DEBUG_ENABLED = false;
+
+
     public Debug(Specialization plugin){
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         setupDefaultChannels();
@@ -79,15 +84,19 @@ public class Debug implements Listener {
      */
     private void setupDefaultChannels() {
         getOrCreateChannelPlayerSet("xp", true);
+        getOrCreateChannelPlayerSet("levelup", true);
         getOrCreateChannelPlayerSet("craft", true);
+        getOrCreateChannelPlayerSet("recipe", true);
         getOrCreateChannelPlayerSet("customitem", true);
         getOrCreateChannelPlayerSet("damage", true);
         getOrCreateChannelPlayerSet("armor", true);
+        getOrCreateChannelPlayerSet("death", true);
+        getOrCreateChannelPlayerSet("down", true);
+        getOrCreateChannelPlayerSet("revive", true);
+        getOrCreateChannelPlayerSet("combatlog", true);
         getOrCreateChannelPlayerSet("weight", true);
         getOrCreateChannelPlayerSet("globalchat", true);
-        getOrCreateChannelPlayerSet("down", true);
-        getOrCreateChannelPlayerSet("combatlog", true);
-        getOrCreateChannelPlayerSet("revive", true);
+        getOrCreateChannelPlayerSet("mob", true);
     }
 
     /**
@@ -188,6 +197,7 @@ public class Debug implements Listener {
      * /debug remove <debug_channel>
      */
     public static void broadcast(String debug_channel, String msg, String hover_event){
+        if(!DEBUG_ENABLED)return;
         Component comp = getInstance().formatDebugMessageDefault(debug_channel, msg, hover_event);
         broadcastFinalize(debug_channel, comp, false);
     }
@@ -200,16 +210,25 @@ public class Debug implements Listener {
      * @param register_channel whether or not this channel gets added to the TabCompleter for the command
      */
     public static void broadcast(String debug_channel, String msg, String hover_event, boolean register_channel){
+        if(!DEBUG_ENABLED)return;
         Component comp = getInstance().formatDebugMessageDefault(debug_channel, msg, hover_event);
         broadcastFinalize(debug_channel, comp, register_channel);
     }
 
+    /**
+     * IMPORTANT: Use Debug.isEnabled() before using component based calls
+     */
     public static void broadcast(String debug_channel, Component msg){
+        if(!DEBUG_ENABLED)return;
         Component comp;
         broadcastFinalize(debug_channel, getPrefix(debug_channel).append(msg), false);
     }
 
+    /**
+     * IMPORTANT: Use Debug.isEnabled() before using component based calls
+     */
     public static void broadcast(String debug_channel, Component msg, Component hover){
+        if(!DEBUG_ENABLED)return;
         Component comp;
         if(hover!=null){
             comp = msg.hoverEvent(HoverEvent.showText(hover));
@@ -219,7 +238,11 @@ public class Debug implements Listener {
         broadcastFinalize(debug_channel, getPrefix(debug_channel).append(comp), false);
     }
 
+    /**
+     * IMPORTANT: Use Debug.isEnabled() before using component based calls
+     */
     public static void broadcast(String debug_channel, Component msg, Component hover, boolean register_channel){
+        if(!DEBUG_ENABLED)return;
         Component comp = msg.hoverEvent(HoverEvent.showText(hover));
         broadcastFinalize(debug_channel, getPrefix(debug_channel).append(comp), register_channel);
     }
@@ -235,6 +258,7 @@ public class Debug implements Listener {
     }
 
     public static void broadcast(String debug_channel, String msg){
+        if(!DEBUG_ENABLED)return;
         broadcast(debug_channel, msg, null);
     }
 
@@ -249,20 +273,21 @@ public class Debug implements Listener {
     public static void message(Player player, String debug_channel, String msg, String hover_details){
         Debug debug = getInstance();
         Component comp = debug.formatDebugMessageDefault(debug_channel, msg, hover_details);
-        if(debug.getOrCreateChannelPlayerSet(debug_channel, false).contains(player)){
+        if(debug.getOrCreateChannelPlayerSet(debug_channel, false).contains(player.getUniqueId())){
             player.sendMessage(comp);
         }
     }
 
     /**
      * Sends a debug to a player who is listening to a debug channel
+     * IMPORTANT: Use Debug.isEnabled() before using component based calls
      */
     public static void message(Player player, String debug_channel, Component msg, Component hover) {
      Debug debug = getInstance();
         if(hover!=null){
             msg = msg.hoverEvent(HoverEvent.showText(hover));
         }
-        if(debug.getOrCreateChannelPlayerSet(debug_channel, false).contains(player)){
+        if(debug.getOrCreateChannelPlayerSet(debug_channel, false).contains(player.getUniqueId())){
             player.sendMessage(getPrefix(debug_channel).append(msg));
         }
     }
