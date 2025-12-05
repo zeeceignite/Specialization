@@ -36,7 +36,7 @@ public class RepairingListener implements Listener {
         if (!player.isSneaking()) return;
 
         Block clickedBlock = event.getClickedBlock();
-        if (clickedBlock == null || clickedBlock.getType() != Material.ANVIL) {
+        if (!Tag.ANVIL.isTagged(clickedBlock.getType())) {
             return;
         }
 

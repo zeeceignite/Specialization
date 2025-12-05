@@ -258,13 +258,18 @@ public class PlayerInteractListener implements Listener {
         Block clicked = e.getClickedBlock();
         if (clicked == null) return;
 
+        Player player = e.getPlayer();
+
         Material type = clicked.getType();
         if (type != Material.CAVE_VINES && type != Material.CAVE_VINES_PLANT) return;
 
         String data = clicked.getBlockData().getAsString();
         if (!data.contains("berries=true")) return;
+        if(player.isSneaking()){
+            return;
+        }
 
-        CustomPlayer cp = CoreUtil.getPlayer(e.getPlayer());
+        CustomPlayer cp = CoreUtil.getPlayer(player);
         if (cp != null) {
             cp.addSkillXp(SkillType.FARMER, 1);
         }

@@ -159,7 +159,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new FishingListener(), this);
         combatManager = new CombatManager(this); // Guardsman Damage Output
         new FoodInteractionListener(this);
-        getServer().getPluginManager().registerEvents(new HungerSystemListener(this, emoteManager), this);
+        getServer().getPluginManager().registerEvents(new HungerSystem(this, emoteManager), this);
         getServer().getPluginManager().registerEvents(new LeashListener(), this);
         getServer().getPluginManager().registerEvents(new BedListener(), this);
         getServer().getPluginManager().registerEvents(new LocatorBarManager(this), this);
