@@ -270,7 +270,7 @@ public class MobManager implements Listener {
                         .speed(1.25, 1.75)
                         .stepheight(0.5)
                         .hunts(54)
-                        .breaks(1.25)
+                        .breaks(1.5)
                 );
 
         new MobOverrideRule(100, SKELETON)

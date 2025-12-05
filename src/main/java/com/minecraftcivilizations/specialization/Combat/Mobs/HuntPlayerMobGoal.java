@@ -361,11 +361,11 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
             case DIRT:
             case GRAVEL:
             case SAND:
-                return 2.0f;
+                return 2.5f;
             case GRASS_BLOCK:
             case MUD:
             case MYCELIUM:
-                return 1.75f;
+                return 2.0f;
             case CLAY:
             case FARMLAND:
             case COARSE_DIRT:
@@ -375,11 +375,11 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
                 return 0.8f; // loose stone, breaks quick
             case STONE:
             case DEEPSLATE:
-                return 0.4f; // solid stone, holds together
+                return 0.6f; // solid stone, holds together
             case ANDESITE:
             case DIORITE:
             case GRANITE:
-                return 0.5f;
+                return 0.6f;
             case NETHERITE_BLOCK:
                 return 0.05f;
             case CHEST:
