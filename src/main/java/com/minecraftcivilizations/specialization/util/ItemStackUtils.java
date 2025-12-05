@@ -109,4 +109,74 @@ public class ItemStackUtils {
         item_stack.setItemMeta(meta);
     }
 
+    // Returns hunger points (food "nutrition") restored by one unit of the given Material.
+// Values sourced from the Minecraft Wiki "Food" table (Java Edition values).
+    public static int getFoodNutrition(Material food_type) {
+        if (food_type == null) return 0;
+        switch (food_type) {
+            // crops / basic
+            case APPLE: return 4;
+            case CARROT: return 3;
+            case POTATO: return 1;                 // raw potato
+            case BAKED_POTATO: return 5;
+            case POISONOUS_POTATO: return 2;
+            case BEETROOT: return 1;
+            case BEETROOT_SOUP: return 6;
+            case WHEAT: return 0;                 // wheat is an ingredient, not consumed for hunger
+            case MELON_SLICE: return 2;
+            case PUMPKIN_PIE: return 8;
+            case BREAD: return 5;
+            case CAKE: return 2;                  // one slice = 2 hunger points (placed cake is eaten slice-by-slice)
+            case COOKIE: return 2;
+
+            // berries / plants
+            case SWEET_BERRIES: return 2;
+            case GLOW_BERRIES: return 2;
+            case HONEY_BOTTLE: return 6;
+
+            // meat (raw / cooked)
+            case BEEF: return 3;
+            case COOKED_BEEF: return 8;           // steak
+            case CHICKEN: return 2;
+            case COOKED_CHICKEN: return 6;
+            case PORKCHOP: return 3;
+            case COOKED_PORKCHOP: return 8;
+            case RABBIT: return 3;
+            case COOKED_RABBIT: return 5;
+            case MUTTON: return 2;
+            case COOKED_MUTTON: return 6;
+
+            // fish
+            case COD: return 2;                   // raw cod (Material.COD)
+            case COOKED_COD: return 5;
+            case SALMON: return 2;                // raw salmon
+            case COOKED_SALMON: return 6;
+            case TROPICAL_FISH: return 1;
+            case PUFFERFISH: return 1;
+
+            case ROTTEN_FLESH: return 1;
+
+            // other stackable foods / miscellaneous
+            case CHORUS_FRUIT: return 4;
+            case SPIDER_EYE: return 2;
+            case DRIED_KELP: return 1;
+            case SUSPICIOUS_STEW: return 6;       // restores 6 hunger + status effect
+            case MUSHROOM_STEW: return 6;
+            case RABBIT_STEW: return 10;
+
+            // golden items
+            case GOLDEN_APPLE: return 4;
+            case ENCHANTED_GOLDEN_APPLE: return 4;
+            case GOLDEN_CARROT: return 6;
+
+            // other consumables
+            case MILK_BUCKET: return 0;           // clears effects; does not restore hunger
+            case HONEYCOMB: return 0;             // not edible
+            // (include bucket variants if you want)
+            // fall-through default
+            default:
+                return 0;
+        }
+    }
+
 }

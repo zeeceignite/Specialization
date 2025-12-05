@@ -357,6 +357,10 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
      */
     private float getBlockModifier(Block block) {
         Material type = block.getType();
+
+        if(type.name().contains("BRICK") || type.name().contains("_TILE")){
+            return 0;
+        }
         switch(type){
             case DIRT:
             case GRAVEL:
@@ -365,16 +369,36 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
             case GRASS_BLOCK:
             case MUD:
             case MYCELIUM:
+            case PODZOL:
                 return 2.0f;
+            case NETHERRACK:
+            case CRIMSON_NYLIUM:
+            case WARPED_NYLIUM:
+            case SOUL_SOIL:
+            case SOUL_SAND:
+                return 1.75f;
             case CLAY:
             case FARMLAND:
             case COARSE_DIRT:
+            case ROOTED_DIRT:
+            case MAGMA_BLOCK:
+            case MELON:
+            case PUMPKIN:
+            case CARVED_PUMPKIN:
+            case JACK_O_LANTERN:
                 return 1.55f;
+            case CACTUS:
+                return 1.25f;
             case COBBLESTONE:
             case COBBLED_DEEPSLATE:
+            case DRIPSTONE_BLOCK:
+            case TUFF:
                 return 0.8f; // loose stone, breaks quick
             case STONE:
             case DEEPSLATE:
+            case BASALT:
+            case POLISHED_BASALT:
+            case SMOOTH_BASALT:
                 return 0.6f; // solid stone, holds together
             case ANDESITE:
             case DIORITE:
@@ -392,14 +416,18 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
             case SMITHING_TABLE:
             case STONECUTTER:
             case GRINDSTONE:
+            case COBWEB:
                 return 0.5f;
+            case SLIME_BLOCK:
+            case HONEY_BLOCK:
+                return 0.4f;
             case TINTED_GLASS:
             case COPPER_BLOCK:
                 return 0.25f;
             case IRON_BLOCK:
-                return 0.15f;
+                return 0.125f;
             case DIAMOND_BLOCK:
-                return 0.1f;
+                return 0.075f;
             case ANVIL:
                 return 0.1f;
             case CHIPPED_ANVIL:
@@ -411,6 +439,7 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
             case RESPAWN_ANCHOR:
             case LODESTONE:
                 return 0.125f;
+            case CRYING_OBSIDIAN:
             case OBSIDIAN:
                 return 0.025f;
                 //BLACKLIST:
@@ -418,10 +447,11 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
             case DEEPSLATE_DIAMOND_ORE:
             case DIAMOND_ORE:
             case BEDROCK:
+            case SPAWNER:
                 return 0;
         }
-        if(type.name().contains("BRICK")){
-            return 0;
+        if(type.name().contains("BLACKSTONE")){
+            return 0.6f;
         }
         if(type.name().contains("_LEAVES")){
             return 2.5f;
@@ -432,11 +462,8 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
         if(type.name().contains("GLASS")){
             return 1.5f;
         }
-        if(type.name().contains("_ORE")){
+        if(type.name().contains("_ORE") || type.name().endsWith("_CONCRETE")){
             return 0.125f;
-        }
-        if(type.name().contains("_TILES") || type.name().contains("_BRICK")){
-            return 0.0125f;
         }
         return 1.0f;
     }

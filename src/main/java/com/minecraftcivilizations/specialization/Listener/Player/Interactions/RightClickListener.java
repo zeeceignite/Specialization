@@ -29,6 +29,7 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.components.FoodComponent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,51 +90,6 @@ public class RightClickListener implements Listener {
             }
         }
 
-    }
-
-    //force feed players as guardsmen
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onRightClickPlayer(PlayerInteractEntityEvent event) {
-        if (!(event.getRightClicked() instanceof Player target)) return;
-
-        Player player = event.getPlayer();
-        CustomPlayer cPlayer = CoreUtil.getPlayer(player);
-
-        // Guardsman/healer check
-        if ((cPlayer.getSkillLevel(SkillType.GUARDSMAN) <= 0) && (cPlayer.getSkillLevel(SkillType.HEALER) <= 2)) return;
-
-        ItemStack handItem = player.getInventory().getItemInMainHand();
-        if (!handItem.getType().isEdible()) return;
-
-        // Force feed: add 1 hunger
-        // Only feed if target is not full
-        if (!(target.getFoodLevel() < 20)) {
-            PlayerUtil.message(player, target.getName() + " can't handle more food", 1);
-           return;
-        }
-
-        target.setFoodLevel(Math.min(target.getFoodLevel() + 2, 20));
-        // Play swing animation
-        ItemStack held = player.getInventory().getItemInMainHand();
-
-        player.swingHand(EquipmentSlot.HAND);
-
-        float pitch = 0.8f + (float) (Math.random() * 0.4f); // 0.8–1.2
-        target.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_BURP, SoundCategory.PLAYERS, 1f, pitch);
-
-        target.getWorld().spawnParticle(
-                Particle.ITEM,
-                target.getEyeLocation(),
-                8,
-                0.2, 0, 0.5,
-                0,
-                held
-        );
-
-        // Consume one item from hand
-        handItem.setAmount(handItem.getAmount() - 1);
-//        PlayerUtil.message(player, "Force fed <gold>" + target.getName(), 1);
-//        PlayerUtil.message(target, "<gold>" + target.getName() + "</gold>force fed you", 1);
     }
 
 

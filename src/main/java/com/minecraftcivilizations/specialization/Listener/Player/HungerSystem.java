@@ -2,39 +2,51 @@ package com.minecraftcivilizations.specialization.Listener.Player;
 
 import com.minecraftcivilizations.specialization.Command.EmoteManager;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Player.CustomPlayer;
+import com.minecraftcivilizations.specialization.Skill.SkillType;
+import com.minecraftcivilizations.specialization.Specialization;
+import com.minecraftcivilizations.specialization.StaffTools.Debug;
+import com.minecraftcivilizations.specialization.util.CoreUtil;
+import com.minecraftcivilizations.specialization.util.ItemStackUtils;
+import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import org.bukkit.GameMode;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class HungerSystemListener implements Listener {
+public class HungerSystem implements Listener {
 
-    private final JavaPlugin plugin;
+    private final Specialization plugin;
     private final Map<UUID, Long> lastMoveTime = new HashMap<>();
     private final Map<UUID, PlayerActivity> playerActivity = new HashMap<>();
     private final Map<UUID, Double> playerHungerBuffer = new HashMap<>();
 
-    private static final double SPRINTING_DRAIN = SpecializationConfig.getHungerConfig().get("SPRINTING_DRAIN", Double.class);
+    private static final double  SPRINTING_DRAIN = SpecializationConfig.getHungerConfig().get("SPRINTING_DRAIN", Double.class);
     private static final double WALKING_DRAIN = SpecializationConfig.getHungerConfig().get("WALKING_DRAIN", Double.class);
     private static final double SWIMMING_DRAIN = SpecializationConfig.getHungerConfig().get("SWIMMING_DRAIN", Double.class);
     private static final double CROUCHING_DRAIN = SpecializationConfig.getHungerConfig().get("CROUCHING_DRAIN", Double.class);
     private static final double IDLE_DRAIN = SpecializationConfig.getHungerConfig().get("IDLE_DRAIN", Double.class);
 
-
     private static final long DRAIN_INTERVAL = SpecializationConfig.getHungerConfig().get("DRAIN_INTERVAL_IN_TICKS", Long.class);
     private static final long IDLE_CHECK_TIME = SpecializationConfig.getHungerConfig().get("IDLE_CHECK_TIME_IN_TICKS", Long.class);
     private final EmoteManager emoteCommand;
 
-    public HungerSystemListener(JavaPlugin plugin, EmoteManager emoteCommand) {
+    public HungerSystem(Specialization plugin, EmoteManager emoteCommand) {
         this.plugin = plugin;
         this.emoteCommand = emoteCommand;
         startHungerDrainTask();
@@ -92,7 +104,6 @@ public class HungerSystemListener implements Listener {
                 playerActivity.put(playerId, PlayerActivity.WALKING);
             }
         }
-
         lastMoveTime.put(playerId, System.currentTimeMillis());
     }
 
@@ -136,12 +147,14 @@ public class HungerSystemListener implements Listener {
     }
 
     private void drainHunger(Player player, PlayerActivity activity) {
+        if(player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR){
+            return;
+        }
         // Prevent hunger drain while sleeping
         if (player.isSleeping()){
             return;
         }
-
-        if (emoteCommand.isPlayerSitting(player) || player.getGameMode() == GameMode.CREATIVE) {
+        if (emoteCommand.isPlayerSitting(player)) {
             return;
         }
 
@@ -184,4 +197,58 @@ public class HungerSystemListener implements Listener {
                 return IDLE_DRAIN;
         }
     }
+
+
+    /**
+     * force feed players as guardsmen
+     */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onRightClickPlayer(PlayerInteractEntityEvent event) {
+        if (!(event.getRightClicked() instanceof Player target)) return;
+
+        Player player = event.getPlayer();
+        ItemStack handItem = player.getInventory().getItemInMainHand();
+        if (!handItem.getType().isEdible()) return;
+
+        CustomPlayer cPlayer = CoreUtil.getPlayer(player);
+        // Guardsman/healer check
+        if ((cPlayer.getSkillLevel(SkillType.GUARDSMAN) <= 0) && (cPlayer.getSkillLevel(SkillType.HEALER) <= 2)) return;
+
+        // Force feed: add 1 hunger
+        // Only feed if target is not full
+        if (!(target.getFoodLevel() < 20)) {
+            PlayerUtil.message(player, target.getName() + " can't handle more food", 1);
+            return;
+        }
+
+        if(PlayerUtil.isOnCooldown(player, "feedother")){
+            return;
+        }
+        int nutrition = ItemStackUtils.getFoodNutrition(handItem.getType());
+        int increase = Math.max(1, ((nutrition / 2)));
+
+        target.setFoodLevel(Math.min(target.getFoodLevel() + increase, 20));
+        // Play swing animation
+        ItemStack held = player.getInventory().getItemInMainHand();
+
+        player.swingHand(EquipmentSlot.HAND);
+
+        float pitch = 0.8f + (float) (Math.random() * 0.4f); // 0.8–1.2
+        target.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_BURP, SoundCategory.PLAYERS, 1f, pitch);
+        target.getWorld().spawnParticle(
+                Particle.ITEM,
+                target.getEyeLocation(),
+                8,
+                0.2, 0, 0.5,
+                0,
+                held
+        );
+        // Consume one item from hand
+        handItem.setAmount(handItem.getAmount() - 1);
+        PlayerUtil.setCooldown(player, "feedother", 4);
+//        PlayerUtil.message(player, "Force fed <gold>" + target.getName(), 1);
+//        PlayerUtil.message(target, "<gold>" + target.getName() + "</gold>force fed you", 1);
+    }
+
+
 }
