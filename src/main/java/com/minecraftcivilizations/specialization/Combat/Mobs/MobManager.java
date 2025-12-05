@@ -362,7 +362,7 @@ public class MobManager implements Listener {
                         .health(2)
                         .damage(1.5)
                         .speed(1.75)
-                        .stepheight(1)
+                        .stepheight(0.5)
                         .xpScale(1.5)
                         .hunts()
                         .breaks()
@@ -389,8 +389,8 @@ public class MobManager implements Listener {
                         .speed(1.8)
                         .xpScale(0.5)
                         .hunts(62)
-                        .stepheight(1)
-                        .breaks(2)
+                        .stepheight(0.5)
+                        .breaks(1.5)
                         .drops(0)
                 );
 
@@ -427,7 +427,7 @@ public class MobManager implements Listener {
                                 .health(2.0)
                                 .stepheight(1.0)
                                 .waterspeed(1.5, 1.5)
-                                .breaks(1.5)
+                                .breaks(1.0)
                                 .hunts()
                                 .drops(1, 1)
                         , 100)
@@ -453,7 +453,7 @@ public class MobManager implements Listener {
                 .speed(1.25, 1.5)
                 .setGainsXpOverride(true)
                 .hunts(24)
-                .breaks(0.5)
+                .breaks(0.75)
                 .stepheight(0.5)
                 .xpScale(2.5)
                 .spawnExtra(3)
@@ -472,7 +472,7 @@ public class MobManager implements Listener {
                                 .speed(1.75)
                                 .hunts()
                                 .xpScale(1.25)
-                                .breaks(0.25)
+                                .breaks(0.75)
                         , 100)
                 ;
 
@@ -514,7 +514,7 @@ public class MobManager implements Listener {
 
         setDefaultRuleSetChance(25, POLAR_BEAR);
         new MobOverrideRule(25, POLAR_BEAR)
-                .addVariation(new MobVariation("mean_polar_bear", POLAR_BEAR).anger(true).speed(1.2,1.2).health(2).hunts(64).breaks(2));
+                .addVariation(new MobVariation("mean_polar_bear", POLAR_BEAR).anger(true).speed(1.2,1.2).health(2).hunts(48).breaks(1.5));
 
 
         setDefaultRuleSetChance(200, ENDERMAN);

@@ -27,8 +27,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.bukkit.Material.*;
-
 public class HuntPlayerMobGoal implements Goal<Mob> {
     public static final GoalKey<Mob> KEY = GoalKey.of(Mob.class, new NamespacedKey(Specialization.getInstance(), "monster_hunt_player"));
 
@@ -44,13 +42,13 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
     private Entity last_target = null;
     private int tick = 0;
     private int reacquire_tick = 0;
-    private float break_scalar;
+    private float mobBreakScalar;
 
     public HuntPlayerMobGoal(Mob mob, double follow_range, boolean breaks_blocks, double break_scalar) {
         this.mob = mob;
         this.follow_range = follow_range;
         this.breaks_blocks = breaks_blocks;
-        this.break_scalar = (float)break_scalar;
+        this.mobBreakScalar = (float)break_scalar;
     }
 
     @Override
@@ -234,9 +232,12 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
             // Basic validation: same world and within configured target radius
             if (!mob.getWorld().equals(current_target.getWorld())) return;
 
-            Vector vectorToPlayer = current_target.getLocation().subtract(mob.getEyeLocation()).toVector().normalize().add(MathUtils.randomVectorCentered(0.25)).normalize();
+            double spray = 0.35; // angular offset for block raytrace, increase to increase block randomization
+
+
+            Vector vectorToPlayer = current_target.getLocation().subtract(mob.getEyeLocation()).toVector().normalize().add(MathUtils.randomVectorCentered(spray)).normalize();
             // Raytrace for a blocking block up to distance 5 from the mob's eye (like the previous logic)
-            RayTraceResult result = mob.getWorld().rayTrace(mob.getEyeLocation(), vectorToPlayer.normalize(), reach_distance, FluidCollisionMode.NEVER, true, .15, entity -> false);
+            RayTraceResult result = mob.getWorld().rayTrace(mob.getEyeLocation().add(MathUtils.randomVectorCentered(0.15)), vectorToPlayer.normalize(), reach_distance, FluidCollisionMode.NEVER, true, .15, entity -> false);
             if (result == null || result.getHitBlock() == null) {
                 Location leglocation = mob.getLocation().add(0,0.5,0);
                 vectorToPlayer = current_target.getLocation().subtract(leglocation).toVector();
@@ -245,27 +246,29 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
 //                    Debug.broadcast("huntplayer", "<#554400>Both blocks null");
                     return;
                 }else{
-                    Debug.broadcast("huntplayer", "<gray>⛏ Block Found ⬇");
-//                    Debug.broadcast("huntplayer", "<gold>Block found on Floor location");
+//                    Debug.broadcast("huntplayer", "<gray>⛏ Block Found ⬇");
                 }
             }else{
-                Debug.broadcast("huntplayer", "<gray>⛏ Block Found ⬆");
-//                Debug.broadcast("huntplayer", "<gold>Block found on Eye location");
+//                Debug.broadcast("huntplayer", "<gray>⛏ Block Found ⬆");
             }
 
             Block hit_block = result.getHitBlock();
             if (hit_block == null) return;
 
-            List<String> deniedBlocks = SpecializationConfig.getMobConfig()
-                    .get("BLOCK_BREAK_IGNORE_LIST_REGEX", new TypeToken<List<String>>() {});
+            float blockModifier = getBlockModifier(hit_block);
+            if(blockModifier==0){
+                return;
+            }
+//            List<String> deniedBlocks = SpecializationConfig.getMobConfig()
+//                    .get("BLOCK_BREAK_IGNORE_LIST_REGEX", new TypeToken<List<String>>() {});
 
             if (hit_block.getType() == Material.AIR) return;
 
             String material_name = hit_block.getType().name();
 
-            if (deniedBlocks.stream().anyMatch(material_name::matches)) {
-                return;
-            }
+//            if (deniedBlocks.stream().anyMatch(material_name::matches)) {
+//                return;
+//            }
 
             /**
              * Prevents mobs from breaking blocks at their feet
@@ -308,10 +311,15 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
                 return;
             }
 
-            float breakPercentagePerTick = 5f; //SpecializationConfig.getMobConfig().get("VISUAL_BREAKING_INCREASE_PER_TICK_PERCENTAGE", Float.class);
+            float blockModifier = getBlockModifier(block);
+            if(blockModifier==0){
+                return;
+            }
+
+            float breakPercentagePerTick = 5f; // 1 second per block
             if (ReinforcementManager.isReinforced(block)){
                 if(ReinforcementManager.isLightlyReinforced(block)){
-                    breakPercentagePerTick = 0.25f;
+                    breakPercentagePerTick = 0.5f;
                 }
                 if(ReinforcementManager.isHeavilyReinforced(block)){
                     block = null;
@@ -320,7 +328,8 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
                     return;
                 }
             }
-            breakPercentagePerTick *= break_scalar;
+            breakPercentagePerTick *= blockModifier;
+            breakPercentagePerTick *= mobBreakScalar;
             breakAmount += breakPercentagePerTick / 100f;
 
             if (breakAmount >= 1.0f) {
@@ -340,6 +349,96 @@ public class HuntPlayerMobGoal implements Goal<Mob> {
                 nearbyPlayers.forEach(player -> player.sendBlockDamage(block.getLocation(), breakAmount));
             }
         }
+    }
+
+    /**
+     * Returns how quickly block break
+     * Higher values break faster
+     */
+    private float getBlockModifier(Block block) {
+        Material type = block.getType();
+        switch(type){
+            case DIRT:
+            case GRAVEL:
+            case SAND:
+                return 2.0f;
+            case GRASS_BLOCK:
+            case MUD:
+            case MYCELIUM:
+                return 1.75f;
+            case CLAY:
+            case FARMLAND:
+            case COARSE_DIRT:
+                return 1.55f;
+            case COBBLESTONE:
+            case COBBLED_DEEPSLATE:
+                return 0.8f; // loose stone, breaks quick
+            case STONE:
+            case DEEPSLATE:
+                return 0.4f; // solid stone, holds together
+            case ANDESITE:
+            case DIORITE:
+            case GRANITE:
+                return 0.5f;
+            case NETHERITE_BLOCK:
+                return 0.05f;
+            case CHEST:
+                return 0.9f;
+            case BARREL:
+                return 0.6f;
+            case FURNACE:
+            case BLAST_FURNACE:
+            case SMOKER:
+            case SMITHING_TABLE:
+            case STONECUTTER:
+            case GRINDSTONE:
+                return 0.5f;
+            case TINTED_GLASS:
+            case COPPER_BLOCK:
+                return 0.25f;
+            case IRON_BLOCK:
+                return 0.15f;
+            case DIAMOND_BLOCK:
+                return 0.1f;
+            case ANVIL:
+                return 0.1f;
+            case CHIPPED_ANVIL:
+                return 0.2f;
+            case DAMAGED_ANVIL:
+                return 0.3f;
+            case ENCHANTING_TABLE:
+            case JUKEBOX:
+            case RESPAWN_ANCHOR:
+            case LODESTONE:
+                return 0.125f;
+            case OBSIDIAN:
+                return 0.025f;
+                //BLACKLIST:
+            case ANCIENT_DEBRIS:
+            case DEEPSLATE_DIAMOND_ORE:
+            case DIAMOND_ORE:
+            case BEDROCK:
+                return 0;
+        }
+        if(type.name().contains("BRICK")){
+            return 0;
+        }
+        if(type.name().contains("_LEAVES")){
+            return 2.5f;
+        }
+        if(type.name().contains("_LOGS")){
+            return 0.75f;
+        }
+        if(type.name().contains("GLASS")){
+            return 1.5f;
+        }
+        if(type.name().contains("_ORE")){
+            return 0.125f;
+        }
+        if(type.name().contains("_TILES") || type.name().contains("_BRICK")){
+            return 0.0125f;
+        }
+        return 1.0f;
     }
 
     @Override

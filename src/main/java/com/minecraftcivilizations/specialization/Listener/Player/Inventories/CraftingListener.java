@@ -214,7 +214,16 @@ public class CraftingListener implements Listener {
     private double getFoodReduction(Material type) {
         switch (type) {
             case STICK:
+            case PUMPKIN_PIE:
+            case BEETROOT_SOUP: //Special foods should be more optimized to craft, higher lvl
+            case MUSHROOM_STEW:
                 return 0.25;
+            case BREAD: //Bread is a bit more expensive to craft due to it being lo lvl
+                return 0.5;
+            case CAKE:
+                return 0.5;
+            case COOKIE:
+                return 0.125;
             case CRAFTING_TABLE:
                 return 1.0;
             case FURNACE:
