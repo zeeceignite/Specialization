@@ -151,6 +151,15 @@ public class Recipes {
             try { Bukkit.addRecipe(bell, true); }
             catch (Exception e) { failedExceptions.add("bell (" + e.getMessage() + ")"); }
         } else skippedDuplicateCount++;
+
+        NamespacedKey cobwebKey = new NamespacedKey(Specialization.getInstance(), "cobweb");
+        ShapedRecipe cobweb = new ShapedRecipe(cobwebKey, new ItemStack(Material.COBWEB));
+        cobweb.shape("SSS", "SSS", "SSS");
+        cobweb.setIngredient('S', Material.STRING);
+        if (!recipeExists(cobwebKey, cobweb.getResult())) {
+            try { Bukkit.addRecipe(cobweb, true); }
+            catch (Exception e) { failedExceptions.add("cobweb (" + e.getMessage() + ")"); }
+        } else skippedDuplicateCount++;
     }
 
     public static void addArmorTrims(List<String> failedExceptions, int skippedDuplicateCount) {

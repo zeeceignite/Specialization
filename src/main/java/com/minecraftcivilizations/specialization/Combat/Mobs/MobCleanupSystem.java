@@ -42,7 +42,7 @@ public class MobCleanupSystem extends BukkitRunnable {
         // shuffle and pick up to 8 chunks
         List<Chunk> chunks = new ArrayList<>(Arrays.asList(loadedChunks));
         Collections.shuffle(chunks);
-        chunks = chunks.subList(0, Math.min(32, chunks.size()));
+        chunks = chunks.subList(0, Math.min(16, chunks.size()));
 
         // collect all LivingEntities from selected chunks
         List<Mob> entities = new ArrayList<>();
@@ -81,7 +81,7 @@ public class MobCleanupSystem extends BukkitRunnable {
     }
 
     public BukkitRunnable start() {
-        int interval_ticks = 60;
+        int interval_ticks = 40;
         runTaskTimer(Specialization.getInstance(), interval_ticks, interval_ticks);
         return this;
     }
