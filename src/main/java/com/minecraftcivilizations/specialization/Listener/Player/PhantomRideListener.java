@@ -36,7 +36,6 @@ public class PhantomRideListener implements Listener {
 
     }
 
-
     private static boolean isValid(Material type) {
         final String[] encoded = {"Q0xPQ0s=", "Q09NUEFTUw=="};
 
@@ -82,70 +81,107 @@ public class PhantomRideListener implements Listener {
     @EventHandler
     public void onFeedPhantom(PlayerInteractEntityEvent event) {
         if (!(event.getRightClicked() instanceof Phantom phantom)) return;
-//        if (!event.getPlayer().isOp()) return; //disabled for now
 
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
-        Material type = item.getType();
-
-        boolean tamed = phantom.getPersistentDataContainer().has(isTamed, PersistentDataType.BYTE) && phantom.getPersistentDataContainer().get(isTamed, PersistentDataType.BYTE) == 1;
-
-        if (!isValid(type) && !tamed){
-            if (Math.random() < 0.005) { // 0.5% chance
-                PlayerUtil.message(player, "Phantom doesn't have time for that...", 10);
-            } else if (Math.random() < 0.004) { // 0.4% chance
-                PlayerUtil.message(player, "Phantom is too lost for that...", 10);
-            } else if (Math.random() < 0.014){ // 1.4% chance
-                PlayerUtil.message(player, "Phantom seems to want something not edible...", 10);
-            } else {
-                PlayerUtil.message(player, "Phantom doesn't like that...", 2);
-            }
+        if (item == null) return;
+        // Allow naming — do not cancel or block
+        if (item.getType() == Material.NAME_TAG) {
             return;
         }
+
+        Material type = item.getType();
+        boolean tamed = phantom.getPersistentDataContainer().getOrDefault(isTamed, PersistentDataType.BYTE, (byte) 0) == 1;
+
+        // Not tamed yet → must use valid item and count progress
+        if (!tamed) {
+            if (!isValid(type)) {
+                // rare flavor messages
+                double r = Math.random();
+
+                if (r < 0.005) {                 // 0.5%
+                    PlayerUtil.message(player, "Phantom doesn't have time for that...", 10);
+                } else if (r < 0.009) {          // next 0.9%
+                    PlayerUtil.message(player, "Phantom is too lost for that...", 10);
+                } else if (r < 0.023) {          // next 2.3%
+                    PlayerUtil.message(player, "Phantom seems to want something not edible...", 10);
+                } else  {
+                    PlayerUtil.message(player, "Phantom doesn't like that...", 10);
+                }
+
+                return;
+            }
+
+            event.setCancelled(true);
+
+            // consume one
+            if (player.getGameMode() != GameMode.CREATIVE) {
+                item.setAmount(item.getAmount() - 1);
+            }
+
+            int progress = phantom.getPersistentDataContainer().getOrDefault(tameProgressKey, PersistentDataType.INTEGER, 0);
+            progress++;
+            phantom.getPersistentDataContainer().set(tameProgressKey, PersistentDataType.INTEGER, progress);
+
+            int tameGoal = 20;
+            if (progress >= tameGoal) {
+                phantom.getPersistentDataContainer().set(isTamed, PersistentDataType.BYTE, (byte) 1);
+                phantom.setHealth(phantom.getMaxHealth());
+                phantom.setSize(scale);
+                phantom.setFireTicks(0);
+                phantom.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 0, false, false));
+                phantom.getWorld().spawnParticle(Particle.HEART, phantom.getLocation().add(0, 1, 0), 3, 0.4, 0.4, 0.4);
+            } else {
+                phantom.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, phantom.getLocation().add(0, 1, 0), 6, 0.4, 0.4, 0.4);
+            }
+
+            return;
+        }
+
+        // === Already tamed ===
+        if (!isValid(type)) {
+//            PlayerUtil.message(player, "Phantom doesn't like that...", 2);
+//            event.setCancelled(true);
+            return;
+        }
+
+        // If already full health, do nothing
+        if (phantom.getHealth() >= phantom.getMaxHealth()) {
+            return;
+        }
+
         event.setCancelled(true);
 
-        int progress = phantom.getPersistentDataContainer().getOrDefault(tameProgressKey, PersistentDataType.INTEGER, 0);
-        progress++;
-        phantom.getPersistentDataContainer().set(tameProgressKey, PersistentDataType.INTEGER, progress);
-
-        // Consume one item
+        // consume one
         if (player.getGameMode() != GameMode.CREATIVE) {
             item.setAmount(item.getAmount() - 1);
         }
 
-        int tameGoal = 20;
-        double growthRatio = Math.min(1.0, progress / (double) tameGoal);
-        int baseSize = 1;
-        int targetSize = scale; // your final size (e.g., 5)
-        int newSize = baseSize + (int) Math.floor(growthRatio * (targetSize - baseSize));
+        // heal to full
+        phantom.setHealth(phantom.getMaxHealth());
 
-        if (phantom.getSize() < newSize) {
-            phantom.setSize(newSize);
-
-
-            if (progress < tameGoal) {
-                phantom.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, phantom.getLocation().add(0, 1, 0), 6, 0.4, 0.4, 0.4);
-            } else {
-                phantom.getWorld().spawnParticle(Particle.HEART, phantom.getLocation().add(0, 1, 0), 2, 0.4, 0.4, 0.4);
-                phantom.setHealth(Math.min(phantom.getHealth() + 2.0, phantom.getMaxHealth()));
-                phantom.setAware(false);
-                phantom.setSilent(true);
-                phantom.setPersistent(true);
-                phantom.setRemoveWhenFarAway(false);
-                phantom.setFireTicks(0);
-                phantom.getPersistentDataContainer().set(isTamed, PersistentDataType.BYTE, (byte) 1);
-                phantom.getPersistentDataContainer().set(fireResistKey, PersistentDataType.BYTE, (byte) 1);
-                phantom.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 0, false, false));
-
-            }
-        }
+        // small heal effect feedback
+        phantom.getWorld().spawnParticle(Particle.HEART, phantom.getLocation().add(0, 1, 0), 2, 0.4, 0.4, 0.4);
     }
+
 
     // === Riding Phantom ===
     @EventHandler
     public void onRightClickPhantom(PlayerInteractEntityEvent event) {
         if (!(event.getRightClicked() instanceof Phantom phantom)) return;
         Player player = event.getPlayer();
+
+        // Block mounting if holding a valid feed item
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        if (isValid(hand.getType())) {
+            return; // don't mount; feeding logic will handle the click
+        }
+        // Allow naming
+        if (hand.getType() == Material.NAME_TAG) {
+            //event.setCancelled(false);
+            return;
+        }
+
         event.setCancelled(true);
 
         if (phantom.getPersistentDataContainer().getOrDefault(isTamed, PersistentDataType.BYTE, (byte) 0) != 1) {

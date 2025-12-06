@@ -1,15 +1,18 @@
 package com.minecraftcivilizations.specialization.Combat;
 
+import com.minecraftcivilizations.specialization.CustomItem.CustomItemManager;
 import com.minecraftcivilizations.specialization.GUI.PatDownGUI;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -20,6 +23,18 @@ public class PatDown implements Listener {
         Player inspector = event.getPlayer();
         if (!(event.getRightClicked() instanceof Player target)) {return;}
         CustomPlayer customInspector = CoreUtil.getPlayer(inspector);
+        // --- BLOCK PATDOWN IF HOLDING CUSTOMBANDAGE OR LEAD ---
+        ItemStack hand = inspector.getInventory().getItemInMainHand();
+        if (hand != null) {
+            Material type = hand.getType();
+
+            boolean holdingLead = type == Material.LEAD;
+            boolean holdingCustomBandage = CustomItemManager.getDefinitions().bandage.isCustomItem(hand);
+
+            if (holdingLead || holdingCustomBandage) {
+                return; // don't fire pat-down if using these items
+            }
+        }
         // Check target PDC for downed
         // Check target PDC for downed (BYTE)
         NamespacedKey downedKey = new NamespacedKey(Specialization.getInstance(), "is_downed");

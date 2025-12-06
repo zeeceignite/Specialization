@@ -74,6 +74,8 @@ public class CustomItemManager implements Listener {
         return Specialization.getInstance().getCustomItemManager();
     }
 
+    public static DefineCustomItems getDefinitions(){ return getInstance().definitions;}
+
 
     void registerItem(CustomItem custom_item) {
         Specialization.getInstance().getLogger().info("Registering Custom Item: "+custom_item.getId());
@@ -162,6 +164,24 @@ public class CustomItemManager implements Listener {
         }
         return null;
     }
+
+
+    public boolean isCustomItem(ItemStack item_stack, String id){
+        CustomItem custom_item = getCustomItem(item_stack);
+        if(custom_item != null && custom_item.getId().equals(id)){
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isCustomItem(ItemStack item_stack, CustomItem comparing_custom_item){
+        CustomItem custom_item = getCustomItem(item_stack);
+        if(custom_item != null && custom_item == comparing_custom_item){
+            return true;
+        }
+        return false;
+    }
+
 
     public boolean disableItem(String id) {
         CustomItem item = custom_items_loaded.get(id);
