@@ -172,38 +172,24 @@ public class BreakBlockListener implements Listener {
     }
 
     private void handleExplosion(List<Block> blocks) {
-        blocks.forEach(block -> {
+        List<Block> block_list_copy = new ArrayList<>(blocks.size());
+        block_list_copy.addAll(blocks);
+        block_list_copy.forEach(block -> {
             if (!isReinforced(block)) return;
-
             Location dropLocation = block.getLocation().add(0.5, 0.5, 0.5);
-            Material type = block.getType();
-            org.bukkit.block.data.BlockData data = block.getBlockData();
 
-            if (isHeavilyReinforced(block)) {
-                double heavy = SpecializationConfig.getReinforcementConfig().get("HEAVY_EXPLOSION_RESISTANCE", Double.class);
-                Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
-                    if (Math.random() < heavy) {
-                        block.setType(type);
-                        block.setBlockData(data);
-                    } else {
-                        block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT));
-                    }
-                }, 3L);
+            boolean heavy = isHeavilyReinforced(block);
+            double factor;
+            if(heavy){
+                factor = SpecializationConfig.getReinforcementConfig().get("HEAVY_EXPLOSION_RESISTANCE", Double.class);
+            }else{
+                factor = SpecializationConfig.getReinforcementConfig().get("LIGHT_EXPLOSION_RESISTANCE", Double.class);
             }
-
-            if (isLightlyReinforced(block)) {
-                double light = SpecializationConfig.getReinforcementConfig().get("LIGHT_EXPLOSION_RESISTANCE", Double.class);
-                Bukkit.getScheduler().runTaskLater(Specialization.getInstance(), () -> {
-                    if (Math.random() < light) {
-                        block.setType(type);
-                        block.setBlockData(data);
-                    } else {
-                        block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT));
-                    }
-                }, 3L);
+            if(Math.random() < factor){
+                blocks.remove(block); //this removes the block from the event
+                block.getWorld().dropItemNaturally(dropLocation, new ItemStack(heavy?Material.IRON_INGOT:Material.COPPER_INGOT));
+                for (Block b : getMultiBlocks(block)) removeReinforcement(b);
             }
-
-            for (Block b : getMultiBlocks(block)) removeReinforcement(b);
         });
     }
 }
