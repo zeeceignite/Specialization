@@ -378,7 +378,7 @@ public class MobManager implements Listener {
                         .hunts(32)
                         .stepheight(0.25)
                         .breaks(1)
-                        .drops(0)
+                        .removeDrop(Material.GOLDEN_AXE)
                 );
 
         new MobOverrideRule(100,
@@ -391,7 +391,7 @@ public class MobManager implements Listener {
                         .hunts(62)
                         .stepheight(0.5)
                         .breaks(1.5)
-                        .drops(0)
+                        .removeDrop(Material.GOLDEN_SWORD)
                 );
 
         new MobOverrideRule(100,
