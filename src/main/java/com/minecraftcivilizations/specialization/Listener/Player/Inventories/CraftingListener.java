@@ -2,6 +2,7 @@ package com.minecraftcivilizations.specialization.Listener.Player.Inventories;
 
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.CustomItem.CustomItemManager;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -208,9 +209,6 @@ public class CraftingListener implements Listener {
         }
         SpecializationCraftItemEvent new_event = new SpecializationCraftItemEvent(event, player, craftedAmount, totalReduction, xp_gain_pair.firstValue(), lvl);
         Bukkit.getPluginManager().callEvent(new_event);
-        if(new_event.isXpCancelled()) {
-            return;
-        }
         if (xp_gain_pair.firstValue() != null && xp_gain_pair.secondValue() != null) {
             double xpToGive = xp_gain_pair.secondValue() * craftedAmount;
 
@@ -218,9 +216,9 @@ public class CraftingListener implements Listener {
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (player.isOnline()) {
                     player.setFoodLevel(player.getFoodLevel() - finalReduction);
-                    customPlayer.addSkillXp(xp_gain_pair.firstValue(), xpToGive);
-                    LOGGER.fine("Gave " + xpToGive + " XP to " + player.getName() +
-                            " for crafting " + craftedAmount + "x " + crafted.getType());
+                    if(!new_event.isXpCancelled()) {
+                        customPlayer.addSkillXp(xp_gain_pair.firstValue(), xpToGive);
+                    }
                 }
             }, 1L);
         }
@@ -229,13 +227,21 @@ public class CraftingListener implements Listener {
 
     private double getFoodReduction(Material type) {
         switch (type) {
+            case FERMENTED_SPIDER_EYE:
+            case BEETROOT_SOUP:
+                return 2.0;
             case STICK:
             case PUMPKIN_PIE:
-            case BEETROOT_SOUP: //Special foods should be more optimized to craft, higher lvl
             case MUSHROOM_STEW:
-                return 0.25;
+                return 0.35;
+            case TORCH:
+            case REDSTONE_TORCH:
+            case SOUL_TORCH:
+            case REDSTONE_LAMP:
+            case BOOK:
+            case BOOKSHELF:
+            case DRIED_KELP_BLOCK:
             case BREAD: //Bread is a bit more expensive to craft due to it being lo lvl
-                return 0.5;
             case CAKE:
                 return 0.5;
             case COOKIE:
@@ -250,17 +256,44 @@ public class CraftingListener implements Listener {
             case ENCHANTING_TABLE:
             case ANVIL:
                 return 1.25;
+            case WRITABLE_BOOK:
             case FLINT_AND_STEEL:
             case BUCKET:
             case SHEARS:
                 return 2.0;
+            case CLAY:
+            case PACKED_MUD:
+            case SNOW_BLOCK:
+            case GLASS_PANE:
+                return 0.33;
+            case TINTED_GLASS:
+            case GLASS_BOTTLE:
+                return 0.75;
         }
         String name = type.name();
-        if (name.contains("_PLANKS")){
-            return 0.25;
-        }else if(name.contains("_STAIRS") || name.contains("_FENCE") || name.contains("_SLAB") || name.contains("_WALL")){
+
+
+        if(Tag.STAIRS.isTagged(type)
+                || Tag.FENCES.isTagged(type)
+                || Tag.FENCE_GATES.isTagged(type)
+                || Tag.SLABS.isTagged(type)
+                || Tag.WALLS.isTagged(type)
+                || Tag.BUTTONS.isTagged(type)
+                || Tag.ALL_SIGNS.isTagged(type)
+                || Tag.ALL_HANGING_SIGNS.isTagged(type)
+                || Tag.TERRACOTTA.isTagged(type)
+        ){
             return 0.5;
         }
+        if (Tag.PLANKS.isTagged(type)){
+            return 0.25;
+        }
+        if(Tag.TRAPDOORS.isTagged(type)
+                || Tag.PRESSURE_PLATES.isTagged(type)
+                || name.contains("_GLASS")){
+            return 0.33;
+        }
+
 
         /**
          * Complex values for tools
