@@ -4,6 +4,9 @@ import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 
 @AllArgsConstructor
@@ -61,6 +64,18 @@ public class Skill {
                 }
             }
         }
+
+        boolean positive = appliedXp>0;
+        TextComponent valuecomp;
+        if(appliedXp>0){
+            valuecomp = Component.text("+"+appliedXp+" ").color(NamedTextColor.GREEN);
+        } else{
+            valuecomp = Component.text("-"+appliedXp+" ").color(NamedTextColor.RED);
+        }
+        TextComponent comp = Component.text(" "+getSkillType().name()+" ").color(NamedTextColor.WHITE)
+                .append(valuecomp)
+                .append(Component.text("("+this.xp+")").color(NamedTextColor.GRAY));
+        Debug.broadcast("xp_"+player.getName(), comp);
         this.lastUpdate = System.currentTimeMillis();
     }
 

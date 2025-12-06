@@ -92,7 +92,7 @@ public class CustomItemManager implements Listener {
 
         CustomItem ci = getCustomItem(result);
         if (ci != null) {
-            Debug.broadcast("customitem", "prepare crafting custom item");
+//            Debug.broadcast("customitem", "prepare crafting custom item");
             Player player = (Player) event.getView().getPlayer();
             if (!ci.canPlayerCraft(player)) {
                 // Hide the result
@@ -105,7 +105,6 @@ public class CustomItemManager implements Listener {
     public void onCraftItem(CraftItemEvent event) {
         CustomItem ci = getCustomItem(event.getCurrentItem());
         if (ci != null) {
-            Debug.broadcast("customitem", "crafting custom item");
             Player player = (Player) event.getWhoClicked();
             if (!ci.canPlayerCraft(player)) {
                 // Prevent crafting entirely

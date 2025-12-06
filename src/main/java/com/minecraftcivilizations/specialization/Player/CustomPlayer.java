@@ -155,22 +155,6 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
                 "<"+color+">(" +(negative?"":"+") +xp+")</"+color+"> " +
                 "<gray>"+getDisplayName(skillType)+"</gray>");
 
-
-        // Debug XP if applicable
-        if (Debug.isListeningToChannel(player, "xp")){
-            try {
-                Debug.message(player, "xp",
-                        MiniMessage.miniMessage().deserialize(player.getName() + " xp: ")
-                                .append(simple_xp_msg)
-                                .append(Component.space())
-                                .append(Debug.formatLocationClickable(player.getLocation(), true)),
-                        null
-                );
-            }catch(Exception e){
-                e.printStackTrace();
-                Specialization.getInstance().getLogger().info("BAD DEBUG in CustomPlayer.java");
-            }
-        }
         player.sendActionBar(simple_xp_msg);
         int currentLevel = this.getSkillLevel(skillType);
         if (!silent && this.isSoundEnabled) {
@@ -182,6 +166,21 @@ public class CustomPlayer extends minecraftcivilizations.com.minecraftCivilizati
             }
         }
         XpGainMonitor.handleXpGain(player, skillType, xp);
+
+        // Debug XP if applicable
+        if (Debug.isListeningToChannel(player, "xp")){
+            try {
+                Debug.message(player, "xp",
+                        MiniMessage.miniMessage().deserialize("xp: ")
+                                .append(simple_xp_msg)
+                                .append(Component.space()),
+                        null
+                );
+            }catch(Exception e){
+                e.printStackTrace();
+                Specialization.getInstance().getLogger().info("BAD DEBUG in CustomPlayer.java");
+            }
+        }
 
         // Update team assignment based on highest skill
 //        TeamManager.setTeam(Bukkit.getPlayer(getUuid()));

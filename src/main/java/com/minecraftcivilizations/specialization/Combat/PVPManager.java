@@ -108,8 +108,8 @@ public class PVPManager implements Listener, CommandExecutor {
         // Tag both
         combatMap.put(victim.getUniqueId(), now);
         combatMap.put(damager.getUniqueId(), now);
-        addCombatBar(victim);
-        addCombatBar(damager);
+        addCombatBar(victim, null);
+        addCombatBar(damager, victim);
         startCombatTaskIfNeeded();
 
         // Only send messages if BOTH were NOT tagged before
@@ -139,11 +139,14 @@ public class PVPManager implements Listener, CommandExecutor {
         }
     }
 
-    private void addCombatBar(Player p) {
+    private void addCombatBar(Player p, Player pvp_target) {
         BossBar bar = combatBars.get(p.getUniqueId());
         if (bar == null) {
             bar = Bukkit.createBossBar("§7Combat-Log Timer", BarColor.RED, BarStyle.SEGMENTED_10);
             bar.addPlayer(p);
+            if(pvp_target!=null) {
+                Debug.broadcast("combat", p.getName() + "<gray> entered combat with</gray> "+pvp_target.getName());
+            }
             combatBars.put(p.getUniqueId(), bar);
         }
         if (!bar.getPlayers().contains(p)) {
@@ -372,7 +375,7 @@ public class PVPManager implements Listener, CommandExecutor {
             combatMap.remove(id);
             combatMap.put(id, lastHit);
 
-            addCombatBar(player);
+            addCombatBar(player, null);
             startCombatTaskIfNeeded();
 
             PlayerUtil.message(player,"You are still in §ccombat §7for §b"
@@ -557,7 +560,7 @@ public class PVPManager implements Listener, CommandExecutor {
         Debug.broadcast("combatlog", "<grey>[Command] /simulatehit executed for " + p.getName());
 //        p.sendMessage("§0[§0§6CivLabs§0]§8 » §7You are tagged for §ccombat §7for §b" + (COMBAT_COOLDOWN / 1000) + " §7seconds");
         PlayerUtil.message(p,"§cCombat§7 logging leaves your items on a §ckillable §aMannequin§7 for §c15s§7 before logging out safely.");
-        addCombatBar(p);
+        addCombatBar(p, null);
         startCombatTaskIfNeeded();
         return true;
     }

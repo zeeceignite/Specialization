@@ -9,6 +9,8 @@ import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Item.ItemUtils;
 import minecraftcivilizations.com.minecraftCivilizationsCore.MinecraftCivilizationsCore;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -178,18 +180,32 @@ public class CraftingListener implements Listener {
             }
         }
 
+        Material mat = event.getCurrentItem().getType();
+        String color = getItemNameFormat(mat);
+        boolean rare = true;
+        if(color==null){
+            color = "gray";
+            rare = false;
+        }
+        String colortag = "<"+color+">"+amtstring+mat.name()+"</"+color+">";
 
-        Debug.broadcast("craft",
-                player.getName()+"<gray> crafted</gray> "+amtstring+getItemNameFormat(event.getCurrentItem().getType())+" <red>🍖"+totalReduction+"</red>",
-
-                "<gray>🎬:"+event.getAction().name()+"\n"
-                        +"<green>Current Item: </green>"+event.getCurrentItem().getType().name()+"\n"
-                        +"<blue>Cursor Item: </blue>"+event.getCursor().getType().name()+"\n"
-                        +"<red>🍖 Type Base Reduction: </red>"+base_reduction+"\n"
-                        +"<red>🍖 Skill Benefit: </red>"+skill_benefit+"\n"
-                        +"<red>🍖 Food Level: </red>"+foodLevel+" <gold>🍖 Reduction:</gold> "+totalReduction
-        );
-
+        Component debug_isolated = MiniMessage.miniMessage().deserialize("<gray>crafted</gray> "+colortag+" <red>🍖"+totalReduction+"</red>");
+        Component debug_global = Component.text(player.getName()+" ").color(NamedTextColor.WHITE).append(debug_isolated);
+        Component hover = MiniMessage.miniMessage().deserialize("<gray>🎬:"+event.getAction().name()+"\n"
+                +"<green>Current Item: </green>"+event.getCurrentItem().getType().name()+"\n"
+                +"<blue>Cursor Item: </blue>"+event.getCursor().getType().name()+"\n"
+                +"<red>🍖 Type Base Reduction: </red>"+base_reduction+"\n"
+                +"<red>🍖 Skill Benefit: </red>"+skill_benefit+"\n"
+                +"<red>🍖 Food Level: </red>"+foodLevel+" <gold>🍖 Reduction:</gold> "+totalReduction);
+        Debug.broadcast("craft", debug_global, hover);
+        if(rare){
+            Debug.broadcast("craftrare", debug_global, hover);
+        }
+        String isolated_debug_channel = "craft_"+player.getName().toLowerCase();
+        if(Debug.isAnyoneListening(isolated_debug_channel, false)) {
+            Debug.broadcast(isolated_debug_channel, debug_isolated
+                    .append(Debug.formatLocationClickable(player.getLocation(), true)), hover);
+        }
         SpecializationCraftItemEvent new_event = new SpecializationCraftItemEvent(event, player, craftedAmount, totalReduction, xp_gain_pair.firstValue(), lvl);
         Bukkit.getPluginManager().callEvent(new_event);
         if(new_event.isXpCancelled()) {
@@ -274,18 +290,21 @@ public class CraftingListener implements Listener {
     }
 
     private String getItemNameFormat(Material type) {
-        String color = "gray";
+        String color = null;
         if(type.name().contains("IRON_")){
             color = "green";
         }else if(type.name().contains("DIAMOND_")){
             color = "aqua";
+        }else if(type.name().contains("NETHERITE_")) {
+            color = "light_purple";
         }else{
-
             switch(type){
                 case TNT:
                 case RESPAWN_ANCHOR:
+                case END_CRYSTAL:
                     color = "dark_red";
                     break;
+                case BEACON:
                 case ANVIL:
                 case ENCHANTING_TABLE:
                     color = "yellow";
@@ -293,7 +312,7 @@ public class CraftingListener implements Listener {
 
             }
         }
-        return "<"+color+">"+type.name()+"</"+color+">";
+        return color;
     }
 
     /**
