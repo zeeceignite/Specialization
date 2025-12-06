@@ -2,19 +2,23 @@ package com.minecraftcivilizations.specialization.StaffTools;
 
 import com.minecraftcivilizations.specialization.Specialization;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.text.DecimalFormat;
 import java.util.*;
@@ -38,7 +42,8 @@ public class Debug implements Listener {
     private Map<UUID, List<String>> listening_channels = new HashMap<UUID, List<String>>(); //used specifically for tab completion
     private List<String> debug_channels = new ArrayList<String>(); //used by command suggestions
 
-
+    // Add this field to the class (non-static)
+    private final NamespacedKey debug_channels_key;
 
 
     public static boolean DEBUG_ENABLED = false;
@@ -46,6 +51,7 @@ public class Debug implements Listener {
 
     public Debug(Specialization plugin){
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        this.debug_channels_key = new NamespacedKey(plugin, "DebugChannels");
         setupDefaultChannels();
     }
 
@@ -57,25 +63,67 @@ public class Debug implements Listener {
         }
     }
 
+
     @EventHandler
     public void onLogout(PlayerQuitEvent event){
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
 
-//        unregisterPlayerToAllChannels(event.getPlayer());
+        // Persist whatever channels this player is currently listening to into their PDC
+        List<String> channels_to_save = listening_channels.get(uuid);
+        if (channels_to_save != null && !channels_to_save.isEmpty()) {
+            String serialized = String.join(",", channels_to_save);
+            player.getPersistentDataContainer().set(debug_channels_key, PersistentDataType.STRING, serialized);
+        } else {
+            // Remove the key if there is nothing to save
+            player.getPersistentDataContainer().remove(debug_channels_key);
+        }
+
+        // Unregister player from all debug channel listener sets and remove from in-memory map
+        unregisterPlayerToAllChannels(player);
+        listening_channels.remove(uuid);
     }
 
 
     @EventHandler
     public void onLogin(PlayerJoinEvent event) {
-//        Player player = event.getPlayer();
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
 
-        // If we have a remembered list for this player (unlikely if we cleared on quit),
-        // restore them to those channels first.
-//        List<String> remembered = listening_channels.get(player.getUniqueId());
-//        if (remembered != null && !remembered.isEmpty()) {
-//            for (String ch : remembered) {
-//                getOrCreateChannelPlayerSet(ch, false).add(player);
-//            }
-//        }
+        // Load persisted channels from PDC (if any) and restore them directly (no permission check).
+        String serialized = player.getPersistentDataContainer().get(debug_channels_key, PersistentDataType.STRING);
+        if (serialized != null && !serialized.isEmpty()) {
+            String[] channels = serialized.split(",");
+            for (String ch : channels) {
+                if (ch == null) continue;
+                ch = ch.trim().toLowerCase();
+                if (ch.isEmpty()) continue;
+                restorePlayerChannelNoPerm(player, ch);
+            }
+        }
+
+        // If there exists an in-memory remembered list (e.g. server didn't clear for this player),
+        // prefer it: ensure it's applied to the channel sets as well.
+        List<String> remembered = listening_channels.get(uuid);
+        if (remembered != null && !remembered.isEmpty()) {
+            // Make a copy to avoid concurrent modification while we register
+            for (String ch : new ArrayList<>(remembered)) {
+                restorePlayerChannelNoPerm(player, ch);
+            }
+        }
+    }
+    private void restorePlayerChannelNoPerm(Player player, String debug_channel) {
+        debug_channel = debug_channel.toLowerCase();
+        // ensure the channel set exists and add the player
+        Set<UUID> player_set = getOrCreateChannelPlayerSet(debug_channel, false);
+        player_set.add(player.getUniqueId());
+
+        // ensure player's list exists and avoid duplicates
+        listening_channels.computeIfAbsent(player.getUniqueId(), k -> new ArrayList<>());
+        List<String> p_channels = listening_channels.get(player.getUniqueId());
+        if (!p_channels.contains(debug_channel)) {
+            p_channels.add(debug_channel);
+        }
     }
 
     /**
@@ -84,19 +132,25 @@ public class Debug implements Listener {
      */
     private void setupDefaultChannels() {
         getOrCreateChannelPlayerSet("xp", true);
+        getOrCreateChannelPlayerSet("xp_player_name", true);
         getOrCreateChannelPlayerSet("levelup", true);
         getOrCreateChannelPlayerSet("craft", true);
+        getOrCreateChannelPlayerSet("craftrare", true);
+        getOrCreateChannelPlayerSet("craft_player_name", true);
         getOrCreateChannelPlayerSet("recipe", true);
         getOrCreateChannelPlayerSet("customitem", true);
         getOrCreateChannelPlayerSet("damage", true);
+//        getOrCreateChannelPlayerSet("damage_player_name", true);
         getOrCreateChannelPlayerSet("armor", true);
         getOrCreateChannelPlayerSet("death", true);
         getOrCreateChannelPlayerSet("down", true);
         getOrCreateChannelPlayerSet("revive", true);
+        getOrCreateChannelPlayerSet("combat", true);
         getOrCreateChannelPlayerSet("combatlog", true);
         getOrCreateChannelPlayerSet("weight", true);
         getOrCreateChannelPlayerSet("globalchat", true);
         getOrCreateChannelPlayerSet("mob", true);
+        getOrCreateChannelPlayerSet("debug", true);
     }
 
     /**
@@ -133,6 +187,12 @@ public class Debug implements Listener {
 
     static void resetAllValues(CommandSender commander) {
         Debug debug = getInstance();
+
+        Debug.broadcast("debug", "debug_listening: "+debug.debug_listening.size());
+        Debug.broadcast("debug", "listening_channels: "+debug.listening_channels.size());
+        Debug.broadcast("debug", "debug_channels: "+debug.debug_channels.size());
+        Debug.broadcast("debug", "Resetting all values");
+
         debug.debug_listening = new HashMap<String, Set<UUID>>();
         debug.listening_channels = new HashMap<UUID, List<String>>();
         debug.debug_channels = new ArrayList<String>();
@@ -147,9 +207,13 @@ public class Debug implements Listener {
         if (!player.hasPermission("specialization.debug")) {
             return;
         }
+        debug_channel = debug_channel.toLowerCase();
         Set<UUID> player_set = getOrCreateChannelPlayerSet(debug_channel, false);
         player_set.add(player.getUniqueId());
         listening_channels.computeIfAbsent(player.getUniqueId(), p -> new ArrayList<String>()).add(debug_channel);
+//        if(!debug_channels.contains(debug_channel)){
+//            debug_channels.add(debug_channel);
+//        }
     }
 
     /**
@@ -169,7 +233,13 @@ public class Debug implements Listener {
     }
 
     public void unregisterPlayerToAllChannels(Player player) {
-        for(String channel : debug_channels){
+        List<String> strings = listening_channels.get(player.getUniqueId());
+        if (strings == null || strings.isEmpty()) {
+            listening_channels.put(player.getUniqueId(), new ArrayList<String>());
+            return;
+        }
+        // iterate a copy to avoid ConcurrentModificationException
+        for (String channel : new ArrayList<>(strings)) {
             unregisterPlayerChannel(player, channel);
         }
         listening_channels.put(player.getUniqueId(), new ArrayList<String>());
@@ -220,7 +290,6 @@ public class Debug implements Listener {
      */
     public static void broadcast(String debug_channel, Component msg){
         if(!DEBUG_ENABLED)return;
-        Component comp;
         broadcastFinalize(debug_channel, getPrefix(debug_channel).append(msg), false);
     }
 
@@ -247,6 +316,10 @@ public class Debug implements Listener {
         broadcastFinalize(debug_channel, getPrefix(debug_channel).append(comp), register_channel);
     }
 
+    /**
+     * All other broadcasts channel here
+     * Use this if you need quick response debugging
+     */
     private static void broadcastFinalize(String debug_channel, Component comp, boolean register_channel) {
         debug_channel = debug_channel.toLowerCase();
         for(UUID playeruuid : getInstance().getOrCreateChannelPlayerSet(debug_channel, register_channel)){
@@ -283,7 +356,10 @@ public class Debug implements Listener {
      * IMPORTANT: Use Debug.isEnabled() before using component based calls
      */
     public static void message(Player player, String debug_channel, Component msg, Component hover) {
-     Debug debug = getInstance();
+        if (!player.hasPermission("specialization.debug")) {
+            return;
+        }
+        Debug debug = getInstance();
         if(hover!=null){
             msg = msg.hoverEvent(HoverEvent.showText(hover));
         }
@@ -310,9 +386,21 @@ public class Debug implements Listener {
 //        return comp;
     }
 
+    private static final Map<String, Component> prefix_cache = new HashMap<>();
+
+    private static final TextComponent bracket_l = Component.text("[", NamedTextColor.DARK_GRAY);
+    private static final TextComponent bracket_r = Component.text("] ", NamedTextColor.DARK_GRAY);
+
+
     private static Component getPrefix(String debug_channel) {
-        return MiniMessage.miniMessage().deserialize("<dark_gray>[" + debug_channel.toLowerCase() + "]:</dark_gray> ");
+        return prefix_cache.computeIfAbsent(debug_channel.toLowerCase(), ch ->
+                bracket_l.append(Component.text(ch, NamedTextColor.DARK_GRAY)).append(bracket_r)
+        );
     }
+
+//    private static Component getPrefix(String debug_channel) {
+//        return MiniMessage.miniMessage().deserialize("<dark_gray>[" + debug_channel.toLowerCase() + "]:</dark_gray> ");
+//    }
 
     /**
      * Used for Tab Completion with the command

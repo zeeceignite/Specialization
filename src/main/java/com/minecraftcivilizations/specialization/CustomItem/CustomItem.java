@@ -289,7 +289,7 @@ public abstract class CustomItem {
 
         float ftick = ((float)ticks)/20;
         cd.setCooldownSeconds(ftick);
-        Debug.broadcast("customitem", "cooldown override: "+ftick);
+//        Debug.broadcast("customitem", "cooldown override: "+ftick);
         meta.setUseCooldown(cd);
         item.setItemMeta(meta);
 
