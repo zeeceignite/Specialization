@@ -73,7 +73,11 @@ public class Bandage extends CustomItem {
         Player healer = event.getPlayer();
         CustomPlayer cHealer = CoreUtil.getPlayer(healer.getUniqueId());
         int lvl = cHealer.getSkillLevel(SkillType.HEALER);
-        if (lvl == 0) return;
+        if (lvl == 0)
+        {
+            PlayerUtil.message(healer,"You need to be a healer to use a bandage", 5);
+            return;
+        }
 
         Entity clicked = event.getRightClicked();
 
@@ -133,7 +137,10 @@ public class Bandage extends CustomItem {
         CustomPlayer cHealer = CoreUtil.getPlayer(healer.getUniqueId());
         int lvl = cHealer.getSkillLevel(SkillType.HEALER);
 
-        if (lvl <= 0) return;
+        if (lvl <= 0){
+            PlayerUtil.message(healer,"You need to be a healer to use a bandage", 5);
+            return;
+        }
         //reviving player
         if (target instanceof Player pTarget) {
             Byte downed = pTarget.getPersistentDataContainer().get(
@@ -156,12 +163,12 @@ public class Bandage extends CustomItem {
         double current_health = target.getHealth();
         double max_health = target.getAttribute(Attribute.MAX_HEALTH).getValue();
         if (current_health >= max_health) {
-            Debug.broadcast("customitem", "<red>player already max health");
+            PlayerUtil.message(healer,target.getName()+" already has full health", 10);
             return;
         }
 
         if (healer.getFoodLevel() < 3) {
-            PlayerUtil.message(healer,"You're too hungry to preform this action");
+            PlayerUtil.message(healer,"You're too hungry to heal");
             return;
         }
 

@@ -107,6 +107,10 @@ public abstract class CustomItem {
         this(id, displayName, material, id, -1, enabled, uses_cooldown);
     }
 
+    public boolean isCustomItem(ItemStack stack){
+        return getManager().isCustomItem(stack, id);
+    }
+
     /**
      * Creates a typless Custom Item, to allow for variants such as swords
      */
