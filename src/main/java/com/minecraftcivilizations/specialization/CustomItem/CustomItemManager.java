@@ -53,8 +53,8 @@ public class CustomItemManager implements Listener {
     Specialization plugin;
 
     // items are defined and referenced here
-    @Getter
     public DefineCustomItems definitions;
+
     public CustomItemManager(Specialization plugin ){
         this.plugin = plugin;
 
