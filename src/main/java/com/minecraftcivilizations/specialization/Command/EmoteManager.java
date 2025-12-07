@@ -17,6 +17,7 @@ import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.type.Slab;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Interaction;
@@ -251,7 +252,11 @@ public class EmoteManager extends BaseCommand implements Listener {
         }
 
         if (name.endsWith("_SLAB")) {
-            return true;
+            // Only allow bottom slabs (not top or double)
+            if (block.getBlockData() instanceof Slab slab) {
+                return slab.getType() == Slab.Type.BOTTOM;
+            }
+            return false;
         }
 
         // Carpet support
