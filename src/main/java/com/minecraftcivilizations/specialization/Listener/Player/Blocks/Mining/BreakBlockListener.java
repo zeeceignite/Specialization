@@ -63,6 +63,9 @@ public class BreakBlockListener implements Listener {
             }
         }
 
+        boolean wasReinforced = isReinforced(event.getBlock());
+        boolean wasHeavy = wasReinforced && isHeavilyReinforced(event.getBlock());
+
         AttributeInstance breakSpeedAttr = event.getPlayer().getAttribute(Attribute.BLOCK_BREAK_SPEED);
 
         if (breakSpeedAttr != null) {
@@ -72,8 +75,8 @@ public class BreakBlockListener implements Listener {
             CustomPlayer player = CoreUtil.getPlayer(event.getPlayer().getUniqueId());
             BlockData blockData = event.getBlock().getBlockData();
 
-            if (isReinforced(event.getBlock())) {
-                handleReinforcedDrop(event.getBlock(), event.getPlayer());
+            if (wasReinforced) {
+                handleReinforcedDrop(event.getBlock(), event.getPlayer(), wasHeavy);
             }
 
             if (pair != null && pair.firstValue() != null && pair.secondValue() != null) {
@@ -90,19 +93,16 @@ public class BreakBlockListener implements Listener {
         farmerListener(event);
     }
 
-    private void handleReinforcedDrop(Block block, org.bukkit.entity.Player player) {
+    private void handleReinforcedDrop(Block block, org.bukkit.entity.Player player, boolean wasHeavy) {
         Location dropLocation = block.getLocation().add(0.5, 0.5, 0.5);
 
-        // 50% chance to give the reward item
         if (Math.random() < 0.5) {
-            if (isHeavilyReinforced(block)) {
+            if (wasHeavy) {
                 block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT));
                 PlayerUtil.message(player,"Iron Reinforcement Broke");
-            }
-            if (isLightlyReinforced(block)) {
+            } else {
                 block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT));
                 PlayerUtil.message(player,"Copper Reinforcement Broke");
-
             }
         }
 
