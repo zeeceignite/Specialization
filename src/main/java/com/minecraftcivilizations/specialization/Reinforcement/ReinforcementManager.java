@@ -2,6 +2,7 @@ package com.minecraftcivilizations.specialization.Reinforcement;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -28,8 +29,49 @@ public class ReinforcementManager {
     private static final long CACHE_EXPIRE_MS = 2 * 60 * 1000L; // 2 minutes
     private static final int CHUNK_RADIUS = 3; //scan radius around player to show particles
 
+    private static long HEAVY_DECAY_TICKS;
+    private static long LIGHT_DECAY_TICKS;
+    private static long DECAY_CHECK_INTERVAL;
+
     // --------------------- PARTICLE STREAMING ---------------------
     public static void startReinforcement() {
+        HEAVY_DECAY_TICKS = SpecializationConfig.getReinforcementConfig().get("HEAVY_DECAY_TICKS", Long.class);
+        LIGHT_DECAY_TICKS = SpecializationConfig.getReinforcementConfig().get("LIGHT_DECAY_TICKS", Long.class);
+        DECAY_CHECK_INTERVAL = HEAVY_DECAY_TICKS;
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                long currentTick = Bukkit.getCurrentTick();
+                for (Chunk chunk : new ArrayList<>(cachedReinforcements.keySet())) {
+                    Set<Reinforcement> set = cachedReinforcements.get(chunk);
+                    if (set == null) continue;
+                    
+                    Set<Reinforcement> toRemove = new HashSet<>();
+                    Set<Reinforcement> toAdd = new HashSet<>();
+                    
+                    for (Reinforcement r : set) {
+                        if (r.isHeavy()) {
+                            if (currentTick - r.createdTick() > HEAVY_DECAY_TICKS) {
+                                toRemove.add(r);
+                                toAdd.add(new Reinforcement(r.location(), false, currentTick));
+                            }
+                        } else {
+                            if (currentTick - r.createdTick() > LIGHT_DECAY_TICKS) {
+                                toRemove.add(r);
+                            }
+                        }
+                    }
+                    
+                    if (!toRemove.isEmpty()) {
+                        set.removeAll(toRemove);
+                        set.addAll(toAdd);
+                        chunk.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, new Gson().toJson(set));
+                        cachedReinforcements.put(chunk, set);
+                        cacheTime.put(chunk, System.currentTimeMillis());
+                    }
+                }
+            }
+        }.runTaskTimerAsynchronously(Specialization.getInstance(), 0L, DECAY_CHECK_INTERVAL);
 
         // --- Player scan every 3 seconds ---
         new BukkitRunnable() {
@@ -173,7 +215,7 @@ public class ReinforcementManager {
         Chunk chunk = block.getChunk();
         Set<Reinforcement> blocks = getReinforcedBlocks(chunk);
         if (blocks == null) blocks = new HashSet<>();
-        if (!blocks.add(new Reinforcement(block.getLocation().toVector(), isHeavy))) return false;
+        if (!blocks.add(new Reinforcement(block.getLocation().toVector(), isHeavy, Bukkit.getCurrentTick()))) return false;
 
         chunk.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, new Gson().toJson(blocks));
         cachedReinforcements.put(chunk, blocks);
@@ -197,7 +239,7 @@ public class ReinforcementManager {
         Chunk c = b.getChunk();
         Set<Reinforcement> r = getReinforcedBlocks(c);
         if (r == null) r = new HashSet<>();
-        if (!r.add(new Reinforcement(b.getLocation().toVector(), h))) return false;
+        if (!r.add(new Reinforcement(b.getLocation().toVector(), h, Bukkit.getCurrentTick()))) return false;
         c.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, new Gson().toJson(r));
         cachedReinforcements.put(c, r);
         cacheTime.put(c, System.currentTimeMillis());
@@ -208,8 +250,9 @@ public class ReinforcementManager {
         Chunk chunk = block.getChunk();
         Set<Reinforcement> reinforcedBlocks = getReinforcedBlocks(chunk);
         if (reinforcedBlocks == null) return;
-        reinforcedBlocks.remove(new Reinforcement(block.getLocation().toVector(), false));
-        reinforcedBlocks.remove(new Reinforcement(block.getLocation().toVector(), true));
+        long currentTick = Bukkit.getCurrentTick();
+        reinforcedBlocks.remove(new Reinforcement(block.getLocation().toVector(), false, currentTick));
+        reinforcedBlocks.remove(new Reinforcement(block.getLocation().toVector(), true, currentTick));
         chunk.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, new Gson().toJson(reinforcedBlocks));
         cachedReinforcements.put(chunk, reinforcedBlocks);
         cacheTime.put(chunk, System.currentTimeMillis());
