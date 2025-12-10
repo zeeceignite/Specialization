@@ -1,18 +1,18 @@
 package com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining;
 
+import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
+import com.minecraftcivilizations.specialization.Reinforcement.Reinforcement;
+import com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
 import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import minecraftcivilizations.com.minecraftCivilizationsCore.Options.Pair;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
@@ -34,6 +34,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.minecraftcivilizations.specialization.Reinforcement.ReinforcementManager.*;
@@ -63,8 +64,27 @@ public class BreakBlockListener implements Listener {
             }
         }
 
-        boolean wasReinforced = isReinforced(event.getBlock());
-        boolean wasHeavy = wasReinforced && isHeavilyReinforced(event.getBlock());
+        Chunk chunk = event.getBlock().getChunk();
+        org.bukkit.persistence.PersistentDataContainer pdc = chunk.getPersistentDataContainer();
+        String reinforcementData = pdc.get(ReinforcementManager.namespacedKey, org.bukkit.persistence.PersistentDataType.STRING);
+        
+        boolean wasReinforced = false;
+        boolean wasHeavy = false;
+        
+        if (reinforcementData != null) {
+            Set<Reinforcement> blockSet = new Gson().fromJson(reinforcementData, new TypeToken<Set<Reinforcement>>() {}.getType());
+            if (blockSet != null) {
+                for (Reinforcement r : blockSet) {
+                    if (r.location().getBlockX() == event.getBlock().getX() &&
+                        r.location().getBlockY() == event.getBlock().getY() &&
+                        r.location().getBlockZ() == event.getBlock().getZ()) {
+                        wasReinforced = true;
+                        wasHeavy = r.isHeavy();
+                        break;
+                    }
+                }
+            }
+        }
 
         AttributeInstance breakSpeedAttr = event.getPlayer().getAttribute(Attribute.BLOCK_BREAK_SPEED);
 
