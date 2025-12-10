@@ -25,12 +25,22 @@ public class AnimalFeedingManager {
                 Bukkit.getScheduler().runTaskAsynchronously(Specialization.getInstance(), () -> {
                     long currentTick = Bukkit.getCurrentTick();
                     
+                    Long breedingCooldown = SpecializationConfig.getAnimalFeedingConfig().get("BREEDING_COOLDOWN_TICKS", Long.class);
+                    if (breedingCooldown == null) breedingCooldown = 120000L;
+                    
                     for (World world : Bukkit.getWorlds()) {
                         for (Entity entity : world.getEntities()) {
                             if (!(entity instanceof Animals animal)) continue;
 
                             Boolean requiresFeeding = SpecializationConfig.getAnimalFeedingConfig().get("REQUIRE_FEEDING_" + animal.getType().name(), Boolean.class);
                             if (requiresFeeding == null || !requiresFeeding) continue;
+
+                            if (!animal.isAdult()) continue;
+
+                            long lastBreedTime = animal.getPersistentDataContainer().getOrDefault(LAST_BREED_TIME_KEY, PersistentDataType.LONG, 0L);
+                            if (lastBreedTime != 0L && (currentTick - lastBreedTime < breedingCooldown)) {
+                                continue;
+                            }
                             
                             applyHungerEffect(animal);
                         }
