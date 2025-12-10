@@ -10,6 +10,7 @@ import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.minecraftcivilizations.specialization.Analytics.AnalyticsData;
+import com.minecraftcivilizations.specialization.Animal.AnimalFeedingManager;
 import com.minecraftcivilizations.specialization.Combat.*;
 import com.minecraftcivilizations.specialization.Command.*;
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
@@ -17,6 +18,7 @@ import com.minecraftcivilizations.specialization.CustomItem.CustomItemManager;
 import com.minecraftcivilizations.specialization.Data.DataManager;
 import com.minecraftcivilizations.specialization.Data.MongoConnection;
 import com.minecraftcivilizations.specialization.Distance.TownManager;
+import com.minecraftcivilizations.specialization.Listener.Animal.AnimalFeedListener;
 import com.minecraftcivilizations.specialization.Listener.Blocks.AutoCrafterListener;
 import com.minecraftcivilizations.specialization.Listener.Blocks.ReinforcementProtectionListener;
 import com.minecraftcivilizations.specialization.Listener.BurnListener;
@@ -169,6 +171,7 @@ public final class Specialization extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CraftingListener(this), this);
         getServer().getPluginManager().registerEvents(new FurnaceListener(), this);
         getServer().getPluginManager().registerEvents(new AutoCrafterListener(), this);
+        getServer().getPluginManager().registerEvents(new AnimalFeedListener(), this);
 
         new TownManager();
         getServer().getPluginManager().registerEvents(new MoveListener(), this);
@@ -295,6 +298,7 @@ public final class Specialization extends JavaPlugin {
 
         DataManager.startSaver(this);
         ReinforcementManager.startReinforcement();
+        AnimalFeedingManager.startAnimalFeeding();
 
         AnalyticsData.autoPoll();
     }

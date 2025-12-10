@@ -99,10 +99,13 @@ public class SpecializationConfig {
     private static ConfigFile instinctConfig;
     @Getter
     private static ConfigFile locatorBarConfig;
+    @Getter
+    private static ConfigFile animalFeedingConfig;
+    @Getter
+    public static List<EntityType> getBreedableAnimalTypes;
 
     private static List<EntityType> BREEDABLE =  List.of(EntityType.AXOLOTL, EntityType.CAMEL, EntityType.CAT, EntityType.CHICKEN, EntityType.COD, EntityType.COW, EntityType.DONKEY, EntityType.FOX, EntityType.FROG, EntityType.GOAT, EntityType.HOGLIN, EntityType.HORSE, EntityType.LLAMA, EntityType.MOOSHROOM, EntityType.OCELOT, EntityType.PANDA, EntityType.PARROT, EntityType.PIG, EntityType.RABBIT, EntityType.SHEEP, EntityType.STRIDER, EntityType.TADPOLE, EntityType.TURTLE, EntityType.WOLF);
     public static final List<EntityType> TAMEABLE = List.of(EntityType.WOLF, EntityType.OCELOT, EntityType.CAT, EntityType.PARROT, EntityType.HORSE, EntityType.DONKEY, EntityType.MULE, EntityType.LLAMA, EntityType.TRADER_LLAMA);
-
 
     public static void initialize() {
         playerConfig = new ConfigFile(Specialization.getInstance(), "playerConfig", null, fields -> {
@@ -443,6 +446,18 @@ public class SpecializationConfig {
             fields.add(new Pair<>("INSTINCT_DETECTION_RADIUS_LEVEL_2", 12.0));
             fields.add(new Pair<>("INSTINCT_DETECTION_RADIUS_LEVEL_3", 16.0));
             fields.add(new Pair<>("INSTINCT_GLOW_DURATION_TICKS", 300));
+        });
+
+        animalFeedingConfig = new ConfigFile(Specialization.getInstance(), "animalFeedingConfig", null, fields -> {
+            fields.add(new Pair<>("STARVATION_THRESHOLD_TICKS", 48000L));
+            fields.add(new Pair<>("WITHER_EFFECT_DURATION_TICKS", 24000L));
+            fields.add(new Pair<>("WITHER_EFFECT_AMPLIFIER", 0));
+            fields.add(new Pair<>("FEEDS_REQUIRED_TO_BREED", 5L));
+            fields.add(new Pair<>("BREEDING_COOLDOWN_TICKS", 120000L));
+            for (EntityType animal : BREEDABLE) {
+                fields.add(new Pair<>("REQUIRE_FEEDING_" + animal.name(), true));
+                fields.add(new Pair<>("FOOD_PER_DAY_" + animal.name(), 1L));
+            }
         });
 
         xpMonitorConfig = new ConfigFile(Specialization.getInstance(), "XpMonitorAlertThresholds", null, fields -> {
