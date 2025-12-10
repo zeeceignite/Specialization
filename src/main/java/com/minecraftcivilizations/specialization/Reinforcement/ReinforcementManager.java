@@ -250,9 +250,10 @@ public class ReinforcementManager {
         Chunk chunk = block.getChunk();
         Set<Reinforcement> reinforcedBlocks = getReinforcedBlocks(chunk);
         if (reinforcedBlocks == null) return;
-        long currentTick = Bukkit.getCurrentTick();
-        reinforcedBlocks.remove(new Reinforcement(block.getLocation().toVector(), false, currentTick));
-        reinforcedBlocks.remove(new Reinforcement(block.getLocation().toVector(), true, currentTick));
+        
+        Vector location = block.getLocation().toVector();
+        reinforcedBlocks.removeIf(r -> r.location().equals(location));
+        
         chunk.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, new Gson().toJson(reinforcedBlocks));
         cachedReinforcements.put(chunk, reinforcedBlocks);
         cacheTime.put(chunk, System.currentTimeMillis());
