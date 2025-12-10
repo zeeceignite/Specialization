@@ -450,9 +450,6 @@ public class SpecializationConfig {
 
         animalFeedingConfig = new ConfigFile(Specialization.getInstance(), "animalFeedingConfig", null, fields -> {
             fields.add(new Pair<>("STARVATION_THRESHOLD_TICKS", 48000L));
-            fields.add(new Pair<>("WITHER_EFFECT_DURATION_TICKS", 24000L));
-            fields.add(new Pair<>("WITHER_EFFECT_AMPLIFIER", 0));
-            fields.add(new Pair<>("FEEDS_REQUIRED_TO_BREED", 5L));
             fields.add(new Pair<>("BREEDING_COOLDOWN_TICKS", 120000L));
             for (EntityType animal : BREEDABLE) {
                 fields.add(new Pair<>("REQUIRE_FEEDING_" + animal.name(), true));

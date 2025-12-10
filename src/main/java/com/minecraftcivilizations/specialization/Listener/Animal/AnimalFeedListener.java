@@ -19,11 +19,9 @@ public class AnimalFeedListener implements Listener {
         var itemInHand = event.getPlayer().getInventory().getItemInMainHand();
         if (itemInHand.isEmpty()) return;
         if (!AnimalFeedingManager.isAnimalFood(animal, itemInHand.getType())) return;
-        
-        // Cancel the event to prevent default Minecraft breeding behavior
+
         event.setCancelled(true);
-        
-        // Handle custom feeding logic
+
         boolean shouldConsume = AnimalFeedingManager.handleAnimalFed(animal, itemInHand.getType());
         if (shouldConsume) {
             itemInHand.setAmount(itemInHand.getAmount() - 1);
