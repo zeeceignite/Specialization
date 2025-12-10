@@ -116,7 +116,7 @@ public class ArmorEquipAttributes implements Listener {
                 rare_chance = 0.00;
                 weight_mod_low = 0.8;
                 weight_mod_high = 0.95;
-                armor_trim_chance = 0.05;
+                armor_trim_chance = 0.1;
                 break;
             case 3:
                 base_chance = 0.25; // 1 in 4
@@ -132,7 +132,7 @@ public class ArmorEquipAttributes implements Listener {
                 weight_mod_low = 0.75;
                 weight_mod_high = 0.8;
                 knockback_chance = 0.05;
-                armor_trim_chance = 0.175;
+                armor_trim_chance = 0.25;
                 break;
             case 5:
                 base_chance = 0.5; // 1 in 2
@@ -140,7 +140,7 @@ public class ArmorEquipAttributes implements Listener {
                 weight_mod_low = 0.6;
                 weight_mod_high = 0.8;
                 knockback_chance = 0.125;
-                armor_trim_chance = 0.25;
+                armor_trim_chance = 1.0;
                 break;
         }
         double knockback_roll = 0;
