@@ -275,18 +275,18 @@ public class MobManager implements Listener {
                                 .stepheight(0.5)
                                 .hunts(54)
                                 .breaks(1.5)
-                                .armorChance(Material.IRON_INGOT, 100, 0.25)
-                                .armorChance(Material.LEATHER, 50, 0.8)
-                                .armorChance(Material.CHAIN, 20, 0.75)
-                                .armorChance(Material.IRON_INGOT, 35, 0.9)
+                                .armorChance(Material.IRON_INGOT, 200, 0.3)
+                                .armorChance(Material.LEATHER, 75, 0.9)
+                                .armorChance(Material.CHAIN, 30, 0.75)
+                                .armorChance(Material.IRON_INGOT, 35, 0.825)
                                 .armorChance(Material.DIAMOND, 20, 0.33)
                                 .armorChance(Material.GOLD_INGOT, 15, 0.9)
-                                .armorChance(Material.DIAMOND, 5, 1.0)
+                                .armorChance(Material.DIAMOND, 1, 0.925)
                                 .disableItemPickup()
                                 .drops(0)
 //                        .armorChance(Material.DIAMOND, 20, 0.95)
 //                        .armorChance(Material.DIAMOND, 100, 0.25)
-                , 50);
+                , 40);
 
         new MobOverrideRule(100, SKELETON)
                 .addVariation(new MobVariation("skeleton_standard", SKELETON)
@@ -297,13 +297,12 @@ public class MobManager implements Listener {
                         .hunts(36)
                         .breaks(0.75)
                         .disableItemPickup()
-
                                 .armorChance(Material.AIR, 200, 1.0)
                                 .armorChance(Material.CHAIN, 120, 0.9)
-                                .armorChance(Material.IRON_INGOT, 30, 0.65)
-                                .armorChance(Material.DIAMOND, 4, 0.25)
+                                .armorChance(Material.IRON_INGOT, 35, 0.65)
+                                .armorChance(Material.DIAMOND, 4, 0.35)
                                 .replaceOriginalMob()
-                , 250
+                , 200
                 ).addVariation(new MobVariation("skeleton_bogged", BOGGED)
                         .health(1.5)
                         .damage(0.5, 0.8, 2.0)
@@ -314,7 +313,7 @@ public class MobManager implements Listener {
                         .removeDrop(Material.TIPPED_ARROW)
                         .xpScale(1.5)
                         .replaceOriginalMob()
-                , 2)
+                , 3)
                 .addVariation(new MobVariation("skeleton_stray", STRAY)
                         .health(2)
                         .damage(0.5, 0.8, 2.0)
@@ -325,7 +324,7 @@ public class MobManager implements Listener {
                         .removeDrop(Material.TIPPED_ARROW)
                         .xpScale(1.5)
                         .replaceOriginalMob()
-                , 2
+                , 3
                 );
 
         /**
