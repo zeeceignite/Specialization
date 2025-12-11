@@ -132,7 +132,7 @@ public class ArmorEquipAttributes implements Listener {
                 weight_mod_low = 0.75;
                 weight_mod_high = 0.8;
                 knockback_chance = 0.05;
-                armor_trim_chance = 0.25;
+                armor_trim_chance = 0.33;
                 break;
             case 5:
                 base_chance = 0.5; // 1 in 2
@@ -140,7 +140,7 @@ public class ArmorEquipAttributes implements Listener {
                 weight_mod_low = 0.6;
                 weight_mod_high = 0.8;
                 knockback_chance = 0.125;
-                armor_trim_chance = 1.0;
+                armor_trim_chance = 0.75;
                 break;
         }
         double knockback_roll = 0;
@@ -215,7 +215,7 @@ public class ArmorEquipAttributes implements Listener {
          * Roll armor trim
          */
         if(best){
-            armor_trim_chance *= 1.5; //increase chance of trim if lightest armor
+            armor_trim_chance *= 2.5; //increase chance of trim if lightest armor
         }
 
         boolean trimmed = false;

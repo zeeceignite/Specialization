@@ -18,8 +18,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
-import org.bukkit.inventory.EntityEquipment;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.projectiles.ProjectileSource;
@@ -27,10 +25,7 @@ import org.bukkit.projectiles.ProjectileSource;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static com.minecraftcivilizations.specialization.util.MathUtils.compress;
 import static com.minecraftcivilizations.specialization.util.MathUtils.random;
-import static org.bukkit.ChatColor.*;
-import static org.bukkit.ChatColor.GOLD;
 import static org.bukkit.entity.EntityType.*;
 
 import static org.bukkit.event.entity.EntityDamageEvent.DamageModifier.*;
@@ -406,7 +401,7 @@ public class CombatManager implements Listener {
             if (event.getEntity() instanceof LivingEntity victim) {
                 if (!event.isCancelled()) {
                     if (!Specialization.getInstance().getPlayerDownedListener().isDowned(dmger)) {
-                        mobManager.applyExp(event, customPlayer, victim); //Exp is acquired only after calculating final damage
+                        mobManager.applyGuardsmanExp(event, customPlayer, dmger, victim); //Exp is acquired only after calculating final damage
                     }
                 }
             }
