@@ -22,6 +22,7 @@ import com.minecraftcivilizations.specialization.Listener.Animal.AnimalFeedListe
 import com.minecraftcivilizations.specialization.Listener.Blocks.AutoCrafterListener;
 import com.minecraftcivilizations.specialization.Listener.Blocks.ReinforcementProtectionListener;
 import com.minecraftcivilizations.specialization.Listener.BurnListener;
+import com.minecraftcivilizations.specialization.Listener.Item.FoodRotListener;
 import com.minecraftcivilizations.specialization.Listener.Player.*;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.BreakBlockListener;
 import com.minecraftcivilizations.specialization.Listener.Player.Blocks.Mining.PlayerMineListener;
@@ -99,6 +100,7 @@ public final class Specialization extends JavaPlugin {
     private PlayerDownedListener playerDownedListener;
     private RecipeBlocker recipeBlocker;
     private EmoteManager emoteManager;
+    private FoodRotListener foodRotListener;
 
     public static void notify(Player player, String msg) {
         message(player, msg);
@@ -143,6 +145,7 @@ public final class Specialization extends JavaPlugin {
         pvpManager = new PVPManager(playerDownedListener, this);
         recipeBlocker = new RecipeBlocker();
         armorTrimSystem = new BlacksmithArmorTrim();
+        foodRotListener = new FoodRotListener(this);
 //      emoteListener = new EmoteListener(this);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, "civlabs:weathersync", new TimeSyncListener());
@@ -308,6 +311,9 @@ public final class Specialization extends JavaPlugin {
         // Plugin shutdown logic
         for (Player p : Bukkit.getOnlinePlayers()) {
             phantomRideListener.PhantomStateSave(p);
+        }
+        if (foodRotListener != null) {
+            foodRotListener.stopPeriodicUpdate();
         }
         emoteManager.shutdown();
         smart_entity_manager.shutdown();

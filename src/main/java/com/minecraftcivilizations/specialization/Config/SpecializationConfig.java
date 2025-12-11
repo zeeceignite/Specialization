@@ -102,6 +102,8 @@ public class SpecializationConfig {
     @Getter
     private static ConfigFile animalFeedingConfig;
     @Getter
+    private static ConfigFile foodRotConfig;
+    @Getter
     public static List<EntityType> getBreedableAnimalTypes;
 
     private static List<EntityType> BREEDABLE =  List.of(EntityType.AXOLOTL, EntityType.CAMEL, EntityType.CAT, EntityType.CHICKEN, EntityType.COD, EntityType.COW, EntityType.DONKEY, EntityType.FOX, EntityType.FROG, EntityType.GOAT, EntityType.HOGLIN, EntityType.HORSE, EntityType.LLAMA, EntityType.MOOSHROOM, EntityType.OCELOT, EntityType.PANDA, EntityType.PARROT, EntityType.PIG, EntityType.RABBIT, EntityType.SHEEP, EntityType.STRIDER, EntityType.TADPOLE, EntityType.TURTLE, EntityType.WOLF);
@@ -374,7 +376,6 @@ public class SpecializationConfig {
         healthConfig = new ConfigFile(Specialization.getInstance(), "healthConfig", null, fields -> {
             fields.add(new Pair<>("MAX_HEALTH", 20D));
             fields.add(new Pair<>("DEATH_REDUCED_MAX_HEALTH", 8D));
-            fields.add(new Pair<>("BLESSED_FOOD_HEALTH_RESTORE_AMOUNT", 2D));
             fields.add(new Pair<>("HEALTH_ENABLED", true));
         });
 
@@ -455,6 +456,16 @@ public class SpecializationConfig {
                 fields.add(new Pair<>("REQUIRE_FEEDING_" + animal.name(), true));
                 fields.add(new Pair<>("FOOD_PER_DAY_" + animal.name(), 1L));
             }
+        });
+
+        foodRotConfig = new ConfigFile(Specialization.getInstance(), "foodRotConfig", null, fields -> {
+            fields.add(new Pair<>("FOOD_ROT_ENABLED", true));
+            fields.add(new Pair<>("POISON_CHANCE_ON_ROT", 0.15));
+            fields.add(new Pair<>("POISON_DURATION_TICKS", 120));
+            fields.add(new Pair<>("POISON_AMPLIFIER", 1));
+            fields.add(new Pair<>("SHOW_EXPIRATION_IN_LORE", true));
+            fields.add(new Pair<>("FOOD_ROT_MINUTES_PER_SATURATION", 15.0));
+            fields.add(new Pair<>("BLESSED_FOOD_DURATION_MULTIPLIER", 2.0));
         });
 
         xpMonitorConfig = new ConfigFile(Specialization.getInstance(), "XpMonitorAlertThresholds", null, fields -> {

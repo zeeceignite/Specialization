@@ -1,6 +1,7 @@
 package com.minecraftcivilizations.specialization.Listener.Player.Interactions;
 
 import com.minecraftcivilizations.specialization.Config.SpecializationConfig;
+import com.minecraftcivilizations.specialization.Food.FoodRotManager;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillLevel;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
@@ -32,13 +33,12 @@ import java.util.Random;
 public class FoodInteractionListener implements Listener {
 
     Specialization plugin;
-
     NamespacedKey BLESSED_FOOD_KEY;
 
     public FoodInteractionListener(Specialization plugin) {
         this.plugin = plugin;
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        BLESSED_FOOD_KEY = new NamespacedKey(plugin, "BLESSED_FOOD");
+        BLESSED_FOOD_KEY = FoodRotManager.BLESSED_FOOD_KEY;
     }
 
     @EventHandler
@@ -84,8 +84,11 @@ public class FoodInteractionListener implements Listener {
                             }
                         }
 
-                        int blessXp = SpecializationConfig.getHealthConfig().get("BLESSED_FOOD_HEALER_XP", Integer.class);
-                        int hungerCost = SpecializationConfig.getHealthConfig().get("BLESSED_FOOD_HUNGER_COST", Integer.class);
+                        Integer blessXpConfig = SpecializationConfig.getHealthConfig().get("BLESSED_FOOD_HEALER_XP", Integer.class);
+                        int blessXp = blessXpConfig != null ? blessXpConfig : 50;
+                        
+                        Integer hungerCostConfig = SpecializationConfig.getHealthConfig().get("BLESSED_FOOD_HUNGER_COST", Integer.class);
+                        int hungerCost = hungerCostConfig != null ? hungerCostConfig : 5;
 
                         ItemStack singleItem = item.clone();
                         singleItem.setAmount(1);
@@ -115,6 +118,9 @@ public class FoodInteractionListener implements Listener {
         CustomPlayer customPlayer = CoreUtil.getPlayer(player.getUniqueId());
         if (customPlayer == null) return;
 
+        // Check food rot before other effects
+        FoodRotManager.checkFoodRotOnConsume(consumed, player);
+
         if (isBlessedFood(consumed)) {
             int cooldownTicks = 800;
 
@@ -127,9 +133,12 @@ public class FoodInteractionListener implements Listener {
                 }
             }
 
+            // Check if blessed food has expired
+            boolean hasExpired = isBlessedFoodExpired(consumed);
+            
             // Apply blessed food effects
             int healerLevel = getBlessedFoodLevel(consumed);
-            applyBlessedFoodEffects(player, healerLevel, consumed.getType());
+            applyBlessedFoodEffects(player, healerLevel, consumed.getType(), hasExpired);
 
             // Set cooldown **only on items that are actually blessed food**
             for (ItemStack invItem : player.getInventory().getContents()) {
@@ -195,12 +204,21 @@ public class FoodInteractionListener implements Listener {
         meta.setEnchantmentGlintOverride(true); //glowing food
         meta.getPersistentDataContainer().set(BLESSED_FOOD_KEY, PersistentDataType.BOOLEAN, true);
         item.setItemMeta(meta);
+        
+        // Stamp blessed food with FoodRotManager (applies 2x duration multiplier)
+        FoodRotManager.stampFoodCreationTime(item);
     }
 
 
 
 
-    private void applyBlessedFoodEffects(Player player, int healerLevel, Material itemType) {
+    private void applyBlessedFoodEffects(Player player, int healerLevel, Material itemType, boolean isExpired) {
+        if (isExpired) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 10 * 20, 0));
+            PlayerUtil.message(player, ChatColor.DARK_RED + "This blessed food has spoiled...");
+            return;
+        }
+        
         // Fixed, spec-accurate values (ticks); remove food dependence at L2+
         int regenDurationTicks = 0;
         int regenAmplifier = 0; // amp 0 = Regen I, 1 = Regen II, 2 = Regen III
@@ -266,19 +284,16 @@ public class FoodInteractionListener implements Listener {
 
     private int getBlessedFoodLevel(ItemStack item) {
         if (item == null || item.getItemMeta() == null) return 0;
-        List<Component> lore = item.getItemMeta().lore();
+        List<String> lore = item.getItemMeta().getLore();
         if (lore == null) return 0;
-        for (Component component : lore) {
-            String line = component.toString();
-            if (line.contains("Healer Level: ")) {
-                String plainText = ((net.kyori.adventure.text.TextComponent) component).content();
-                if (plainText.startsWith("Healer Level: ")) {
-                    String levelStr = plainText.replace("Healer Level: ", "");
-                    try {
-                        return Integer.parseInt(levelStr);
-                    } catch (NumberFormatException e) {
-                        return 0;
-                    }
+        for (String line : lore) {
+            String stripped = ChatColor.stripColor(line);
+            if (stripped.startsWith("Healer Level: ")) {
+                String levelStr = stripped.replace("Healer Level: ", "").trim();
+                try {
+                    return Integer.parseInt(levelStr);
+                } catch (NumberFormatException e) {
+                    return 0;
                 }
             }
         }
@@ -290,15 +305,19 @@ public class FoodInteractionListener implements Listener {
     private boolean isBlessedFood(ItemStack item) {
         if (item == null || item.getItemMeta() == null) return false;
         return item.getItemMeta().getPersistentDataContainer().has(BLESSED_FOOD_KEY, PersistentDataType.BOOLEAN);
-//        List<Component> lore = item.getItemMeta().lore();
-//        if (lore == null) return false;
-//        for (Component component : lore) {
-//            if (component instanceof net.kyori.adventure.text.TextComponent) {
-//                String content = ((net.kyori.adventure.text.TextComponent) component).content();
-//                if ("Blessed Food".equals(content)) return true;
-//            }
-//        }
-//        return false;
+    }
+
+    private boolean isBlessedFoodExpired(ItemStack item) {
+        if (item == null || item.getItemMeta() == null) return false;
+        
+        Long creationTime = item.getItemMeta().getPersistentDataContainer().get(FoodRotManager.CREATION_TIME_KEY, PersistentDataType.LONG);
+        if (creationTime == null) return false;
+        
+        long rotDurationTicks = FoodRotManager.calculateRotDurationForFood(item);
+        long expiryTime = creationTime + rotDurationTicks;
+        long currentGameTick = plugin.getServer().getWorlds().get(0).getFullTime();
+        
+        return currentGameTick > expiryTime;
     }
 
     private String getItemName(ItemStack item) {
