@@ -94,22 +94,23 @@ public class BreakBlockListener implements Listener {
         Location dropLocation = block.getLocation().add(0.5, 0.5, 0.5);
 
         // 50% chance to give the reward item
-        if (Math.random() < 0.5) {
             if (isHeavilyReinforced(block)) {
-                block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT));
-                PlayerUtil.message(player,"Iron Reinforcement Broke");
+                if (Math.random() < 0.5) {
+                    block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.IRON_INGOT));
+                }
+                PlayerUtil.message(player, "Iron Reinforcement Broke");
+            }else if (isLightlyReinforced(block)) {
+                if (Math.random() < 0.5) {
+                    block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT));
+                }
+                PlayerUtil.message(player, "Copper Reinforcement Broke");
             }
-            if (isLightlyReinforced(block)) {
-                block.getWorld().dropItemNaturally(dropLocation, new ItemStack(Material.COPPER_INGOT));
-                PlayerUtil.message(player,"Copper Reinforcement Broke");
 
-            }
-        }
 
         // Always remove reinforcement
-        for (Block b : getMultiBlocks(block)) {
-            removeReinforcement(b);
-        }
+        removeReinforcement(block);
+//        for (Block b : getMultiBlocks(block)) {
+//        }
     }
 
     public void minerListener(BlockBreakEvent event) {

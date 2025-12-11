@@ -1,17 +1,12 @@
 package com.minecraftcivilizations.specialization.Combat.Mobs;
 
 import com.minecraftcivilizations.specialization.Combat.CombatManager;
-import com.minecraftcivilizations.specialization.Listener.Player.PlayerDownedListener;
 import com.minecraftcivilizations.specialization.Player.CustomPlayer;
 import com.minecraftcivilizations.specialization.Skill.SkillType;
 import com.minecraftcivilizations.specialization.Specialization;
 import com.minecraftcivilizations.specialization.StaffTools.Debug;
 import com.minecraftcivilizations.specialization.util.CoreUtil;
-import com.minecraftcivilizations.specialization.util.PlayerUtil;
 import com.minecraftcivilizations.specialization.util.WorldUtils;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -26,10 +21,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.event.world.ChunkPopulateEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
+import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
@@ -37,7 +32,6 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import java.security.Guard;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -210,19 +204,6 @@ public class MobManager implements Listener {
 
 
         //END OF PRIMARY REFRESH
-//        setDefaultRuleSetChance(0, ZOMBIE, HUSK, DROWNED,
-//                SKELETON, CREEPER, SPIDER,
-//                CAVE_SPIDER,
-//        ); //always override these mobs
-
-        /**
-         *    NOTE: If you add any mob variations, add it to this list
-         */
-//        for(EntityType type : EntityType.values()){
-//            if(type) {
-//                setDefaultRuleSetChance(0, type);
-//            }
-//        }
 
         /**
          * These mobs will have a 100% chance of spawning
@@ -263,15 +244,49 @@ public class MobManager implements Listener {
                         .breaks()
                 );
 
-        new MobOverrideRule(100, ZOMBIE, HUSK, DROWNED, ZOMBIE_VILLAGER)
-                .addVariation(new MobVariation("zombie_variation")
-                        .health(2)
-                        .damage(1.0, 1.35)
-                        .speed(1.25, 1.75)
-                        .stepheight(0.5)
-                        .hunts(54)
-                        .breaks(1.5)
+        new MobOverrideRule(100, DROWNED)
+                .addVariation(new MobVariation("drowned_variation")
+                                .health(2)
+                                .damage(1.0, 1.35)
+                                .speed(1.5, 1.75)
+                                .waterspeed(2,2)
+                                .stepheight(0.5)
+                                .hunts(54)
+                                .breaks(1.25)
+//                        .armorChance(Material.DIAMOND, 20, 0.95)
+//                        .armorChance(Material.DIAMOND, 100, 0.25)
+
                 );
+
+        new MobOverrideRule(100, ZOMBIE, HUSK, ZOMBIE_VILLAGER)
+                .addVariation(new MobVariation("zombie_variation")
+                                .health(2)
+                                .damage(1.0, 1.35)
+                                .speed(1.25, 1.75)
+                                .stepheight(0.5)
+                                .hunts(54)
+                                .breaks(1.5)
+//                        .armorChance(Material.DIAMOND, 20, 0.95)
+//                        .armorChance(Material.DIAMOND, 100, 0.25)
+                , 100).addVariation(new MobVariation("armored_zombie")
+                                .health(2)
+                                .damage(1.0, 1.35)
+                                .speed(1.25, 1.75)
+                                .stepheight(0.5)
+                                .hunts(54)
+                                .breaks(1.5)
+                                .armorChance(Material.IRON_INGOT, 100, 0.25)
+                                .armorChance(Material.LEATHER, 50, 0.8)
+                                .armorChance(Material.CHAIN, 20, 0.75)
+                                .armorChance(Material.IRON_INGOT, 35, 0.9)
+                                .armorChance(Material.DIAMOND, 20, 0.33)
+                                .armorChance(Material.GOLD_INGOT, 15, 0.9)
+                                .armorChance(Material.DIAMOND, 5, 1.0)
+                                .disableItemPickup()
+                                .drops(0)
+//                        .armorChance(Material.DIAMOND, 20, 0.95)
+//                        .armorChance(Material.DIAMOND, 100, 0.25)
+                , 50);
 
         new MobOverrideRule(100, SKELETON)
                 .addVariation(new MobVariation("skeleton_standard", SKELETON)
@@ -281,6 +296,12 @@ public class MobManager implements Listener {
                         .stepheight(0.5)
                         .hunts(36)
                         .breaks(0.75)
+                        .disableItemPickup()
+
+                                .armorChance(Material.AIR, 200, 1.0)
+                                .armorChance(Material.CHAIN, 120, 0.9)
+                                .armorChance(Material.IRON_INGOT, 30, 0.65)
+                                .armorChance(Material.DIAMOND, 4, 0.25)
                                 .replaceOriginalMob()
                 , 250
                 ).addVariation(new MobVariation("skeleton_bogged", BOGGED)
@@ -312,16 +333,16 @@ public class MobManager implements Listener {
          * 95% of normal dolphin
          * 5% of special dolphin
          */
-        setDefaultRuleSetChance(75, DOLPHIN);
-        new MobOverrideRule(25, DOLPHIN)
+        setDefaultRuleSetChance(65, DOLPHIN);
+        new MobOverrideRule(35, DOLPHIN)
                 .spawnInPacks()
                 .addVariation(new MobVariation("evil_dolphin", DOLPHIN)
                         .anger(true)
                         .damage(0.25, 0.5)
                         .health(1.5)
                         .size(1.25,1.5)
-                        .speed(1.0, 1.25)
-                        .hunts(16)
+                        .speed(1.15, 1.35)
+                        .hunts(24)
                         .xpScale(2.0)
                         .setGainsXpOverride(true)
                         .drops(0)
@@ -452,7 +473,7 @@ public class MobManager implements Listener {
                 .health(1.5)
                 .speed(1.25, 1.5)
                 .setGainsXpOverride(true)
-                .hunts(24)
+                .hunts(32)
                 .breaks(0.75)
                 .stepheight(0.5)
                 .xpScale(2.5)
@@ -461,7 +482,7 @@ public class MobManager implements Listener {
                 .replaceOriginalMob()
                 .despawnFaraway();
 
-        new MobOverrideRule(3, CREEPER)
+        new MobOverrideRule(8, CREEPER)
                 .addVariation(night_wolves, 10).spawnInPacks();
 
         new MobOverrideRule(100, CREEPER)
@@ -819,6 +840,10 @@ public class MobManager implements Listener {
         }
         stats.applyRandomArmor(entity);
 
+        if (!stats.isDisableItemPickup()){
+            entity.setCanPickupItems(false);
+        }
+
         applyLogicToMob(entity, stats);
     }
 
@@ -1106,8 +1131,10 @@ public class MobManager implements Listener {
     }
 
 
-
-    public void applyExp(EntityDamageByEntityEvent event, CustomPlayer customPlayer, LivingEntity victim) {
+    /**
+     * Grants guardsman exp to the player
+     */
+    public void applyGuardsmanExp(EntityDamageByEntityEvent event, CustomPlayer customPlayer, Player dmger, LivingEntity victim) {
         if(event.getDamage()<0.1)return;
         if (victim instanceof Player px){
             return;
@@ -1115,27 +1142,33 @@ public class MobManager implements Listener {
         if(victim instanceof ArmorStand){
             return;
         }
-        if(!(victim instanceof LivingEntity)){
+        int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
+        EntityEquipment equipment = dmger.getEquipment();
+        Material type = equipment.getItemInMainHand().getType();
+        if(lvl == 0 && !isValidWeapon(type)){
             return;
         }
         double xp_scale = 1.0;
 
-        int lvl = customPlayer.getSkillLevel(SkillType.GUARDSMAN);
-
         if(!(victim instanceof Enemy)) {
             //Passive Mob XP Reduction
-            switch (lvl) {
-                case 0:
-                    xp_scale = 0.75;
-                    break;
-                case 1:
-                    xp_scale = 0.5;
-                    break;
-                case 2:
-                    xp_scale = 0.25;
-                    break;
-                default: xp_scale = 0;
-                break; //No xp to grant on passive mobs
+            if(type.name().contains("_AXE") && lvl == 0){
+                xp_scale = 0;
+            }else {
+                switch (lvl) {
+                    case 0:
+                        xp_scale = 0.75;
+                        break;
+                    case 1:
+                        xp_scale = 0.5;
+                        break;
+                    case 2:
+                        xp_scale = 0.25;
+                        break;
+                    default:
+                        xp_scale = 0;
+                        break; //No xp to grant on passive mobs
+                }
             }
         }
 
@@ -1145,7 +1178,7 @@ public class MobManager implements Listener {
                 xp_scale = 1.0;
             }
         }
-        if(xp_scale == 0){
+        if(xp_scale <= 0){
             return;
         }
 //            does_grant_exp = true;
@@ -1166,7 +1199,7 @@ public class MobManager implements Listener {
         double xp_multiplier = mobStats.getXpScale() * xp_scale;
         if (xp_multiplier>0) {
             LivingEntity le = (LivingEntity) victim;
-            double xp = event.getDamage();
+            double xp = event.getFinalDamage();
             if (xp > le.getHealth()) {
                 xp = Math.max(1, le.getHealth());
             }
@@ -1176,6 +1209,27 @@ public class MobManager implements Listener {
 //            Debug.broadcast("xp", "XP formula 3: "+event.getFinalDamage());
 //            customPlayer.addSkillXp(SkillType.GUARDSMAN, (int) Math.max(1, (xp * xp_multiplier)), true); // USE THIS if we want xp gained on each low hit (account for sweeping edge)
             customPlayer.addSkillXp(SkillType.GUARDSMAN, (int) (xp * xp_multiplier), true);
+        }
+    }
+
+    private boolean isValidWeapon(Material type) {
+        switch(type){
+            case WOODEN_SWORD:
+            case STONE_SWORD:
+            case IRON_SWORD:
+            case GOLDEN_SWORD:
+            case DIAMOND_SWORD:
+            case NETHERITE_SWORD:
+            case WOODEN_AXE:
+            case STONE_AXE:
+            case IRON_AXE:
+            case GOLDEN_AXE:
+            case DIAMOND_AXE:
+            case NETHERITE_AXE:
+            case TRIDENT:
+            case MACE:
+                return true;
+            default: return false;
         }
     }
 

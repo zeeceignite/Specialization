@@ -112,6 +112,9 @@ public class MobVariation {
 
     private boolean random_scale_enabled = false;
 
+    @Getter
+    private boolean disableItemPickup = false;
+
     private boolean always_angry = false;
 
     private boolean does_hunting = false;
@@ -388,11 +391,59 @@ public class MobVariation {
         final Material material;
         final int weight;
         final double chance_per_slot;
+        final Material helmet;
+        final Material chest;
+        final Material legs;
+        final Material feet;
 
         ArmorRoll(Material material, int weight, double chance_per_slot) {
             this.material = material;
             this.weight = weight;
             this.chance_per_slot = chance_per_slot;
+            switch (material) {
+                case LEATHER -> {
+                    helmet = Material.LEATHER_HELMET;
+                    chest = Material.LEATHER_CHESTPLATE;
+                    legs = Material.LEATHER_LEGGINGS;
+                    feet = Material.LEATHER_BOOTS;
+                }
+                case CHAIN -> {
+                    helmet = Material.CHAINMAIL_HELMET;
+                    chest = Material.CHAINMAIL_CHESTPLATE;
+                    legs = Material.CHAINMAIL_LEGGINGS;
+                    feet = Material.CHAINMAIL_BOOTS;
+                }
+                case IRON_INGOT -> {
+                    helmet = Material.IRON_HELMET;
+                    chest = Material.IRON_CHESTPLATE;
+                    legs = Material.IRON_LEGGINGS;
+                    feet = Material.IRON_BOOTS;
+                }
+                case GOLD_INGOT -> {
+                    helmet = Material.GOLDEN_HELMET;
+                    chest = Material.GOLDEN_CHESTPLATE;
+                    legs = Material.GOLDEN_LEGGINGS;
+                    feet = Material.GOLDEN_BOOTS;
+                }
+                case DIAMOND -> {
+                    helmet = Material.DIAMOND_HELMET;
+                    chest = Material.DIAMOND_CHESTPLATE;
+                    legs = Material.DIAMOND_LEGGINGS;
+                    feet = Material.DIAMOND_BOOTS;
+                }
+                case NETHERITE_INGOT -> {
+                    helmet = Material.NETHERITE_HELMET;
+                    chest = Material.NETHERITE_CHESTPLATE;
+                    legs = Material.NETHERITE_LEGGINGS;
+                    feet = Material.NETHERITE_BOOTS;
+                }
+                default -> {
+                    helmet = null;
+                    chest = null;
+                    legs = null;
+                    feet = null;
+                }
+            }
         }
     }
 
@@ -427,31 +478,22 @@ public class MobVariation {
         EntityEquipment eq = entity.getEquipment();
         if (eq == null) return;
 
-        tryEquip(eq::setHelmet, selected.material, selected.chance_per_slot);
-        tryEquip(eq::setChestplate, selected.material, selected.chance_per_slot);
-        tryEquip(eq::setLeggings, selected.material, selected.chance_per_slot);
-        tryEquip(eq::setBoots, selected.material, selected.chance_per_slot);
+        tryEquip(eq::setHelmet, selected.helmet, selected.chance_per_slot);
+        tryEquip(eq::setChestplate, selected.chest, selected.chance_per_slot);
+        tryEquip(eq::setLeggings, selected.legs, selected.chance_per_slot);
+        tryEquip(eq::setBoots, selected.feet, selected.chance_per_slot);
     }
 
     private void tryEquip(Consumer<ItemStack> setter, Material base, double chance) {
+        if(base==null)return;
         if (ThreadLocalRandom.current().nextDouble() > chance) return;
+        setter.accept(new ItemStack(base));
+    }
 
-        Material piece = switch (base) {
-            case IRON_INGOT -> Material.IRON_HELMET;
-            case DIAMOND -> Material.DIAMOND_HELMET;
-            default -> null;
-        };
 
-        if (piece == null) return;
-
-        // swap by suffix
-        String name = piece.name();
-        if (setter.toString().contains("Chestplate")) piece = Material.valueOf(name.replace("HELMET", "CHESTPLATE"));
-        if (setter.toString().contains("Leggings"))  piece = Material.valueOf(name.replace("HELMET", "LEGGINGS"));
-        if (setter.toString().contains("Boots"))     piece = Material.valueOf(name.replace("HELMET", "BOOTS"));
-
-        setter.accept(new ItemStack(piece));
-
-}
+    public MobVariation disableItemPickup(){
+        disableItemPickup = true;
+        return this;
+    }
 
 }
