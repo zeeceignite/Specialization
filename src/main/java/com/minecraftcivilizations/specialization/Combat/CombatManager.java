@@ -105,7 +105,7 @@ public class CombatManager implements Listener {
             switch(weapon.getType()){
                 case BOW:
                     if(shooter instanceof Player ps){
-                        multiplier = 0.75;
+                        multiplier = 1.0;
                         ps.setCooldown(Material.CROSSBOW, 16);
                     }else{
                         //skeleton or mob

@@ -275,10 +275,10 @@ public class MobManager implements Listener {
                                 .stepheight(0.5)
                                 .hunts(54)
                                 .breaks(1.5)
+                                .armorChance(Material.IRON_INGOT, 100, 0.25)
                                 .armorChance(Material.LEATHER, 50, 0.8)
-                                .armorChance(Material.CHAIN, 50, 0.75)
-                                .armorChance(Material.IRON_INGOT, 50, 0.5)
-                                .armorChance(Material.IRON_INGOT, 25, 0.825)
+                                .armorChance(Material.CHAIN, 20, 0.75)
+                                .armorChance(Material.IRON_INGOT, 35, 0.9)
                                 .armorChance(Material.DIAMOND, 20, 0.33)
                                 .armorChance(Material.GOLD_INGOT, 15, 0.9)
                                 .armorChance(Material.DIAMOND, 5, 1.0)
@@ -296,6 +296,12 @@ public class MobManager implements Listener {
                         .stepheight(0.5)
                         .hunts(36)
                         .breaks(0.75)
+                        .disableItemPickup()
+
+                                .armorChance(Material.AIR, 200, 1.0)
+                                .armorChance(Material.CHAIN, 120, 0.9)
+                                .armorChance(Material.IRON_INGOT, 30, 0.65)
+                                .armorChance(Material.DIAMOND, 4, 0.25)
                                 .replaceOriginalMob()
                 , 250
                 ).addVariation(new MobVariation("skeleton_bogged", BOGGED)
@@ -327,16 +333,16 @@ public class MobManager implements Listener {
          * 95% of normal dolphin
          * 5% of special dolphin
          */
-        setDefaultRuleSetChance(75, DOLPHIN);
-        new MobOverrideRule(25, DOLPHIN)
+        setDefaultRuleSetChance(65, DOLPHIN);
+        new MobOverrideRule(35, DOLPHIN)
                 .spawnInPacks()
                 .addVariation(new MobVariation("evil_dolphin", DOLPHIN)
                         .anger(true)
                         .damage(0.25, 0.5)
                         .health(1.5)
                         .size(1.25,1.5)
-                        .speed(1.0, 1.25)
-                        .hunts(16)
+                        .speed(1.15, 1.35)
+                        .hunts(24)
                         .xpScale(2.0)
                         .setGainsXpOverride(true)
                         .drops(0)

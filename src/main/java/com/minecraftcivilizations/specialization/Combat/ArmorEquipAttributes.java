@@ -215,7 +215,7 @@ public class ArmorEquipAttributes implements Listener {
          * Roll armor trim
          */
         if(best){
-            armor_trim_chance *= 2.5; //increase chance of trim if lightest armor
+            armor_trim_chance *= 2; //increase chance of trim if lightest armor
         }
 
         boolean trimmed = false;
