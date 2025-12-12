@@ -20,6 +20,7 @@ import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -159,16 +160,17 @@ public class RecipesGUI extends GUI {
             ArrayList<ItemStack> itemStacks = new ArrayList<>(0);
             if (stringHashSetPair != null) {
                 for (NamespacedKey namespacedKey : stringHashSetPair) {
-                    Material material = Registry.MATERIAL.get(namespacedKey);
-                    if(material==null) {
+                    Recipe recipe = Bukkit.getRecipe(namespacedKey);
+                    if (recipe != null) {
+                        itemStacks.add(recipe.getResult().clone());
+                    } else {
+                        // fallback for weird cases
                         ItemStack stack = recipe_exceptions.get(namespacedKey.getKey());
-                        if(stack!=null){
+                        if (stack != null) {
                             itemStacks.add(stack);
-                        }else{
-                            Debug.broadcast("recipe", "<red>requires mapping:<white>"+namespacedKey.getKey());
+                        } else {
+                            Debug.broadcast("recipe", "<red>Unknown recipe key:<white> " + namespacedKey);
                         }
-                    }else{
-                        itemStacks.add(ItemStack.of(material));
                     }
                 }
                 new ListGUI(Component.text("Recipes"), itemStacks, Map.of(GUIPlaceOption.SHOULD_PLACE_EXIT, false, GUIPlaceOption.SHOULD_PLACE_BACK, true, GUIPlaceOption.SHOULD_PLACE_SEARCH, false)).setParentGUI(this).open(Bukkit.getPlayer(customPlayer.getUuid()));
