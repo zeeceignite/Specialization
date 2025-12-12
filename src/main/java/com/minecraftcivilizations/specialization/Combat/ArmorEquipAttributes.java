@@ -306,7 +306,8 @@ public class ArmorEquipAttributes implements Listener {
 
 
             if(previous_weight != weight) {
-                player.sendActionBar("Armor Weight: " + weightColor(weight) + weight);
+                WeightLevel level = weightLevel(weight);
+                player.sendActionBar("Armor Weight: " + level.color + weight +level.title);
                 weight_map.put(uuid, weight);
             }
 //            Debug.broadcast("armorstats", "<blue>Armor:</blue> "+stats.getArmor()+" <blue>Toughness:</blue> "+stats.getToughness());
@@ -320,17 +321,27 @@ public class ArmorEquipAttributes implements Listener {
     public final double weight_offset = -25; //baseline, a player can have up to this before weight becomes effective
     public final double weight_threshold = 50;
 
-    public ChatColor weightColor(double weight){
-        if(weight> weight_threshold *3){
-            return DARK_RED;
-        }else if(weight> weight_threshold *2){
-            return RED;
-        }else if (weight> weight_threshold){
-            return GOLD;
-        }else if(weight>0){
-            return YELLOW;
+    class WeightLevel{
+
+        String title;
+        ChatColor color;
+        public WeightLevel(String title, ChatColor color){
+            this.title = title;
+            this.color = color;
         }
-        return GREEN;
+    }
+
+    public WeightLevel weightLevel(double weight){
+        if(weight> weight_threshold *3){
+            return new WeightLevel(" (How tf r u this heavy?)", DARK_RED);
+        }else if(weight> weight_threshold *2){
+            return new WeightLevel(" (Very Heavy)", RED);
+        }else if (weight> weight_threshold){
+            return new WeightLevel(" (Heavy)", GOLD);
+        }else if(weight>0){
+            return new WeightLevel(" (Medium)", YELLOW);
+        }
+        return new WeightLevel("(Light)", GREEN);
     }
 
     public boolean hasWeight(ItemStack item){
