@@ -319,6 +319,14 @@ public class CombatManager implements Listener {
         }
 
 
+
+        if(charge_amount<0.22){
+            event.setCancelled(true);
+            return;
+        }
+
+
+
         //ABSORPTION BEHAVIOR
         double absorption = event.getDamage(ABSORPTION);
         double absorption_to_remove = 0;

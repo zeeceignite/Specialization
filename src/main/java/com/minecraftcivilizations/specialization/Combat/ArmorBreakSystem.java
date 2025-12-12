@@ -107,14 +107,17 @@ public class ArmorBreakSystem {
                         double scale = 1.0;
                         switch (unbreaking){
                             case 1:
-                                scale = 0.75;
+                                scale = 0.9;
                                 break;
                             case 2:
-                                scale = 0.625;
+                                scale = 0.8;
                                 break;
                             case 3:
-                                scale = 0.5;
+                                scale = 0.7;
                                 break;
+                        }
+                        if(m.name().contains("DIAMOND") || m.name().contains("NETHERITE")){
+                            scale *= 2.0;
                         }
                         int current_damage_amount = (int) (armor_damage * scale);
                         item.damage(current_damage_amount, attacker);

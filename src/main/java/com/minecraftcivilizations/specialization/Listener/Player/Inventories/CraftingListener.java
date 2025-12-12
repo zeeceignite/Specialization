@@ -229,7 +229,7 @@ public class CraftingListener implements Listener {
         switch (type) {
             case FERMENTED_SPIDER_EYE:
             case BEETROOT_SOUP:
-                return 2.0;
+                return 1.75;
             case STICK:
             case PUMPKIN_PIE:
             case MUSHROOM_STEW:
@@ -238,6 +238,10 @@ public class CraftingListener implements Listener {
             case REDSTONE_TORCH:
             case SOUL_TORCH:
             case REDSTONE_LAMP:
+            case BRICKS:
+            case BRICK_SLAB:
+            case BRICK_STAIRS:
+            case BRICK_WALL:
             case BOOK:
             case BOOKSHELF:
             case DRIED_KELP_BLOCK:
@@ -262,10 +266,24 @@ public class CraftingListener implements Listener {
             case SHEARS:
                 return 2.0;
             case CLAY:
+            case BRICK:
             case PACKED_MUD:
             case SNOW_BLOCK:
             case GLASS_PANE:
                 return 0.33;
+            case SANDSTONE:
+            case SANDSTONE_SLAB:
+            case SANDSTONE_STAIRS:
+            case SANDSTONE_WALL:
+            case RESIN_BLOCK:
+            case RESIN_BRICK:
+            case RESIN_BRICK_SLAB:
+            case RESIN_BRICK_STAIRS:
+            case RESIN_BRICK_WALL:
+            case RESIN_BRICKS:
+            case RESIN_CLUMP:
+            case CHISELED_RESIN_BRICKS:
+                return 0.3;
             case TINTED_GLASS:
             case GLASS_BOTTLE:
                 return 0.75;
