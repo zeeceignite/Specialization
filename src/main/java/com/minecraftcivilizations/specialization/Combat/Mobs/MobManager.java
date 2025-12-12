@@ -839,7 +839,7 @@ public class MobManager implements Listener {
         }
         stats.applyRandomArmor(entity);
 
-        if (!stats.isDisableItemPickup()){
+        if (stats.isDisableItemPickup()){
             entity.setCanPickupItems(false);
         }
 
