@@ -305,6 +305,11 @@ public class CombatManager implements Listener {
             //Attacker is a player
             charge_amount = player.getAttackCooldown();
             fully_charged = charge_amount >= 1.0f;
+            if (charge_amount < 0.225) {
+                //prevents auto-click / excessive attack spam
+                event.setCancelled(true);
+                return;
+            }
             guardsmanDamage.applyGuardsmanDamage(customPlayer, event);
 //            dynamicArmor.applyRaytracedArmorHit(event);
 //            Debug.broadcast("mob", "animal took damage :(");
@@ -319,15 +324,9 @@ public class CombatManager implements Listener {
         }
 
 
-
-        if(charge_amount<0.22){
-            event.setCancelled(true);
-            return;
-        }
-
-
-
-        //ABSORPTION BEHAVIOR
+        /**
+         * Absorption Damage
+         */
         double absorption = event.getDamage(ABSORPTION);
         double absorption_to_remove = 0;
         if (absorption < 0) {
